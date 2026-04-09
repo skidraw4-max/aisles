@@ -4,8 +4,8 @@ import { createClient } from '@supabase/supabase-js';
 import type { User } from '@supabase/supabase-js';
 import { prisma } from '@/lib/prisma';
 import { ensurePrismaUser } from '@/lib/ensure-user';
-import { uploadPublicObject } from '@/lib/r2';
-import { isTrustedR2Url } from '@/lib/r2-url';
+import { MEDIA_STORAGE_NOT_CONFIGURED, uploadPublicObject } from '@/lib/r2';
+import { isTrustedMediaUrl } from '@/lib/r2-url';
 import type { Category } from '@prisma/client';
 import { parsePostCategory } from '@/lib/post-categories';
 
@@ -129,9 +129,9 @@ async function postFromJson(req: NextRequest) {
   }
 
   const thumbnailUrl = typeof b.thumbnailUrl === 'string' ? b.thumbnailUrl.trim() : '';
-  if (!thumbnailUrl || !isTrustedR2Url(thumbnailUrl)) {
+  if (!thumbnailUrl || !isTrustedMediaUrl(thumbnailUrl)) {
     return NextResponse.json(
-      { error: 'R2에서 업로드된 썸네일 URL이 필요합니다. 이미지 업로드를 먼저 완료해 주세요.' },
+      { error: '허용된 저장소에서 업로드된 썸네일 URL이 필요합니다. 미디어 업로드를 먼저 완료해 주세요.' },
       { status: 400 }
     );
   }
@@ -238,8 +238,8 @@ async function postFromMultipart(req: NextRequest) {
     return NextResponse.json(
       {
         error:
-          uploaded.error === 'R2 is not configured'
-            ? '파일 저장소(R2)가 설정되지 않았습니다.'
+          uploaded.error === MEDIA_STORAGE_NOT_CONFIGURED
+            ? '파일 저장소가 준비되지 않았습니다. R2 환경 변수를 설정하거나, Supabase Storage 버킷과 SUPABASE_SERVICE_ROLE_KEY 를 설정해 주세요.'
             : uploaded.error,
       },
       { status: 503 }

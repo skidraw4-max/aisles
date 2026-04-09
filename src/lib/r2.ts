@@ -1,4 +1,5 @@
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { createClient } from '@supabase/supabase-js';
 
 type R2Config = {
   endpoint: string;
@@ -7,6 +8,15 @@ type R2Config = {
   bucket: string;
   publicBase: string;
 };
+
+type SupabaseStorageConfig = {
+  url: string;
+  serviceKey: string;
+  bucket: string;
+};
+
+/** R2 미설정·업로드 실패 후 Supabase Storage 폴백도 없을 때 */
+export const MEDIA_STORAGE_NOT_CONFIGURED = 'MEDIA_STORAGE_NOT_CONFIGURED';
 
 /**
  * R2 설정 (서버 전용 — API Route / Server Actions 에서만 사용)
@@ -46,32 +56,87 @@ export function getR2Config(): R2Config | null {
   return { endpoint, accessKeyId, secretAccessKey, bucket, publicBase };
 }
 
+/**
+ * R2 대안: Supabase Storage (서버에서만 service role 사용).
+ * Dashboard → Storage 에 공개 버킷 생성 후 `SUPABASE_SERVICE_ROLE_KEY` 설정.
+ */
+export function getSupabaseStorageUploadConfig(): SupabaseStorageConfig | null {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+  const bucket = process.env.SUPABASE_STORAGE_BUCKET?.trim() || 'uploads';
+  if (!url || !serviceKey) return null;
+  return { url, serviceKey, bucket };
+}
+
+async function uploadViaSupabaseStorage(
+  key: string,
+  body: Buffer,
+  contentType: string,
+  cfg: SupabaseStorageConfig
+): Promise<{ publicUrl: string } | { error: string }> {
+  const supabase = createClient(cfg.url, cfg.serviceKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+
+  const { error } = await supabase.storage.from(cfg.bucket).upload(key, body, {
+    contentType,
+    upsert: false,
+  });
+
+  if (error) {
+    console.error('[supabase storage upload]', error.message);
+    return { error: error.message || 'Supabase Storage 업로드에 실패했습니다.' };
+  }
+
+  const { data } = supabase.storage.from(cfg.bucket).getPublicUrl(key);
+  return { publicUrl: data.publicUrl };
+}
+
+/**
+ * 공개 URL로 서빙되는 객체 업로드. R2가 있으면 R2, 없으면 Supabase Storage(service role).
+ */
 export async function uploadPublicObject(
   key: string,
   body: Buffer,
   contentType: string
 ): Promise<{ publicUrl: string } | { error: string }> {
-  const cfg = getR2Config();
-  if (!cfg) return { error: 'R2 is not configured' };
+  const r2 = getR2Config();
+  if (r2) {
+    try {
+      const client = new S3Client({
+        region: 'auto',
+        endpoint: r2.endpoint,
+        credentials: {
+          accessKeyId: r2.accessKeyId,
+          secretAccessKey: r2.secretAccessKey,
+        },
+      });
 
-  const client = new S3Client({
-    region: 'auto',
-    endpoint: cfg.endpoint,
-    credentials: {
-      accessKeyId: cfg.accessKeyId,
-      secretAccessKey: cfg.secretAccessKey,
-    },
-  });
+      await client.send(
+        new PutObjectCommand({
+          Bucket: r2.bucket,
+          Key: key,
+          Body: body,
+          ContentType: contentType,
+        })
+      );
 
-  await client.send(
-    new PutObjectCommand({
-      Bucket: cfg.bucket,
-      Key: key,
-      Body: body,
-      ContentType: contentType,
-    })
-  );
+      const publicUrl = `${r2.publicBase}/${key}`;
+      return { publicUrl };
+    } catch (e) {
+      console.error('[r2 upload]', e);
+      const sup = getSupabaseStorageUploadConfig();
+      if (sup) {
+        return uploadViaSupabaseStorage(key, body, contentType, sup);
+      }
+      return { error: e instanceof Error ? e.message : 'R2 업로드에 실패했습니다.' };
+    }
+  }
 
-  const publicUrl = `${cfg.publicBase}/${key}`;
-  return { publicUrl };
+  const sup = getSupabaseStorageUploadConfig();
+  if (sup) {
+    return uploadViaSupabaseStorage(key, body, contentType, sup);
+  }
+
+  return { error: MEDIA_STORAGE_NOT_CONFIGURED };
 }

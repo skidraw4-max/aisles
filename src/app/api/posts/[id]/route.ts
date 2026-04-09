@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getUserFromBearer } from '@/lib/auth-bearer';
 import { ensurePrismaUser } from '@/lib/ensure-user';
-import { isTrustedR2Url } from '@/lib/r2-url';
+import { isTrustedMediaUrl } from '@/lib/r2-url';
 import type { Category } from '@prisma/client';
 
 type Ctx = { params: Promise<{ id: string }> };
@@ -123,9 +123,9 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
 
   if (typeof b.thumbnailUrl === 'string') {
     const url = b.thumbnailUrl.trim();
-    if (!url || !isTrustedR2Url(url)) {
+    if (!url || !isTrustedMediaUrl(url)) {
       return NextResponse.json(
-        { error: 'R2에서 업로드된 썸네일 URL만 사용할 수 있습니다.' },
+        { error: '허용된 저장소에서 업로드된 썸네일 URL만 사용할 수 있습니다.' },
         { status: 400 }
       );
     }

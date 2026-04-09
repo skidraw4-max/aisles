@@ -2,7 +2,7 @@ import { randomUUID } from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { ensurePrismaUser } from '@/lib/ensure-user';
-import { uploadPublicObject } from '@/lib/r2';
+import { MEDIA_STORAGE_NOT_CONFIGURED, uploadPublicObject } from '@/lib/r2';
 
 const MEDIA_EXT = new Map<string, string>([
   ['image/jpeg', 'jpg'],
@@ -71,8 +71,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       {
         error:
-          uploaded.error === 'R2 is not configured'
-            ? '파일 저장소(R2)가 설정되지 않았습니다.'
+          uploaded.error === MEDIA_STORAGE_NOT_CONFIGURED
+            ? '파일 저장소가 준비되지 않았습니다. R2 환경 변수를 설정하거나, Supabase Storage 버킷과 SUPABASE_SERVICE_ROLE_KEY 를 설정해 주세요.'
             : uploaded.error,
       },
       { status: 503 }
