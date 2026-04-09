@@ -1270,6 +1270,7 @@
 }
 
 .contentShowcaseListThumb {
+  position: relative;
   flex-shrink: 0;
   width: 88px;
   height: 64px;
