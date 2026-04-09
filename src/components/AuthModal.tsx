@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { getPublicSiteUrl } from '@/lib/site-url';
 import { syncPrismaUserWithAuth } from '@/lib/sync-prisma-user';
 import styles from './AuthModal.module.css';
 
@@ -68,11 +69,13 @@ export function AuthModal({ open, onClose, onAuthed }: Props) {
     setLoading(true);
     try {
       const supabase = createClient();
+      const site = getPublicSiteUrl();
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: { username: username.trim() },
+          ...(site ? { emailRedirectTo: `${site}/auth/callback` } : {}),
         },
       });
       if (error) throw error;
@@ -100,9 +103,9 @@ export function AuthModal({ open, onClose, onAuthed }: Props) {
     setLoading(true);
     try {
       const supabase = createClient();
-      const origin = typeof window !== 'undefined' ? window.location.origin : '';
+      const site = getPublicSiteUrl();
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${origin}/auth/update-password`,
+        redirectTo: site ? `${site}/auth/update-password` : `${window.location.origin}/auth/update-password`,
       });
       if (error) throw error;
       setMessage({
