@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useInView } from 'react-intersection-observer';
 import { MediaThumb } from '@/components/MediaThumb';
-import { POST_CATEGORY_OPTIONS } from '@/lib/post-categories';
+import { categoryToHomeQuery, POST_CATEGORY_OPTIONS } from '@/lib/post-categories';
 import type { Category } from '@prisma/client';
 import type { HomeFeedSort } from '@/lib/feed-sort';
 import type { FeedPostJson } from '@/lib/home-feed';
@@ -42,24 +42,9 @@ function CardFooter({ username, likeCount }: { username: string; likeCount: numb
   );
 }
 
-function FeedPostCard({
-  post,
-  featuredVisual,
-}: {
-  post: FeedPostJson;
-  featuredVisual?: boolean;
-}) {
-  const wrapClass = featuredVisual
-    ? `${styles.feedCardWrap} ${styles.feedCardWrapFeatured}`
-    : styles.feedCardWrap;
-
+function FeedPostCard({ post }: { post: FeedPostJson }) {
   return (
-    <div className={wrapClass}>
-      {featuredVisual ? (
-        <span className={styles.featuredRibbon} aria-label="Editor's Choice">
-          Editor&apos;s Choice
-        </span>
-      ) : null}
+    <div className={styles.feedCardWrap}>
       <Link href={`/post/${post.id}`} className={styles.feedCard}>
         <div className={styles.feedCardMedia}>
           {post.thumbnail ? (
@@ -86,17 +71,22 @@ function FeedPostCard({
 
 type Props = {
   sort: HomeFeedSort;
-  initialFeatured: FeedPostJson[];
+  category: Category | null;
+  excludeIds: string[];
   initialPosts: FeedPostJson[];
   initialHasMore: boolean;
 };
 
-export function HomeAllFeed({ sort, initialFeatured, initialPosts, initialHasMore }: Props) {
+export function HomeAllFeed({ sort, category, excludeIds, initialPosts, initialHasMore }: Props) {
   const [posts, setPosts] = useState<FeedPostJson[]>(initialPosts);
   const [hasMore, setHasMore] = useState(initialHasMore);
   const [loading, setLoading] = useState(false);
-  const [featured] = useState<FeedPostJson[]>(initialFeatured);
   const abortRef = useRef<AbortController | null>(null);
+  const excludeQs =
+    excludeIds.length > 0 ? `&exclude=${excludeIds.map(encodeURIComponent).join('%2C')}` : '';
+  const catQs = category
+    ? `&category=${encodeURIComponent(categoryToHomeQuery(category))}`
+    : '';
 
   const fetchJson = useCallback(
     async (url: string, signal: AbortSignal) => {
@@ -112,7 +102,7 @@ export function HomeAllFeed({ sort, initialFeatured, initialPosts, initialHasMor
       abortRef.current?.abort();
       const ac = new AbortController();
       abortRef.current = ac;
-      const base = `/api/feed?sort=${nextSort}&skip=${skip}&limit=${PAGE_SIZE}`;
+      const base = `/api/feed?sort=${nextSort}&skip=${skip}&limit=${PAGE_SIZE}${catQs}${excludeQs}`;
       try {
         const data = await fetchJson(base, ac.signal);
         if (replace) {
@@ -139,7 +129,7 @@ export function HomeAllFeed({ sort, initialFeatured, initialPosts, initialHasMor
         }
       }
     },
-    [fetchJson]
+    [fetchJson, excludeQs, catQs]
   );
 
   const { ref: sentinelRef, inView } = useInView({
@@ -155,26 +145,6 @@ export function HomeAllFeed({ sort, initialFeatured, initialPosts, initialHasMor
 
   return (
     <>
-      {featured.length > 0 ? (
-        <section className={styles.featuredSection} aria-labelledby="editor-choice-heading">
-          <div className={styles.featuredSectionHead}>
-            <h2 id="editor-choice-heading" className={styles.featuredSectionTitle}>
-              Editor&apos;s Choice
-            </h2>
-            <p className={styles.featuredSectionDesc}>
-              에디터가 고른 하이라이트 글입니다. (조회·반응과 별도로 상단에 고정 노출됩니다.)
-            </p>
-          </div>
-          <div className={styles.featuredStrip} role="list">
-            {featured.map((post) => (
-              <div key={post.id} className={styles.featuredStripItem} role="listitem">
-                <FeedPostCard post={post} featuredVisual />
-              </div>
-            ))}
-          </div>
-        </section>
-      ) : null}
-
       {posts.length === 0 ? (
         <p className={styles.emptySection}>
           아직 게시글이 없습니다. 첫 번째 주인공이 되어보세요!{' '}

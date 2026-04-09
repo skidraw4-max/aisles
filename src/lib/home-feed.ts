@@ -34,16 +34,19 @@ const HOT_LIKE_WEIGHT = 5;
 
 /**
  * 메인 피드(비-featured만). Hot: 가중 점수 내림차순.
+ * `excludeIds`: 상단 쇼케이스에 이미 노출된 글 제외(중복 방지).
  */
 export async function fetchFeedPosts(
   sort: 'new' | 'hot',
   skip: number,
   take: number,
-  category: Category | null
+  category: Category | null,
+  excludeIds: string[] = []
 ): Promise<{ posts: HomeFeedPost[]; hasMore: boolean }> {
   const where = {
     isFeatured: false,
     ...(category ? { category } : {}),
+    ...(excludeIds.length > 0 ? { id: { notIn: excludeIds } } : {}),
   };
 
   if (sort === 'new') {
@@ -61,6 +64,10 @@ export async function fetchFeedPosts(
   const conditions = [Prisma.sql`p."isFeatured" = false`];
   if (category) {
     conditions.push(Prisma.sql`p.category = ${category}::"Category"`);
+  }
+  if (excludeIds.length > 0) {
+    const idParams = excludeIds.map((id) => Prisma.sql`${id}`);
+    conditions.push(Prisma.sql`p.id NOT IN (${Prisma.join(idParams, ', ')})`);
   }
 
   const idRows = await prisma.$queryRaw<{ id: string }[]>`
