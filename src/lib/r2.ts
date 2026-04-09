@@ -138,5 +138,32 @@ export async function uploadPublicObject(
     return uploadViaSupabaseStorage(key, body, contentType, sup);
   }
 
+  logMediaStorageMisconfig();
   return { error: MEDIA_STORAGE_NOT_CONFIGURED };
+}
+
+/** Vercel/로컬 서버 로그용 — 값은 출력하지 않고 이름만 */
+function logMediaStorageMisconfig() {
+  const r2Missing: string[] = [];
+  if (!process.env.R2_ACCESS_KEY_ID?.trim()) r2Missing.push('R2_ACCESS_KEY_ID');
+  if (!process.env.R2_SECRET_ACCESS_KEY?.trim()) r2Missing.push('R2_SECRET_ACCESS_KEY');
+  if (!process.env.R2_BUCKET_NAME?.trim()) r2Missing.push('R2_BUCKET_NAME');
+  const pub =
+    process.env.R2_PUBLIC_BASE_URL?.trim() || process.env.NEXT_PUBLIC_R2_PUBLIC_URL?.trim();
+  if (!pub) r2Missing.push('R2_PUBLIC_BASE_URL 또는 NEXT_PUBLIC_R2_PUBLIC_URL');
+  const hasEndpoint = !!process.env.R2_ENDPOINT?.trim();
+  const hasAccount = !!process.env.R2_ACCOUNT_ID?.trim();
+  if (!hasEndpoint && !hasAccount) r2Missing.push('R2_ENDPOINT 또는 R2_ACCOUNT_ID');
+
+  const supMissing: string[] = [];
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL?.trim()) supMissing.push('NEXT_PUBLIC_SUPABASE_URL');
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY?.trim()) supMissing.push('SUPABASE_SERVICE_ROLE_KEY');
+
+  console.warn(
+    '[media-storage] 업로드 불가. R2를 쓰려면 모두 필요 →',
+    r2Missing.join(', ') || '(없음 — 변수명 오타·Vercel 환경 스코프 확인)',
+    '| Supabase Storage 폴백 →',
+    supMissing.join(', ') || '(없음)',
+    '| 버킷: R2_BUCKET_NAME / SUPABASE_STORAGE_BUCKET(미설정 시 uploads)'
+  );
 }
