@@ -1,0 +1,13 @@
+---
+description: AIsle 저장소와 연결된 Stitch 프로젝트 ID (MCP·디자인 참고용)
+alwaysApply: true
+---
+
+# Stitch 프로젝트 (AIsle)
+
+이 저장소(AIsle)의 UI·디자인을 Stitch에서 확인하거나 MCP로 조회할 때는 **아래 프로젝트만** 사용한다.
+
+- **프로젝트 ID** (API·MCP `projectId`): `1902550422259030884`
+- **리소스 이름** (필요 시): `projects/1902550422259030884`
+
+`list_screens`, `get_screen`, 디자인 시스템 조회 등 Stitch 관련 도구 호출 시 위 ID를 기본값으로 쓴다. 사용자가 다른 ID를 명시하면 그때만 예외.

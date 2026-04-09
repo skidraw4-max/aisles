@@ -1,0 +1,64 @@
+@tailwind utilities;
+
+:root {
+  --bg: #0b0d17;
+  --surface: #161b22;
+  --surface-2: #1c222c;
+  --accent: #a78bfa;
+  --accent-soft: rgba(167, 139, 250, 0.15);
+  --text: #f4f4f5;
+  --muted: #a1a1aa;
+  --border: rgba(255, 255, 255, 0.08);
+
+  /* Stitch 데스크탑 아트보드: 커뮤니티 메인류 화면과 동일한 1280×기준 레이아웃 */
+  --aisle-max: 1280px;
+  --aisle-gutter: 24px;
+  --aisle-gutter-sm: 16px;
+
+  /* 16px root 기준 타이포 (Stitch/M3 스타일 데스크탑 스케일) */
+  --type-11: 0.6875rem; /* 11px — 배지·캡션 소 */
+  --type-12: 0.75rem; /* 12px */
+  --type-13: 0.8125rem; /* 13px — 보조 메타 */
+  --type-14: 0.875rem; /* 14px — 네비·라벨 */
+  --type-15: 0.9375rem; /* 15px — 본문 보조 */
+  --type-16: 1rem; /* 16px — 본문 */
+  --type-17: 1.0625rem; /* 17px — 카드 제목 */
+  --type-22: 1.375rem; /* 22px — 섹션 제목 */
+  --type-hero: clamp(1.75rem, 3.15vw, 2.5rem); /* 28px → 40px — 히어로 */
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  color-scheme: dark;
+  /* 변수 로드 전·실패 시에도 다크 베이스 유지 */
+  background-color: #0b0d17;
+  color: #f4f4f5;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background-color: var(--bg);
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body), system-ui, sans-serif;
+  font-size: var(--type-16);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-display), var(--font-body), system-ui, sans-serif;
+}
+
+a {
+  color: inherit;
+}

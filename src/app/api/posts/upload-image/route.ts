@@ -1,0 +1,89 @@
+import { randomUUID } from 'crypto';
+import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
+import { ensurePrismaUser } from '@/lib/ensure-user';
+import { uploadPublicObject } from '@/lib/r2';
+
+const MEDIA_EXT = new Map<string, string>([
+  ['image/jpeg', 'jpg'],
+  ['image/png', 'png'],
+  ['image/webp', 'webp'],
+  ['image/gif', 'gif'],
+  ['video/mp4', 'mp4'],
+  ['video/webm', 'webm'],
+  ['video/quicktime', 'mov'],
+]);
+
+const MAX_BYTES = 100 * 1024 * 1024;
+
+export const maxDuration = 120;
+
+/** 이미지·영상을 R2에 올리고 퍼블릭 URL만 반환 (Post 저장은 별도 API) */
+export async function POST(req: NextRequest) {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !anon) {
+    return NextResponse.json({ error: 'Supabase env not configured' }, { status: 500 });
+  }
+
+  const token = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '');
+  if (!token) {
+    return NextResponse.json({ error: 'Missing token' }, { status: 401 });
+  }
+
+  const supabase = createClient(url, anon);
+  const {
+    data: { user },
+    error: authErr,
+  } = await supabase.auth.getUser(token);
+
+  if (authErr || !user?.email) {
+    return NextResponse.json({ error: 'Invalid session' }, { status: 401 });
+  }
+
+  let form: FormData;
+  try {
+    form = await req.formData();
+  } catch {
+    return NextResponse.json({ error: 'Invalid form data' }, { status: 400 });
+  }
+
+  const file = form.get('file');
+  if (!file || !(file instanceof File)) {
+    return NextResponse.json({ error: '파일을 선택해 주세요.' }, { status: 400 });
+  }
+  if (file.size > MAX_BYTES) {
+    return NextResponse.json({ error: '파일 크기는 100MB 이하여야 합니다.' }, { status: 400 });
+  }
+
+  const ext = MEDIA_EXT.get(file.type);
+  if (!ext) {
+    return NextResponse.json(
+      { error: 'JPEG, PNG, WebP, GIF, MP4, WebM, QuickTime(MOV)만 업로드할 수 있습니다.' },
+      { status: 400 }
+    );
+  }
+
+  const buf = Buffer.from(await file.arrayBuffer());
+  const key = `posts/${user.id}/${randomUUID()}.${ext}`;
+  const uploaded = await uploadPublicObject(key, buf, file.type);
+  if ('error' in uploaded) {
+    return NextResponse.json(
+      {
+        error:
+          uploaded.error === 'R2 is not configured'
+            ? '파일 저장소(R2)가 설정되지 않았습니다.'
+            : uploaded.error,
+      },
+      { status: 503 }
+    );
+  }
+
+  try {
+    await ensurePrismaUser(user);
+  } catch {
+    /* 글 등록 단계에서 재시도 */
+  }
+
+  return NextResponse.json({ ok: true, url: uploaded.publicUrl });
+}

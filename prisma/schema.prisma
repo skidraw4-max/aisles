@@ -1,0 +1,103 @@
+// 1. Prisma 클라이언트 및 DB 연결 설정
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  // url 부분은 아예 지워버리세요.
+}
+
+// 2. 사용자 모델 (Supabase Auth user.id 와 동일한 UUID 문자열)
+model User {
+  id         String   @id // auth.users.id (Supabase)
+  username   String   @unique
+  email      String   @unique
+  avatarUrl  String? // Cloudflare R2 등 퍼블릭 URL
+  role       Role     @default(USER)
+  posts      Post[]
+  postLikes  PostLike[]
+  comments   Comment[]
+  createdAt  DateTime @default(now())
+}
+
+// 3. 게시물 모델 (4개의 복도 통합 관리)
+model Post {
+  id          String      @id @default(uuid())
+  category    Category    // RECIPE, GALLERY, BUILD, LAUNCH 중 하나
+  title       String
+  content     String?
+  thumbnail   String?
+  viewCount   Int         @default(0)
+  likeCount   Int         @default(0)
+  /// 메인 상단 등 에디터 픽 노출용
+  isFeatured  Boolean     @default(false)
+  /// 출시·외부 서비스 페이지 등 연결 URL (선택)
+  externalLink String?
+  author      User        @relation(fields: [authorId], references: [id])
+  authorId    String
+  metadata    AiMetadata?
+  launchInfo  LaunchInfo?
+  likes       PostLike[]
+  comments    Comment[]
+  createdAt   DateTime    @default(now())
+}
+
+// 게시글 좋아요 (누가 눌렀는지 추적, Post.likeCount와 동기화)
+model PostLike {
+  postId    String
+  userId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@id([postId, userId])
+  @@index([userId])
+}
+
+/// 게시글 상세 댓글 (작성자는 `User`, 로그인 유저만 POST API로 작성)
+model Comment {
+  id        String   @id @default(uuid())
+  content   String   @db.Text
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([postId])
+  @@index([authorId])
+}
+
+// 4. AI 레시피 및 빌드 정보 (Lab/Build 복도용 상세 데이터)
+model AiMetadata {
+  postId      String  @id
+  post        Post    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  modelName   String? // 예: GPT-4o, Midjourney
+  prompt      String? @db.Text
+  params      Json?   // Seed, Temp 등 설정을 JSON 형태로 저장
+}
+
+// 5. 서비스 홍보 정보 (Launchpad 복도용 상세 데이터)
+model LaunchInfo {
+  postId      String  @id
+  post        Post    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  serviceUrl  String? // 서비스 바로가기 링크
+  status      String? // BETA, LIVE 등 상태
+}
+
+// 6. 열거형 데이터 (고정된 선택지)
+enum Role {
+  USER
+  BUILDER
+  ADMIN
+}
+
+enum Category {
+  RECIPE  // 프롬프트 복도
+  GALLERY // 아트 복도
+  BUILD   // 빌드 복도
+  LAUNCH  // 서비스 복도
+}
