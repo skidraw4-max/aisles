@@ -28,8 +28,12 @@ export async function fetchFeaturedForHome(category: Category | null): Promise<H
   });
 }
 
+/** Hot 정렬 가중치: 조회 1pt, 좋아요 5pt */
+const HOT_VIEW_WEIGHT = 1;
+const HOT_LIKE_WEIGHT = 5;
+
 /**
- * 메인 피드(비-featured만). Hot: 조회수+좋아요 합 내림차순.
+ * 메인 피드(비-featured만). Hot: 가중 점수 내림차순.
  */
 export async function fetchFeedPosts(
   sort: 'new' | 'hot',
@@ -62,7 +66,7 @@ export async function fetchFeedPosts(
   const idRows = await prisma.$queryRaw<{ id: string }[]>`
     SELECT p.id FROM "Post" p
     WHERE ${Prisma.join(conditions, ' AND ')}
-    ORDER BY (p."viewCount" + p."likeCount") DESC, p."createdAt" DESC
+    ORDER BY (p."viewCount" * ${HOT_VIEW_WEIGHT} + p."likeCount" * ${HOT_LIKE_WEIGHT}) DESC, p."createdAt" DESC
     LIMIT ${take + 1} OFFSET ${skip}
   `;
 

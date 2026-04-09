@@ -2,7 +2,9 @@ import Link from 'next/link';
 import { SiteHeader } from '@/components/SiteHeader';
 import { MediaThumb } from '@/components/MediaThumb';
 import { HomeAllFeed } from '@/components/HomeAllFeed';
+import { HomeFeedSortTabs } from '@/components/HomeFeedSortTabs';
 import { prisma } from '@/lib/prisma';
+import { parseHomeFeedSort } from '@/lib/feed-sort';
 import { fetchFeaturedForHome, fetchFeedPosts, serializeFeedPost } from '@/lib/home-feed';
 import { parseHomeCategoryQuery, POST_CATEGORY_OPTIONS } from '@/lib/post-categories';
 import type { Category } from '@prisma/client';
@@ -11,7 +13,7 @@ import styles from './page.module.css';
 export const dynamic = 'force-dynamic';
 
 type PageProps = {
-  searchParams: Promise<{ category?: string | string[] }>;
+  searchParams: Promise<{ category?: string | string[]; sort?: string | string[] }>;
 };
 
 function formatDate(d: Date) {
@@ -68,17 +70,21 @@ export default async function HomePage({ searchParams }: PageProps) {
 
   const heroFilterNote = filterCategory
     ? `${categoryUiLabel(filterCategory)} 복도만 표시 중입니다.`
-    : '전체 복도 피드입니다. 최신순·인기순 탭과 무한 스크롤로 탐색해 보세요.';
+    : '전체 복도 피드입니다. 상단에서 최신순(New)·인기순(Hot)을 고르고, 스크롤로 더 불러옵니다.';
 
   if (!filterCategory) {
+    const feedSort = parseHomeFeedSort(sp.sort);
     const [featuredHome, firstHomeFeed] = await Promise.all([
       fetchFeaturedForHome(null),
-      fetchFeedPosts('new', 0, 12, null),
+      fetchFeedPosts(feedSort, 0, 12, null),
     ]);
     return (
       <>
         <SiteHeader />
         <main className={styles.mainShell}>
+          <div className={styles.homeFeedToolbarWrap}>
+            <HomeFeedSortTabs sort={feedSort} />
+          </div>
           <section className={styles.hero}>
             <p className={styles.eyebrow}>Four aisles, one workspace</p>
             <h1 className={styles.heroTitle}>
@@ -94,10 +100,14 @@ export default async function HomePage({ searchParams }: PageProps) {
               <span className={styles.badge}>ALL</span>
               <h2>피드</h2>
               <p className={styles.sectionDesc}>
-                에디터 픽과 일반 글을 구분해 보여 줍니다. 탭으로 최신순(New)·인기순(Hot)을 전환할 수 있습니다.
+                Editor&apos;s Choice는 피드와 별도로 상단에 고정됩니다. 정렬은 URL{' '}
+                <code className={styles.inlineCodeHint}>/</code> ·{' '}
+                <code className={styles.inlineCodeHint}>?sort=hot</code> 과 동기화됩니다.
               </p>
             </div>
             <HomeAllFeed
+              key={feedSort}
+              sort={feedSort}
               initialFeatured={featuredHome.map(serializeFeedPost)}
               initialPosts={firstHomeFeed.posts.map(serializeFeedPost)}
               initialHasMore={firstHomeFeed.hasMore}

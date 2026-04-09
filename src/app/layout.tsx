@@ -23,9 +23,65 @@ const mono = Roboto_Mono({
   weight: ['400', '500'],
 });
 
+const siteTitle = 'AIsle - AI Recipe & Project Hub';
+
+const siteDescription =
+  '프롬프트 레시피(Lab)부터 비주얼 갤러리, 빌드 노트, AI 서비스 런치까지—네 개의 복도에서 영감을 모으고 작품을 완성하세요. 크리에이터와 빌더를 위한 AI 허브, AIsle.';
+
 export const metadata: Metadata = {
-  title: 'AIsle — Lab · Gallery · Build · Launch',
-  description: 'AI 프롬프트, 비주얼, 빌드, 런치를 한 복도에서.',
+  metadataBase: new URL('https://aisles.kr'),
+  title: siteTitle,
+  description: siteDescription,
+  keywords: [
+    'AIsle',
+    'AI',
+    '프롬프트',
+    '레시피',
+    'Lab',
+    'Gallery',
+    'Build',
+    'Launch',
+    '크리에이터',
+    '프로젝트 허브',
+  ],
+  applicationName: 'AIsle',
+  authors: [{ name: 'AIsle', url: 'https://aisles.kr' }],
+  creator: 'AIsle',
+  publisher: 'AIsle',
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
+  openGraph: {
+    type: 'website',
+    locale: 'ko_KR',
+    url: 'https://aisles.kr',
+    siteName: 'AIsle',
+    title: siteTitle,
+    description: siteDescription,
+    images: [
+      {
+        url: '/opengraph-image',
+        width: 1200,
+        height: 630,
+        alt: 'AIsle — Lab · Gallery · Build · Launch',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: siteTitle,
+    description: siteDescription,
+    images: ['/twitter-image'],
+  },
+  alternates: {
+    canonical: 'https://aisles.kr',
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 async function getInitialSession(): Promise<InitialSession> {

@@ -6,6 +6,7 @@ import { useInView } from 'react-intersection-observer';
 import { MediaThumb } from '@/components/MediaThumb';
 import { POST_CATEGORY_OPTIONS } from '@/lib/post-categories';
 import type { Category } from '@prisma/client';
+import type { HomeFeedSort } from '@/lib/feed-sort';
 import type { FeedPostJson } from '@/lib/home-feed';
 import styles from '@/app/page.module.css';
 
@@ -55,8 +56,8 @@ function FeedPostCard({
   return (
     <div className={wrapClass}>
       {featuredVisual ? (
-        <span className={styles.featuredRibbon} aria-label="에디터 픽">
-          Featured
+        <span className={styles.featuredRibbon} aria-label="Editor's Choice">
+          Editor&apos;s Choice
         </span>
       ) : null}
       <Link href={`/post/${post.id}`} className={styles.feedCard}>
@@ -83,20 +84,17 @@ function FeedPostCard({
   );
 }
 
-type SortTab = 'new' | 'hot';
-
 type Props = {
+  sort: HomeFeedSort;
   initialFeatured: FeedPostJson[];
   initialPosts: FeedPostJson[];
   initialHasMore: boolean;
 };
 
-export function HomeAllFeed({ initialFeatured, initialPosts, initialHasMore }: Props) {
-  const [sort, setSort] = useState<SortTab>('new');
+export function HomeAllFeed({ sort, initialFeatured, initialPosts, initialHasMore }: Props) {
   const [posts, setPosts] = useState<FeedPostJson[]>(initialPosts);
   const [hasMore, setHasMore] = useState(initialHasMore);
   const [loading, setLoading] = useState(false);
-  const [tabLoading, setTabLoading] = useState(false);
   const [featured] = useState<FeedPostJson[]>(initialFeatured);
   const abortRef = useRef<AbortController | null>(null);
 
@@ -110,7 +108,7 @@ export function HomeAllFeed({ initialFeatured, initialPosts, initialHasMore }: P
   );
 
   const loadPage = useCallback(
-    async (nextSort: SortTab, skip: number, replace: boolean) => {
+    async (nextSort: HomeFeedSort, skip: number, replace: boolean) => {
       abortRef.current?.abort();
       const ac = new AbortController();
       abortRef.current = ac;
@@ -138,21 +136,11 @@ export function HomeAllFeed({ initialFeatured, initialPosts, initialHasMore }: P
       } finally {
         if (!ac.signal.aborted) {
           setLoading(false);
-          setTabLoading(false);
         }
       }
     },
     [fetchJson]
   );
-
-  const onTabChange = (next: SortTab) => {
-    if (next === sort) return;
-    setSort(next);
-    setTabLoading(true);
-    setPosts([]);
-    setHasMore(true);
-    void loadPage(next, 0, true);
-  };
 
   const { ref: sentinelRef, inView } = useInView({
     rootMargin: '240px 0px',
@@ -160,20 +148,22 @@ export function HomeAllFeed({ initialFeatured, initialPosts, initialHasMore }: P
   });
 
   useEffect(() => {
-    if (!inView || !hasMore || loading || tabLoading) return;
+    if (!inView || !hasMore || loading) return;
     setLoading(true);
     void loadPage(sort, posts.length, false);
-  }, [inView, hasMore, loading, tabLoading, sort, posts.length, loadPage]);
+  }, [inView, hasMore, loading, sort, posts.length, loadPage]);
 
   return (
     <>
       {featured.length > 0 ? (
-        <section className={styles.featuredSection} aria-labelledby="editor-pick-heading">
+        <section className={styles.featuredSection} aria-labelledby="editor-choice-heading">
           <div className={styles.featuredSectionHead}>
-            <h2 id="editor-pick-heading" className={styles.featuredSectionTitle}>
-              에디터 픽
+            <h2 id="editor-choice-heading" className={styles.featuredSectionTitle}>
+              Editor&apos;s Choice
             </h2>
-            <p className={styles.featuredSectionDesc}>팀이 골라 넣은 하이라이트 글입니다.</p>
+            <p className={styles.featuredSectionDesc}>
+              에디터가 고른 하이라이트 글입니다. (조회·반응과 별도로 상단에 고정 노출됩니다.)
+            </p>
           </div>
           <div className={styles.featuredStrip} role="list">
             {featured.map((post) => (
@@ -185,38 +175,7 @@ export function HomeAllFeed({ initialFeatured, initialPosts, initialHasMore }: P
         </section>
       ) : null}
 
-      <div className={styles.feedTabsBar} role="tablist" aria-label="피드 정렬">
-        <button
-          type="button"
-          role="tab"
-          aria-selected={sort === 'new'}
-          className={sort === 'new' ? `${styles.feedTab} ${styles.feedTabActive}` : styles.feedTab}
-          onClick={() => onTabChange('new')}
-          disabled={tabLoading}
-        >
-          최신순
-          <span className={styles.feedTabHint}>New</span>
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={sort === 'hot'}
-          className={sort === 'hot' ? `${styles.feedTab} ${styles.feedTabActive}` : styles.feedTab}
-          onClick={() => onTabChange('hot')}
-          disabled={tabLoading}
-        >
-          인기순
-          <span className={styles.feedTabHint}>Hot</span>
-        </button>
-      </div>
-
-      {tabLoading && posts.length === 0 ? (
-        <p className={styles.feedTabLoading} role="status">
-          불러오는 중…
-        </p>
-      ) : null}
-
-      {!tabLoading && posts.length === 0 ? (
+      {posts.length === 0 ? (
         <p className={styles.emptySection}>
           아직 게시글이 없습니다. 첫 번째 주인공이 되어보세요!{' '}
           <Link href="/upload">업로드 페이지로 이동</Link>

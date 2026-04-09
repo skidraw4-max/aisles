@@ -738,6 +738,77 @@
   margin-top: 0.15rem;
 }
 
+/* 헤더 카테고리 메뉴 바로 아래 — 작은 정렬 탭 (/) */
+.homeFeedToolbarWrap {
+  max-width: var(--aisle-max);
+  margin: 0 auto;
+  padding: 0.5rem var(--aisle-gutter-sm) 0.15rem;
+}
+
+@media (min-width: 640px) {
+  .homeFeedToolbarWrap {
+    padding-left: var(--aisle-gutter);
+    padding-right: var(--aisle-gutter);
+  }
+}
+
+.homeFeedSortNav {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+  padding: 0.2rem;
+  border-radius: 999px;
+  background: rgba(15, 17, 23, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.homeFeedSortPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  font-size: var(--type-12);
+  font-weight: 600;
+  color: rgba(161, 161, 170, 0.95);
+  text-decoration: none;
+  transition:
+    color 0.15s ease,
+    background 0.15s ease,
+    box-shadow 0.18s ease;
+}
+
+.homeFeedSortPill:hover {
+  color: #e4e4e7;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.homeFeedSortPillActive {
+  color: #faf5ff;
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.42) 0%, rgba(59, 130, 246, 0.22) 100%);
+  box-shadow:
+    0 0 0 1px rgba(196, 181, 253, 0.28) inset,
+    0 2px 14px rgba(76, 29, 149, 0.28);
+}
+
+.homeFeedSortEn {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  opacity: 0.78;
+}
+
+.inlineCodeHint {
+  font-family: ui-monospace, monospace;
+  font-size: 0.85em;
+  padding: 0.12rem 0.35rem;
+  border-radius: 4px;
+  background: rgba(99, 102, 241, 0.15);
+  color: #c4b5fd;
+}
+
 /* ——— 홈 ALL: 에디터 픽 · 탭 · 무한 스크롤 ——— */
 .featuredSection {
   margin: 0 0 2rem;
@@ -820,12 +891,14 @@
   top: 0.55rem;
   right: 0.55rem;
   z-index: 3;
-  padding: 0.2rem 0.5rem;
+  max-width: min(11rem, 46%);
+  padding: 0.22rem 0.45rem;
   border-radius: 6px;
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 800;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+  text-align: right;
   color: #1e1b4b;
   background: linear-gradient(135deg, #fae8ff 0%, #e9d5ff 100%);
   border: 1px solid rgba(255, 255, 255, 0.5);
