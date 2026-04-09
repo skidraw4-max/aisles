@@ -82,8 +82,7 @@ export function AuthModal({ open, onClose, onAuthed }: Props) {
       if (!data.session) {
         setMessage({
           type: 'ok',
-          text:
-            'Supabase Auth에 가입되었습니다. 이메일 인증 후 첫 로그인 시 Prisma 프로필도 자동으로 만들어집니다. (대시보드에서 이메일 확인을 끄면 바로 로그인·동기화됩니다.)',
+          text: 'Aisle에서 보낸 인증 메일을 확인해 주세요. 메일의 링크로 이메일을 인증한 뒤 로그인할 수 있습니다.',
         });
         return;
       }
