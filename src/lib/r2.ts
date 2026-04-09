@@ -23,7 +23,7 @@ export const MEDIA_STORAGE_NOT_CONFIGURED = 'MEDIA_STORAGE_NOT_CONFIGURED';
  *
  * 지원하는 환경 변수 조합:
  * - 엔드포인트: `R2_ENDPOINT`(전체 URL) 또는 `R2_ACCOUNT_ID`(서브도메인만으로 `https://{id}.r2.cloudflarestorage.com` 구성)
- * - 퍼블릭 베이스: `R2_PUBLIC_BASE_URL` 또는 `NEXT_PUBLIC_R2_PUBLIC_URL`(둘 다 서버에서 읽힘)
+ * - 퍼블릭 베이스: `R2_PUBLIC_BASE_URL` 또는 `NEXT_PUBLIC_R2_PUBLIC_URL` 또는 `R2_PUBLIC_DOMAIN`(별칭, 끝 `/` 없이 전체 URL)
  * - 공통: `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME`
  */
 export function getR2Config(): R2Config | null {
@@ -33,8 +33,12 @@ export function getR2Config(): R2Config | null {
 
   const publicBaseRaw =
     process.env.R2_PUBLIC_BASE_URL?.trim() ||
-    process.env.NEXT_PUBLIC_R2_PUBLIC_URL?.trim();
-  const publicBase = publicBaseRaw?.replace(/\/$/, '') ?? '';
+    process.env.NEXT_PUBLIC_R2_PUBLIC_URL?.trim() ||
+    process.env.R2_PUBLIC_DOMAIN?.trim();
+  let publicBase = publicBaseRaw?.replace(/\/$/, '') ?? '';
+  if (publicBase && !/^https?:\/\//i.test(publicBase)) {
+    publicBase = `https://${publicBase}`;
+  }
 
   const endpointFromEnv = process.env.R2_ENDPOINT?.trim();
   const accountId = process.env.R2_ACCOUNT_ID?.trim();
@@ -149,8 +153,11 @@ function logMediaStorageMisconfig() {
   if (!process.env.R2_SECRET_ACCESS_KEY?.trim()) r2Missing.push('R2_SECRET_ACCESS_KEY');
   if (!process.env.R2_BUCKET_NAME?.trim()) r2Missing.push('R2_BUCKET_NAME');
   const pub =
-    process.env.R2_PUBLIC_BASE_URL?.trim() || process.env.NEXT_PUBLIC_R2_PUBLIC_URL?.trim();
-  if (!pub) r2Missing.push('R2_PUBLIC_BASE_URL 또는 NEXT_PUBLIC_R2_PUBLIC_URL');
+    process.env.R2_PUBLIC_BASE_URL?.trim() ||
+    process.env.NEXT_PUBLIC_R2_PUBLIC_URL?.trim() ||
+    process.env.R2_PUBLIC_DOMAIN?.trim();
+  if (!pub)
+    r2Missing.push('R2_PUBLIC_BASE_URL, NEXT_PUBLIC_R2_PUBLIC_URL 또는 R2_PUBLIC_DOMAIN');
   const hasEndpoint = !!process.env.R2_ENDPOINT?.trim();
   const hasAccount = !!process.env.R2_ACCOUNT_ID?.trim();
   if (!hasEndpoint && !hasAccount) r2Missing.push('R2_ENDPOINT 또는 R2_ACCOUNT_ID');

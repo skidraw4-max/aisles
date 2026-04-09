@@ -11,8 +11,12 @@ export function getSupabaseStoragePublicPrefix(): string | null {
 export function getR2PublicBase(): string | null {
   const raw =
     process.env.R2_PUBLIC_BASE_URL?.trim() ||
-    process.env.NEXT_PUBLIC_R2_PUBLIC_URL?.trim();
-  const b = raw?.replace(/\/$/, '');
+    process.env.NEXT_PUBLIC_R2_PUBLIC_URL?.trim() ||
+    process.env.R2_PUBLIC_DOMAIN?.trim();
+  let b = raw?.replace(/\/$/, '') ?? '';
+  if (b && !/^https?:\/\//i.test(b)) {
+    b = `https://${b}`;
+  }
   return b || null;
 }
 
