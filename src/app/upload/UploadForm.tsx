@@ -115,6 +115,14 @@ export function UploadForm({ editInitial = null }: Props) {
     return () => ac.abort();
   }, [file, editInitial?.id, editInitial?.thumbnail]);
 
+  function handleClose() {
+    if (editInitial) {
+      router.push('/my-aisles');
+    } else {
+      router.push('/');
+    }
+  }
+
   const isLab = category === 'RECIPE';
   const showServiceLink = category === 'BUILD' || category === 'LAUNCH';
   const canSubmit =
@@ -223,6 +231,14 @@ export function UploadForm({ editInitial = null }: Props) {
 
   return (
     <div className={styles.card}>
+      <button
+        type="button"
+        className={styles.cardClose}
+        onClick={handleClose}
+        aria-label="닫기"
+      >
+        ×
+      </button>
       {formError && (
         <p className={styles.msgErr} role="alert">
           {formError}
@@ -349,17 +365,22 @@ export function UploadForm({ editInitial = null }: Props) {
           <p className={styles.hint}>JPEG, PNG, WebP, GIF, MP4, WebM, MOV · 최대 100MB</p>
         </div>
 
-        <button type="submit" className={styles.primary} disabled={!canSubmit}>
-          {submitting
-            ? editInitial
-              ? '수정 중…'
-              : '저장 중…'
-            : uploading
-              ? '업로드 대기 중…'
-              : editInitial
-                ? '수정 저장'
-                : '저장하기'}
-        </button>
+        <div className={styles.formActions}>
+          <button type="button" className={styles.cancel} onClick={handleClose}>
+            취소
+          </button>
+          <button type="submit" className={styles.primary} disabled={!canSubmit}>
+            {submitting
+              ? editInitial
+                ? '수정 중…'
+                : '저장 중…'
+              : uploading
+                ? '업로드 대기 중…'
+                : editInitial
+                  ? '수정 저장'
+                  : '저장하기'}
+          </button>
+        </div>
       </form>
     </div>
   );

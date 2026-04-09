@@ -35,13 +35,74 @@
 }
 
 .card {
+  position: relative;
   border-radius: 16px;
   padding: 1.75rem;
+  padding-top: 2.85rem;
   background: linear-gradient(145deg, #161b22 0%, #12161d 100%);
   border: 1px solid rgba(167, 139, 250, 0.22);
   box-shadow:
     0 24px 48px rgba(0, 0, 0, 0.35),
     0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+}
+
+.cardClose {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  width: 2.25rem;
+  height: 2.25rem;
+  border: none;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #a1a1aa;
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
+}
+
+.cardClose:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #e4e4e7;
+}
+
+.formActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.65rem;
+  margin-top: 0.35rem;
+}
+
+.cancel {
+  margin-right: auto;
+  padding: 0.85rem 1.15rem;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 12px;
+  background: transparent;
+  color: #d4d4d8;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.cancel:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.22);
+}
+
+.formActions .primary {
+  margin-top: 0;
 }
 
 .form {
@@ -144,7 +205,7 @@
 }
 
 .primary {
-  margin-top: 0.35rem;
+  margin-top: 0;
   padding: 0.85rem 1rem;
   border: none;
   border-radius: 12px;
