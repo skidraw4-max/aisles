@@ -1,16 +1,13 @@
 import Link from 'next/link';
-import { Suspense } from 'react';
 import { SiteHeader } from '@/components/SiteHeader';
 import { MediaThumb } from '@/components/MediaThumb';
 import { HomeAllFeed } from '@/components/HomeAllFeed';
-import { HomeContentShowcase } from '@/components/HomeContentShowcase';
 import { HomeMainHero } from '@/components/HomeMainHero';
-import { HomeContentTabs } from '@/components/HomeContentTabs';
 import { TodaysBest } from '@/components/TodaysBest';
+import { SHOW_HOME_MAIN_HERO } from '@/lib/home-flags';
 import { prisma } from '@/lib/prisma';
 import { homeViewFromSearchParams } from '@/lib/content-tab';
 import { fetchFeedPosts, serializeFeedPost } from '@/lib/home-feed';
-import { fetchHomeShowcasePosts } from '@/lib/home-showcase';
 import { POST_CATEGORY_OPTIONS } from '@/lib/post-categories';
 import type { Category } from '@prisma/client';
 import styles from './page.module.css';
@@ -35,17 +32,7 @@ export default async function HomePage({ searchParams }: PageProps) {
     include: { author: { select: { username: true } } },
   });
 
-  const showcase = await fetchHomeShowcasePosts({
-    category: filterCategory,
-    sort: feedSort,
-  });
-  const firstHomeFeed = await fetchFeedPosts(
-    feedSort,
-    0,
-    12,
-    filterCategory,
-    showcase.showcaseIds
-  );
+  const firstHomeFeed = await fetchFeedPosts(feedSort, 0, 12, filterCategory, []);
 
   let heroLead: string;
   if (filterCategory) {
@@ -83,26 +70,24 @@ export default async function HomePage({ searchParams }: PageProps) {
             <span className={styles.badge}>{filterCategory ? categoryUiLabel(filterCategory) : 'ALL'}</span>
             <h2>피드</h2>
             <p className={styles.sectionDesc}>
-              콘텐츠 영역에서 최신·인기·복도별로 강조 글을 보고, 아래에서 같은 기준으로 무한 스크롤됩니다. 전환은{' '}
-              <Link href="/">URL</Link>만 바꾸며 브라우저 전체 새로고침 없이 이어집니다.
+              상단 복도 메뉴와 정렬에 맞춰 아래 목록이 갱신됩니다. 무한 스크롤로 더 불러옵니다. 전환은{' '}
+              <Link href="/">URL</Link> 쿼리로 이어집니다.
             </p>
           </div>
 
-          <div className={styles.feedLayoutRow}>
-            <div className={styles.feedLayoutHeroFull}>
-              <HomeMainHero />
-            </div>
-            <div className={styles.feedLayoutMainUpper}>
-              <HomeContentShowcase
-                toolbar={
-                  <Suspense fallback={<div className={styles.contentTabBarFallback} aria-hidden />}>
-                    <HomeContentTabs />
-                  </Suspense>
-                }
-                leftPosts={showcase.leftPosts}
-                rightPosts={showcase.rightPosts}
-              />
-            </div>
+          <div
+            className={[
+              styles.feedLayoutRow,
+              !SHOW_HOME_MAIN_HERO ? styles.feedLayoutRowNoHero : '',
+            ]
+              .filter(Boolean)
+              .join(' ')}
+          >
+            {SHOW_HOME_MAIN_HERO ? (
+              <div className={styles.feedLayoutHeroFull}>
+                <HomeMainHero />
+              </div>
+            ) : null}
             <div className={styles.feedLayoutAside}>
               <TodaysBest />
             </div>
@@ -111,7 +96,7 @@ export default async function HomePage({ searchParams }: PageProps) {
                 key={`${feedSort}-${filterCategory ?? 'all'}`}
                 sort={feedSort}
                 category={filterCategory}
-                excludeIds={showcase.showcaseIds}
+                excludeIds={[]}
                 initialPosts={firstHomeFeed.posts.map(serializeFeedPost)}
                 initialHasMore={firstHomeFeed.hasMore}
               />

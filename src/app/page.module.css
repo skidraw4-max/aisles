@@ -1585,7 +1585,7 @@
   }
 }
 
-/* 메인 콘텐츠: 1행 히어로 전체 너비 · 2행 쇼케이스(7) | 오늘의 베스트(3) 상단 정렬 · 3행 피드(7) */
+/* 메인 콘텐츠: 1행 히어로(옵션) 전체 너비 · 2행 피드(7) | 오늘의 베스트(3) */
 .feedLayoutRow {
   display: grid;
   grid-template-columns: 1fr;
@@ -1602,10 +1602,6 @@
   margin-bottom: 0;
 }
 
-.feedLayoutMainUpper {
-  min-width: 0;
-}
-
 .feedLayoutMainFeed {
   min-width: 0;
 }
@@ -1617,7 +1613,7 @@
 @media (min-width: 1100px) {
   .feedLayoutRow {
     grid-template-columns: minmax(0, 7fr) minmax(0, 3fr);
-    grid-template-rows: auto minmax(0, auto) auto;
+    grid-template-rows: auto auto;
     column-gap: 1.35rem;
     row-gap: 1.35rem;
     align-items: stretch;
@@ -1626,12 +1622,6 @@
   .feedLayoutHeroFull {
     grid-column: 1 / -1;
     grid-row: 1;
-  }
-
-  .feedLayoutMainUpper {
-    grid-column: 1;
-    grid-row: 2;
-    min-height: 0;
   }
 
   .feedLayoutAside {
@@ -1646,7 +1636,13 @@
 
   .feedLayoutMainFeed {
     grid-column: 1;
-    grid-row: 3;
+    grid-row: 2;
+  }
+
+  /* 히어로 비표시 시 피드·베스트를 첫 행에 배치 */
+  .feedLayoutRowNoHero .feedLayoutAside,
+  .feedLayoutRowNoHero .feedLayoutMainFeed {
+    grid-row: 1;
   }
 }
 
