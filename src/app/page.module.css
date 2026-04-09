@@ -85,6 +85,10 @@
   color: var(--accent);
 }
 
+.feedBadgeRow {
+  margin-bottom: 1rem;
+}
+
 .list {
   list-style: none;
   margin: 1.5rem 0 0;

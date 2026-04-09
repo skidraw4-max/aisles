@@ -66,6 +66,9 @@ export default async function HomePage({ searchParams }: PageProps) {
         </section>
 
         <section className={styles.section}>
+          <div className={styles.feedBadgeRow}>
+            <span className={styles.badge}>{filterCategory ? categoryUiLabel(filterCategory) : 'ALL'}</span>
+          </div>
           <div
             className={[
               styles.feedLayoutRow,
