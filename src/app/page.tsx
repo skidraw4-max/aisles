@@ -40,7 +40,7 @@ export default async function HomePage({ searchParams }: PageProps) {
   } else if (feedSort === 'hot') {
     heroLead = '조회·좋아요 반응을 반영한 인기 피드입니다. 탭으로 최신이나 복도별 보기로 바꿀 수 있습니다.';
   } else {
-    heroLead = '네 개의 복도를 한 화면에서 탐색하세요. 콘텐츠 탭으로 정렬과 복도를 고릅니다.';
+    heroLead = '세상의 모든 AI 창작자와 함께 실험하고, 만들고, 성장하세요.';
   }
 
   return (
@@ -56,9 +56,9 @@ export default async function HomePage({ searchParams }: PageProps) {
               </>
             ) : (
               <>
-                실험하고, 전시하고,
+                Collect. Build. Launch.
                 <br />
-                빌드하고, 출시하세요.
+                with AIsleHub.
               </>
             )}
           </h1>
