@@ -4,12 +4,12 @@ import { SiteHeader } from '@/components/SiteHeader';
 import { MediaThumb } from '@/components/MediaThumb';
 import { HomeAllFeed } from '@/components/HomeAllFeed';
 import { HomeContentShowcase } from '@/components/HomeContentShowcase';
+import { HomeMainHero } from '@/components/HomeMainHero';
 import { HomeContentTabs } from '@/components/HomeContentTabs';
-import { HomeFeedHeroBanner } from '@/components/HomeFeedHeroBanner';
+import { TodaysBest } from '@/components/TodaysBest';
 import { prisma } from '@/lib/prisma';
 import { homeViewFromSearchParams } from '@/lib/content-tab';
 import { fetchFeedPosts, serializeFeedPost } from '@/lib/home-feed';
-import { fetchHeroBannerPost } from '@/lib/home-hero-banner';
 import { fetchHomeShowcasePosts } from '@/lib/home-showcase';
 import { POST_CATEGORY_OPTIONS } from '@/lib/post-categories';
 import type { Category } from '@prisma/client';
@@ -35,13 +35,10 @@ export default async function HomePage({ searchParams }: PageProps) {
     include: { author: { select: { username: true } } },
   });
 
-  const [heroBannerPost, showcase] = await Promise.all([
-    fetchHeroBannerPost(),
-    fetchHomeShowcasePosts({
-      category: filterCategory,
-      sort: feedSort,
-    }),
-  ]);
+  const showcase = await fetchHomeShowcasePosts({
+    category: filterCategory,
+    sort: feedSort,
+  });
   const firstHomeFeed = await fetchFeedPosts(
     feedSort,
     0,
@@ -91,26 +88,35 @@ export default async function HomePage({ searchParams }: PageProps) {
             </p>
           </div>
 
-          <HomeFeedHeroBanner post={heroBannerPost} />
-
-          <HomeContentShowcase
-            toolbar={
-              <Suspense fallback={<div className={styles.contentTabBarFallback} aria-hidden />}>
-                <HomeContentTabs />
-              </Suspense>
-            }
-            leftPosts={showcase.leftPosts}
-            rightPosts={showcase.rightPosts}
-          />
-
-          <HomeAllFeed
-            key={`${feedSort}-${filterCategory ?? 'all'}`}
-            sort={feedSort}
-            category={filterCategory}
-            excludeIds={showcase.showcaseIds}
-            initialPosts={firstHomeFeed.posts.map(serializeFeedPost)}
-            initialHasMore={firstHomeFeed.hasMore}
-          />
+          <div className={styles.feedLayoutRow}>
+            <div className={styles.feedLayoutHeroFull}>
+              <HomeMainHero />
+            </div>
+            <div className={styles.feedLayoutMainUpper}>
+              <HomeContentShowcase
+                toolbar={
+                  <Suspense fallback={<div className={styles.contentTabBarFallback} aria-hidden />}>
+                    <HomeContentTabs />
+                  </Suspense>
+                }
+                leftPosts={showcase.leftPosts}
+                rightPosts={showcase.rightPosts}
+              />
+            </div>
+            <div className={styles.feedLayoutAside}>
+              <TodaysBest />
+            </div>
+            <div className={styles.feedLayoutMainFeed}>
+              <HomeAllFeed
+                key={`${feedSort}-${filterCategory ?? 'all'}`}
+                sort={feedSort}
+                category={filterCategory}
+                excludeIds={showcase.showcaseIds}
+                initialPosts={firstHomeFeed.posts.map(serializeFeedPost)}
+                initialHasMore={firstHomeFeed.hasMore}
+              />
+            </div>
+          </div>
         </section>
 
         <section className={styles.section} style={{ paddingTop: 0 }}>

@@ -31,7 +31,7 @@ export function HomeContentShowcase({ toolbar, leftPosts, rightPosts }: Props) {
         <h2 id="content-showcase-heading" className={styles.contentShowcaseTitle}>
           콘텐츠
         </h2>
-        {toolbar}
+        {toolbar ? <div className={styles.contentShowcaseTabsRow}>{toolbar}</div> : null}
       </div>
 
       {!hasAny ? (
