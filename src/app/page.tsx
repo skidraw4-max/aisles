@@ -66,15 +66,6 @@ export default async function HomePage({ searchParams }: PageProps) {
         </section>
 
         <section className={styles.section}>
-          <div className={styles.sectionHead}>
-            <span className={styles.badge}>{filterCategory ? categoryUiLabel(filterCategory) : 'ALL'}</span>
-            <h2>피드</h2>
-            <p className={styles.sectionDesc}>
-              상단 복도 메뉴와 정렬에 맞춰 아래 목록이 갱신됩니다. 무한 스크롤로 더 불러옵니다. 전환은{' '}
-              <Link href="/">URL</Link> 쿼리로 이어집니다.
-            </p>
-          </div>
-
           <div
             className={[
               styles.feedLayoutRow,
