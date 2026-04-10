@@ -115,13 +115,6 @@ async function postFromJson(req: NextRequest) {
   const contentRaw = typeof b.content === 'string' ? b.content.trim() : '';
   const content = contentRaw ? contentRaw.slice(0, 20000) : null;
 
-  if (category === 'LOUNGE' && !contentRaw) {
-    return NextResponse.json(
-      { error: 'LOUNGE 카테고리는 본문(설명)을 입력해 주세요.' },
-      { status: 400 }
-    );
-  }
-
   const promptRaw = typeof b.prompt === 'string' ? b.prompt.trim() : '';
   if (category === 'RECIPE') {
     if (!promptRaw) {
@@ -230,13 +223,6 @@ async function postFromMultipart(req: NextRequest) {
     return NextResponse.json({ error: linkResult.message }, { status: 400 });
   }
   const externalLink = linkResult.value;
-
-  if (category === 'LOUNGE' && !content?.trim()) {
-    return NextResponse.json(
-      { error: 'LOUNGE 카테고리는 본문을 입력해 주세요.' },
-      { status: 400 }
-    );
-  }
 
   const file = form.get('file');
   let thumbnail: string | null = null;

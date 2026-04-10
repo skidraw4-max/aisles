@@ -11,20 +11,25 @@ import {
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
-  const url = new URL(req.url);
+  try {
+    const url = new URL(req.url);
 
-  if (url.searchParams.get('featured') === '1') {
+    if (url.searchParams.get('featured') === '1') {
+      const category = parseHomeCategoryQuery(url.searchParams.get('category'));
+      const posts = await fetchFeaturedForHome(category);
+      return NextResponse.json({ posts: posts.map(serializeFeedPost) });
+    }
+
+    const sort = parseHomeFeedSort(url.searchParams.get('sort'));
+    const skip = Math.max(0, parseInt(url.searchParams.get('skip') || '0', 10) || 0);
+    const limit = Math.min(24, Math.max(1, parseInt(url.searchParams.get('limit') || '12', 10) || 12));
     const category = parseHomeCategoryQuery(url.searchParams.get('category'));
-    const posts = await fetchFeaturedForHome(category);
-    return NextResponse.json({ posts: posts.map(serializeFeedPost) });
+    const excludeIds = parseFeedExcludeIds(url.searchParams.get('exclude'));
+
+    const { posts, hasMore } = await fetchFeedPosts(sort, skip, limit, category, excludeIds);
+    return NextResponse.json({ posts: posts.map(serializeFeedPost), hasMore });
+  } catch (err) {
+    console.error('[api/feed GET]', err);
+    return NextResponse.json({ posts: [], hasMore: false }, { status: 200 });
   }
-
-  const sort = parseHomeFeedSort(url.searchParams.get('sort'));
-  const skip = Math.max(0, parseInt(url.searchParams.get('skip') || '0', 10) || 0);
-  const limit = Math.min(24, Math.max(1, parseInt(url.searchParams.get('limit') || '12', 10) || 12));
-  const category = parseHomeCategoryQuery(url.searchParams.get('category'));
-  const excludeIds = parseFeedExcludeIds(url.searchParams.get('exclude'));
-
-  const { posts, hasMore } = await fetchFeedPosts(sort, skip, limit, category, excludeIds);
-  return NextResponse.json({ posts: posts.map(serializeFeedPost), hasMore });
 }

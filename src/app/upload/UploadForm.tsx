@@ -132,17 +132,13 @@ export function UploadForm({ editInitial = null }: Props) {
     !uploading &&
     !submitting &&
     (!isLab || prompt.trim()) &&
-    (mediaOptional ? description.trim().length > 0 : Boolean(uploadedUrl));
+    (mediaOptional || Boolean(uploadedUrl));
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setFormError(null);
     if (!mediaOptional && !uploadedUrl) {
       setFormError('미디어 업로드가 끝날 때까지 기다려 주세요.');
-      return;
-    }
-    if (isLounge && !description.trim()) {
-      setFormError('LOUNGE 카테고리는 본문(설명)을 입력해 주세요.');
       return;
     }
     if (isLab && !prompt.trim()) {
@@ -290,15 +286,20 @@ export function UploadForm({ editInitial = null }: Props) {
 
         <label className={styles.label}>
           설명 (Description)
-          {isLounge ? <span className={styles.requiredMark}> · LOUNGE 필수</span> : null}
+          {isLounge ? (
+            <span className={styles.optionalMark}> · LOUNGE: 본문·이미지 선택 (제목만으로도 게시)</span>
+          ) : null}
           <textarea
             className={styles.textarea}
             value={description}
             onChange={(ev) => setDescription(ev.target.value)}
             maxLength={20000}
-            placeholder={isLounge ? '본문을 입력하세요 (LOUNGE는 텍스트만으로도 게시 가능)' : '선택 사항 — 본문·메모'}
+            placeholder={
+              isLounge
+                ? '본문이 있으면 입력하세요. 비워 두면 제목만으로 게시됩니다.'
+                : '선택 사항 — 본문·메모'
+            }
             rows={isLounge ? 6 : 4}
-            required={isLounge}
           />
         </label>
 

@@ -1,9 +1,13 @@
 import Link from 'next/link';
+import { Suspense } from 'react';
 import { SiteHeader } from '@/components/SiteHeader';
 import { MediaThumb } from '@/components/MediaThumb';
 import { HomeAllFeed } from '@/components/HomeAllFeed';
 import { HomeMainHero } from '@/components/HomeMainHero';
 import { TodaysBest } from '@/components/TodaysBest';
+import { HomeCompositeSection } from '@/components/HomeCompositeSection';
+import { HomeContentTabs } from '@/components/HomeContentTabs';
+import { HomeLoungeMiniWidget } from '@/components/HomeLoungeMiniWidget';
 import { SHOW_HOME_MAIN_HERO } from '@/lib/home-flags';
 import { prisma } from '@/lib/prisma';
 import { homeViewFromSearchParams } from '@/lib/content-tab';
@@ -65,6 +69,23 @@ export default async function HomePage({ searchParams }: PageProps) {
           <p className={styles.heroLead}>{heroLead}</p>
         </section>
 
+        <section className={styles.section} style={{ paddingTop: 12, paddingBottom: 8 }}>
+          <Suspense fallback={<div className={styles.contentTabBarFallback} aria-hidden />}>
+            <HomeContentTabs />
+          </Suspense>
+          {!filterCategory ? (
+            <div className={styles.homeBannerBelow}>
+              <HomeLoungeMiniWidget />
+            </div>
+          ) : null}
+        </section>
+
+        {!filterCategory ? (
+          <section className={styles.section} style={{ paddingTop: 8 }}>
+            <HomeCompositeSection />
+          </section>
+        ) : null}
+
         <section className={styles.section}>
           <div className={styles.feedBadgeRow}>
             <span className={styles.badge}>{filterCategory ? categoryUiLabel(filterCategory) : 'ALL'}</span>
@@ -83,7 +104,42 @@ export default async function HomePage({ searchParams }: PageProps) {
               </div>
             ) : null}
             <div className={styles.feedLayoutAside}>
-              <TodaysBest />
+              <div className={styles.feedAsideStack}>
+                <TodaysBest />
+                <aside className={styles.recentPostsAside} aria-labelledby="recent-posts-aside-heading">
+                  <h3 id="recent-posts-aside-heading" className={styles.recentPostsAsideTitle}>
+                    최근 게시물
+                  </h3>
+                  {recentAll.length === 0 ? (
+                    <p className={styles.recentPostsAsideEmpty}>
+                      아직 게시글이 없습니다.{' '}
+                      <Link href="/upload">업로드</Link>
+                    </p>
+                  ) : (
+                    <ul className={styles.builders}>
+                      {recentAll.map((post) => (
+                        <li key={post.id} className={styles.builderRow}>
+                          <Link href={`/post/${post.id}`} className={styles.recentLink}>
+                            {post.thumbnail ? (
+                              <div className={styles.recentThumb}>
+                                <MediaThumb url={post.thumbnail} alt={post.title} />
+                              </div>
+                            ) : (
+                              <span className={styles.avatar} aria-hidden />
+                            )}
+                            <div style={{ minWidth: 0, flex: 1 }}>
+                              <div className={styles.recentTitle}>{post.title}</div>
+                              <div className={styles.recentMeta}>
+                                {categoryUiLabel(post.category)} · {post.author.username}
+                              </div>
+                            </div>
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </aside>
+              </div>
             </div>
             <div className={styles.feedLayoutMainFeed}>
               <HomeAllFeed
@@ -95,40 +151,6 @@ export default async function HomePage({ searchParams }: PageProps) {
                 initialHasMore={firstHomeFeed.hasMore}
               />
             </div>
-          </div>
-        </section>
-
-        <section className={styles.section} style={{ paddingTop: 0 }}>
-          <div className={styles.widget} style={{ maxWidth: 520 }}>
-            <h3>최근 8개 (전체 복도)</h3>
-            {recentAll.length === 0 ? (
-              <p className={styles.emptyInline}>
-                아직 게시글이 없습니다. 첫 번째 주인공이 되어보세요!{' '}
-                <Link href="/upload">업로드 페이지로 이동</Link>
-              </p>
-            ) : (
-              <ul className={styles.builders}>
-                {recentAll.map((post) => (
-                  <li key={post.id} className={styles.builderRow}>
-                    <Link href={`/post/${post.id}`} className={styles.recentLink}>
-                      {post.thumbnail ? (
-                        <div className={styles.recentThumb}>
-                          <MediaThumb url={post.thumbnail} alt={post.title} />
-                        </div>
-                      ) : (
-                        <span className={styles.avatar} aria-hidden />
-                      )}
-                      <div style={{ minWidth: 0, flex: 1 }}>
-                        <div className={styles.recentTitle}>{post.title}</div>
-                        <div className={styles.recentMeta}>
-                          {categoryUiLabel(post.category)} · {post.author.username}
-                        </div>
-                      </div>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            )}
           </div>
         </section>
       </main>

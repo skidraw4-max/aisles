@@ -21,12 +21,17 @@ export function serializeFeedPost(post: HomeFeedPost): FeedPostJson {
 
 /** 에디터 픽 — 현재 필터(전체 또는 복도)에 맞는 featured 글 */
 export async function fetchFeaturedForHome(category: Category | null): Promise<HomeFeedPost[]> {
-  return prisma.post.findMany({
-    where: { isFeatured: true, ...(category ? { category } : {}) },
-    orderBy: { createdAt: 'desc' },
-    take: 24,
-    include: HOME_FEED_INCLUDE,
-  });
+  try {
+    return await prisma.post.findMany({
+      where: { isFeatured: true, ...(category ? { category } : {}) },
+      orderBy: { createdAt: 'desc' },
+      take: 24,
+      include: HOME_FEED_INCLUDE,
+    });
+  } catch (err) {
+    console.error('[fetchFeaturedForHome]', { category, err });
+    return [];
+  }
 }
 
 /** Hot 정렬 가중치: 조회 1pt, 좋아요 5pt */
@@ -44,52 +49,57 @@ export async function fetchFeedPosts(
   category: Category | null,
   excludeIds: string[] = []
 ): Promise<{ posts: HomeFeedPost[]; hasMore: boolean }> {
-  const where = {
-    isFeatured: false,
-    ...(category ? { category } : {}),
-    ...(excludeIds.length > 0 ? { id: { notIn: excludeIds } } : {}),
-  };
+  try {
+    const where = {
+      isFeatured: false,
+      ...(category ? { category } : {}),
+      ...(excludeIds.length > 0 ? { id: { notIn: excludeIds } } : {}),
+    };
 
-  if (sort === 'new') {
+    if (sort === 'new') {
+      const posts = await prisma.post.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: take + 1,
+        include: HOME_FEED_INCLUDE,
+      });
+      const hasMore = posts.length > take;
+      return { posts: hasMore ? posts.slice(0, take) : posts, hasMore };
+    }
+
+    const conditions = [Prisma.sql`p."isFeatured" = false`];
+    if (category) {
+      conditions.push(Prisma.sql`p.category = ${category}::"Category"`);
+    }
+    if (excludeIds.length > 0) {
+      const idParams = excludeIds.map((id) => Prisma.sql`${id}`);
+      conditions.push(Prisma.sql`p.id NOT IN (${Prisma.join(idParams, ', ')})`);
+    }
+
+    const idRows = await prisma.$queryRaw<{ id: string }[]>`
+      SELECT p.id FROM "Post" p
+      WHERE ${Prisma.join(conditions, ' AND ')}
+      ORDER BY (p."viewCount" * ${HOT_VIEW_WEIGHT} + p."likeCount" * ${HOT_LIKE_WEIGHT}) DESC, p."createdAt" DESC
+      LIMIT ${take + 1} OFFSET ${skip}
+    `;
+
+    const hasMore = idRows.length > take;
+    const ids = idRows.slice(0, take).map((r) => r.id);
+    if (ids.length === 0) {
+      return { posts: [], hasMore };
+    }
+
     const posts = await prisma.post.findMany({
-      where,
-      orderBy: { createdAt: 'desc' },
-      skip,
-      take: take + 1,
+      where: { id: { in: ids } },
       include: HOME_FEED_INCLUDE,
     });
-    const hasMore = posts.length > take;
-    return { posts: hasMore ? posts.slice(0, take) : posts, hasMore };
+    const rank = new Map(ids.map((id, i) => [id, i]));
+    posts.sort((a, b) => (rank.get(a.id) ?? 0) - (rank.get(b.id) ?? 0));
+
+    return { posts, hasMore };
+  } catch (err) {
+    console.error('[fetchFeedPosts]', { sort, category, skip, take, err });
+    return { posts: [], hasMore: false };
   }
-
-  const conditions = [Prisma.sql`p."isFeatured" = false`];
-  if (category) {
-    conditions.push(Prisma.sql`p.category = ${category}::"Category"`);
-  }
-  if (excludeIds.length > 0) {
-    const idParams = excludeIds.map((id) => Prisma.sql`${id}`);
-    conditions.push(Prisma.sql`p.id NOT IN (${Prisma.join(idParams, ', ')})`);
-  }
-
-  const idRows = await prisma.$queryRaw<{ id: string }[]>`
-    SELECT p.id FROM "Post" p
-    WHERE ${Prisma.join(conditions, ' AND ')}
-    ORDER BY (p."viewCount" * ${HOT_VIEW_WEIGHT} + p."likeCount" * ${HOT_LIKE_WEIGHT}) DESC, p."createdAt" DESC
-    LIMIT ${take + 1} OFFSET ${skip}
-  `;
-
-  const hasMore = idRows.length > take;
-  const ids = idRows.slice(0, take).map((r) => r.id);
-  if (ids.length === 0) {
-    return { posts: [], hasMore };
-  }
-
-  const posts = await prisma.post.findMany({
-    where: { id: { in: ids } },
-    include: HOME_FEED_INCLUDE,
-  });
-  const rank = new Map(ids.map((id, i) => [id, i]));
-  posts.sort((a, b) => (rank.get(a.id) ?? 0) - (rank.get(b.id) ?? 0));
-
-  return { posts, hasMore };
 }

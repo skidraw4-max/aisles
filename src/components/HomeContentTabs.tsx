@@ -22,7 +22,7 @@ export function HomeContentTabs() {
   const active = getContentTabFromSearchParams(searchParams);
 
   return (
-    <nav className={styles.contentTabBar} aria-label="콘텐츠 구분">
+    <nav className={`${styles.contentTabBar} ${styles.contentTabBarStrip}`} aria-label="콘텐츠 구분">
       <ul className={styles.contentTabList}>
         {TABS.map((tab) => {
           const isActive = tab.id === active;
