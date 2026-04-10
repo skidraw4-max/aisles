@@ -17,6 +17,7 @@ import { PostAdjacentNav } from './PostAdjacentNav';
 import { DosDontsSection } from './DosDontsSection';
 import { ExternalServiceCta } from './ExternalServiceCta';
 import { LaunchVisitProjectCta } from './LaunchVisitProjectCta';
+import { PostCategoryBoardList } from './PostCategoryBoardList';
 import styles from './post.module.css';
 
 export const dynamic = 'force-dynamic';
@@ -121,7 +122,8 @@ export default async function PostPage({ params }: Props) {
 
   const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
-  const [likedRow, comments, meProfile, relatedPosts, weekPopular, prevPost, nextPost] = await Promise.all([
+  const [likedRow, comments, meProfile, relatedPosts, weekPopular, prevPost, nextPost, categoryBoardPosts] =
+    await Promise.all([
     user?.id
       ? prisma.postLike.findUnique({
           where: { postId_userId: { postId: id, userId: user.id } },
@@ -175,6 +177,18 @@ export default async function PostPage({ params }: Props) {
       orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
       select: { id: true, title: true },
     }),
+    prisma.post.findMany({
+      where: { category: post.category },
+      orderBy: { createdAt: 'desc' },
+      take: 150,
+      select: {
+        id: true,
+        title: true,
+        viewCount: true,
+        author: { select: { username: true } },
+        _count: { select: { comments: true } },
+      },
+    }),
   ]);
 
   let popularPosts = weekPopular;
@@ -222,6 +236,14 @@ export default async function PostPage({ params }: Props) {
   }));
 
   const listHref = homeHrefForCategory(post.category);
+
+  const categoryBoardItems = categoryBoardPosts.map((p) => ({
+    id: p.id,
+    title: p.title,
+    viewCount: p.viewCount,
+    authorUsername: p.author.username,
+    commentCount: p._count.comments,
+  }));
   const externalHref = (post.externalLink ?? '').trim();
   const catLabel = categoryLabel(post.category);
   const heroCaption = post.metadata?.modelName
@@ -310,7 +332,13 @@ export default async function PostPage({ params }: Props) {
       <figure className={styles.magazineHeroFigure}>
         {post.thumbnail ? (
           <div className={styles.magazineHeroInner}>
-            <MediaThumb url={post.thumbnail} alt={post.title} objectFit="cover" videoControls />
+            <MediaThumb
+              url={post.thumbnail}
+              alt={post.title}
+              objectFit="contain"
+              videoControls
+              intrinsic
+            />
           </div>
         ) : (
           <div className={styles.magazineHeroInner}>
@@ -421,6 +449,13 @@ export default async function PostPage({ params }: Props) {
                   currentAvatarUrl={meProfile?.avatarUrl ?? null}
                   listHref={listHref}
                   adjacentNav={<PostAdjacentNav prev={prevPost} next={nextPost} />}
+                />
+
+                <PostCategoryBoardList
+                  category={post.category}
+                  categoryLabel={catLabel}
+                  currentPostId={post.id}
+                  posts={categoryBoardItems}
                 />
               </article>
             </div>

@@ -1630,11 +1630,23 @@
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.05) inset,
     0 20px 50px rgba(0, 0, 0, 0.45);
+  aspect-ratio: unset;
+  max-height: none;
+}
+
+/* 미디어 없을 때만 고정 비율 영역 유지 */
+.magazineHeroFigure:has(.heroMediaPlaceholder) {
   aspect-ratio: 16 / 9;
   max-height: min(52vh, 440px);
 }
 
 .magazineHeroInner {
+  position: relative;
+  width: 100%;
+  display: block;
+}
+
+.magazineHeroFigure:has(.heroMediaPlaceholder) .magazineHeroInner {
   position: absolute;
   inset: 0;
 }
@@ -1661,14 +1673,22 @@
 }
 
 .galleryStageMagazine {
-  min-height: min(48vh, 520px);
-  height: min(48vh, calc(100dvh - 200px));
-  max-height: 560px;
+  min-height: 240px;
+  height: auto;
+  max-height: none;
+  align-items: stretch;
 }
 
 .galleryStageMagazine .galleryGlassOuter {
-  height: min(42vh, 480px);
-  max-height: 520px;
+  height: auto;
+  min-height: 240px;
+  max-height: none;
+}
+
+.galleryStageMagazine .galleryGlassInner {
+  height: auto;
+  min-height: 200px;
+  overflow: hidden;
 }
 
 .sidebar {
@@ -3030,4 +3050,220 @@
   font-size: 10px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
+}
+
+/* 상세 하단 — 동일 복도 글 목록 (퀘이사존식 한 줄 리스트) */
+.postCategoryBoard {
+  margin-top: 2.5rem;
+  padding-top: 1.75rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.postCategoryBoardGossip {
+  border-top-color: rgba(248, 113, 113, 0.22);
+}
+
+.postCategoryBoardToolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem 1rem;
+  margin-bottom: 1rem;
+}
+
+.postCategoryBoardHeading {
+  margin: 0;
+  font-size: var(--type-18);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #fafafa;
+}
+
+.postCategoryBoardMore {
+  font-size: var(--type-13);
+  font-weight: 700;
+  color: #c4b5fd;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.postCategoryBoardMore:hover {
+  text-decoration: underline;
+  color: #e9d5ff;
+}
+
+.postCategoryBoardSurface {
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: linear-gradient(180deg, rgba(18, 20, 30, 0.92) 0%, rgba(11, 13, 23, 0.88) 100%);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
+  overflow: hidden;
+}
+
+.postCategoryBoardGossip .postCategoryBoardSurface {
+  border-color: rgba(248, 113, 113, 0.2);
+  box-shadow:
+    0 12px 32px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(248, 113, 113, 0.05);
+}
+
+.postCategoryBoardHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
+  padding: 0.55rem 0.85rem;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #71717a;
+  background: rgba(0, 0, 0, 0.32);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.postCategoryBoardHeadMain {
+  flex: 1;
+  min-width: 0;
+}
+
+.postCategoryBoardHeadMeta {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 0.85rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.postCategoryBoardHeadMeta span:first-child {
+  min-width: 5.25rem;
+  max-width: 7.5rem;
+  text-align: right;
+}
+
+.postCategoryBoardHeadMeta span:last-child {
+  min-width: 2.75rem;
+  text-align: right;
+}
+
+.postCategoryBoardScroll {
+  max-height: min(55vh, 480px);
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+}
+
+.postCategoryBoardScroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.postCategoryBoardScroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+}
+
+.postCategoryBoardList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.postCategoryBoardLink {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem 1rem;
+  padding: 0.55rem 0.85rem;
+  min-width: 0;
+  text-decoration: none;
+  color: #e4e4e7;
+  font-size: var(--type-13);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  transition: background 0.12s ease;
+}
+
+.postCategoryBoardRow:last-child .postCategoryBoardLink {
+  border-bottom: none;
+}
+
+.postCategoryBoardLink:hover {
+  background: rgba(167, 139, 250, 0.08);
+}
+
+.postCategoryBoardGossip .postCategoryBoardLink:hover {
+  background: rgba(248, 113, 113, 0.06);
+}
+
+.postCategoryBoardLinkCurrent {
+  background: rgba(139, 92, 246, 0.12);
+  box-shadow: inset 3px 0 0 #a78bfa;
+}
+
+.postCategoryBoardGossip .postCategoryBoardLinkCurrent {
+  background: rgba(248, 113, 113, 0.1);
+  box-shadow: inset 3px 0 0 #f87171;
+}
+
+.postCategoryBoardMain {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.postCategoryBoardTitleLine {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.postCategoryBoardTitleStr {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+  color: #fafafa;
+  letter-spacing: -0.01em;
+}
+
+.postCategoryBoardComments {
+  flex-shrink: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #4ade80;
+  font-family: ui-monospace, monospace;
+}
+
+.postCategoryBoardMeta {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 0.85rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.postCategoryBoardAuthor {
+  min-width: 4.5rem;
+  max-width: 7.5rem;
+  text-align: right;
+  color: #a1a1aa;
+  font-size: 0.75rem;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.postCategoryBoardViews {
+  min-width: 2.75rem;
+  text-align: right;
+  font-family: ui-monospace, monospace;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #d4d4d8;
 }

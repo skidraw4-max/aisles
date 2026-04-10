@@ -9,6 +9,8 @@ type Props = {
   objectFit?: 'cover' | 'contain';
   /** 영상 재생 컨트롤 (기본 false — 카드 썸네일용) */
   videoControls?: boolean;
+  /** true: 고정 박스 대신 width 100%·height auto로 전체 미디어 표시 (상세 전용) */
+  intrinsic?: boolean;
 };
 
 function isVideoUrl(url: string) {
@@ -16,8 +18,16 @@ function isVideoUrl(url: string) {
 }
 
 /** R2 등 URL이 이미지/영상인지 확장자로 구분해 표시 */
-export function MediaThumb({ url, alt, className, objectFit = 'cover', videoControls = false }: Props) {
-  const cn = [styles.mediaFill, className].filter(Boolean).join(' ');
+export function MediaThumb({
+  url,
+  alt,
+  className,
+  objectFit = 'cover',
+  videoControls = false,
+  intrinsic = false,
+}: Props) {
+  const base = intrinsic ? styles.mediaFillIntrinsic : styles.mediaFill;
+  const cn = [base, className].filter(Boolean).join(' ');
   const fit: CSSProperties = { objectFit };
   if (isVideoUrl(url)) {
     return (

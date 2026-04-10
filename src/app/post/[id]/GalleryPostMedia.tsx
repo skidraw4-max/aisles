@@ -55,7 +55,7 @@ export function GalleryPostMedia({ url, alt, compact }: Props) {
       <div className={styles.galleryVignette} aria-hidden />
       <div className={styles.galleryGlassOuter}>
         <div className={styles.galleryGlassInner}>
-          <MediaThumb url={url} alt={alt} objectFit="contain" videoControls />
+          <MediaThumb url={url} alt={alt} objectFit="contain" videoControls intrinsic />
         </div>
       </div>
     </figure>
