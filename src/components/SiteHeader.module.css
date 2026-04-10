@@ -63,18 +63,6 @@
   white-space: nowrap;
 }
 
-.navLinkQuasi::before {
-  content: '[';
-  opacity: 0.45;
-  margin-right: 0.12em;
-}
-
-.navLinkQuasi::after {
-  content: ']';
-  opacity: 0.45;
-  margin-left: 0.12em;
-}
-
 .navLink {
   font-size: var(--type-14);
   font-weight: 500;
