@@ -18,6 +18,8 @@ import { DosDontsSection } from './DosDontsSection';
 import { ExternalServiceCta } from './ExternalServiceCta';
 import { LaunchVisitProjectCta } from './LaunchVisitProjectCta';
 import { PostCategoryBoardList } from './PostCategoryBoardList';
+import { PostOwnerActions } from './PostOwnerActions';
+import { PostRichContent } from '@/lib/PostRichContent';
 import styles from './post.module.css';
 
 export const dynamic = 'force-dynamic';
@@ -245,6 +247,7 @@ export default async function PostPage({ params }: Props) {
     commentCount: p._count.comments,
   }));
   const externalHref = (post.externalLink ?? '').trim();
+  const extraAttachments = (post.attachmentUrls ?? []).filter((u) => u.trim().length > 0);
   const catLabel = categoryLabel(post.category);
   const heroCaption = post.metadata?.modelName
     ? `모델 · ${post.metadata.modelName}`
@@ -378,17 +381,27 @@ export default async function PostPage({ params }: Props) {
                 ) : (
                   <>
                     {headerBlock}
-                    {showLabDescription ? (
-                      <p className={styles.magazineIntro}>{post.content}</p>
+                    {showLabDescription && post.content ? (
+                      <PostRichContent
+                        text={post.content}
+                        className={styles.magazineIntro}
+                        textClassName={styles.postRichInline}
+                        embedMediaClassName={styles.postBodyEmbed}
+                      />
                     ) : null}
                     {mainMediaBlock}
                   </>
                 )}
 
-                {isGallery && showLabDescription ? (
+                {isGallery && showLabDescription && post.content ? (
                   <div className={`${styles.magazineBodyCard} ${styles.magazineCard}`}>
                     <h2 className={styles.bodyLabel}>설명</h2>
-                    <p className={styles.body}>{post.content}</p>
+                    <PostRichContent
+                      text={post.content}
+                      className={styles.body}
+                      textClassName={styles.postRichInline}
+                      embedMediaClassName={styles.postBodyEmbed}
+                    />
                   </div>
                 ) : null}
 
@@ -416,8 +429,28 @@ export default async function PostPage({ params }: Props) {
                 {!isGallery && !isLab && !isBuildOrLaunch && post.content ? (
                   <div className={`${styles.magazineBodyCard} ${styles.magazineCard}`}>
                     <h2 className={styles.bodyLabel}>설명</h2>
-                    <p className={styles.body}>{post.content}</p>
+                    <PostRichContent
+                      text={post.content}
+                      className={styles.body}
+                      textClassName={styles.postRichInline}
+                      embedMediaClassName={styles.postBodyEmbed}
+                    />
                   </div>
+                ) : null}
+
+                {extraAttachments.length > 0 ? (
+                  <section className={styles.postAttachmentStrip} aria-label="추가 첨부 미디어">
+                    <h2 className={styles.bodyLabel}>첨부 미디어</h2>
+                    <ul className={styles.postAttachmentGrid}>
+                      {extraAttachments.map((url) => (
+                        <li key={url}>
+                          <div className={styles.postAttachmentCell}>
+                            <MediaThumb url={url} alt="" objectFit="cover" videoControls />
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  </section>
                 ) : null}
 
                 {!isGallery && !isBuildOrLaunch && post.metadata && (post.metadata.modelName || post.metadata.params != null) ? (
@@ -450,6 +483,10 @@ export default async function PostPage({ params }: Props) {
                   listHref={listHref}
                   adjacentNav={<PostAdjacentNav prev={prevPost} next={nextPost} />}
                 />
+
+                {user?.id === post.authorId ? (
+                  <PostOwnerActions postId={post.id} postTitle={post.title} afterDeleteHref={listHref} />
+                ) : null}
 
                 <PostCategoryBoardList
                   category={post.category}

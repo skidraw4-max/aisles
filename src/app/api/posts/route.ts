@@ -8,6 +8,7 @@ import { MEDIA_STORAGE_NOT_CONFIGURED, uploadPublicObject } from '@/lib/r2';
 import { isTrustedMediaUrl } from '@/lib/r2-url';
 import type { Category } from '@prisma/client';
 import { categoryAllowsOptionalThumbnail, parsePostCategory } from '@/lib/post-categories';
+import { parseMediaUrlsField } from '@/lib/post-media-urls';
 
 const MEDIA_EXT = new Map<string, string>([
   ['image/jpeg', 'jpg'],
@@ -128,21 +129,33 @@ async function postFromJson(req: NextRequest) {
     }
   }
 
-  const thumbnailRaw = typeof b.thumbnailUrl === 'string' ? b.thumbnailUrl.trim() : '';
+  const mediaParsed = parseMediaUrlsField(b);
+  if (!mediaParsed.ok) {
+    return NextResponse.json({ error: mediaParsed.message }, { status: 400 });
+  }
+
   let thumbnail: string | null = null;
-  if (thumbnailRaw) {
-    if (!isTrustedMediaUrl(thumbnailRaw)) {
+  let attachmentUrls: string[] = [];
+
+  if (mediaParsed.urls.length > 0) {
+    thumbnail = mediaParsed.urls[0];
+    attachmentUrls = mediaParsed.urls.slice(1);
+  } else {
+    const thumbnailRaw = typeof b.thumbnailUrl === 'string' ? b.thumbnailUrl.trim() : '';
+    if (thumbnailRaw) {
+      if (!isTrustedMediaUrl(thumbnailRaw)) {
+        return NextResponse.json(
+          { error: '허용된 저장소에서 업로드된 썸네일 URL만 사용할 수 있습니다.' },
+          { status: 400 }
+        );
+      }
+      thumbnail = thumbnailRaw;
+    } else if (!categoryAllowsOptionalThumbnail(category)) {
       return NextResponse.json(
-        { error: '허용된 저장소에서 업로드된 썸네일 URL만 사용할 수 있습니다.' },
+        { error: '허용된 저장소에서 업로드된 썸네일 URL이 필요합니다. 미디어 업로드를 먼저 완료해 주세요.' },
         { status: 400 }
       );
     }
-    thumbnail = thumbnailRaw;
-  } else if (!categoryAllowsOptionalThumbnail(category)) {
-    return NextResponse.json(
-      { error: '허용된 저장소에서 업로드된 썸네일 URL이 필요합니다. 미디어 업로드를 먼저 완료해 주세요.' },
-      { status: 400 }
-    );
   }
 
   const linkResult = normalizeExternalLink(category, b.externalLink);
@@ -159,6 +172,7 @@ async function postFromJson(req: NextRequest) {
         title,
         content,
         thumbnail,
+        attachmentUrls,
         authorId: user.id,
         ...(externalLink != null ? { externalLink } : {}),
         ...(category === 'RECIPE'
@@ -177,6 +191,7 @@ async function postFromJson(req: NextRequest) {
         title: true,
         content: true,
         thumbnail: true,
+        attachmentUrls: true,
         createdAt: true,
       },
     });
@@ -267,6 +282,7 @@ async function postFromMultipart(req: NextRequest) {
         title,
         content,
         thumbnail,
+        attachmentUrls: [],
         authorId: user.id,
         ...(externalLink != null ? { externalLink } : {}),
       },
@@ -276,6 +292,7 @@ async function postFromMultipart(req: NextRequest) {
         title: true,
         content: true,
         thumbnail: true,
+        attachmentUrls: true,
         createdAt: true,
       },
     });

@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { getUserFromBearer } from '@/lib/auth-bearer';
 import { ensurePrismaUser } from '@/lib/ensure-user';
 import { isTrustedMediaUrl } from '@/lib/r2-url';
+import { parseMediaUrlsField } from '@/lib/post-media-urls';
 import type { Category } from '@prisma/client';
 
 type Ctx = { params: Promise<{ id: string }> };
@@ -102,6 +103,7 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
     title?: string;
     content?: string | null;
     thumbnail?: string | null;
+    attachmentUrls?: string[];
     externalLink?: string | null;
   } = {};
 
@@ -121,7 +123,26 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
     data.content = c ? c.slice(0, 20000) : null;
   }
 
-  if (typeof b.thumbnailUrl === 'string') {
+  if ('mediaUrls' in b) {
+    const parsed = parseMediaUrlsField(b);
+    if (!parsed.ok) {
+      return NextResponse.json({ error: parsed.message }, { status: 400 });
+    }
+    if (parsed.urls.length === 0) {
+      if (post.category === 'LOUNGE') {
+        data.thumbnail = null;
+        data.attachmentUrls = [];
+      } else {
+        return NextResponse.json(
+          { error: '이 카테고리는 최소 1개의 대표 미디어가 필요합니다.' },
+          { status: 400 }
+        );
+      }
+    } else {
+      data.thumbnail = parsed.urls[0];
+      data.attachmentUrls = parsed.urls.slice(1);
+    }
+  } else if (typeof b.thumbnailUrl === 'string') {
     const url = b.thumbnailUrl.trim();
     if (!url) {
       if (post.category === 'LOUNGE') {
@@ -188,6 +209,7 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
         title: true,
         content: true,
         thumbnail: true,
+        attachmentUrls: true,
         externalLink: true,
         createdAt: true,
       },

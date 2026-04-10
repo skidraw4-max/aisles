@@ -1158,31 +1158,6 @@
   color: var(--muted);
 }
 
-.footer {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-  justify-content: space-between;
-  align-items: center;
-  max-width: var(--aisle-max);
-  margin: 0 auto;
-  padding: 32px var(--aisle-gutter-sm) 48px;
-  border-top: 1px solid var(--border);
-  font-size: var(--type-13);
-  color: var(--muted);
-}
-
-@media (min-width: 640px) {
-  .footer {
-    padding-left: var(--aisle-gutter);
-    padding-right: var(--aisle-gutter);
-  }
-}
-
-.footerMuted {
-  opacity: 0.8;
-}
-
 .emptySection {
   margin: 1.5rem 0 0;
   padding: 1.25rem 1.1rem;

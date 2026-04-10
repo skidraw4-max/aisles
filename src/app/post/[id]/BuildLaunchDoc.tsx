@@ -4,6 +4,7 @@ import {
   parseProductDocContent,
   stripStandaloneUrlFromOverview,
 } from '@/lib/build-launch-content';
+import { PostRichContent } from '@/lib/PostRichContent';
 import styles from './post.module.css';
 
 type Props = {
@@ -97,7 +98,12 @@ export function BuildLaunchDoc({ category, content, serviceUrl, status }: Props)
         <div className={styles.productDocBlock}>
           <h2 className={styles.productDocHeading}>개요</h2>
           <div className={styles.productDocProse}>
-            <p className={styles.productDocParagraph}>{contentTrim}</p>
+            <PostRichContent
+              text={contentTrim}
+              className={styles.productDocParagraph}
+              textClassName={styles.postRichInline}
+              embedMediaClassName={styles.postBodyEmbed}
+            />
           </div>
         </div>
       ) : null}

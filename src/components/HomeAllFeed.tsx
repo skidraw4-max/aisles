@@ -109,7 +109,9 @@ function FeedBoardRow({ post, gossipReportStyle }: { post: FeedPostJson; gossipR
           </span>
         </span>
         <span className={styles.feedBoardFreeMeta}>
-          <span className={styles.feedBoardFreeDate}>{formatDate(post.createdAt)}</span>
+          <span className={styles.feedBoardFreeAuthor} title={post.author.username}>
+            {post.author.username}
+          </span>
           <span className={styles.feedBoardFreeViews} title="조회수">
             {post.viewCount.toLocaleString('ko-KR')}
           </span>
@@ -128,7 +130,7 @@ function FeedBoardTable({ posts, gossipReportStyle }: { posts: FeedPostJson[]; g
             제목
           </span>
           <span className={styles.feedBoardFreeHeadMeta} role="presentation">
-            <span role="columnheader">작성일</span>
+            <span role="columnheader">글쓴이</span>
             <span role="columnheader">조회</span>
           </span>
         </div>

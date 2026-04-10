@@ -30,6 +30,8 @@ model Post {
   title       String
   content     String?
   thumbnail   String?
+  /// 대표 썸네일 외 추가 미디어 URL (최대 4개 + thumbnail = 5개까지)
+  attachmentUrls String[] @default([])
   viewCount   Int         @default(0)
   likeCount   Int         @default(0)
   /// 메인 상단 등 에디터 픽 노출용

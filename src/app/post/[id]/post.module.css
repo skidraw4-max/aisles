@@ -1672,6 +1672,57 @@
   color: #e2e8f0;
 }
 
+.postRichInline {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.postBodyEmbed {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0.85rem 0;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.postAttachmentStrip {
+  margin-top: 1.5rem;
+  padding: 1.15rem 1.2rem;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(15, 17, 23, 0.45);
+}
+
+.postAttachmentGrid {
+  list-style: none;
+  margin: 0.65rem 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 168px), 1fr));
+  gap: 0.75rem;
+}
+
+.postAttachmentGrid li {
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+
+.postAttachmentCell {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(10, 12, 20, 0.8);
+}
+
+.postAttachmentCell .mediaFill {
+  position: absolute;
+  inset: 0;
+}
+
 .galleryStageMagazine {
   min-height: 240px;
   height: auto;
@@ -1992,6 +2043,34 @@
   cursor: copy;
   user-select: text;
   border-left: 3px solid rgba(129, 140, 248, 0.55);
+}
+
+.recipeMagazinePreWrap {
+  margin: 0;
+  padding: 1.1rem 1.15rem 1.2rem;
+  max-height: min(48vh, 28rem);
+  overflow: auto;
+  cursor: copy;
+  user-select: text;
+  border-left: 3px solid rgba(129, 140, 248, 0.55);
+}
+
+.recipeMagazinePreText {
+  font-family: ui-monospace, 'Cascadia Code', SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.8125rem;
+  line-height: 1.65;
+  color: #e2e8f0;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.recipePromptEmbed {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0.75rem 0;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .dosDontsCard {
@@ -3266,4 +3345,155 @@
   font-size: 0.75rem;
   font-weight: 600;
   color: #d4d4d8;
+}
+
+/* 작성자 전용 — 상세 하단 수정·삭제 */
+.postOwnerActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem 0.65rem;
+  margin: 1.75rem 0 0;
+  padding: 1rem 1.05rem;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(15, 17, 23, 0.55);
+}
+
+.postOwnerBtnEdit,
+.postOwnerBtnDelete {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 5.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 10px;
+  font-size: var(--type-13);
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.postOwnerBtnEdit {
+  border: 1px solid rgba(167, 139, 250, 0.4);
+  background: rgba(167, 139, 250, 0.12);
+  color: #c4b5fd;
+}
+
+.postOwnerBtnEdit:hover {
+  background: rgba(167, 139, 250, 0.22);
+  border-color: rgba(167, 139, 250, 0.55);
+  color: #ddd6fe;
+}
+
+.postOwnerBtnDelete {
+  border: 1px solid rgba(248, 113, 113, 0.4);
+  background: rgba(248, 113, 113, 0.1);
+  color: #fca5a5;
+}
+
+.postOwnerBtnDelete:hover {
+  background: rgba(248, 113, 113, 0.18);
+  border-color: rgba(248, 113, 113, 0.55);
+  color: #fecaca;
+}
+
+.postOwnerModalRoot {
+  position: fixed;
+  inset: 0;
+  z-index: 220;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  background: rgba(5, 6, 10, 0.75);
+  backdrop-filter: blur(6px);
+}
+
+.postOwnerModalPanel {
+  width: 100%;
+  max-width: 400px;
+  border-radius: 16px;
+  padding: 1.5rem 1.5rem 1.25rem;
+  background: linear-gradient(145deg, #161b22 0%, #12161d 100%);
+  border: 1px solid var(--border);
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.45);
+}
+
+.postOwnerModalTitle {
+  margin: 0 0 0.65rem;
+  font-size: var(--type-18);
+  font-weight: 700;
+  color: var(--text);
+}
+
+.postOwnerModalText {
+  margin: 0 0 1.25rem;
+  font-size: var(--type-14);
+  line-height: 1.55;
+  color: var(--muted);
+}
+
+.postOwnerModalStrong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.postOwnerModalErr {
+  margin: 0 0 1rem;
+  padding: 0.55rem 0.65rem;
+  border-radius: 8px;
+  font-size: var(--type-13);
+  color: #fecaca;
+  background: rgba(248, 113, 113, 0.12);
+  border: 1px solid rgba(248, 113, 113, 0.3);
+}
+
+.postOwnerModalActions {
+  display: flex;
+  gap: 0.65rem;
+  justify-content: flex-end;
+}
+
+.postOwnerModalBtn {
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-size: var(--type-13);
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+}
+
+.postOwnerModalBtn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.postOwnerModalBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.postOwnerModalBtnDanger {
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-size: var(--type-13);
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid rgba(248, 113, 113, 0.45);
+  background: rgba(220, 38, 38, 0.2);
+  color: #fecaca;
+}
+
+.postOwnerModalBtnDanger:hover:not(:disabled) {
+  background: rgba(220, 38, 38, 0.32);
+}
+
+.postOwnerModalBtnDanger:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }

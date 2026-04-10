@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { MediaThumb } from '@/components/MediaThumb';
 import { UPLOAD_CATEGORY_OPTIONS, categoryAllowsOptionalThumbnail } from '@/lib/post-categories';
+import { MAX_POST_MEDIA } from '@/lib/post-media-urls';
 import type { Category } from '@prisma/client';
 import styles from './upload.module.css';
 
@@ -16,9 +17,40 @@ export type UploadEditInitial = {
   externalLink: string;
   prompt: string;
   thumbnail: string;
+  attachmentUrls: string[];
 };
 
 type Props = { editInitial?: UploadEditInitial | null };
+
+type MediaSlot = { id: string; name: string; url: string };
+
+function insertAtTextareaCursor(
+  el: HTMLTextAreaElement,
+  insert: string,
+  setValue: React.Dispatch<React.SetStateAction<string>>
+) {
+  const start = el.selectionStart;
+  const end = el.selectionEnd;
+  setValue((prev) => prev.slice(0, start) + insert + prev.slice(end));
+  const pos = start + insert.length;
+  queueMicrotask(() => {
+    el.focus();
+    el.setSelectionRange(pos, pos);
+  });
+}
+
+function clipboardImageFile(e: React.ClipboardEvent): File | null {
+  const items = e.clipboardData?.items;
+  if (!items) return null;
+  for (let i = 0; i < items.length; i++) {
+    const it = items[i];
+    if (it.kind === 'file' && it.type.startsWith('image/')) {
+      const f = it.getAsFile();
+      if (f) return f;
+    }
+  }
+  return null;
+}
 
 export function UploadForm({ editInitial = null }: Props) {
   const router = useRouter();
@@ -27,12 +59,40 @@ export function UploadForm({ editInitial = null }: Props) {
   const [description, setDescription] = useState('');
   const [prompt, setPrompt] = useState('');
   const [externalLink, setExternalLink] = useState('');
-  const [file, setFile] = useState<File | null>(null);
-  const [uploadedUrl, setUploadedUrl] = useState<string | null>(null);
-  const [uploading, setUploading] = useState(false);
-  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [mediaSlots, setMediaSlots] = useState<MediaSlot[]>([]);
+  const [uploadCount, setUploadCount] = useState(0);
+  const [pasteMessage, setPasteMessage] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+
+  const beginUpload = useCallback(() => {
+    setUploadCount((c) => c + 1);
+  }, []);
+  const endUpload = useCallback(() => {
+    setUploadCount((c) => Math.max(0, c - 1));
+  }, []);
+
+  const uploadFileToR2 = useCallback(
+    async (file: File): Promise<string> => {
+      const supabase = createClient();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error('로그인이 필요합니다.');
+      const fd = new FormData();
+      fd.set('file', file);
+      const res = await fetch('/api/posts/upload-image', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${session.access_token}` },
+        body: fd,
+      });
+      const data = (await res.json()) as { error?: string; url?: string };
+      if (!res.ok) throw new Error(data.error || 'R2 업로드에 실패했습니다.');
+      if (!data.url) throw new Error('업로드 URL을 받지 못했습니다.');
+      return data.url;
+    },
+    []
+  );
 
   useEffect(() => {
     if (editInitial != null) return;
@@ -41,9 +101,8 @@ export function UploadForm({ editInitial = null }: Props) {
     setDescription('');
     setPrompt('');
     setExternalLink('');
-    setFile(null);
-    setUploadedUrl(null);
-    setUploadError(null);
+    setMediaSlots([]);
+    setPasteMessage(null);
   }, [editInitial]);
 
   useEffect(() => {
@@ -63,57 +122,79 @@ export function UploadForm({ editInitial = null }: Props) {
     setDescription(editInitial.content);
     setPrompt(editInitial.prompt);
     setExternalLink(editInitial.externalLink);
-    setFile(null);
-    setUploadedUrl(editInitial.thumbnail.trim() ? editInitial.thumbnail : null);
-    setUploadError(null);
+    const slots: MediaSlot[] = [];
+    const thumb = editInitial.thumbnail.trim();
+    if (thumb) slots.push({ id: 'thumb', name: '대표 미디어', url: thumb });
+    const extra = editInitial.attachmentUrls ?? [];
+    extra.forEach((u, i) => {
+      if (u.trim()) slots.push({ id: `att-${i}`, name: `첨부 ${i + 1}`, url: u.trim() });
+    });
+    setMediaSlots(slots.slice(0, MAX_POST_MEDIA));
+    setPasteMessage(null);
   }, [editInitial?.id]);
 
-  useEffect(() => {
-    if (!file) {
-      if (editInitial?.id) {
-        setUploadedUrl(editInitial.thumbnail.trim() ? editInitial.thumbnail : null);
-        setUploadError(null);
-        return;
-      }
-      setUploadedUrl(null);
-      setUploadError(null);
+  async function handleAddFiles(fileList: FileList | null) {
+    if (!fileList?.length) return;
+    const room = MAX_POST_MEDIA - mediaSlots.length;
+    if (room <= 0) {
+      setFormError(`첨부 미디어는 최대 ${MAX_POST_MEDIA}개까지입니다.`);
       return;
     }
-
-    const ac = new AbortController();
-
-    (async () => {
-      setUploading(true);
-      setUploadError(null);
-      setUploadedUrl(null);
+    setFormError(null);
+    const toAdd = Array.from(fileList).slice(0, room);
+    for (const file of toAdd) {
+      const id = crypto.randomUUID();
+      setMediaSlots((s) => [...s, { id, name: file.name, url: '' }]);
+      beginUpload();
       try {
-        const supabase = createClient();
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
-        if (!session?.access_token) throw new Error('로그인이 필요합니다.');
-        const fd = new FormData();
-        fd.set('file', file);
-        const res = await fetch('/api/posts/upload-image', {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${session.access_token}` },
-          body: fd,
-          signal: ac.signal,
-        });
-        const data = (await res.json()) as { error?: string; url?: string };
-        if (!res.ok) throw new Error(data.error || 'R2 업로드에 실패했습니다.');
-        if (!data.url) throw new Error('업로드 URL을 받지 못했습니다.');
-        setUploadedUrl(data.url);
+        const url = await uploadFileToR2(file);
+        setMediaSlots((s) => s.map((x) => (x.id === id ? { ...x, url } : x)));
       } catch (e) {
-        if (e instanceof DOMException && e.name === 'AbortError') return;
-        setUploadError(e instanceof Error ? e.message : '업로드에 실패했습니다.');
+        setMediaSlots((s) => s.filter((x) => x.id !== id));
+        setFormError(e instanceof Error ? e.message : '업로드에 실패했습니다.');
       } finally {
-        if (!ac.signal.aborted) setUploading(false);
+        endUpload();
       }
-    })();
+    }
+  }
 
-    return () => ac.abort();
-  }, [file, editInitial?.id, editInitial?.thumbnail]);
+  function removeSlot(id: string) {
+    setMediaSlots((s) => s.filter((x) => x.id !== id));
+  }
+
+  async function handlePasteInBody(e: React.ClipboardEvent<HTMLTextAreaElement>) {
+    const file = clipboardImageFile(e);
+    if (!file) return;
+    e.preventDefault();
+    setPasteMessage(null);
+    beginUpload();
+    try {
+      const url = await uploadFileToR2(file);
+      const md = `\n\n![이미지](${url})\n\n`;
+      insertAtTextareaCursor(e.currentTarget, md, setDescription);
+    } catch (err) {
+      setPasteMessage(err instanceof Error ? err.message : '이미지 업로드에 실패했습니다.');
+    } finally {
+      endUpload();
+    }
+  }
+
+  async function handlePasteInPrompt(e: React.ClipboardEvent<HTMLTextAreaElement>) {
+    const file = clipboardImageFile(e);
+    if (!file) return;
+    e.preventDefault();
+    setPasteMessage(null);
+    beginUpload();
+    try {
+      const url = await uploadFileToR2(file);
+      const md = `\n\n![이미지](${url})\n\n`;
+      insertAtTextareaCursor(e.currentTarget, md, setPrompt);
+    } catch (err) {
+      setPasteMessage(err instanceof Error ? err.message : '이미지 업로드에 실패했습니다.');
+    } finally {
+      endUpload();
+    }
+  }
 
   function handleClose() {
     if (editInitial) {
@@ -127,18 +208,22 @@ export function UploadForm({ editInitial = null }: Props) {
   const isLounge = category === 'LOUNGE';
   const mediaOptional = categoryAllowsOptionalThumbnail(category);
   const showServiceLink = category === 'BUILD' || category === 'LAUNCH';
+  const filledSlots = mediaSlots.filter((s) => s.url);
+  const hasMedia = filledSlots.length > 0;
+  const uploading = uploadCount > 0;
+
   const canSubmit =
     title.trim() &&
     !uploading &&
     !submitting &&
     (!isLab || prompt.trim()) &&
-    (mediaOptional || Boolean(uploadedUrl));
+    (mediaOptional || hasMedia);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setFormError(null);
-    if (!mediaOptional && !uploadedUrl) {
-      setFormError('미디어 업로드가 끝날 때까지 기다려 주세요.');
+    if (!mediaOptional && !hasMedia) {
+      setFormError('미디어를 최소 1개 등록해 주세요.');
       return;
     }
     if (isLab && !prompt.trim()) {
@@ -168,18 +253,16 @@ export function UploadForm({ editInitial = null }: Props) {
       return;
     }
 
+    const mediaUrls = filledSlots.map((s) => s.url);
+
     setSubmitting(true);
     try {
       if (editInitial) {
         const patchBody: Record<string, unknown> = {
           title: title.trim(),
           content: description.trim() ? description.trim() : '',
+          mediaUrls,
         };
-        if (uploadedUrl) {
-          patchBody.thumbnailUrl = uploadedUrl;
-        } else if (isLounge) {
-          patchBody.thumbnailUrl = '';
-        }
         if (isLab) {
           patchBody.prompt = prompt.trim();
         }
@@ -204,10 +287,8 @@ export function UploadForm({ editInitial = null }: Props) {
       const body: Record<string, unknown> = {
         category,
         title: title.trim(),
+        mediaUrls,
       };
-      if (uploadedUrl) {
-        body.thumbnailUrl = uploadedUrl;
-      }
       if (description.trim()) {
         body.content = description.trim();
       }
@@ -252,6 +333,11 @@ export function UploadForm({ editInitial = null }: Props) {
           {formError}
         </p>
       )}
+      {pasteMessage && (
+        <p className={styles.msgErr} role="alert">
+          {pasteMessage}
+        </p>
+      )}
 
       <form className={styles.form} onSubmit={handleSubmit}>
         <label className={styles.label}>
@@ -294,13 +380,15 @@ export function UploadForm({ editInitial = null }: Props) {
             value={description}
             onChange={(ev) => setDescription(ev.target.value)}
             maxLength={20000}
+            onPaste={handlePasteInBody}
             placeholder={
               isLounge
-                ? '본문이 있으면 입력하세요. 비워 두면 제목만으로 게시됩니다.'
-                : '선택 사항 — 본문·메모'
+                ? '본문이 있으면 입력하세요. 클립보드 이미지를 붙여넣으면 자동 업로드 후 본문에 삽입됩니다.'
+                : '선택 사항 — 본문·메모. 이미지를 복사해 붙여넣으면 R2에 올리고 본문에 삽입됩니다.'
             }
             rows={isLounge ? 6 : 4}
           />
+          <p className={styles.pasteHint}>클립보드에서 이미지(Ctrl+V) 붙여넣기 지원</p>
         </label>
 
         {isLab ? (
@@ -312,10 +400,12 @@ export function UploadForm({ editInitial = null }: Props) {
                 value={prompt}
                 onChange={(ev) => setPrompt(ev.target.value)}
                 maxLength={50000}
+                onPaste={handlePasteInPrompt}
                 required
-                placeholder="복사·공유할 프롬프트 전문"
+                placeholder="복사·공유할 프롬프트 전문 (이미지 붙여넣기 가능)"
                 rows={8}
               />
+              <p className={styles.pasteHint}>프롬프트 입력란에도 이미지 붙여넣기 가능</p>
             </label>
             <p className={styles.hint}>LAB 게시글은 프롬프트가 필수입니다. 상세 페이지에서 복사할 수 있습니다.</p>
           </div>
@@ -343,44 +433,64 @@ export function UploadForm({ editInitial = null }: Props) {
 
         <div className={styles.fileRow}>
           <span className={styles.label} style={{ textTransform: 'none', letterSpacing: 'normal' }}>
-            이미지 / 영상
-            {mediaOptional ? <span className={styles.optionalMark}> (선택)</span> : null}
+            대표·첨부 미디어 (최대 {MAX_POST_MEDIA}개)
+            {mediaOptional ? <span className={styles.optionalMark}> · LOUNGE는 생략 가능</span> : null}
           </span>
           <label className={styles.fileLabel}>
-            <span className={styles.fileBtn}>{file ? '다른 파일 선택' : '파일 선택'}</span>
+            <span className={styles.fileBtn}>
+              {mediaSlots.length >= MAX_POST_MEDIA ? '개수 한도 도달' : '파일 추가'}
+            </span>
             <input
               className={styles.fileInput}
               type="file"
+              multiple
               accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime"
-              onChange={(ev) => setFile(ev.target.files?.[0] ?? null)}
-              disabled={uploading}
+              onChange={(ev) => {
+                void handleAddFiles(ev.target.files);
+                ev.target.value = '';
+              }}
+              disabled={uploading || mediaSlots.length >= MAX_POST_MEDIA}
             />
           </label>
-          {file && <p className={styles.fileName}>{file.name}</p>}
           {uploading && (
             <div className={styles.uploadLoading} role="status" aria-live="polite">
               <span className={styles.spinner} aria-hidden />
               <span>Cloudflare R2에 업로드하는 중…</span>
             </div>
           )}
-          {uploadError && (
-            <p className={styles.msgErr} style={{ marginTop: '0.5rem' }} role="alert">
-              {uploadError}
-            </p>
-          )}
-          {uploadedUrl && !uploading && (
-            <div className={styles.previewBox}>
-              <p className={styles.hint} style={{ marginBottom: '0.5rem' }}>
-                {file ? '업로드 완료' : '현재 썸네일'}
-              </p>
-              <div className={styles.previewInner}>
-                <MediaThumb url={uploadedUrl} alt="" objectFit="contain" videoControls />
-              </div>
-            </div>
-          )}
+          {mediaSlots.length > 0 ? (
+            <ul className={styles.mediaSlotList}>
+              {mediaSlots.map((slot) => (
+                <li key={slot.id} className={styles.mediaSlotItem}>
+                  {!slot.url ? (
+                    <div className={styles.mediaSlotPending}>업로드 중… {slot.name}</div>
+                  ) : (
+                    <>
+                      <div className={styles.mediaSlotPreview}>
+                        <MediaThumb url={slot.url} alt="" objectFit="cover" videoControls />
+                      </div>
+                      <div className={styles.mediaSlotMeta}>
+                        <span className={styles.mediaSlotName} title={slot.name}>
+                          {slot.name}
+                        </span>
+                        <button
+                          type="button"
+                          className={styles.mediaSlotRemove}
+                          onClick={() => removeSlot(slot.id)}
+                          disabled={uploading}
+                        >
+                          제거
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </li>
+              ))}
+            </ul>
+          ) : null}
           <p className={styles.hint}>
-            JPEG, PNG, WebP, GIF, MP4, WebM, MOV · 최대 100MB
-            {isLounge ? ' · LOUNGE는 생략 가능' : ''}
+            첫 번째 파일이 목록·상세의 대표 미디어로 쓰입니다. JPEG, PNG, WebP, GIF, MP4, WebM, MOV · 파일당 최대
+            100MB
           </p>
         </div>
 

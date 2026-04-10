@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { Suspense } from 'react';
 import { SiteHeader } from '@/components/SiteHeader';
+import { SiteFooter } from '@/components/SiteFooter';
 import { MediaThumb } from '@/components/MediaThumb';
 import { HomeAllFeed } from '@/components/HomeAllFeed';
 import { HomeMainHero } from '@/components/HomeMainHero';
@@ -156,10 +157,7 @@ export default async function HomePage({ searchParams }: PageProps) {
           </div>
         </section>
       </main>
-      <footer className={styles.footer}>
-        <span>AIsle</span>
-        <span className={styles.footerMuted}>Supabase Auth · Prisma · Next.js</span>
-      </footer>
+      <SiteFooter />
     </>
   );
 }

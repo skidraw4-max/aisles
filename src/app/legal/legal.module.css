@@ -1,0 +1,91 @@
+.shell {
+  min-height: calc(100vh - 72px);
+  padding: 2rem var(--aisle-gutter-sm) 3rem;
+}
+
+@media (min-width: 640px) {
+  .shell {
+    padding-left: var(--aisle-gutter);
+    padding-right: var(--aisle-gutter);
+  }
+}
+
+.inner {
+  max-width: 42rem;
+  margin: 0 auto;
+}
+
+.back {
+  display: inline-block;
+  margin-bottom: 1.25rem;
+  font-size: var(--type-13);
+  font-weight: 600;
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.back:hover {
+  text-decoration: underline;
+}
+
+.title {
+  margin: 0 0 0.35rem;
+  font-size: var(--type-hero);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--text);
+}
+
+.updated {
+  margin: 0 0 1.75rem;
+  font-size: var(--type-13);
+  color: var(--muted);
+}
+
+.lead {
+  margin: 0 0 1.5rem;
+  font-size: var(--type-15);
+  line-height: 1.65;
+  color: var(--muted);
+}
+
+.prose {
+  font-size: var(--type-15);
+  line-height: 1.75;
+  color: #e2e8f0;
+}
+
+.prose h2 {
+  margin: 2rem 0 0.65rem;
+  font-size: var(--type-17);
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.02em;
+}
+
+.prose h2:first-of-type {
+  margin-top: 0;
+}
+
+.prose p {
+  margin: 0 0 1rem;
+}
+
+.prose ul {
+  margin: 0 0 1rem;
+  padding-left: 1.25rem;
+}
+
+.prose li {
+  margin-bottom: 0.35rem;
+}
+
+.prose a {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.prose a:hover {
+  text-decoration: underline;
+}

@@ -45,6 +45,7 @@ export default async function UploadPage({ searchParams }: PageProps) {
       externalLink: p.externalLink ?? '',
       prompt: p.metadata?.prompt ?? '',
       thumbnail: p.thumbnail ?? '',
+      attachmentUrls: p.attachmentUrls ?? [],
     };
   }
 

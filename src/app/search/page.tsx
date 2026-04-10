@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import { SiteHeader } from '@/components/SiteHeader';
+import { SiteFooter } from '@/components/SiteFooter';
 import { searchPostsByQuery } from '@/lib/search-posts';
 import styles from './search.module.css';
 
@@ -81,10 +82,7 @@ export default async function SearchPage({ searchParams }: PageProps) {
           </ul>
         )}
       </main>
-      <footer className={styles.footer}>
-        <span>AIsle</span>
-        <span className={styles.footerMuted}>Supabase Auth · Prisma · Next.js</span>
-      </footer>
+      <SiteFooter />
     </>
   );
 }

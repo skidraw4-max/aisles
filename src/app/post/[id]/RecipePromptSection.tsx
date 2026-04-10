@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { PostRichContent } from '@/lib/PostRichContent';
 import styles from './post.module.css';
 
 type Props = {
@@ -110,16 +111,20 @@ export function RecipePromptSection({ postId, promptText }: Props) {
           </button>
         </div>
         <div className={styles.recipeMagazineBody}>
-          <pre
-            className={styles.recipeMagazinePre}
+          <div
+            className={styles.recipeMagazinePreWrap}
             tabIndex={0}
             role="region"
             aria-label="프롬프트 레시피 본문. 텍스트를 드래그하지 않고 클릭하면 전체가 복사됩니다."
             title="텍스트 선택 없이 클릭 시 전체 레시피 복사"
             onClick={handleEditorClick}
           >
-            {promptText}
-          </pre>
+            <PostRichContent
+              text={promptText}
+              textClassName={styles.recipeMagazinePreText}
+              embedMediaClassName={styles.recipePromptEmbed}
+            />
+          </div>
         </div>
       </section>
     </>
