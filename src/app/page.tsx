@@ -75,7 +75,7 @@ export default async function HomePage({ searchParams }: PageProps) {
           </Suspense>
         </section>
 
-        {!filterCategory ? (
+        {!filterCategory && SHOW_HOME_MAIN_HERO ? (
           <section className={`${styles.section} ${styles.quasarHeroBanner}`}>
             <div className={styles.feedLayoutHeroFull}>
               <HomeMainHero />
