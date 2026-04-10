@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/components/SessionProvider';
 import { AuthModal } from './AuthModal';
 import { MainNav, MainNavFallback } from './MainNav';
+import { HeaderSearch } from './HeaderSearch';
 import styles from './SiteHeader.module.css';
 
 export function SiteHeader() {
@@ -51,12 +52,9 @@ export function SiteHeader() {
             <MainNav />
           </Suspense>
           <div className={styles.right}>
-            <div className={styles.search} role="search">
-              <span className={styles.searchIcon} aria-hidden>
-                ⌕
-              </span>
-              <input type="search" placeholder="Search recipes, builds…" aria-label="검색" />
-            </div>
+            <Suspense fallback={<div className={styles.searchFallback} aria-hidden />}>
+              <HeaderSearch />
+            </Suspense>
             {isAuthenticated ? (
               <div className={styles.userRow}>
                 <Link href="/upload" className={styles.uploadLink}>

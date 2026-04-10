@@ -1,0 +1,141 @@
+.shell {
+  max-width: var(--aisle-max);
+  margin: 0 auto;
+  padding: 32px var(--aisle-gutter-sm) 48px;
+}
+
+@media (min-width: 640px) {
+  .shell {
+    padding-left: var(--aisle-gutter);
+    padding-right: var(--aisle-gutter);
+  }
+}
+
+.title {
+  margin: 0 0 0.5rem;
+  font-size: var(--type-22);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.meta {
+  margin: 0 0 1.5rem;
+  font-size: var(--type-14);
+  color: var(--muted);
+}
+
+.empty {
+  margin: 0;
+  padding: 1.25rem 1rem;
+  border-radius: 14px;
+  border: 1px dashed var(--border);
+  background: var(--surface);
+  color: var(--muted);
+  font-size: var(--type-14);
+  line-height: 1.5;
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.row {
+  margin: 0;
+  padding: 0;
+}
+
+.link {
+  display: block;
+  padding: 1rem 1.1rem;
+  border-radius: 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  text-decoration: none;
+  color: inherit;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
+}
+
+.link:hover {
+  border-color: rgba(167, 139, 250, 0.28);
+  background: rgba(167, 139, 250, 0.06);
+}
+
+.rowTitle {
+  margin: 0 0 0.35rem;
+  font-size: var(--type-16);
+  font-weight: 600;
+  line-height: 1.35;
+  color: #fafafa;
+}
+
+.rowMeta {
+  margin: 0 0 0.35rem;
+  font-size: var(--type-12);
+  color: var(--muted);
+}
+
+.snippet {
+  margin: 0;
+  font-size: var(--type-13);
+  color: #a1a1aa;
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.back {
+  display: inline-block;
+  margin-bottom: 1.25rem;
+  font-size: var(--type-14);
+  font-weight: 600;
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.back:hover {
+  text-decoration: underline;
+}
+
+.emptyLink {
+  color: var(--accent);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.emptyLink:hover {
+  text-decoration: underline;
+}
+
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: space-between;
+  align-items: center;
+  max-width: var(--aisle-max);
+  margin: 0 auto;
+  padding: 32px var(--aisle-gutter-sm) 48px;
+  border-top: 1px solid var(--border);
+  font-size: var(--type-13);
+  color: var(--muted);
+}
+
+@media (min-width: 640px) {
+  .footer {
+    padding-left: var(--aisle-gutter);
+    padding-right: var(--aisle-gutter);
+  }
+}
+
+.footerMuted {
+  opacity: 0.8;
+}

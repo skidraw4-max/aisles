@@ -119,6 +119,26 @@
   }
 }
 
+.searchSubmit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  padding: 0;
+  margin: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: inherit;
+  line-height: 1;
+}
+
+.searchSubmit:focus-visible {
+  outline: 2px solid rgba(167, 139, 250, 0.6);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
 .search input {
   flex: 1;
   border: none;
@@ -137,6 +157,21 @@
   color: #71717a;
   font-size: 1rem;
   line-height: 1;
+}
+
+.searchFallback {
+  display: none;
+  min-width: 200px;
+  height: 2.25rem;
+  border-radius: 999px;
+  background: #161b22;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+@media (min-width: 960px) {
+  .searchFallback {
+    display: block;
+  }
 }
 
 .login {

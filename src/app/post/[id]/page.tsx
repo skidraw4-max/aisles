@@ -200,7 +200,9 @@ export default async function PostPage({ params }: Props) {
 
   const isLab = post.category === 'RECIPE';
   const isGallery = post.category === 'GALLERY';
+  const isLoungeOrGossip = post.category === 'LOUNGE' || post.category === 'GOSSIP';
   const isBuildOrLaunch = post.category === 'BUILD' || post.category === 'LAUNCH';
+  const hasHeroMedia = Boolean(post.thumbnail?.trim());
   const metaPrompt = post.metadata?.prompt?.trim() ?? '';
   const labPromptText = resolveRecipePrompt(post);
   const showLabDescription = isLab && Boolean(post.content?.trim()) && Boolean(metaPrompt);
@@ -298,28 +300,27 @@ export default async function PostPage({ params }: Props) {
     </header>
   );
 
-  const mainMediaBlock =
-    isGallery ? (
-      <div className={styles.galleryMagazineBlock}>
-        <GalleryPostMedia url={post.thumbnail} alt={post.title} compact />
-        <p className={styles.magazineCaption}>{heroCaption}</p>
-      </div>
-    ) : (
-      <div className={styles.magazineHeroWrap}>
-        <figure className={styles.magazineHeroFigure}>
-          {post.thumbnail ? (
-            <div className={styles.magazineHeroInner}>
-              <MediaThumb url={post.thumbnail} alt={post.title} objectFit="cover" videoControls />
-            </div>
-          ) : (
-            <div className={styles.magazineHeroInner}>
-              <div className={styles.heroMediaPlaceholder} />
-            </div>
-          )}
-        </figure>
-        <p className={styles.magazineCaption}>{heroCaption}</p>
-      </div>
-    );
+  const mainMediaBlock = isGallery ? (
+    <div className={styles.galleryMagazineBlock}>
+      <GalleryPostMedia url={post.thumbnail} alt={post.title} compact />
+      <p className={styles.magazineCaption}>{heroCaption}</p>
+    </div>
+  ) : isLoungeOrGossip && !hasHeroMedia ? null : (
+    <div className={styles.magazineHeroWrap}>
+      <figure className={styles.magazineHeroFigure}>
+        {post.thumbnail ? (
+          <div className={styles.magazineHeroInner}>
+            <MediaThumb url={post.thumbnail} alt={post.title} objectFit="cover" videoControls />
+          </div>
+        ) : (
+          <div className={styles.magazineHeroInner}>
+            <div className={styles.heroMediaPlaceholder} />
+          </div>
+        )}
+      </figure>
+      <p className={styles.magazineCaption}>{heroCaption}</p>
+    </div>
+  );
 
   const sidebar = (
     <div className={styles.magazineSidebar}>
