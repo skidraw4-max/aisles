@@ -54,11 +54,26 @@ export async function fetchLatestForCategory(
   }
 }
 
-/** LAB·GALLERY 인기 각 2개 → 2×2 그리드용 [lab0, gal0, lab1, gal1] */
+/** LAB·GALLERY 최신 각 4개 → 한 줄 4칸×2줄 그리드용 (교차: lab0, gal0, …) */
+export async function fetchLatestLabGalleryEight(): Promise<HomeFeedPost[]> {
+  const [lab, gallery] = await Promise.all([
+    fetchLatestForCategory('RECIPE', 4),
+    fetchLatestForCategory('GALLERY', 4),
+  ]);
+  const out: HomeFeedPost[] = [];
+  const maxPairs = Math.max(lab.length, gallery.length);
+  for (let i = 0; i < maxPairs; i++) {
+    if (lab[i]) out.push(lab[i]);
+    if (gallery[i]) out.push(gallery[i]);
+  }
+  return out;
+}
+
+/** LAB·GALLERY 인기 각 4개 → 메인 AI Work 그리드와 동일 4×2 패턴 */
 export async function fetchAiWorkShowcasePosts(): Promise<HomeFeedPost[]> {
   const [lab, gallery] = await Promise.all([
-    fetchHotTopForCategory('RECIPE', 2),
-    fetchHotTopForCategory('GALLERY', 2),
+    fetchHotTopForCategory('RECIPE', 4),
+    fetchHotTopForCategory('GALLERY', 4),
   ]);
   const out: HomeFeedPost[] = [];
   const maxPairs = Math.max(lab.length, gallery.length);
