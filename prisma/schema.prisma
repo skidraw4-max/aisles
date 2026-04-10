@@ -26,7 +26,7 @@ model User {
 // 3. 게시물 모델 (4개의 복도 통합 관리)
 model Post {
   id          String      @id @default(uuid())
-  category    Category    // RECIPE, GALLERY, BUILD, LAUNCH 중 하나
+  category    Category
   title       String
   content     String?
   thumbnail   String?
@@ -96,8 +96,10 @@ enum Role {
 }
 
 enum Category {
-  RECIPE  // 프롬프트 복도
+  RECIPE  // 프롬프트 복도 (LAB)
   GALLERY // 아트 복도
+  LOUNGE  // 라운지 · 텍스트 중심 (썸네일 선택)
+  GOSSIP  // 소셜·가십 복도
   BUILD   // 빌드 복도
   LAUNCH  // 서비스 복도
 }

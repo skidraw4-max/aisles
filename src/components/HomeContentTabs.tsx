@@ -6,15 +6,16 @@ import type { ContentTabId } from '@/lib/content-tab';
 import { getContentTabFromSearchParams } from '@/lib/content-tab';
 import styles from '@/app/page.module.css';
 
-const TABS: { id: ContentTabId; label: string; href: string }[] =
-  [
-    { id: 'latest', label: '최신', href: '/' },
-    { id: 'hot', label: '인기', href: '/?sort=hot' },
-    { id: 'lab', label: 'Lab', href: '/?category=LAB' },
-    { id: 'gallery', label: 'Gallery', href: '/?category=GALLERY' },
-    { id: 'build', label: 'Build', href: '/?category=BUILD' },
-    { id: 'launch', label: 'Launch', href: '/?category=LAUNCH' },
-  ];
+const TABS: { id: ContentTabId; label: string; href: string }[] = [
+  { id: 'latest', label: '최신', href: '/' },
+  { id: 'hot', label: '인기', href: '/?sort=hot' },
+  { id: 'lab', label: 'LAB', href: '/?category=LAB' },
+  { id: 'gallery', label: 'GALLERY', href: '/?category=GALLERY' },
+  { id: 'lounge', label: 'LOUNGE', href: '/?category=LOUNGE' },
+  { id: 'gossip', label: 'GOSSIP', href: '/?category=GOSSIP' },
+  { id: 'build', label: 'BUILD', href: '/?category=BUILD' },
+  { id: 'launch', label: 'LAUNCH', href: '/?category=LAUNCH' },
+];
 
 export function HomeContentTabs() {
   const searchParams = useSearchParams();

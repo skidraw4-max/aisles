@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { ChevronLeft, ChevronRight, MessageCircle } from 'lucide-react';
 import styles from '@/app/page.module.css';
 
-type BestCategory = 'ALL' | 'LAB' | 'GALLERY' | 'BUILD' | 'LAUNCH';
+type BestCategory = 'ALL' | 'LAB' | 'GALLERY' | 'LOUNGE' | 'GOSSIP' | 'BUILD' | 'LAUNCH';
 
 type BestItem = { id: string; title: string; commentCount: number; rank: number };
 
@@ -20,6 +20,8 @@ const CATS: { id: BestCategory; label: string }[] = [
   { id: 'ALL', label: '전체' },
   { id: 'LAB', label: 'Lab' },
   { id: 'GALLERY', label: 'Gallery' },
+  { id: 'LOUNGE', label: 'Lounge' },
+  { id: 'GOSSIP', label: 'Gossip' },
   { id: 'BUILD', label: 'Build' },
   { id: 'LAUNCH', label: 'Launch' },
 ];

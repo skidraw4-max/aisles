@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { MediaThumb } from '@/components/MediaThumb';
-import { UPLOAD_CATEGORY_OPTIONS } from '@/lib/post-categories';
+import { UPLOAD_CATEGORY_OPTIONS, categoryAllowsOptionalThumbnail } from '@/lib/post-categories';
 import type { Category } from '@prisma/client';
 import styles from './upload.module.css';
 
@@ -124,19 +124,25 @@ export function UploadForm({ editInitial = null }: Props) {
   }
 
   const isLab = category === 'RECIPE';
+  const isLounge = category === 'LOUNGE';
+  const mediaOptional = categoryAllowsOptionalThumbnail(category);
   const showServiceLink = category === 'BUILD' || category === 'LAUNCH';
   const canSubmit =
-    uploadedUrl &&
     title.trim() &&
     !uploading &&
     !submitting &&
-    (!isLab || prompt.trim());
+    (!isLab || prompt.trim()) &&
+    (mediaOptional ? description.trim().length > 0 : Boolean(uploadedUrl));
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setFormError(null);
-    if (!uploadedUrl) {
+    if (!mediaOptional && !uploadedUrl) {
       setFormError('미디어 업로드가 끝날 때까지 기다려 주세요.');
+      return;
+    }
+    if (isLounge && !description.trim()) {
+      setFormError('LOUNGE 카테고리는 본문(설명)을 입력해 주세요.');
       return;
     }
     if (isLab && !prompt.trim()) {
@@ -171,9 +177,13 @@ export function UploadForm({ editInitial = null }: Props) {
       if (editInitial) {
         const patchBody: Record<string, unknown> = {
           title: title.trim(),
-          thumbnailUrl: uploadedUrl,
           content: description.trim() ? description.trim() : '',
         };
+        if (uploadedUrl) {
+          patchBody.thumbnailUrl = uploadedUrl;
+        } else if (isLounge) {
+          patchBody.thumbnailUrl = '';
+        }
         if (isLab) {
           patchBody.prompt = prompt.trim();
         }
@@ -198,8 +208,10 @@ export function UploadForm({ editInitial = null }: Props) {
       const body: Record<string, unknown> = {
         category,
         title: title.trim(),
-        thumbnailUrl: uploadedUrl,
       };
+      if (uploadedUrl) {
+        body.thumbnailUrl = uploadedUrl;
+      }
       if (description.trim()) {
         body.content = description.trim();
       }
@@ -278,13 +290,15 @@ export function UploadForm({ editInitial = null }: Props) {
 
         <label className={styles.label}>
           설명 (Description)
+          {isLounge ? <span className={styles.requiredMark}> · LOUNGE 필수</span> : null}
           <textarea
             className={styles.textarea}
             value={description}
             onChange={(ev) => setDescription(ev.target.value)}
             maxLength={20000}
-            placeholder="선택 사항 — 본문·메모"
-            rows={4}
+            placeholder={isLounge ? '본문을 입력하세요 (LOUNGE는 텍스트만으로도 게시 가능)' : '선택 사항 — 본문·메모'}
+            rows={isLounge ? 6 : 4}
+            required={isLounge}
           />
         </label>
 
@@ -329,6 +343,7 @@ export function UploadForm({ editInitial = null }: Props) {
         <div className={styles.fileRow}>
           <span className={styles.label} style={{ textTransform: 'none', letterSpacing: 'normal' }}>
             이미지 / 영상
+            {mediaOptional ? <span className={styles.optionalMark}> (선택)</span> : null}
           </span>
           <label className={styles.fileLabel}>
             <span className={styles.fileBtn}>{file ? '다른 파일 선택' : '파일 선택'}</span>
@@ -362,7 +377,10 @@ export function UploadForm({ editInitial = null }: Props) {
               </div>
             </div>
           )}
-          <p className={styles.hint}>JPEG, PNG, WebP, GIF, MP4, WebM, MOV · 최대 100MB</p>
+          <p className={styles.hint}>
+            JPEG, PNG, WebP, GIF, MP4, WebM, MOV · 최대 100MB
+            {isLounge ? ' · LOUNGE는 생략 가능' : ''}
+          </p>
         </div>
 
         <div className={styles.formActions}>

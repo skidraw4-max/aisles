@@ -4,6 +4,8 @@ import type { Category } from '@prisma/client';
 const HOME_QUERY_TO_CATEGORY: Record<string, Category> = {
   LAB: 'RECIPE',
   GALLERY: 'GALLERY',
+  LOUNGE: 'LOUNGE',
+  GOSSIP: 'GOSSIP',
   BUILD: 'BUILD',
   LAUNCH: 'LAUNCH',
 };
@@ -24,6 +26,10 @@ export function categoryToHomeQuery(category: Category): string {
       return 'LAB';
     case 'GALLERY':
       return 'GALLERY';
+    case 'LOUNGE':
+      return 'LOUNGE';
+    case 'GOSSIP':
+      return 'GOSSIP';
     case 'BUILD':
       return 'BUILD';
     case 'LAUNCH':
@@ -41,14 +47,18 @@ export function homeHrefForCategory(category: Category): string {
 export const POST_CATEGORY_OPTIONS: { value: Category; label: string }[] = [
   { value: 'RECIPE', label: 'Lab' },
   { value: 'GALLERY', label: 'Gallery' },
+  { value: 'LOUNGE', label: 'Lounge' },
+  { value: 'GOSSIP', label: 'Gossip' },
   { value: 'BUILD', label: 'Build' },
   { value: 'LAUNCH', label: 'Launch' },
 ];
 
-/** /upload 셀렉트용 대문자 라벨 (값은 Prisma enum 그대로) */
+/** /upload 셀렉트용 (순서: LAB → GALLERY → LOUNGE → GOSSIP → BUILD → LAUNCH) */
 export const UPLOAD_CATEGORY_OPTIONS: { value: Category; label: string }[] = [
   { value: 'RECIPE', label: 'LAB' },
   { value: 'GALLERY', label: 'GALLERY' },
+  { value: 'LOUNGE', label: 'LOUNGE' },
+  { value: 'GOSSIP', label: 'GOSSIP' },
   { value: 'BUILD', label: 'BUILD' },
   { value: 'LAUNCH', label: 'LAUNCH' },
 ];
@@ -58,4 +68,9 @@ const VALUES = new Set(POST_CATEGORY_OPTIONS.map((o) => o.value));
 export function parsePostCategory(raw: string | null | undefined): Category | null {
   if (!raw || !VALUES.has(raw as Category)) return null;
   return raw as Category;
+}
+
+/** 썸네일 없이 글 작성 가능 (제목 + 본문) */
+export function categoryAllowsOptionalThumbnail(category: Category): boolean {
+  return category === 'LOUNGE';
 }

@@ -101,7 +101,7 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
   const data: {
     title?: string;
     content?: string | null;
-    thumbnail?: string;
+    thumbnail?: string | null;
     externalLink?: string | null;
   } = {};
 
@@ -123,13 +123,23 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
 
   if (typeof b.thumbnailUrl === 'string') {
     const url = b.thumbnailUrl.trim();
-    if (!url || !isTrustedMediaUrl(url)) {
+    if (!url) {
+      if (post.category === 'LOUNGE') {
+        data.thumbnail = null;
+      } else {
+        return NextResponse.json(
+          { error: '허용된 저장소에서 업로드된 썸네일 URL만 사용할 수 있습니다.' },
+          { status: 400 }
+        );
+      }
+    } else if (!isTrustedMediaUrl(url)) {
       return NextResponse.json(
         { error: '허용된 저장소에서 업로드된 썸네일 URL만 사용할 수 있습니다.' },
         { status: 400 }
       );
+    } else {
+      data.thumbnail = url;
     }
-    data.thumbnail = url;
   }
 
   if ('externalLink' in b && b.externalLink !== undefined) {

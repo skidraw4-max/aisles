@@ -3,7 +3,15 @@ import { parseHomeFeedSort } from '@/lib/feed-sort';
 import { parseHomeCategoryQuery } from '@/lib/post-categories';
 
 /** 콘텐츠 탭 바 활성 키 */
-export type ContentTabId = 'latest' | 'hot' | 'lab' | 'gallery' | 'build' | 'launch';
+export type ContentTabId =
+  | 'latest'
+  | 'hot'
+  | 'lab'
+  | 'gallery'
+  | 'lounge'
+  | 'gossip'
+  | 'build'
+  | 'launch';
 
 export function getContentTabFromSearchParams(search: {
   get: (key: string) => string | null;
@@ -11,6 +19,8 @@ export function getContentTabFromSearchParams(search: {
   const cat = parseHomeCategoryQuery(search.get('category'));
   if (cat === 'RECIPE') return 'lab';
   if (cat === 'GALLERY') return 'gallery';
+  if (cat === 'LOUNGE') return 'lounge';
+  if (cat === 'GOSSIP') return 'gossip';
   if (cat === 'BUILD') return 'build';
   if (cat === 'LAUNCH') return 'launch';
   if (parseHomeFeedSort(search.get('sort')) === 'hot') return 'hot';

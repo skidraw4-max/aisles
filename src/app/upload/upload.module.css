@@ -306,3 +306,11 @@
   background: rgba(255, 255, 255, 0.06);
   color: #e2e8f0;
 }
+
+.requiredMark,
+.optionalMark {
+  font-weight: 600;
+  color: #a78bfa;
+  text-transform: none;
+  letter-spacing: normal;
+}

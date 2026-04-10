@@ -7,7 +7,7 @@ import { ensurePrismaUser } from '@/lib/ensure-user';
 import { MEDIA_STORAGE_NOT_CONFIGURED, uploadPublicObject } from '@/lib/r2';
 import { isTrustedMediaUrl } from '@/lib/r2-url';
 import type { Category } from '@prisma/client';
-import { parsePostCategory } from '@/lib/post-categories';
+import { categoryAllowsOptionalThumbnail, parsePostCategory } from '@/lib/post-categories';
 
 const MEDIA_EXT = new Map<string, string>([
   ['image/jpeg', 'jpg'],
@@ -115,6 +115,13 @@ async function postFromJson(req: NextRequest) {
   const contentRaw = typeof b.content === 'string' ? b.content.trim() : '';
   const content = contentRaw ? contentRaw.slice(0, 20000) : null;
 
+  if (category === 'LOUNGE' && !contentRaw) {
+    return NextResponse.json(
+      { error: 'LOUNGE 카테고리는 본문(설명)을 입력해 주세요.' },
+      { status: 400 }
+    );
+  }
+
   const promptRaw = typeof b.prompt === 'string' ? b.prompt.trim() : '';
   if (category === 'RECIPE') {
     if (!promptRaw) {
@@ -128,8 +135,17 @@ async function postFromJson(req: NextRequest) {
     }
   }
 
-  const thumbnailUrl = typeof b.thumbnailUrl === 'string' ? b.thumbnailUrl.trim() : '';
-  if (!thumbnailUrl || !isTrustedMediaUrl(thumbnailUrl)) {
+  const thumbnailRaw = typeof b.thumbnailUrl === 'string' ? b.thumbnailUrl.trim() : '';
+  let thumbnail: string | null = null;
+  if (thumbnailRaw) {
+    if (!isTrustedMediaUrl(thumbnailRaw)) {
+      return NextResponse.json(
+        { error: '허용된 저장소에서 업로드된 썸네일 URL만 사용할 수 있습니다.' },
+        { status: 400 }
+      );
+    }
+    thumbnail = thumbnailRaw;
+  } else if (!categoryAllowsOptionalThumbnail(category)) {
     return NextResponse.json(
       { error: '허용된 저장소에서 업로드된 썸네일 URL이 필요합니다. 미디어 업로드를 먼저 완료해 주세요.' },
       { status: 400 }
@@ -149,7 +165,7 @@ async function postFromJson(req: NextRequest) {
         category,
         title,
         content,
-        thumbnail: thumbnailUrl,
+        thumbnail,
         authorId: user.id,
         ...(externalLink != null ? { externalLink } : {}),
         ...(category === 'RECIPE'
@@ -215,35 +231,46 @@ async function postFromMultipart(req: NextRequest) {
   }
   const externalLink = linkResult.value;
 
-  const file = form.get('file');
-  if (!file || !(file instanceof File)) {
-    return NextResponse.json({ error: '이미지 또는 영상 파일을 선택해 주세요.' }, { status: 400 });
-  }
-  if (file.size > MAX_BYTES) {
-    return NextResponse.json({ error: '파일 크기는 100MB 이하여야 합니다.' }, { status: 400 });
-  }
-
-  const ext = MEDIA_EXT.get(file.type);
-  if (!ext) {
+  if (category === 'LOUNGE' && !content?.trim()) {
     return NextResponse.json(
-      { error: '지원 형식: JPEG, PNG, WebP, GIF, MP4, WebM, QuickTime(MOV).' },
+      { error: 'LOUNGE 카테고리는 본문을 입력해 주세요.' },
       { status: 400 }
     );
   }
 
-  const buf = Buffer.from(await file.arrayBuffer());
-  const key = `posts/${user.id}/${randomUUID()}.${ext}`;
-  const uploaded = await uploadPublicObject(key, buf, file.type);
-  if ('error' in uploaded) {
-    return NextResponse.json(
-      {
-        error:
-          uploaded.error === MEDIA_STORAGE_NOT_CONFIGURED
-            ? '파일 저장소가 준비되지 않았습니다. R2 환경 변수를 설정하거나, Supabase Storage 버킷과 SUPABASE_SERVICE_ROLE_KEY 를 설정해 주세요.'
-            : uploaded.error,
-      },
-      { status: 503 }
-    );
+  const file = form.get('file');
+  let thumbnail: string | null = null;
+
+  if (file instanceof File) {
+    if (file.size > MAX_BYTES) {
+      return NextResponse.json({ error: '파일 크기는 100MB 이하여야 합니다.' }, { status: 400 });
+    }
+
+    const ext = MEDIA_EXT.get(file.type);
+    if (!ext) {
+      return NextResponse.json(
+        { error: '지원 형식: JPEG, PNG, WebP, GIF, MP4, WebM, QuickTime(MOV).' },
+        { status: 400 }
+      );
+    }
+
+    const buf = Buffer.from(await file.arrayBuffer());
+    const key = `posts/${user.id}/${randomUUID()}.${ext}`;
+    const uploaded = await uploadPublicObject(key, buf, file.type);
+    if ('error' in uploaded) {
+      return NextResponse.json(
+        {
+          error:
+            uploaded.error === MEDIA_STORAGE_NOT_CONFIGURED
+              ? '파일 저장소가 준비되지 않았습니다. R2 환경 변수를 설정하거나, Supabase Storage 버킷과 SUPABASE_SERVICE_ROLE_KEY 를 설정해 주세요.'
+              : uploaded.error,
+        },
+        { status: 503 }
+      );
+    }
+    thumbnail = uploaded.publicUrl;
+  } else if (!categoryAllowsOptionalThumbnail(category)) {
+    return NextResponse.json({ error: '이미지 또는 영상 파일을 선택해 주세요.' }, { status: 400 });
   }
 
   try {
@@ -253,7 +280,7 @@ async function postFromMultipart(req: NextRequest) {
         category,
         title,
         content,
-        thumbnail: uploaded.publicUrl,
+        thumbnail,
         authorId: user.id,
         ...(externalLink != null ? { externalLink } : {}),
       },

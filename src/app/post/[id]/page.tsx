@@ -33,6 +33,10 @@ function categoryTagClass(category: string): string {
       return styles.tagLab;
     case 'GALLERY':
       return styles.tagGallery;
+    case 'LOUNGE':
+      return styles.tagLounge;
+    case 'GOSSIP':
+      return styles.tagGossip;
     case 'BUILD':
       return styles.tagBuild;
     case 'LAUNCH':

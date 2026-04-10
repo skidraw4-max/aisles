@@ -554,6 +554,18 @@
   box-shadow: 0 0 18px rgba(244, 114, 182, 0.1);
 }
 
+.tagLounge {
+  background: rgba(52, 211, 153, 0.12);
+  color: #6ee7b7;
+  border-color: rgba(52, 211, 153, 0.3);
+}
+
+.tagGossip {
+  background: rgba(248, 113, 113, 0.12);
+  color: #fca5a5;
+  border-color: rgba(248, 113, 113, 0.28);
+}
+
 .tagBuild {
   background: rgba(56, 189, 248, 0.14);
   color: #7dd3fc;

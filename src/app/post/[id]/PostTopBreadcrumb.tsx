@@ -13,6 +13,10 @@ function thirdCrumbLabel(category: Category): string {
       return '튜토리얼';
     case 'GALLERY':
       return '피드';
+    case 'LOUNGE':
+      return '라운지';
+    case 'GOSSIP':
+      return '토픽';
     case 'BUILD':
       return '빌드 노트';
     case 'LAUNCH':

@@ -8,6 +8,8 @@ const PAGE_SIZE = 20;
 const QUERY_TO_CATEGORY: Record<string, Category> = {
   LAB: 'RECIPE',
   GALLERY: 'GALLERY',
+  LOUNGE: 'LOUNGE',
+  GOSSIP: 'GOSSIP',
   BUILD: 'BUILD',
   LAUNCH: 'LAUNCH',
 };
