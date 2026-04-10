@@ -72,7 +72,7 @@ export default function SupportPage() {
               운영 관련 문의, 제휴, 저작권·권리 침해 신고는 이메일로 연락해 주세요.
             </p>
             <p>
-              <a href="mailto:support@aisles.kr">support@aisles.kr</a>
+              <a href="mailto:skidraw4@gmail.com">skidraw4@gmail.com</a>
             </p>
             <p>
               답변은 영업일 기준으로 순차 처리되며, 단순 문의는 3~5일 이내 회신을 목표로 합니다.{' '}
