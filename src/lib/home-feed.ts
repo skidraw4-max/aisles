@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma';
 export const HOME_FEED_INCLUDE = {
   author: { select: { username: true } },
   launchInfo: { select: { serviceUrl: true, status: true } },
+  _count: { select: { comments: true } },
 } as const;
 
 export type HomeFeedPost = Prisma.PostGetPayload<{ include: typeof HOME_FEED_INCLUDE }>;

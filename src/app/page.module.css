@@ -271,6 +271,207 @@
   padding-top: 0.65rem;
 }
 
+/* LOUNGE / GOSSIP — 퀘이사존식 보드 리스트 */
+.feedBoardSurface {
+  margin-top: 1.5rem;
+  width: 100%;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: linear-gradient(180deg, rgba(18, 20, 30, 0.92) 0%, rgba(11, 13, 23, 0.88) 100%);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.28);
+  overflow: hidden;
+}
+
+.feedBoardSurfaceGossip {
+  border-color: rgba(248, 113, 113, 0.18);
+  box-shadow:
+    0 16px 40px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(248, 113, 113, 0.06);
+}
+
+.feedBoardScroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.feedBoardHead,
+.feedBoardRowLink {
+  display: grid;
+  grid-template-columns: 36px minmax(140px, 1fr) minmax(64px, 88px) 76px 40px 40px;
+  gap: 0.4rem 0.5rem;
+  align-items: center;
+  padding: 0.45rem 0.65rem;
+  min-width: min(100%, 520px);
+}
+
+@media (min-width: 640px) {
+  .feedBoardHead,
+  .feedBoardRowLink {
+    grid-template-columns: 42px minmax(200px, 1fr) 100px 88px 48px 48px;
+    gap: 0.5rem 0.75rem;
+    padding: 0.5rem 0.85rem;
+    min-width: 0;
+  }
+}
+
+.feedBoardHead {
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #71717a;
+  background: rgba(0, 0, 0, 0.32);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.feedBoardHead span:nth-child(5),
+.feedBoardHead span:nth-child(6) {
+  text-align: right;
+}
+
+.feedBoardList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.feedBoardRowLink {
+  text-decoration: none;
+  color: #e4e4e7;
+  font-size: var(--type-13);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  transition: background 0.12s ease;
+}
+
+.feedBoardRow:last-child .feedBoardRowLink {
+  border-bottom: none;
+}
+
+.feedBoardRowLink:hover {
+  background: rgba(167, 139, 250, 0.08);
+}
+
+.feedBoardSurfaceGossip .feedBoardRowLink:hover {
+  background: rgba(248, 113, 113, 0.06);
+}
+
+.feedBoardCellNum {
+  font-family: ui-monospace, 'Cascadia Code', monospace;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #52525b;
+  text-align: center;
+}
+
+.feedBoardCellTitle {
+  min-width: 0;
+}
+
+.feedBoardTitleCluster {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.feedBoardGossipThumb {
+  position: relative;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 3px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: #0f111a;
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.45),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+
+@media (min-width: 640px) {
+  .feedBoardGossipThumb {
+    width: 38px;
+    height: 38px;
+    border-radius: 4px;
+  }
+}
+
+.feedBoardGossipThumbFallback {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(145deg, #3f3f46 0%, #1c1c22 100%);
+}
+
+.feedBoardTitleLine {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.feedBoardMediaIconWrap {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+}
+
+.feedBoardMediaIcon {
+  flex-shrink: 0;
+  color: #a78bfa;
+  opacity: 0.9;
+}
+
+.feedBoardMediaIconSpacer {
+  flex-shrink: 0;
+  width: 15px;
+  height: 15px;
+}
+
+.feedBoardTitleStr {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+  color: #fafafa;
+  letter-spacing: -0.01em;
+}
+
+.feedBoardCommentBadge {
+  flex-shrink: 0;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #4ade80;
+  font-family: ui-monospace, monospace;
+}
+
+.feedBoardCellAuthor {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #a1a1aa;
+  font-size: 0.78rem;
+}
+
+.feedBoardCellDate {
+  color: #71717a;
+  font-size: 0.7rem;
+  white-space: nowrap;
+}
+
+.feedBoardCellViews,
+.feedBoardCellLikes {
+  font-family: ui-monospace, monospace;
+  font-size: 0.68rem;
+  color: #a1a1aa;
+  text-align: right;
+  justify-self: end;
+}
+
 .listIcon {
   color: var(--accent);
   font-size: var(--type-12);

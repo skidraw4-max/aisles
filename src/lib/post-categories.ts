@@ -74,3 +74,8 @@ export function parsePostCategory(raw: string | null | undefined): Category | nu
 export function categoryAllowsOptionalThumbnail(category: Category): boolean {
   return category === 'LOUNGE';
 }
+
+/** 메인 피드: 퀘이사존식 한 줄 리스트 (LAB·GALLERY는 그리드) */
+export function isFeedBoardListCategory(category: Category | null): boolean {
+  return category === 'LOUNGE' || category === 'GOSSIP';
+}
