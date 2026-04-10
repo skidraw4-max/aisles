@@ -17,6 +17,7 @@ export type MyPostRow = {
   createdAt: string;
   viewCount: number;
   likeCount: number;
+  authorUsername: string;
 };
 
 function categoryLabel(c: Category) {
@@ -35,13 +36,84 @@ function formatDate(iso: string) {
   }
 }
 
+function MyAislesLoungeGossipList({
+  posts,
+  onDeleteClick,
+}: {
+  posts: MyPostRow[];
+  onDeleteClick: (id: string) => void;
+}) {
+  if (posts.length === 0) return null;
+  return (
+    <section className={styles.textListSection} aria-labelledby="my-aisles-lg-heading">
+      <h2 id="my-aisles-lg-heading" className={styles.textListHeading}>
+        Lounge · Gossip
+      </h2>
+      <div className={styles.textListSurface}>
+        <div className={styles.textListHead} role="row">
+          <span className={styles.textListColTitle} role="columnheader">
+            제목
+          </span>
+          <span className={styles.textListColDate} role="columnheader">
+            작성일
+          </span>
+          <span className={styles.textListColAuthor} role="columnheader">
+            작성자
+          </span>
+          <span className={styles.textListColActions} role="columnheader">
+            관리
+          </span>
+        </div>
+        <ul className={styles.textListUl} role="list">
+          {posts.map((post) => (
+            <li key={post.id} className={styles.textListLi}>
+              <div className={styles.textListRow}>
+                <Link href={`/post/${post.id}`} className={styles.textListMainLink}>
+                  <span className={styles.textListTitleStr}>{post.title}</span>
+                  <span className={styles.textListDate}>{formatDate(post.createdAt)}</span>
+                  <span className={styles.textListAuthor} title={post.authorUsername}>
+                    {post.authorUsername}
+                  </span>
+                </Link>
+                <div className={styles.textListActions}>
+                  <Link href={`/post/${post.id}`} className={styles.textListMiniBtn}>
+                    보기
+                  </Link>
+                  <Link href={`/upload?edit=${post.id}`} className={styles.textListMiniBtn}>
+                    수정
+                  </Link>
+                  <button
+                    type="button"
+                    className={`${styles.textListMiniBtn} ${styles.textListMiniBtnDanger}`}
+                    onClick={() => onDeleteClick(post.id)}
+                  >
+                    삭제
+                  </button>
+                </div>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
+  );
+}
+
 export function MyPostsGrid({ posts }: { posts: MyPostRow[] }) {
   const router = useRouter();
   const [confirmId, setConfirmId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
+  const loungeGossipPosts = posts.filter((p) => p.category === 'LOUNGE' || p.category === 'GOSSIP');
+  const cardPosts = posts.filter((p) => p.category !== 'LOUNGE' && p.category !== 'GOSSIP');
+
   const confirmPost = confirmId ? posts.find((p) => p.id === confirmId) : undefined;
+
+  function openDelete(id: string) {
+    setDeleteError(null);
+    setConfirmId(id);
+  }
 
   const closeModal = useCallback(() => {
     if (deleting) return;
@@ -100,46 +172,46 @@ export function MyPostsGrid({ posts }: { posts: MyPostRow[] }) {
 
   return (
     <>
-      <ul className={styles.grid}>
-        {posts.map((post) => (
-          <li key={post.id}>
-            <article className={styles.card}>
-              <Link href={`/post/${post.id}`} className={styles.cardMedia} aria-label={`${post.title} 상세`}>
-                {post.thumbnail ? (
-                  <MediaThumb url={post.thumbnail} alt="" objectFit="cover" />
-                ) : (
-                  <div className={styles.placeholder} aria-hidden />
-                )}
-                <span className={styles.badge}>{categoryLabel(post.category)}</span>
-              </Link>
-              <div className={styles.cardBody}>
-                <h2 className={styles.cardTitle}>{post.title}</h2>
-                <p className={styles.cardMeta}>
-                  {formatDate(post.createdAt)} · 조회 {post.viewCount} · ♥ {post.likeCount}
-                </p>
-                <div className={styles.actions}>
-                  <Link href={`/post/${post.id}`} className={`${styles.btnBase} ${styles.linkView}`}>
-                    보기
-                  </Link>
-                  <Link href={`/upload?edit=${post.id}`} className={`${styles.btnBase} ${styles.btnEdit}`}>
-                    수정
-                  </Link>
-                  <button
-                    type="button"
-                    className={`${styles.btnBase} ${styles.btnDelete}`}
-                    onClick={() => {
-                      setDeleteError(null);
-                      setConfirmId(post.id);
-                    }}
-                  >
-                    삭제
-                  </button>
+      <MyAislesLoungeGossipList posts={loungeGossipPosts} onDeleteClick={openDelete} />
+      {cardPosts.length > 0 ? (
+        <ul className={styles.grid}>
+          {cardPosts.map((post) => (
+            <li key={post.id}>
+              <article className={styles.card}>
+                <Link href={`/post/${post.id}`} className={styles.cardMedia} aria-label={`${post.title} 상세`}>
+                  {post.thumbnail ? (
+                    <MediaThumb url={post.thumbnail} alt="" objectFit="cover" />
+                  ) : (
+                    <div className={styles.placeholder} aria-hidden />
+                  )}
+                  <span className={styles.badge}>{categoryLabel(post.category)}</span>
+                </Link>
+                <div className={styles.cardBody}>
+                  <h2 className={styles.cardTitle}>{post.title}</h2>
+                  <p className={styles.cardMeta}>
+                    {formatDate(post.createdAt)} · 조회 {post.viewCount} · ♥ {post.likeCount}
+                  </p>
+                  <div className={styles.actions}>
+                    <Link href={`/post/${post.id}`} className={`${styles.btnBase} ${styles.linkView}`}>
+                      보기
+                    </Link>
+                    <Link href={`/upload?edit=${post.id}`} className={`${styles.btnBase} ${styles.btnEdit}`}>
+                      수정
+                    </Link>
+                    <button
+                      type="button"
+                      className={`${styles.btnBase} ${styles.btnDelete}`}
+                      onClick={() => openDelete(post.id)}
+                    >
+                      삭제
+                    </button>
+                  </div>
                 </div>
-              </div>
-            </article>
-          </li>
-        ))}
-      </ul>
+              </article>
+            </li>
+          ))}
+        </ul>
+      ) : null}
 
       {confirmPost ? (
         <div

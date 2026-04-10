@@ -33,12 +33,19 @@ export default async function MyAislesPage() {
       createdAt: true,
       viewCount: true,
       likeCount: true,
+      author: { select: { username: true } },
     },
   });
 
   const posts: MyPostRow[] = rows.map((p) => ({
-    ...p,
+    id: p.id,
+    title: p.title,
+    category: p.category,
+    thumbnail: p.thumbnail,
     createdAt: p.createdAt.toISOString(),
+    viewCount: p.viewCount,
+    likeCount: p.likeCount,
+    authorUsername: p.author.username,
   }));
 
   return (

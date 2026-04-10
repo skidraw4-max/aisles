@@ -533,6 +533,130 @@
   color: #a1a1aa;
 }
 
+/* 메인 ALL: Lounge·Gossip 전용 텍스트 리스트 (카드 그리드 위) */
+.allFeedMixBoard {
+  margin: 0 0 1.25rem;
+  width: 100%;
+}
+
+.allFeedMixBoardHeading {
+  margin: 0 0 0.45rem;
+  font-size: var(--type-11);
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #71717a;
+}
+
+.allFeedMixBoardSurface {
+  width: 100%;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: linear-gradient(180deg, rgba(18, 20, 30, 0.92) 0%, rgba(11, 13, 23, 0.88) 100%);
+  overflow: hidden;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.22);
+}
+
+.allFeedMixBoardHead {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 5.75rem 5.5rem;
+  gap: 0.5rem 0.75rem;
+  align-items: center;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #71717a;
+  background: rgba(0, 0, 0, 0.32);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.allFeedMixBoardColTitle {
+  min-width: 0;
+}
+
+.allFeedMixBoardColDate,
+.allFeedMixBoardColAuthor {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.allFeedMixBoardList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.allFeedMixBoardRow {
+  margin: 0;
+  padding: 0;
+}
+
+.allFeedMixBoardLink {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 5.75rem 5.5rem;
+  gap: 0.5rem 0.75rem;
+  align-items: center;
+  padding: 0.5rem 0.75rem;
+  min-width: 0;
+  text-decoration: none;
+  color: #e4e4e7;
+  font-size: var(--type-13);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  transition: background 0.12s ease;
+}
+
+.allFeedMixBoardRow:last-child .allFeedMixBoardLink {
+  border-bottom: none;
+}
+
+.allFeedMixBoardLink:hover {
+  background: rgba(167, 139, 250, 0.08);
+}
+
+.allFeedMixBoardTitleStr {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+  color: #fafafa;
+  letter-spacing: -0.01em;
+}
+
+.allFeedMixBoardDate {
+  text-align: right;
+  font-size: 0.75rem;
+  color: #a1a1aa;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.allFeedMixBoardAuthor {
+  text-align: right;
+  font-size: 0.75rem;
+  color: #a1a1aa;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 480px) {
+  .allFeedMixBoardHead,
+  .allFeedMixBoardLink {
+    grid-template-columns: minmax(0, 1fr) 4.25rem 3.75rem;
+    gap: 0.35rem 0.5rem;
+    padding-left: 0.55rem;
+    padding-right: 0.55rem;
+  }
+
+  .allFeedMixBoardLink {
+    font-size: var(--type-12);
+  }
+}
+
 .allFeed {
   list-style: none;
   margin: 1.5rem 0 0;
@@ -2038,12 +2162,9 @@
   display: none !important;
 }
 
+/* 대형 그라데이션 배너 배경 비표시 (텍스트·캐러셀은 유지) */
 .homeMainHeroBgStack {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  overflow: hidden;
-  border-radius: inherit;
+  display: none;
 }
 
 .homeMainHeroBgSlide {

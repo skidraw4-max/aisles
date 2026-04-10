@@ -121,6 +121,44 @@ function FeedBoardRow({ post, gossipReportStyle }: { post: FeedPostJson; gossipR
   );
 }
 
+/** 메인 ALL: Lounge·Gossip만 제목·작성일·작성자 리스트 */
+function AllFeedLoungeGossipList({ posts }: { posts: FeedPostJson[] }) {
+  if (posts.length === 0) return null;
+  return (
+    <section className={styles.allFeedMixBoard} aria-labelledby="all-feed-lounge-gossip-heading">
+      <h2 id="all-feed-lounge-gossip-heading" className={styles.allFeedMixBoardHeading}>
+        Lounge · Gossip
+      </h2>
+      <div className={styles.allFeedMixBoardSurface}>
+        <div className={styles.allFeedMixBoardHead} role="row">
+          <span className={styles.allFeedMixBoardColTitle} role="columnheader">
+            제목
+          </span>
+          <span className={styles.allFeedMixBoardColDate} role="columnheader">
+            작성일
+          </span>
+          <span className={styles.allFeedMixBoardColAuthor} role="columnheader">
+            작성자
+          </span>
+        </div>
+        <ul className={styles.allFeedMixBoardList} role="list">
+          {posts.map((post) => (
+            <li key={post.id} className={styles.allFeedMixBoardRow}>
+              <Link href={`/post/${post.id}`} className={styles.allFeedMixBoardLink}>
+                <span className={styles.allFeedMixBoardTitleStr}>{post.title}</span>
+                <span className={styles.allFeedMixBoardDate}>{formatDate(post.createdAt)}</span>
+                <span className={styles.allFeedMixBoardAuthor} title={post.author.username}>
+                  {post.author.username}
+                </span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
+  );
+}
+
 function FeedBoardTable({ posts, gossipReportStyle }: { posts: FeedPostJson[]; gossipReportStyle: boolean }) {
   return (
     <div className={`${styles.feedBoardSurface} ${gossipReportStyle ? styles.feedBoardSurfaceGossip : ''}`}>
@@ -165,6 +203,13 @@ export function HomeAllFeed({ sort, category, excludeIds, initialPosts, initialH
 
   const boardList = isFeedBoardListCategory(category);
   const gossipReportStyle = category === 'GOSSIP';
+  const isAllView = category === null;
+  const loungeGossipPosts = isAllView
+    ? posts.filter((p) => p.category === 'LOUNGE' || p.category === 'GOSSIP')
+    : [];
+  const cardPosts = isAllView
+    ? posts.filter((p) => p.category !== 'LOUNGE' && p.category !== 'GOSSIP')
+    : posts;
 
   const fetchJson = useCallback(
     async (url: string, signal: AbortSignal) => {
@@ -231,13 +276,18 @@ export function HomeAllFeed({ sort, category, excludeIds, initialPosts, initialH
       ) : boardList ? (
         <FeedBoardTable posts={posts} gossipReportStyle={gossipReportStyle} />
       ) : (
-        <ul className={styles.allFeed}>
-          {posts.map((post) => (
-            <li key={post.id}>
-              <FeedPostCard post={post} />
-            </li>
-          ))}
-        </ul>
+        <>
+          <AllFeedLoungeGossipList posts={loungeGossipPosts} />
+          {cardPosts.length > 0 ? (
+            <ul className={styles.allFeed}>
+              {cardPosts.map((post) => (
+                <li key={post.id}>
+                  <FeedPostCard post={post} />
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </>
       )}
 
       <div ref={sentinelRef} className={styles.feedSentinel} aria-hidden />
