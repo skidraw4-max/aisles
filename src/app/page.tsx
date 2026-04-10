@@ -5,9 +5,8 @@ import { MediaThumb } from '@/components/MediaThumb';
 import { HomeAllFeed } from '@/components/HomeAllFeed';
 import { HomeMainHero } from '@/components/HomeMainHero';
 import { TodaysBest } from '@/components/TodaysBest';
-import { HomeCompositeSection } from '@/components/HomeCompositeSection';
 import { HomeContentTabs } from '@/components/HomeContentTabs';
-import { HomeLoungeMiniWidget } from '@/components/HomeLoungeMiniWidget';
+import { HomeQuasarBoard } from '@/components/HomeQuasarBoard';
 import { SHOW_HOME_MAIN_HERO } from '@/lib/home-flags';
 import { prisma } from '@/lib/prisma';
 import { homeViewFromSearchParams } from '@/lib/content-tab';
@@ -73,16 +72,19 @@ export default async function HomePage({ searchParams }: PageProps) {
           <Suspense fallback={<div className={styles.contentTabBarFallback} aria-hidden />}>
             <HomeContentTabs />
           </Suspense>
-          {!filterCategory ? (
-            <div className={styles.homeBannerBelow}>
-              <HomeLoungeMiniWidget />
-            </div>
-          ) : null}
         </section>
 
         {!filterCategory ? (
+          <section className={`${styles.section} ${styles.quasarHeroBanner}`}>
+            <div className={styles.feedLayoutHeroFull}>
+              <HomeMainHero />
+            </div>
+          </section>
+        ) : null}
+
+        {!filterCategory ? (
           <section className={styles.section} style={{ paddingTop: 8 }}>
-            <HomeCompositeSection />
+            <HomeQuasarBoard />
           </section>
         ) : null}
 
@@ -93,12 +95,12 @@ export default async function HomePage({ searchParams }: PageProps) {
           <div
             className={[
               styles.feedLayoutRow,
-              !SHOW_HOME_MAIN_HERO ? styles.feedLayoutRowNoHero : '',
+              !filterCategory || !SHOW_HOME_MAIN_HERO ? styles.feedLayoutRowNoHero : '',
             ]
               .filter(Boolean)
               .join(' ')}
           >
-            {SHOW_HOME_MAIN_HERO ? (
+            {filterCategory && SHOW_HOME_MAIN_HERO ? (
               <div className={styles.feedLayoutHeroFull}>
                 <HomeMainHero />
               </div>
