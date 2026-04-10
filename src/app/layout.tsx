@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Script from 'next/script';
 import { Syne, DM_Sans, Roboto_Mono } from 'next/font/google';
 import { SessionProvider, type InitialSession } from '@/components/SessionProvider';
 import { createClient } from '@/lib/supabase/server';
@@ -22,6 +23,8 @@ const mono = Roboto_Mono({
   variable: '--font-mono',
   weight: ['400', '500'],
 });
+
+const GA_MEASUREMENT_ID = 'G-BH4L4PYCJT';
 
 const siteTitle = 'AIsle - AI Recipe & Project Hub';
 
@@ -120,6 +123,18 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang="ko" className={`${display.variable} ${body.variable} ${mono.variable}`}>
       <body className={body.className}>
+        <Script
+          src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
+          strategy="afterInteractive"
+        />
+        <Script id="google-analytics-gtag" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', '${GA_MEASUREMENT_ID}');
+          `}
+        </Script>
         <SessionProvider initialSession={initialSession}>{children}</SessionProvider>
       </body>
     </html>
