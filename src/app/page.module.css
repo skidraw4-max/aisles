@@ -662,8 +662,24 @@
   margin: 1.5rem 0 0;
   padding: 0;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 1.25rem;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: clamp(0.65rem, 1.4vw, 1.25rem);
+}
+
+.allFeed > li {
+  min-width: 0;
+}
+
+@media (max-width: 959px) {
+  .allFeed {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 479px) {
+  .allFeed {
+    grid-template-columns: 1fr;
+  }
 }
 
 .feedCard {
