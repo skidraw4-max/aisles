@@ -1,9 +1,16 @@
 import { prisma } from '@/lib/prisma';
 import { POST_CATEGORY_OPTIONS } from '@/lib/post-categories';
-import type { Category } from '@prisma/client';
+import { normalizePostTagsInput } from '@/lib/post-tags';
+import type { Category, Prisma } from '@prisma/client';
 
 const MAX_QUERY_LEN = 120;
 const MAX_RESULTS = 50;
+
+export type SearchPostsParams = {
+  q?: string;
+  /** 쿼리 `tag` — `normalizePostTagsInput` 후 첫 태그만 사용 */
+  tag?: string;
+};
 
 export type SearchPostHit = {
   id: string;
@@ -19,23 +26,38 @@ function categoryLabel(c: Category): string {
   return POST_CATEGORY_OPTIONS.find((o) => o.value === c)?.label ?? c;
 }
 
-/** 제목·본문·작성자명 부분 일치 (대소문자 무시) */
-export async function searchPostsByQuery(raw: string): Promise<SearchPostHit[]> {
-  const q = raw.trim();
-  if (q.length < 1 || q.length > MAX_QUERY_LEN) {
-    return [];
+function firstNormalizedTag(raw: string | undefined): string | undefined {
+  if (!raw?.trim()) return undefined;
+  const tags = normalizePostTagsInput(raw);
+  return tags[0];
+}
+
+/** 제목·본문·작성자명 부분 일치(대소문자 무시) + 선택적 태그 필터(배열 정확 일치) */
+export async function searchPosts(params: SearchPostsParams): Promise<SearchPostHit[]> {
+  const q = (params.q ?? '').trim();
+  const tag = firstNormalizedTag(params.tag);
+
+  if (!q && !tag) return [];
+  if (q.length > MAX_QUERY_LEN) return [];
+
+  const parts: Prisma.PostWhereInput[] = [];
+  if (tag) parts.push({ tags: { has: tag } });
+  if (q.length > 0) {
+    parts.push({
+      OR: [
+        { title: { contains: q, mode: 'insensitive' } },
+        { content: { contains: q, mode: 'insensitive' } },
+        { author: { username: { contains: q, mode: 'insensitive' } } },
+      ],
+    });
   }
+
+  const where: Prisma.PostWhereInput = parts.length === 1 ? parts[0]! : { AND: parts };
 
   let posts;
   try {
     posts = await prisma.post.findMany({
-      where: {
-        OR: [
-          { title: { contains: q, mode: 'insensitive' } },
-          { content: { contains: q, mode: 'insensitive' } },
-          { author: { username: { contains: q, mode: 'insensitive' } } },
-        ],
-      },
+      where,
       orderBy: { createdAt: 'desc' },
       take: MAX_RESULTS,
       select: {
@@ -48,7 +70,7 @@ export async function searchPostsByQuery(raw: string): Promise<SearchPostHit[]> 
       },
     });
   } catch (err) {
-    console.error('[searchPostsByQuery]', err);
+    console.error('[searchPosts]', err);
     return [];
   }
 
@@ -70,3 +92,4 @@ export async function searchPostsByQuery(raw: string): Promise<SearchPostHit[]> 
     };
   });
 }
+
