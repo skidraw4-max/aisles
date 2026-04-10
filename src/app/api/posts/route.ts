@@ -9,6 +9,7 @@ import { isTrustedMediaUrl } from '@/lib/r2-url';
 import type { Category } from '@prisma/client';
 import { categoryAllowsOptionalThumbnail, parsePostCategory } from '@/lib/post-categories';
 import { parseMediaUrlsField } from '@/lib/post-media-urls';
+import { normalizePostTagsInput } from '@/lib/post-tags';
 
 const MEDIA_EXT = new Map<string, string>([
   ['image/jpeg', 'jpg'],
@@ -163,6 +164,7 @@ async function postFromJson(req: NextRequest) {
     return NextResponse.json({ error: linkResult.message }, { status: 400 });
   }
   const externalLink = linkResult.value;
+  const tags = normalizePostTagsInput(b.tags);
 
   try {
     await ensurePrismaUser(user);
@@ -173,6 +175,7 @@ async function postFromJson(req: NextRequest) {
         content,
         thumbnail,
         attachmentUrls,
+        tags,
         authorId: user.id,
         ...(externalLink != null ? { externalLink } : {}),
         ...(category === 'RECIPE'
@@ -192,6 +195,7 @@ async function postFromJson(req: NextRequest) {
         content: true,
         thumbnail: true,
         attachmentUrls: true,
+        tags: true,
         createdAt: true,
       },
     });
@@ -238,6 +242,8 @@ async function postFromMultipart(req: NextRequest) {
     return NextResponse.json({ error: linkResult.message }, { status: 400 });
   }
   const externalLink = linkResult.value;
+  const tagsRaw = form.get('tags');
+  const tags = normalizePostTagsInput(typeof tagsRaw === 'string' ? tagsRaw : '');
 
   const file = form.get('file');
   let thumbnail: string | null = null;
@@ -283,6 +289,7 @@ async function postFromMultipart(req: NextRequest) {
         content,
         thumbnail,
         attachmentUrls: [],
+        tags,
         authorId: user.id,
         ...(externalLink != null ? { externalLink } : {}),
       },
@@ -293,6 +300,7 @@ async function postFromMultipart(req: NextRequest) {
         content: true,
         thumbnail: true,
         attachmentUrls: true,
+        tags: true,
         createdAt: true,
       },
     });

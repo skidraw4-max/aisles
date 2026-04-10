@@ -1,8 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { usePostLike } from './PostLikeContext';
 import styles from './post.module.css';
 
 export type CommentDTO = {
@@ -16,8 +17,6 @@ export type CommentDTO = {
 
 type Props = {
   postId: string;
-  initialLikeCount: number;
-  initialLiked: boolean;
   initialComments: CommentDTO[];
   currentUserId: string | null;
   /** 로그인 시 Prisma 프로필 닉네임(낙관적 댓글·표시용) */
@@ -37,8 +36,6 @@ function avatarInitials(username: string) {
 
 export function PostEngagement({
   postId,
-  initialLikeCount,
-  initialLiked,
   initialComments,
   currentUserId,
   currentUsername,
@@ -46,10 +43,7 @@ export function PostEngagement({
   listHref,
   adjacentNav,
 }: Props) {
-  const [likeCount, setLikeCount] = useState(initialLikeCount);
-  const [liked, setLiked] = useState(initialLiked);
-  const [likePending, setLikePending] = useState(false);
-  const likeInFlightRef = useRef(false);
+  const { likeCount, liked, likePending, toggleLike, likeError } = usePostLike();
   const [comments, setComments] = useState(initialComments);
   const [body, setBody] = useState('');
   const [commentLoading, setCommentLoading] = useState(false);
@@ -75,56 +69,12 @@ export function PostEngagement({
     })();
   }, []);
 
-  useEffect(() => {
-    setLikeCount(initialLikeCount);
-    setLiked(initialLiked);
-    likeInFlightRef.current = false;
-    setLikePending(false);
-  }, [postId, initialLikeCount, initialLiked]);
-
   async function getToken() {
     const supabase = createClient();
     const {
       data: { session },
     } = await supabase.auth.getSession();
     return session?.access_token ?? null;
-  }
-
-  async function handleLike() {
-    setError(null);
-    const token = await getToken();
-    if (!token) {
-      setError('로그인 후 추천할 수 있습니다.');
-      return;
-    }
-    if (likeInFlightRef.current) return;
-    likeInFlightRef.current = true;
-    setLikePending(true);
-
-    const prevLiked = liked;
-    const prevCount = likeCount;
-    setLiked(!prevLiked);
-    setLikeCount((c) => (prevLiked ? Math.max(0, c - 1) : c + 1));
-
-    try {
-      const res = await fetch(`/api/posts/${postId}/like`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = (await res.json()) as { error?: string; liked?: boolean; likeCount?: number };
-      if (!res.ok) throw new Error(data.error || '요청에 실패했습니다.');
-      if (typeof data.liked === 'boolean' && typeof data.likeCount === 'number') {
-        setLiked(data.liked);
-        setLikeCount(data.likeCount);
-      }
-    } catch (e) {
-      setLiked(prevLiked);
-      setLikeCount(prevCount);
-      setError(e instanceof Error ? e.message : '추천 처리에 실패했습니다.');
-    } finally {
-      likeInFlightRef.current = false;
-      setLikePending(false);
-    }
   }
 
   const scrollToComments = useCallback(() => {
@@ -247,7 +197,7 @@ export function PostEngagement({
         <button
           type="button"
           className={liked ? styles.floatingLikeActive : styles.floatingLike}
-          onClick={() => void handleLike()}
+          onClick={() => void toggleLike()}
           disabled={likePending}
           aria-pressed={liked}
           aria-busy={likePending}
@@ -291,9 +241,9 @@ export function PostEngagement({
         </p>
       ) : null}
 
-      {error ? (
+      {error || likeError ? (
         <p className={styles.engagementErr} role="alert">
-          {error}
+          {error || likeError}
         </p>
       ) : null}
 

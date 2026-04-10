@@ -15,7 +15,7 @@ export type MyPostRow = {
   category: Category;
   thumbnail: string | null;
   createdAt: string;
-  viewCount: number;
+  views: number;
   likeCount: number;
   authorUsername: string;
 };
@@ -189,7 +189,7 @@ export function MyPostsGrid({ posts }: { posts: MyPostRow[] }) {
                 <div className={styles.cardBody}>
                   <h2 className={styles.cardTitle}>{post.title}</h2>
                   <p className={styles.cardMeta}>
-                    {formatDate(post.createdAt)} · 조회 {post.viewCount} · ♥ {post.likeCount}
+                    {formatDate(post.createdAt)} · 조회 {post.views} · ♥ {post.likeCount}
                   </p>
                   <div className={styles.actions}>
                     <Link href={`/post/${post.id}`} className={`${styles.btnBase} ${styles.linkView}`}>

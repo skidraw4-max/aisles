@@ -32,16 +32,21 @@ model Post {
   thumbnail   String?
   /// 대표 썸네일 외 추가 미디어 URL (최대 4개 + thumbnail = 5개까지)
   attachmentUrls String[] @default([])
-  viewCount   Int         @default(0)
+  /// 상세·피드 조회수
+  views       Int         @default(0)
+  /// 좋아요 수(비정규화). 실제 누른 유저는 `likes` 관계(PostLike)
   likeCount   Int         @default(0)
   /// 메인 상단 등 에디터 픽 노출용
   isFeatured  Boolean     @default(false)
   /// 출시·외부 서비스 페이지 등 연결 URL (선택)
   externalLink String?
+  /// 해시태그 (#은 표시 시만 붙임)
+  tags        String[]    @default([])
   author      User        @relation(fields: [authorId], references: [id])
   authorId    String
   metadata    AiMetadata?
   launchInfo  LaunchInfo?
+  /// 좋아요를 누른 유저와의 관계 (PostLike)
   likes       PostLike[]
   comments    Comment[]
   createdAt   DateTime    @default(now())

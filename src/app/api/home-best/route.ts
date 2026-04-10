@@ -42,7 +42,7 @@ export async function GET(req: NextRequest) {
       LEFT JOIN "Comment" c ON c."postId" = p.id
       WHERE ${whereSql}
       GROUP BY p.id
-      ORDER BY COUNT(c.id) DESC, (p."viewCount" * 1 + p."likeCount" * 5) DESC, p."createdAt" DESC
+      ORDER BY COUNT(c.id) DESC, (p."views" * 1 + p."likeCount" * 5) DESC, p."createdAt" DESC
       LIMIT ${PAGE_SIZE} OFFSET ${skip}
     `;
 

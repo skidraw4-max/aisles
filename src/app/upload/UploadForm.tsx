@@ -18,6 +18,7 @@ export type UploadEditInitial = {
   prompt: string;
   thumbnail: string;
   attachmentUrls: string[];
+  tags: string[];
 };
 
 type Props = { editInitial?: UploadEditInitial | null };
@@ -64,6 +65,7 @@ export function UploadForm({ editInitial = null }: Props) {
   const [pasteMessage, setPasteMessage] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [tags, setTags] = useState('');
 
   const beginUpload = useCallback(() => {
     setUploadCount((c) => c + 1);
@@ -101,6 +103,7 @@ export function UploadForm({ editInitial = null }: Props) {
     setDescription('');
     setPrompt('');
     setExternalLink('');
+    setTags('');
     setMediaSlots([]);
     setPasteMessage(null);
   }, [editInitial]);
@@ -122,6 +125,7 @@ export function UploadForm({ editInitial = null }: Props) {
     setDescription(editInitial.content);
     setPrompt(editInitial.prompt);
     setExternalLink(editInitial.externalLink);
+    setTags((editInitial.tags ?? []).filter(Boolean).join(', '));
     const slots: MediaSlot[] = [];
     const thumb = editInitial.thumbnail.trim();
     if (thumb) slots.push({ id: 'thumb', name: '대표 미디어', url: thumb });
@@ -269,6 +273,7 @@ export function UploadForm({ editInitial = null }: Props) {
         if (showServiceLink) {
           patchBody.externalLink = linkTrim;
         }
+        patchBody.tags = tags;
         const res = await fetch(`/api/posts/${editInitial.id}`, {
           method: 'PATCH',
           headers: {
@@ -297,6 +302,9 @@ export function UploadForm({ editInitial = null }: Props) {
       }
       if (showServiceLink && linkTrim) {
         body.externalLink = linkTrim;
+      }
+      if (tags.trim()) {
+        body.tags = tags;
       }
 
       const res = await fetch('/api/posts', {
@@ -389,6 +397,20 @@ export function UploadForm({ editInitial = null }: Props) {
             rows={isLounge ? 6 : 4}
           />
           <p className={styles.pasteHint}>클립보드에서 이미지(Ctrl+V) 붙여넣기 지원</p>
+        </label>
+
+        <label className={styles.label}>
+          태그 (선택)
+          <input
+            className={styles.input}
+            type="text"
+            value={tags}
+            onChange={(ev) => setTags(ev.target.value)}
+            placeholder="예: 프롬프트, 한복, SDXL — 쉼표·공백으로 구분"
+          />
+          <p className={styles.hint} style={{ marginTop: '0.35rem' }}>
+            상세 페이지 본문 하단에 #태그 형태로 표시됩니다.
+          </p>
         </label>
 
         {isLab ? (

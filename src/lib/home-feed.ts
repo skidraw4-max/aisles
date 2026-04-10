@@ -80,7 +80,7 @@ export async function fetchFeedPosts(
     const idRows = await prisma.$queryRaw<{ id: string }[]>`
       SELECT p.id FROM "Post" p
       WHERE ${Prisma.join(conditions, ' AND ')}
-      ORDER BY (p."viewCount" * ${HOT_VIEW_WEIGHT} + p."likeCount" * ${HOT_LIKE_WEIGHT}) DESC, p."createdAt" DESC
+      ORDER BY (p."views" * ${HOT_VIEW_WEIGHT} + p."likeCount" * ${HOT_LIKE_WEIGHT}) DESC, p."createdAt" DESC
       LIMIT ${take + 1} OFFSET ${skip}
     `;
 

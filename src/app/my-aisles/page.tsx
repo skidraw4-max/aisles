@@ -31,7 +31,7 @@ export default async function MyAislesPage() {
       category: true,
       thumbnail: true,
       createdAt: true,
-      viewCount: true,
+      views: true,
       likeCount: true,
       author: { select: { username: true } },
     },
@@ -43,7 +43,7 @@ export default async function MyAislesPage() {
     category: p.category,
     thumbnail: p.thumbnail,
     createdAt: p.createdAt.toISOString(),
-    viewCount: p.viewCount,
+    views: p.views,
     likeCount: p.likeCount,
     authorUsername: p.author.username,
   }));

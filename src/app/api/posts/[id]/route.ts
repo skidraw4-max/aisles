@@ -4,6 +4,7 @@ import { getUserFromBearer } from '@/lib/auth-bearer';
 import { ensurePrismaUser } from '@/lib/ensure-user';
 import { isTrustedMediaUrl } from '@/lib/r2-url';
 import { parseMediaUrlsField } from '@/lib/post-media-urls';
+import { normalizePostTagsInput } from '@/lib/post-tags';
 import type { Category } from '@prisma/client';
 
 type Ctx = { params: Promise<{ id: string }> };
@@ -105,6 +106,7 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
     thumbnail?: string | null;
     attachmentUrls?: string[];
     externalLink?: string | null;
+    tags?: string[];
   } = {};
 
   if (typeof b.title === 'string') {
@@ -173,6 +175,10 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
     }
   }
 
+  if ('tags' in b) {
+    data.tags = normalizePostTagsInput(b.tags);
+  }
+
   let metadataUpsert: { create: { prompt: string }; update: { prompt: string } } | undefined;
   if (post.category === 'RECIPE' && typeof b.prompt === 'string') {
     const promptRaw = b.prompt.trim();
@@ -183,10 +189,7 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
     metadataUpsert = { create: { prompt }, update: { prompt } };
   }
 
-  if (
-    Object.keys(data).length === 0 &&
-    metadataUpsert === undefined
-  ) {
+  if (Object.keys(data).length === 0 && metadataUpsert === undefined) {
     return NextResponse.json({ error: '수정할 항목이 없습니다.' }, { status: 400 });
   }
 
@@ -211,6 +214,7 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
         thumbnail: true,
         attachmentUrls: true,
         externalLink: true,
+        tags: true,
         createdAt: true,
       },
     });

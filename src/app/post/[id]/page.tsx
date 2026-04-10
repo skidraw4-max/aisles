@@ -8,6 +8,8 @@ import { createClient } from '@/lib/supabase/server';
 import { POST_CATEGORY_OPTIONS, homeHrefForCategory } from '@/lib/post-categories';
 import { resolveRecipePrompt } from '@/lib/recipe-prompt';
 import { PostEngagement } from './PostEngagement';
+import { PostLikeProvider } from './PostLikeContext';
+import { PostSocialIndicatorBar } from './PostSocialIndicatorBar';
 import { RecipePromptSection } from './RecipePromptSection';
 import { GalleryPostMedia } from './GalleryPostMedia';
 import { BuildLaunchDoc } from './BuildLaunchDoc';
@@ -18,6 +20,8 @@ import { DosDontsSection } from './DosDontsSection';
 import { ExternalServiceCta } from './ExternalServiceCta';
 import { LaunchVisitProjectCta } from './LaunchVisitProjectCta';
 import { PostCategoryBoardList } from './PostCategoryBoardList';
+import { PostTags } from './PostTags';
+import { incrementPostViews } from './actions';
 import { PostOwnerActions } from './PostOwnerActions';
 import { PostRichContent } from '@/lib/PostRichContent';
 import styles from './post.module.css';
@@ -104,17 +108,11 @@ export default async function PostPage({ params }: Props) {
   }
   if (!post) notFound();
 
-  /** 상세 페이지 요청마다 조회수 +1 (Prisma Post.viewCount) */
-  let displayViewCount = post.viewCount;
-  try {
-    const viewed = await prisma.post.update({
-      where: { id: post.id },
-      data: { viewCount: { increment: 1 } },
-      select: { viewCount: true },
-    });
-    displayViewCount = viewed.viewCount;
-  } catch {
-    /* DB에 viewCount 컬럼이 없으면 스키마/마이그레이션 후 재시도 */
+  /** 상세 페이지 요청마다 조회수 +1 (서버 액션) */
+  let displayViews = post.views;
+  const nextViews = await incrementPostViews(post.id);
+  if (nextViews != null) {
+    displayViews = nextViews;
   }
 
   const supabase = await createClient();
@@ -186,7 +184,7 @@ export default async function PostPage({ params }: Props) {
       select: {
         id: true,
         title: true,
-        viewCount: true,
+        views: true,
         author: { select: { username: true } },
         _count: { select: { comments: true } },
       },
@@ -242,7 +240,7 @@ export default async function PostPage({ params }: Props) {
   const categoryBoardItems = categoryBoardPosts.map((p) => ({
     id: p.id,
     title: p.title,
-    viewCount: p.viewCount,
+    views: p.views,
     authorUsername: p.author.username,
     commentCount: p._count.comments,
   }));
@@ -260,7 +258,7 @@ export default async function PostPage({ params }: Props) {
       <LaunchVisitProjectCta href={externalHref} size="hero" />
     ) : null;
 
-  const headerBlock = (
+  const postDetailHeader = (
     <header className={styles.magazinePostHeader}>
       <span className={`${styles.categoryTag} ${categoryTagClass(post.category)}`}>{catLabel}</span>
       <div
@@ -273,6 +271,7 @@ export default async function PostPage({ params }: Props) {
         <h1 className={styles.magazineTitle}>{post.title}</h1>
         {titleLaunchCta}
       </div>
+      <PostSocialIndicatorBar views={displayViews} commentCount={comments.length} />
       <div className={styles.authorStatsRow}>
         <div className={styles.authorBlock}>
           <div className={styles.authorAvatar}>
@@ -302,24 +301,6 @@ export default async function PostPage({ params }: Props) {
           >
             {formatDateShort(post.createdAt)}
           </time>
-          <span className={styles.statItem} title="조회수">
-            <span className={styles.statIcon} aria-hidden>
-              👁
-            </span>
-            {displayViewCount.toLocaleString('ko-KR')}
-          </span>
-          <span className={styles.statItem} title="좋아요">
-            <span className={styles.statIcon} aria-hidden>
-              ♥
-            </span>
-            {post.likeCount.toLocaleString('ko-KR')}
-          </span>
-          <span className={styles.statItem} title="댓글">
-            <span className={styles.statIcon} aria-hidden>
-              💬
-            </span>
-            {comments.length.toLocaleString('ko-KR')}
-          </span>
         </div>
       </div>
     </header>
@@ -372,15 +353,20 @@ export default async function PostPage({ params }: Props) {
           <div className={styles.magazineGrid}>
             <div className={styles.magazineMainCol}>
               <article className={styles.magazineArticle}>
-                <PostTopBreadcrumb category={post.category} />
-                {isGallery ? (
-                  <>
-                    {mainMediaBlock}
-                    {headerBlock}
-                  </>
-                ) : (
-                  <>
-                    {headerBlock}
+                <PostLikeProvider
+                  postId={post.id}
+                  initialLikeCount={post.likeCount}
+                  initialLiked={Boolean(likedRow)}
+                >
+                  <PostTopBreadcrumb category={post.category} />
+                  {isGallery ? (
+                    <>
+                      {mainMediaBlock}
+                      {postDetailHeader}
+                    </>
+                  ) : (
+                    <>
+                      {postDetailHeader}
                     {showLabDescription && post.content ? (
                       <PostRichContent
                         text={post.content}
@@ -472,28 +458,29 @@ export default async function PostPage({ params }: Props) {
                   <LaunchVisitProjectCta href={externalHref} size="footer" />
                 ) : null}
 
-                <PostEngagement
-                  postId={post.id}
-                  initialLikeCount={post.likeCount}
-                  initialLiked={Boolean(likedRow)}
-                  initialComments={initialComments}
-                  currentUserId={user?.id ?? null}
-                  currentUsername={meProfile?.username ?? null}
-                  currentAvatarUrl={meProfile?.avatarUrl ?? null}
-                  listHref={listHref}
-                  adjacentNav={<PostAdjacentNav prev={prevPost} next={nextPost} />}
-                />
+                <PostTags tags={post.tags} />
 
-                {user?.id === post.authorId ? (
-                  <PostOwnerActions postId={post.id} postTitle={post.title} afterDeleteHref={listHref} />
-                ) : null}
+                  <PostEngagement
+                    postId={post.id}
+                    initialComments={initialComments}
+                    currentUserId={user?.id ?? null}
+                    currentUsername={meProfile?.username ?? null}
+                    currentAvatarUrl={meProfile?.avatarUrl ?? null}
+                    listHref={listHref}
+                    adjacentNav={<PostAdjacentNav prev={prevPost} next={nextPost} />}
+                  />
 
-                <PostCategoryBoardList
-                  category={post.category}
-                  categoryLabel={catLabel}
-                  currentPostId={post.id}
-                  posts={categoryBoardItems}
-                />
+                  {user?.id === post.authorId ? (
+                    <PostOwnerActions postId={post.id} postTitle={post.title} afterDeleteHref={listHref} />
+                  ) : null}
+
+                  <PostCategoryBoardList
+                    category={post.category}
+                    categoryLabel={catLabel}
+                    currentPostId={post.id}
+                    posts={categoryBoardItems}
+                  />
+                </PostLikeProvider>
               </article>
             </div>
             {sidebar}

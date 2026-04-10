@@ -6,7 +6,7 @@ import styles from './post.module.css';
 export type PostCategoryBoardItem = {
   id: string;
   title: string;
-  viewCount: number;
+  views: number;
   authorUsername: string;
   commentCount: number;
 };
@@ -83,7 +83,7 @@ export function PostCategoryBoardList({
                         {p.authorUsername}
                       </span>
                       <span className={styles.postCategoryBoardViews} title="조회수">
-                        {p.viewCount.toLocaleString('ko-KR')}
+                        {p.views.toLocaleString('ko-KR')}
                       </span>
                     </span>
                   </Link>

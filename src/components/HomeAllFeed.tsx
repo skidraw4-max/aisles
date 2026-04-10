@@ -113,7 +113,7 @@ function FeedBoardRow({ post, gossipReportStyle }: { post: FeedPostJson; gossipR
             {post.author.username}
           </span>
           <span className={styles.feedBoardFreeViews} title="조회수">
-            {post.viewCount.toLocaleString('ko-KR')}
+            {post.views.toLocaleString('ko-KR')}
           </span>
         </span>
       </Link>

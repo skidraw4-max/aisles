@@ -16,7 +16,7 @@ export async function fetchHotTopForCategory(
     const idRows = await prisma.$queryRaw<{ id: string }[]>`
       SELECT p.id FROM "Post" p
       WHERE p.category = ${category}::"Category"
-      ORDER BY (p."viewCount" * ${HOT_VIEW_WEIGHT} + p."likeCount" * ${HOT_LIKE_WEIGHT}) DESC, p."createdAt" DESC
+      ORDER BY (p."views" * ${HOT_VIEW_WEIGHT} + p."likeCount" * ${HOT_LIKE_WEIGHT}) DESC, p."createdAt" DESC
       LIMIT ${take}
     `;
 
