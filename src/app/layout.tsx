@@ -26,31 +26,38 @@ const mono = Roboto_Mono({
 
 const GA_MEASUREMENT_ID = 'G-BH4L4PYCJT';
 
-const siteTitle = 'AIsle - AI Recipe & Project Hub';
+const siteUrl = 'https://aisleshub.com';
+
+const siteTitle = 'AIsleHub - AI 프롬프트 레시피 & 커뮤니티';
 
 const siteDescription =
-  '프롬프트 레시피(Lab)부터 비주얼 갤러리, 빌드 노트, AI 서비스 런치까지—네 개의 복도에서 영감을 모으고 작품을 완성하세요. 크리에이터와 빌더를 위한 AI 허브, AIsle.';
+  'AI 프롬프트 공유부터 커뮤니티 소통까지, 나만의 AI 레시피를 발견하세요.';
+
+const ogTitle = 'AIsleHub';
+
+const ogDescription = 'AI 프롬프트 공유 및 커뮤니티 플랫폼';
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://aisles.kr'),
+  metadataBase: new URL(siteUrl),
   title: siteTitle,
   description: siteDescription,
   keywords: [
+    'AIsleHub',
     'AIsle',
     'AI',
     '프롬프트',
     '레시피',
+    '커뮤니티',
     'Lab',
     'Gallery',
     'Build',
     'Launch',
     '크리에이터',
-    '프로젝트 허브',
   ],
-  applicationName: 'AIsle',
-  authors: [{ name: 'AIsle', url: 'https://aisles.kr' }],
-  creator: 'AIsle',
-  publisher: 'AIsle',
+  applicationName: 'AIsleHub',
+  authors: [{ name: 'AIsleHub', url: siteUrl }],
+  creator: 'AIsleHub',
+  publisher: 'AIsleHub',
   formatDetection: {
     email: false,
     address: false,
@@ -59,27 +66,27 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'ko_KR',
-    url: 'https://aisles.kr',
-    siteName: 'AIsle',
-    title: siteTitle,
-    description: siteDescription,
+    url: siteUrl,
+    siteName: 'AIsleHub',
+    title: ogTitle,
+    description: ogDescription,
     images: [
       {
-        url: '/opengraph-image',
+        url: '/og-image.png',
         width: 1200,
         height: 630,
-        alt: 'AIsle — Lab · Gallery · Build · Launch',
+        alt: 'AIsleHub — AI 프롬프트 레시피 & 커뮤니티',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: siteTitle,
-    description: siteDescription,
-    images: ['/twitter-image'],
+    title: ogTitle,
+    description: ogDescription,
+    images: ['/og-image.png'],
   },
   alternates: {
-    canonical: 'https://aisles.kr',
+    canonical: siteUrl,
   },
   robots: {
     index: true,

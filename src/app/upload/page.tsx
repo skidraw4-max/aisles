@@ -74,7 +74,7 @@ export default async function UploadPage({ searchParams }: PageProps) {
           <p className={styles.hint} style={{ margin: '-0.5rem 0 1.25rem', maxWidth: 560 }}>
             {isEdit
               ? '내용을 바꾼 뒤 수정 저장하면 My Aisles로 돌아갑니다. 미디어를 바꾸려면 새 파일을 선택해 R2에 다시 올리면 됩니다.'
-              : '이미지 또는 영상을 선택하면 Cloudflare R2에 올립니다. LAB을 고르면 프롬프트 입력란이 열립니다. 저장 시 작성자는 현재 로그인 계정으로 기록되며, 완료 후 메인(/)으로 이동합니다.'}
+              : '나만의 작품과 아이디어를 자유롭게 공유해 보세요. 선택한 카테고리에 맞춰 글 작성이 시작됩니다.'}
           </p>
           <UploadForm editInitial={editInitial} />
         </div>
