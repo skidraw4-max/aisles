@@ -24,6 +24,7 @@ import { PostTags } from './PostTags';
 import { incrementPostViews } from './actions';
 import { PostOwnerActions } from './PostOwnerActions';
 import { PostRichContent } from '@/lib/PostRichContent';
+import { getCanonicalSiteUrl } from '@/lib/canonical-site-url';
 import styles from './post.module.css';
 
 export const dynamic = 'force-dynamic';
@@ -79,13 +80,41 @@ function excerptFrom(text: string | null | undefined) {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
+  const base = getCanonicalSiteUrl();
   try {
     const post = await prisma.post.findUnique({
       where: { id },
-      select: { title: true },
+      select: { title: true, content: true, thumbnail: true, createdAt: true },
     });
     if (!post) return { title: '게시글 — AIsle' };
-    return { title: `${post.title} — AIsle` };
+    const description = excerptFrom(post.content);
+    const url = `${base}/post/${id}`;
+    const thumbRaw = post.thumbnail?.trim();
+    const thumbAbs =
+      thumbRaw && (thumbRaw.startsWith('http://') || thumbRaw.startsWith('https://'))
+        ? thumbRaw
+        : thumbRaw
+          ? new URL(thumbRaw.startsWith('/') ? thumbRaw : `/${thumbRaw}`, base).href
+          : undefined;
+    return {
+      title: `${post.title} — AIsle`,
+      description,
+      alternates: { canonical: url },
+      openGraph: {
+        type: 'article',
+        url,
+        title: post.title,
+        description,
+        publishedTime: post.createdAt.toISOString(),
+        ...(thumbAbs ? { images: [{ url: thumbAbs, alt: post.title }] } : {}),
+      },
+      twitter: {
+        card: thumbAbs ? 'summary_large_image' : 'summary',
+        title: post.title,
+        description,
+        ...(thumbAbs ? { images: [thumbAbs] } : {}),
+      },
+    };
   } catch {
     return { title: '게시글 — AIsle' };
   }

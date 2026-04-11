@@ -4,6 +4,7 @@ import { Syne, DM_Sans, Roboto_Mono } from 'next/font/google';
 import { SessionProvider, type InitialSession } from '@/components/SessionProvider';
 import { createClient } from '@/lib/supabase/server';
 import { prisma } from '@/lib/prisma';
+import { getCanonicalSiteUrl } from '@/lib/canonical-site-url';
 import './globals.css';
 
 const display = Syne({
@@ -26,7 +27,7 @@ const mono = Roboto_Mono({
 
 const GA_MEASUREMENT_ID = 'G-BH4L4PYCJT';
 
-const siteUrl = 'https://aisleshub.com';
+const siteUrl = getCanonicalSiteUrl();
 
 const siteTitle = 'AIsleHub - AI 프롬프트 레시피 & 커뮤니티';
 
@@ -91,7 +92,20 @@ export const metadata: Metadata = {
   robots: {
     index: true,
     follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
   },
+  ...(process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION?.trim()
+    ? {
+        verification: {
+          google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION.trim(),
+        },
+      }
+    : {}),
 };
 
 async function getInitialSession(): Promise<InitialSession> {
@@ -127,9 +141,36 @@ async function getInitialSession(): Promise<InitialSession> {
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const initialSession = await getInitialSession();
 
+  const siteJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: 'AIsleHub',
+    url: siteUrl,
+    description: siteDescription,
+    inLanguage: 'ko-KR',
+    publisher: {
+      '@type': 'Organization',
+      name: 'AIsleHub',
+      url: siteUrl,
+    },
+    potentialAction: {
+      '@type': 'SearchAction',
+      target: {
+        '@type': 'EntryPoint',
+        urlTemplate: `${siteUrl}/search?q={search_term_string}`,
+      },
+      'query-input': 'required name=search_term_string',
+    },
+  };
+
   return (
     <html lang="ko" className={`${display.variable} ${body.variable} ${mono.variable}`}>
       <body className={body.className}>
+        <script
+          type="application/ld+json"
+          // eslint-disable-next-line react/no-danger
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(siteJsonLd) }}
+        />
         <Script
           src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
           strategy="afterInteractive"
