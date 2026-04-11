@@ -3,6 +3,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { ensurePrismaUser } from '@/lib/ensure-user';
 import { MEDIA_STORAGE_NOT_CONFIGURED, uploadPublicObject } from '@/lib/r2';
+import { UPLOAD_IMAGE_MAX_BYTES, formatUploadMaxSizeLabel } from '@/lib/upload-limits';
+import { applyWatermarkForUpload } from '@/lib/watermark-image';
 
 const MEDIA_EXT = new Map<string, string>([
   ['image/jpeg', 'jpg'],
@@ -13,8 +15,6 @@ const MEDIA_EXT = new Map<string, string>([
   ['video/webm', 'webm'],
   ['video/quicktime', 'mov'],
 ]);
-
-const MAX_BYTES = 100 * 1024 * 1024;
 
 export const maxDuration = 120;
 
@@ -52,8 +52,13 @@ export async function POST(req: NextRequest) {
   if (!file || !(file instanceof File)) {
     return NextResponse.json({ error: '파일을 선택해 주세요.' }, { status: 400 });
   }
-  if (file.size > MAX_BYTES) {
-    return NextResponse.json({ error: '파일 크기는 100MB 이하여야 합니다.' }, { status: 400 });
+  if (file.size > UPLOAD_IMAGE_MAX_BYTES) {
+    return NextResponse.json(
+      {
+        error: `파일 크기는 ${formatUploadMaxSizeLabel()} 이하여야 합니다. (Vercel 등 서버리스 업로드 한도)`,
+      },
+      { status: 400 }
+    );
   }
 
   const ext = MEDIA_EXT.get(file.type);
@@ -64,9 +69,12 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const buf = Buffer.from(await file.arrayBuffer());
+  let buf = Buffer.from(await file.arrayBuffer());
+  const watermarked = await applyWatermarkForUpload({ buffer: buf, mimeType: file.type, ext });
+  buf = Buffer.from(watermarked.buffer);
+  const uploadMime = watermarked.mimeType;
   const key = `posts/${user.id}/${randomUUID()}.${ext}`;
-  const uploaded = await uploadPublicObject(key, buf, file.type);
+  const uploaded = await uploadPublicObject(key, buf, uploadMime);
   if ('error' in uploaded) {
     return NextResponse.json(
       {

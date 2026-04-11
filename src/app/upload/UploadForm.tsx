@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client';
 import { MediaThumb } from '@/components/MediaThumb';
 import { UPLOAD_CATEGORY_OPTIONS, categoryAllowsOptionalThumbnail } from '@/lib/post-categories';
 import { MAX_POST_MEDIA } from '@/lib/post-media-urls';
+import { UPLOAD_IMAGE_MAX_BYTES, formatUploadMaxSizeLabel } from '@/lib/upload-limits';
 import type { Category } from '@prisma/client';
 import styles from './upload.module.css';
 
@@ -76,6 +77,11 @@ export function UploadForm({ editInitial = null }: Props) {
 
   const uploadFileToR2 = useCallback(
     async (file: File): Promise<string> => {
+      if (file.size > UPLOAD_IMAGE_MAX_BYTES) {
+        throw new Error(
+          `파일이 너무 큽니다. ${formatUploadMaxSizeLabel()} 이하로 줄여 주세요. (호스팅 업로드 한도)`
+        );
+      }
       const supabase = createClient();
       const {
         data: { session },
@@ -88,7 +94,27 @@ export function UploadForm({ editInitial = null }: Props) {
         headers: { Authorization: `Bearer ${session.access_token}` },
         body: fd,
       });
-      const data = (await res.json()) as { error?: string; url?: string };
+      const text = await res.text();
+      let data: { error?: string; url?: string } = {};
+      if (text) {
+        try {
+          data = JSON.parse(text) as { error?: string; url?: string };
+        } catch {
+          const snippet = text.trim().slice(0, 160);
+          const entityTooLarge =
+            res.status === 413 ||
+            /request\s+entity\s+too\s+large/i.test(text) ||
+            /^request\s+en/i.test(snippet);
+          if (!res.ok) {
+            throw new Error(
+              entityTooLarge
+                ? `파일이 너무 큽니다. ${formatUploadMaxSizeLabel()} 이하로 줄여 주세요.`
+                : snippet || `업로드 실패 (HTTP ${res.status})`
+            );
+          }
+          throw new Error('서버 응답을 해석할 수 없습니다.');
+        }
+      }
       if (!res.ok) throw new Error(data.error || 'R2 업로드에 실패했습니다.');
       if (!data.url) throw new Error('업로드 URL을 받지 못했습니다.');
       return data.url;
@@ -511,8 +537,8 @@ export function UploadForm({ editInitial = null }: Props) {
             </ul>
           ) : null}
           <p className={styles.hint}>
-            첫 번째 파일이 목록·상세의 대표 미디어로 쓰입니다. JPEG, PNG, WebP, GIF, MP4, WebM, MOV · 파일당 최대
-            100MB
+            첫 번째 파일이 목록·상세의 대표 미디어로 쓰입니다. JPEG, PNG, WebP, GIF, MP4, WebM, MOV · 파일당 최대{' '}
+            {formatUploadMaxSizeLabel()} (Vercel 등 서버리스 업로드 한도)
           </p>
         </div>
 

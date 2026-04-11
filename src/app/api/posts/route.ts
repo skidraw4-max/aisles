@@ -10,6 +10,8 @@ import type { Category } from '@prisma/client';
 import { categoryAllowsOptionalThumbnail, parsePostCategory } from '@/lib/post-categories';
 import { parseMediaUrlsField } from '@/lib/post-media-urls';
 import { normalizePostTagsInput } from '@/lib/post-tags';
+import { UPLOAD_IMAGE_MAX_BYTES, formatUploadMaxSizeLabel } from '@/lib/upload-limits';
+import { applyWatermarkForUpload } from '@/lib/watermark-image';
 
 const MEDIA_EXT = new Map<string, string>([
   ['image/jpeg', 'jpg'],
@@ -21,7 +23,6 @@ const MEDIA_EXT = new Map<string, string>([
   ['video/quicktime', 'mov'],
 ]);
 
-const MAX_BYTES = 100 * 1024 * 1024;
 const EXTERNAL_LINK_MAX = 2048;
 
 export const maxDuration = 120;
@@ -249,8 +250,13 @@ async function postFromMultipart(req: NextRequest) {
   let thumbnail: string | null = null;
 
   if (file instanceof File) {
-    if (file.size > MAX_BYTES) {
-      return NextResponse.json({ error: '파일 크기는 100MB 이하여야 합니다.' }, { status: 400 });
+    if (file.size > UPLOAD_IMAGE_MAX_BYTES) {
+      return NextResponse.json(
+        {
+          error: `파일 크기는 ${formatUploadMaxSizeLabel()} 이하여야 합니다. (서버리스 요청 본문 한도)`,
+        },
+        { status: 400 }
+      );
     }
 
     const ext = MEDIA_EXT.get(file.type);
@@ -261,9 +267,12 @@ async function postFromMultipart(req: NextRequest) {
       );
     }
 
-    const buf = Buffer.from(await file.arrayBuffer());
+    let buf = Buffer.from(await file.arrayBuffer());
+    const wm = await applyWatermarkForUpload({ buffer: buf, mimeType: file.type, ext });
+    buf = Buffer.from(wm.buffer);
+    const uploadMime = wm.mimeType;
     const key = `posts/${user.id}/${randomUUID()}.${ext}`;
-    const uploaded = await uploadPublicObject(key, buf, file.type);
+    const uploaded = await uploadPublicObject(key, buf, uploadMime);
     if ('error' in uploaded) {
       return NextResponse.json(
         {
