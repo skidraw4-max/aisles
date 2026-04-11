@@ -113,7 +113,9 @@ export function AuthModal({ open, onClose, onAuthed, initialNotice = null }: Pro
     try {
       const supabase = createClient();
       const site = getPublicSiteUrl();
-      const redirectTo = site ? `${site}/auth/update-password` : `${window.location.origin}/auth/update-password`;
+      // PKCE 코드 교환은 /auth/callback 에서만 처리됨. /auth/update-password 로 직접내면
+      // Supabase 허용 URL 누락 시 Site URL 루트(?code=)로 떨어져 홈에서 오류가 날 수 있음.
+      const redirectTo = `${site}/auth/callback?next=${encodeURIComponent('/auth/update-password')}`;
       const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
         redirectTo,
       });

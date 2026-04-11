@@ -13,6 +13,19 @@ function nextWithRequest(request: NextRequest) {
 }
 
 export async function middleware(request: NextRequest) {
+  // Supabase가 redirectTo 미허용 시 Site URL의 루트로만 ?code= 붙여 보내는 경우:
+  // 홈은 코드 교환을 하지 않으므로 콜백으로 넘겨 세션 만든 뒤 비밀번호 변경 페이지로 보냄.
+  if (request.nextUrl.pathname === '/' && request.nextUrl.searchParams.has('code')) {
+    const u = request.nextUrl.clone();
+    const params = new URLSearchParams(u.searchParams.toString());
+    if (!params.has('next')) {
+      params.set('next', '/auth/update-password');
+    }
+    u.pathname = '/auth/callback';
+    u.search = params.toString();
+    return NextResponse.redirect(u);
+  }
+
   let supabaseResponse = nextWithRequest(request);
 
   const supabase = createServerClient(
