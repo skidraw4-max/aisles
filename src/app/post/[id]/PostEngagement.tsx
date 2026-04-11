@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { usePostLike } from './PostLikeContext';
+import { copyTextToClipboard } from '@/lib/clipboard-copy';
 import styles from './post.module.css';
 
 export type CommentDTO = {
@@ -89,7 +90,7 @@ export function PostEngagement({
         await navigator.share({ title: document.title, url });
         return;
       }
-      await navigator.clipboard.writeText(url);
+      await copyTextToClipboard(url);
       setShareHint('링크가 클립보드에 복사되었습니다.');
       window.setTimeout(() => setShareHint(null), 2200);
     } catch {

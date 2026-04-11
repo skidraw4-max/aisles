@@ -3,15 +3,15 @@
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { PostRichContent } from '@/lib/PostRichContent';
+import { copyTextToClipboard } from '@/lib/clipboard-copy';
 import styles from './post.module.css';
 
 type Props = {
-  postId: string;
-  /** SSR 표시용(서버에서 DB와 동일 규칙으로 계산) */
+  /** SSR 표시용(서버에서 DB와 동일 규칙으로 계산). 복사 시에도 동일 문자열 사용(모바일 클립보드 제약). */
   promptText: string;
 };
 
-export function RecipePromptSection({ postId, promptText }: Props) {
+export function RecipePromptSection({ promptText }: Props) {
   const [toast, setToast] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
 
@@ -25,34 +25,25 @@ export function RecipePromptSection({ postId, promptText }: Props) {
     return () => window.clearTimeout(t);
   }, [toast]);
 
-  async function copyRecipe() {
-    let text = '';
-    try {
-      const res = await fetch(`/api/posts/${postId}/prompt`, { cache: 'no-store' });
-      if (res.ok) {
-        const data = (await res.json()) as { prompt?: unknown };
-        if (typeof data.prompt === 'string') text = data.prompt;
-      }
-    } catch {
-      /* API 실패 시 아래에서 promptText 사용 */
-    }
-    if (!text) text = promptText;
-    if (!text.trim()) {
+  /**
+   * 복사는 반드시 탭 직후 클립보드 API로 이어져야 함(iOS Safari user activation).
+   * `await fetch` 후에는 클립보드가 막히므로, 화면과 동일한 SSR `promptText`만 사용.
+   */
+  function copyRecipe() {
+    const text = promptText.trim();
+    if (!text) {
       setToast('복사할 프롬프트가 없습니다.');
       return;
     }
-    try {
-      await navigator.clipboard.writeText(text);
-      setToast('프롬프트가 클립보드에 복사되었습니다!');
-    } catch {
-      setToast('복사에 실패했습니다. 브라우저 권한을 확인해 주세요.');
-    }
+    void copyTextToClipboard(text)
+      .then(() => setToast('프롬프트가 클립보드에 복사되었습니다!'))
+      .catch(() => setToast('복사에 실패했습니다. 브라우저 권한을 확인해 주세요.'));
   }
 
   function handleEditorClick() {
     const sel = typeof window !== 'undefined' ? window.getSelection()?.toString() ?? '' : '';
     if (sel.length > 0) return;
-    void copyRecipe();
+    copyRecipe();
   }
 
   const toastNode =
@@ -80,7 +71,7 @@ export function RecipePromptSection({ postId, promptText }: Props) {
                 PROMPT RECIPE #01
               </h2>
             </div>
-            <button type="button" className={styles.recipeMagazineCopy} onClick={() => void copyRecipe()}>
+            <button type="button" className={styles.recipeMagazineCopy} onClick={copyRecipe}>
               Copy
             </button>
           </div>
@@ -106,7 +97,7 @@ export function RecipePromptSection({ postId, promptText }: Props) {
               PROMPT RECIPE #01
             </h2>
           </div>
-          <button type="button" className={styles.recipeMagazineCopy} onClick={() => void copyRecipe()}>
+          <button type="button" className={styles.recipeMagazineCopy} onClick={copyRecipe}>
             Copy
           </button>
         </div>

@@ -424,7 +424,7 @@ export default async function PostPage({ params }: Props) {
                   <ExternalServiceCta href={externalHref} variant="buildBand" />
                 ) : null}
 
-                {isLab ? <RecipePromptSection postId={post.id} promptText={labPromptText} /> : null}
+                {isLab ? <RecipePromptSection promptText={labPromptText} /> : null}
                 {isLab ? <DosDontsSection /> : null}
 
                 {!isGallery && isBuildOrLaunch ? (
