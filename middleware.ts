@@ -12,6 +12,15 @@ function nextWithRequest(request: NextRequest) {
   });
 }
 
+/** 비인증 사용자도 접근 허용 — 아래 보호 리다이렉트에서 제외 */
+const PUBLIC_PATH_PREFIXES = ['/reset-password'] as const;
+
+function isPublicPath(pathname: string): boolean {
+  return PUBLIC_PATH_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
+  );
+}
+
 export async function middleware(request: NextRequest) {
   // Supabase가 redirectTo 미허용 시 Site URL의 루트로만 ?code= 붙여 보내는 경우:
   // 홈은 코드 교환을 하지 않으므로 콜백으로 넘겨 세션 만든 뒤 비밀번호 변경 페이지로 보냄.
@@ -46,7 +55,12 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user && request.nextUrl.pathname.startsWith('/upload')) {
+  const pathname = request.nextUrl.pathname;
+  if (isPublicPath(pathname)) {
+    return supabaseResponse;
+  }
+
+  if (!user && pathname.startsWith('/upload')) {
     const url = request.nextUrl.clone();
     url.pathname = '/login';
     url.searchParams.set('next', '/upload');

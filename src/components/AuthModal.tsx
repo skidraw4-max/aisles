@@ -111,14 +111,15 @@ export function AuthModal({ open, onClose, onAuthed, initialNotice = null }: Pro
     resetFeedback();
     setLoading(true);
     try {
-      const supabase = createClient();
-      const site = getPublicSiteUrl();
-      // redirectTo 쿼리(next)가 잘리면 일반 콜백은 홈(/)으로만 가므로, 재설정 전용 경로 사용.
-      const redirectTo = `${site}/auth/reset-callback`;
-      const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-        redirectTo,
+      const res = await fetch('/api/auth/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim() }),
       });
-      if (error) throw error;
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      if (!res.ok) {
+        throw new Error(data.error || '요청에 실패했습니다.');
+      }
       setMessage({
         type: 'ok',
         text: '입력하신 이메일로 비밀번호 변경 링크를 보냈습니다. 메일함(스팸함)을 확인한 뒤 링크를 눌러 새 비밀번호를 설정해 주세요.',

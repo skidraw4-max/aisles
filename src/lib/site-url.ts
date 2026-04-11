@@ -23,3 +23,37 @@ export function getPublicSiteUrl(): string {
   }
   return getCanonicalSiteUrl();
 }
+
+/**
+ * `resetPasswordForEmail` 의 `redirectTo`. `new URL` 로 조합해 경로가 빠지지 않게 함.
+ * 메일의 verify 링크에 `redirect_to` 가 사이트 루트만 있으면 Dashboard 이메일 템플릿을 확인할 것.
+ */
+export function getPasswordRecoveryRedirectTo(): string {
+  const explicit = process.env.NEXT_PUBLIC_PASSWORD_RECOVERY_REDIRECT_TO?.trim();
+  if (explicit) {
+    return explicit.replace(/\/$/, '');
+  }
+  const base = getPublicSiteUrl().replace(/\/$/, '');
+  return new URL('/auth/reset-callback', `${base}/`).href;
+}
+
+/**
+ * 서버(Route Handler) 전용. `window` 없이 env·canonical 만 사용 — Supabase 가 메일에 넣는 redirect_to 와 일치해야 함.
+ */
+export function getPasswordRecoveryRedirectToForServer(): string {
+  const explicit = process.env.NEXT_PUBLIC_PASSWORD_RECOVERY_REDIRECT_TO?.trim();
+  if (explicit) {
+    return explicit.replace(/\/$/, '');
+  }
+  const envBase = process.env.NEXT_PUBLIC_SITE_URL?.trim().replace(/\/$/, '');
+  const base = envBase || getCanonicalSiteUrl();
+  return new URL('/auth/reset-callback', `${base}/`).href;
+}
+
+/** Prisma 유저용: 메일의 redirect_to 에 토큰이 붙은 재설정 페이지 */
+export function buildPasswordRecoveryPageUrlWithToken(token: string): string {
+  const envBase = process.env.NEXT_PUBLIC_SITE_URL?.trim().replace(/\/$/, '') || getCanonicalSiteUrl();
+  const u = new URL('/reset-password', `${envBase}/`);
+  u.searchParams.set('token', token);
+  return u.href;
+}

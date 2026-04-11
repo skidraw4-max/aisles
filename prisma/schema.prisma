@@ -20,7 +20,22 @@ model User {
   posts      Post[]
   postLikes  PostLike[]
   comments   Comment[]
+  passwordResetTokens PasswordResetToken[]
   createdAt  DateTime @default(now())
+}
+
+/// 비밀번호 찾기 메일의 `?token=` 검증용 (Supabase 메일의 redirect_to 에 포함)
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  token     String    @unique
+  email     String
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
 }
 
 // 3. 게시물 모델 (4개의 복도 통합 관리)
