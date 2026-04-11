@@ -4,17 +4,8 @@ import { createClient } from '@supabase/supabase-js';
 import { ensurePrismaUser } from '@/lib/ensure-user';
 import { MEDIA_STORAGE_NOT_CONFIGURED, uploadPublicObject } from '@/lib/r2';
 import { UPLOAD_IMAGE_MAX_BYTES, formatUploadMaxSizeLabel } from '@/lib/upload-limits';
+import { resolveUploadMimeType } from '@/lib/upload-media-types';
 import { applyWatermarkForUpload } from '@/lib/watermark-image';
-
-const MEDIA_EXT = new Map<string, string>([
-  ['image/jpeg', 'jpg'],
-  ['image/png', 'png'],
-  ['image/webp', 'webp'],
-  ['image/gif', 'gif'],
-  ['video/mp4', 'mp4'],
-  ['video/webm', 'webm'],
-  ['video/quicktime', 'mov'],
-]);
 
 export const maxDuration = 120;
 
@@ -61,16 +52,17 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const ext = MEDIA_EXT.get(file.type);
-  if (!ext) {
+  let buf = Buffer.from(await file.arrayBuffer());
+  const resolved = resolveUploadMimeType(file.type, buf);
+  if (!resolved) {
     return NextResponse.json(
       { error: 'JPEG, PNG, WebP, GIF, MP4, WebM, QuickTime(MOV)만 업로드할 수 있습니다.' },
       { status: 400 }
     );
   }
+  const { mime: inputMime, ext } = resolved;
 
-  let buf = Buffer.from(await file.arrayBuffer());
-  const watermarked = await applyWatermarkForUpload({ buffer: buf, mimeType: file.type, ext });
+  const watermarked = await applyWatermarkForUpload({ buffer: buf, mimeType: inputMime, ext });
   buf = Buffer.from(watermarked.buffer);
   const uploadMime = watermarked.mimeType;
   const key = `posts/${user.id}/${randomUUID()}.${ext}`;

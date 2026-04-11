@@ -1,15 +1,22 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import sharp from 'sharp';
+import { WATERMARK_PNG_BASE64 } from '@/lib/watermark-embedded';
 
-const MARGIN_PX = 20;
-/** 원본 너비 대비 워터마크 너비 비율 */
-const WM_WIDTH_RATIO = 0.1;
-/** 워터마크 알파 스케일 (약 25% → 20~30% 요구에 맞춤) */
-const WM_ALPHA_SCALE = 0.25;
-const MIN_WM_WIDTH = 48;
+/** 우하단 여백 — 빨간 표시 구역과 비슷하게 모서리에서 살짝 안쪽 */
+const MARGIN_PX = 14;
+/** 원본 너비 대비 워터마크 너비 (스크린샷 빨간 박스 ≈ 30~35% 너비에 맞춤) */
+const WM_WIDTH_RATIO = 0.33;
+/** 로고 알파 — 최대에 가깝게 */
+const WM_ALPHA_SCALE = 1;
+const MIN_WM_WIDTH = 100;
+const BACKDROP_PAD = 14;
+/** 패널 배경 + 흰 테두리로 밝은/어두운 배경 모두에서 대비 */
+const BACKDROP_FILL = 'rgba(10,12,20,0.82)';
+const BACKDROP_STROKE = 'rgba(255,255,255,0.5)';
+const BACKDROP_STROKE_W = 2;
+const BACKDROP_RADIUS = 12;
 
-/** 애니메이션 보존을 위해 GIF는 합성하지 않음. 동영상도 제외. */
 const WATERMARK_MIME = new Set(['image/jpeg', 'image/png', 'image/webp']);
 
 export type WatermarkUploadPayload = {
@@ -18,8 +25,30 @@ export type WatermarkUploadPayload = {
   ext: string;
 };
 
-function watermarkPath(): string {
-  return path.join(process.cwd(), 'public', 'watermark.png');
+function resolveWatermarkBufferFromFs(): Buffer | null {
+  const cwd = process.cwd();
+  for (const rel of ['public/watermark.png']) {
+    const p = path.join(cwd, ...rel.split('/'));
+    try {
+      if (fs.existsSync(p)) return fs.readFileSync(p);
+    } catch {
+      /* continue */
+    }
+  }
+  return null;
+}
+
+/** 서버리스에서도 동작: 빌드에 포함된 base64 → (옵션) 디스크 폴백 */
+function getWatermarkSourceBuffer(): Buffer {
+  try {
+    const fromB64 = Buffer.from(WATERMARK_PNG_BASE64, 'base64');
+    if (fromB64.length > 100) return fromB64;
+  } catch {
+    /* fall through */
+  }
+  const disk = resolveWatermarkBufferFromFs();
+  if (disk) return disk;
+  throw new Error('[watermark] no embedded or file watermark');
 }
 
 /**
@@ -31,14 +60,17 @@ export async function applyWatermarkForUpload(payload: WatermarkUploadPayload): 
     return payload;
   }
 
-  const wmFile = watermarkPath();
-  if (!fs.existsSync(wmFile)) {
-    console.warn('[watermark] public/watermark.png 없음 — 원본 업로드');
+  let wmSource: Buffer;
+  try {
+    wmSource = getWatermarkSourceBuffer();
+  } catch (e) {
+    console.warn(e);
     return payload;
   }
 
   try {
-    const baseMeta = await sharp(input).metadata();
+    const basePipeline = sharp(input).rotate();
+    const baseMeta = await basePipeline.metadata();
     const bw = baseMeta.width ?? 0;
     const bh = baseMeta.height ?? 0;
     if (bw < 40 || bh < 40) {
@@ -47,24 +79,34 @@ export async function applyWatermarkForUpload(payload: WatermarkUploadPayload): 
 
     const maxBoxW = bw - 2 * MARGIN_PX;
     const maxBoxH = bh - 2 * MARGIN_PX;
-    if (maxBoxW < 16 || maxBoxH < 16) {
+    if (maxBoxW < 24 || maxBoxH < 24) {
       return payload;
     }
 
     let wmTargetW = Math.round(bw * WM_WIDTH_RATIO);
     wmTargetW = Math.max(MIN_WM_WIDTH, Math.min(wmTargetW, maxBoxW));
 
-    const { data, info } = await sharp(wmFile)
-      .resize({ width: wmTargetW, withoutEnlargement: true })
+    const { data, info } = await sharp(wmSource)
+      .resize({
+        width: wmTargetW,
+        fit: 'inside',
+        withoutEnlargement: false,
+      })
       .ensureAlpha()
       .raw()
       .toBuffer({ resolveWithObject: true });
 
-    for (let i = 3; i < data.length; i += 4) {
-      data[i] = Math.round(data[i] * WM_ALPHA_SCALE);
+    if (info.channels !== 4) {
+      console.warn('[watermark] expected 4 channels after ensureAlpha, got', info.channels);
+      return payload;
     }
 
-    let wmOverlay = await sharp(Buffer.from(data), {
+    const raw = Buffer.from(data);
+    for (let i = 3; i < raw.length; i += 4) {
+      raw[i] = Math.min(255, Math.round(raw[i] * WM_ALPHA_SCALE));
+    }
+
+    let wmOverlay = await sharp(raw, {
       raw: {
         width: info.width,
         height: info.height,
@@ -91,7 +133,26 @@ export async function applyWatermarkForUpload(payload: WatermarkUploadPayload): 
     const left = Math.max(MARGIN_PX, Math.round(bw - ow - MARGIN_PX));
     const top = Math.max(MARGIN_PX, Math.round(bh - oh - MARGIN_PX));
 
-    const composited = sharp(input).composite([{ input: wmOverlay, left, top }]);
+    const bgLeft = Math.max(0, left - BACKDROP_PAD);
+    const bgTop = Math.max(0, top - BACKDROP_PAD);
+    const bgW = Math.min(bw - bgLeft, ow + 2 * BACKDROP_PAD);
+    const bgH = Math.min(bh - bgTop, oh + 2 * BACKDROP_PAD);
+
+    let composited: ReturnType<typeof sharp>;
+    if (bgW >= 8 && bgH >= 8) {
+      const s = BACKDROP_STROKE_W;
+      const rw = Math.max(4, bgW - s);
+      const rh = Math.max(4, bgH - s);
+      const rx = Math.min(BACKDROP_RADIUS, rw / 2, rh / 2);
+      const svg = `<svg width="${bgW}" height="${bgH}" xmlns="http://www.w3.org/2000/svg"><rect x="${s / 2}" y="${s / 2}" width="${rw}" height="${rh}" rx="${rx}" ry="${rx}" fill="${BACKDROP_FILL}" stroke="${BACKDROP_STROKE}" stroke-width="${s}"/></svg>`;
+      const backdrop = await sharp(Buffer.from(svg)).png().toBuffer();
+      composited = basePipeline.clone().composite([
+        { input: backdrop, left: bgLeft, top: bgTop },
+        { input: wmOverlay, left, top },
+      ]);
+    } else {
+      composited = basePipeline.clone().composite([{ input: wmOverlay, left, top }]);
+    }
 
     let out: Buffer;
     if (mimeType === 'image/jpeg') {

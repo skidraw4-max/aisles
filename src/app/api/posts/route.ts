@@ -11,17 +11,8 @@ import { categoryAllowsOptionalThumbnail, parsePostCategory } from '@/lib/post-c
 import { parseMediaUrlsField } from '@/lib/post-media-urls';
 import { normalizePostTagsInput } from '@/lib/post-tags';
 import { UPLOAD_IMAGE_MAX_BYTES, formatUploadMaxSizeLabel } from '@/lib/upload-limits';
+import { resolveUploadMimeType } from '@/lib/upload-media-types';
 import { applyWatermarkForUpload } from '@/lib/watermark-image';
-
-const MEDIA_EXT = new Map<string, string>([
-  ['image/jpeg', 'jpg'],
-  ['image/png', 'png'],
-  ['image/webp', 'webp'],
-  ['image/gif', 'gif'],
-  ['video/mp4', 'mp4'],
-  ['video/webm', 'webm'],
-  ['video/quicktime', 'mov'],
-]);
 
 const EXTERNAL_LINK_MAX = 2048;
 
@@ -259,16 +250,17 @@ async function postFromMultipart(req: NextRequest) {
       );
     }
 
-    const ext = MEDIA_EXT.get(file.type);
-    if (!ext) {
+    let buf = Buffer.from(await file.arrayBuffer());
+    const resolved = resolveUploadMimeType(file.type, buf);
+    if (!resolved) {
       return NextResponse.json(
         { error: '지원 형식: JPEG, PNG, WebP, GIF, MP4, WebM, QuickTime(MOV).' },
         { status: 400 }
       );
     }
+    const { mime: inputMime, ext } = resolved;
 
-    let buf = Buffer.from(await file.arrayBuffer());
-    const wm = await applyWatermarkForUpload({ buffer: buf, mimeType: file.type, ext });
+    const wm = await applyWatermarkForUpload({ buffer: buf, mimeType: inputMime, ext });
     buf = Buffer.from(wm.buffer);
     const uploadMime = wm.mimeType;
     const key = `posts/${user.id}/${randomUUID()}.${ext}`;
