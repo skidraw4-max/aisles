@@ -1,57 +1,9 @@
-import { createClient } from '@/lib/supabase/server';
-import type { EmailOtpType } from '@supabase/supabase-js';
-import { NextResponse } from 'next/server';
+import { supabaseAuthCallbackGet } from '@/lib/supabase-auth-callback';
 
 /**
- * Supabase 이메일 확인·매직링크·비밀번호 복구 등: `emailRedirectTo` / `redirectTo`로 이 경로를 지정.
- * PKCE(`code`) 또는 구형 템플릿(`token_hash`+`type`) 모두 처리.
+ * Supabase 이메일 확인·매직링크 등: `emailRedirectTo` 로 이 경로를 지정.
+ * 비밀번호 찾기는 `/auth/reset-callback` 사용(쿼리가 잘려도 재설정 페이지로 고정).
  */
 export async function GET(request: Request) {
-  const url = new URL(request.url);
-  const code = url.searchParams.get('code');
-  const token_hash = url.searchParams.get('token_hash');
-  const type = url.searchParams.get('type') as EmailOtpType | null;
-  const nextParam = url.searchParams.get('next');
-  const next = nextParam?.startsWith('/') ? nextParam : '/';
-
-  const fail = () => NextResponse.redirect(new URL('/login?error=auth_callback', url.origin));
-
-  const supabase = await createClient();
-
-  if (code) {
-    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
-    if (error) {
-      console.error('[auth/callback] exchangeCodeForSession:', error.message);
-      return fail();
-    }
-    if (data.session?.access_token) {
-      await fetch(new URL('/api/auth/sync-profile', url.origin), {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${data.session.access_token}` },
-      }).catch(() => {});
-      return NextResponse.redirect(new URL(next, url.origin));
-    }
-    return fail();
-  }
-
-  if (token_hash && type) {
-    const { data, error } = await supabase.auth.verifyOtp({
-      type,
-      token_hash,
-    });
-    if (error) {
-      console.error('[auth/callback] verifyOtp:', error.message);
-      return fail();
-    }
-    if (data.session?.access_token) {
-      await fetch(new URL('/api/auth/sync-profile', url.origin), {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${data.session.access_token}` },
-      }).catch(() => {});
-      return NextResponse.redirect(new URL(next, url.origin));
-    }
-    return fail();
-  }
-
-  return fail();
+  return supabaseAuthCallbackGet(request, { afterSuccess: 'fromNextQueryOrHome' });
 }
