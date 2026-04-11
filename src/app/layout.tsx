@@ -5,6 +5,7 @@ import { SessionProvider, type InitialSession } from '@/components/SessionProvid
 import { createClient } from '@/lib/supabase/server';
 import { prisma } from '@/lib/prisma';
 import { getCanonicalSiteUrl } from '@/lib/canonical-site-url';
+import { isEmailVerifiedForApp } from '@/lib/auth-email-verified';
 import './globals.css';
 
 const display = Syne({
@@ -115,6 +116,7 @@ async function getInitialSession(): Promise<InitialSession> {
       data: { user },
     } = await supabase.auth.getUser();
     if (!user) return null;
+    if (!isEmailVerifiedForApp(user)) return null;
 
     let dbUsername: string | null = null;
     try {

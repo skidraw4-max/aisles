@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import type { EmailOtpType } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
+import { isEmailVerifiedForApp } from '@/lib/auth-email-verified';
 
 /**
  * Supabase 이메일 확인·매직링크 등: `emailRedirectTo`로 이 경로를 지정.
@@ -20,7 +21,15 @@ export async function GET(request: Request) {
 
   if (code) {
     const { data, error } = await supabase.auth.exchangeCodeForSession(code);
-    if (!error && data.session?.access_token) {
+    if (error) {
+      console.error('[auth/callback] exchangeCodeForSession:', error.message);
+      return fail();
+    }
+    if (data.session?.access_token && data.user && !isEmailVerifiedForApp(data.user)) {
+      console.error('[auth/callback] 세션은 있으나 이메일 미인증 상태');
+      return fail();
+    }
+    if (data.session?.access_token) {
       await fetch(new URL('/api/auth/sync-profile', url.origin), {
         method: 'POST',
         headers: { Authorization: `Bearer ${data.session.access_token}` },
@@ -35,7 +44,15 @@ export async function GET(request: Request) {
       type,
       token_hash,
     });
-    if (!error && data.session?.access_token) {
+    if (error) {
+      console.error('[auth/callback] verifyOtp:', error.message);
+      return fail();
+    }
+    if (data.session?.access_token && data.user && !isEmailVerifiedForApp(data.user)) {
+      console.error('[auth/callback] OTP 검증 후에도 이메일 미인증');
+      return fail();
+    }
+    if (data.session?.access_token) {
       await fetch(new URL('/api/auth/sync-profile', url.origin), {
         method: 'POST',
         headers: { Authorization: `Bearer ${data.session.access_token}` },

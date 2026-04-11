@@ -10,6 +10,7 @@ import {
 } from 'react';
 import type { User } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase/client';
+import { isEmailVerifiedForApp } from '@/lib/auth-email-verified';
 
 export type InitialSession = {
   userId: string;
@@ -77,6 +78,13 @@ export function SessionProvider({ initialSession, children }: Props) {
 
     const bootstrap = async () => {
       const { data: { user: u } } = await supabase.auth.getUser();
+      if (u && !isEmailVerifiedForApp(u)) {
+        await supabase.auth.signOut();
+        setUser(null);
+        setDbUsername(null);
+        setHydrated(true);
+        return;
+      }
       setUser(u ?? null);
       if (!u) {
         setDbUsername(null);
@@ -96,6 +104,12 @@ export function SessionProvider({ initialSession, children }: Props) {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       const next = session?.user ?? null;
+      if (next && !isEmailVerifiedForApp(next)) {
+        await supabase.auth.signOut();
+        setUser(null);
+        setDbUsername(null);
+        return;
+      }
       setUser(next);
       if (!session?.access_token) {
         setDbUsername(null);

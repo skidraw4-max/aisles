@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { getPublicSiteUrl } from '@/lib/site-url';
 import { syncPrismaUserWithAuth } from '@/lib/sync-prisma-user';
+import { isEmailVerifiedForApp } from '@/lib/auth-email-verified';
 import styles from './AuthModal.module.css';
 
 type Mode = 'login' | 'signup' | 'forgot';
@@ -12,15 +13,21 @@ type Props = {
   open: boolean;
   onClose: () => void;
   onAuthed: () => void;
+  /** 로그인 페이지 URL 쿼리 등에서 넘기는 초기 안내 */
+  initialNotice?: { type: 'ok' | 'err'; text: string } | null;
 };
 
-export function AuthModal({ open, onClose, onAuthed }: Props) {
+export function AuthModal({ open, onClose, onAuthed, initialNotice = null }: Props) {
   const [mode, setMode] = useState<Mode>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'ok' | 'err'; text: string } | null>(null);
+
+  useEffect(() => {
+    if (open && initialNotice) setMessage(initialNotice);
+  }, [open, initialNotice]);
 
   useEffect(() => {
     if (!open) return;
@@ -49,6 +56,12 @@ export function AuthModal({ open, onClose, onAuthed }: Props) {
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
       if (!data.session) throw new Error('세션을 받지 못했습니다.');
+      if (data.user && !isEmailVerifiedForApp(data.user)) {
+        await supabase.auth.signOut();
+        throw new Error(
+          '이메일 인증이 완료되지 않았습니다. 가입 시 받은 메일의 링크를 눌러 인증한 뒤 다시 로그인해 주세요.'
+        );
+      }
       await syncPrismaUserWithAuth(data.session.access_token);
       onAuthed();
       onClose();
@@ -79,6 +92,14 @@ export function AuthModal({ open, onClose, onAuthed }: Props) {
         },
       });
       if (error) throw error;
+      if (data.session && data.user && !isEmailVerifiedForApp(data.user)) {
+        await supabase.auth.signOut();
+        setMessage({
+          type: 'ok',
+          text: 'Aisle에서 보낸 인증 메일을 확인해 주세요. 메일의 링크로 이메일을 인증한 뒤 로그인할 수 있습니다.',
+        });
+        return;
+      }
       if (!data.session) {
         setMessage({
           type: 'ok',

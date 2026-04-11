@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import type { User } from '@supabase/supabase-js';
+import { isEmailVerifiedForApp, jsonEmailNotVerified } from '@/lib/auth-email-verified';
 
 export async function getUserFromBearer(
   req: NextRequest
@@ -24,6 +25,9 @@ export async function getUserFromBearer(
   } = await supabase.auth.getUser(token);
   if (error || !user?.id) {
     return { ok: false, response: NextResponse.json({ error: 'Invalid session' }, { status: 401 }) };
+  }
+  if (!isEmailVerifiedForApp(user)) {
+    return { ok: false, response: jsonEmailNotVerified() };
   }
   return { ok: true, user };
 }

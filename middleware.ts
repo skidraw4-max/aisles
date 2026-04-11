@@ -1,5 +1,6 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
+import { isEmailVerifiedForApp } from '@/lib/auth-email-verified';
 
 /**
  * NextResponse에 원본 요청 헤더를 넘겨 RSC/정적 자산 연계가 깨지지 않게 함 (Next 15 권장 패턴).
@@ -41,6 +42,14 @@ export async function middleware(request: NextRequest) {
   if (!user && request.nextUrl.pathname.startsWith('/upload')) {
     const url = request.nextUrl.clone();
     url.pathname = '/login';
+    url.searchParams.set('next', '/upload');
+    return NextResponse.redirect(url);
+  }
+
+  if (user && !isEmailVerifiedForApp(user) && request.nextUrl.pathname.startsWith('/upload')) {
+    const url = request.nextUrl.clone();
+    url.pathname = '/login';
+    url.searchParams.set('error', 'email_not_confirmed');
     url.searchParams.set('next', '/upload');
     return NextResponse.redirect(url);
   }
