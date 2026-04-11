@@ -1,9 +1,12 @@
-import { createAdminClient } from '@/lib/supabase/admin';
+import { createAdminClient, hasServiceRoleKey } from '@/lib/supabase/admin';
 import { sanitizeUsername } from '@/lib/username';
 import { NextResponse } from 'next/server';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MIN_PASSWORD = 6;
+
+const SERVICE_ROLE_HINT =
+  '배포 환경(Vercel 등)에 SUPABASE_SERVICE_ROLE_KEY 를 넣어 주세요. Supabase Dashboard → Settings → API 의 service_role 키입니다. 저장 후 재배포가 필요할 수 있습니다.';
 
 /**
  * 이메일 인증을 끈 프로젝트용: 클라이언트 `signUp`은 확인 메일 발송으로
@@ -11,8 +14,11 @@ const MIN_PASSWORD = 6;
  * 이후 클라이언트에서 `signInWithPassword` 로 세션 확보.
  */
 export async function POST(request: Request) {
-  if (!process.env.SUPABASE_SERVICE_ROLE_KEY?.trim()) {
-    return NextResponse.json({ error: '서버 설정 오류입니다.' }, { status: 503 });
+  if (!hasServiceRoleKey()) {
+    return NextResponse.json(
+      { error: `서버에 service_role 키가 없습니다. ${SERVICE_ROLE_HINT}`, code: 'SERVICE_ROLE_MISSING' },
+      { status: 503 },
+    );
   }
 
   let body: unknown;

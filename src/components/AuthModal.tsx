@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { getPublicSiteUrl } from '@/lib/site-url';
 import { syncPrismaUserWithAuth } from '@/lib/sync-prisma-user';
 import styles from './AuthModal.module.css';
 
@@ -92,8 +93,36 @@ export function AuthModal({ open, onClose, onAuthed, initialNotice = null }: Pro
       } catch {
         /* ignore */
       }
+
+      const signupPayload = payload as { error?: string; code?: string };
+
+      if (res.status === 503) {
+        const supabase = createClient();
+        const site = getPublicSiteUrl();
+        const { data, error } = await supabase.auth.signUp({
+          email: email.trim(),
+          password,
+          options: {
+            data: { username: username.trim() },
+            ...(site ? { emailRedirectTo: `${site}/auth/callback` } : {}),
+          },
+        });
+        if (error) throw error;
+        if (data.session) {
+          await syncPrismaUserWithAuth(data.session.access_token);
+          onAuthed();
+          onClose();
+          return;
+        }
+        setMessage({
+          type: 'ok',
+          text: '가입이 접수되었습니다. 로그인 화면에서 이메일과 비밀번호로 로그인해 주세요.',
+        });
+        return;
+      }
+
       if (!res.ok) {
-        throw new Error(payload.error || '회원가입에 실패했습니다.');
+        throw new Error(signupPayload.error || '회원가입에 실패했습니다.');
       }
 
       const supabase = createClient();

@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma';
-import { createAdminClient } from '@/lib/supabase/admin';
+import { createAdminClient, hasServiceRoleKey } from '@/lib/supabase/admin';
 import { NextResponse } from 'next/server';
 
 const MIN_LEN = 6;
@@ -8,8 +8,8 @@ const MIN_LEN = 6;
  * 토큰으로 검증한 뒤 Supabase Auth 비밀번호 변경 (service role).
  */
 export async function POST(request: Request) {
-  if (!process.env.SUPABASE_SERVICE_ROLE_KEY?.trim()) {
-    return NextResponse.json({ error: '서버 설정 오류입니다.' }, { status: 503 });
+  if (!hasServiceRoleKey()) {
+    return NextResponse.json({ error: '서버에 SUPABASE_SERVICE_ROLE_KEY 가 설정되지 않았습니다.' }, { status: 503 });
   }
 
   let body: unknown;
