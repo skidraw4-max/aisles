@@ -16,12 +16,6 @@ function loginNoticeFromParams(error: string | null) {
       text: '이메일 인증 링크가 만료되었거나 이미 사용되었습니다. 다시 로그인하거나 회원가입 후 새 인증 메일을 받아 주세요.',
     };
   }
-  if (error === 'email_not_confirmed') {
-    return {
-      type: 'err' as const,
-      text: '이메일 인증을 완료한 뒤 로그인할 수 있습니다. 메일함(스팸함 포함)의 인증 링크를 확인해 주세요.',
-    };
-  }
   return null;
 }
 

@@ -13,7 +13,6 @@ import { normalizePostTagsInput } from '@/lib/post-tags';
 import { UPLOAD_IMAGE_MAX_BYTES, formatUploadMaxSizeLabel } from '@/lib/upload-limits';
 import { resolveUploadMimeType } from '@/lib/upload-media-types';
 import { applyWatermarkForUpload } from '@/lib/watermark-image';
-import { isEmailVerifiedForApp, jsonEmailNotVerified } from '@/lib/auth-email-verified';
 
 const EXTERNAL_LINK_MAX = 2048;
 
@@ -68,9 +67,6 @@ async function requireAuthUser(req: NextRequest): Promise<User | NextResponse> {
   } = await supabase.auth.getUser(token);
   if (authErr || !user?.email) {
     return NextResponse.json({ error: 'Invalid session' }, { status: 401 });
-  }
-  if (!isEmailVerifiedForApp(user)) {
-    return jsonEmailNotVerified();
   }
   return user;
 }

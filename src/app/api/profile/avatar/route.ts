@@ -4,7 +4,6 @@ import { createClient } from '@supabase/supabase-js';
 import { prisma } from '@/lib/prisma';
 import { MEDIA_STORAGE_NOT_CONFIGURED, uploadPublicObject } from '@/lib/r2';
 import { sanitizeUsername } from '@/lib/username';
-import { isEmailVerifiedForApp, jsonEmailNotVerified } from '@/lib/auth-email-verified';
 
 const ALLOWED = new Map<string, string>([
   ['image/jpeg', 'jpg'],
@@ -35,10 +34,6 @@ export async function POST(req: NextRequest) {
   if (error || !user?.email) {
     return NextResponse.json({ error: 'Invalid session' }, { status: 401 });
   }
-  if (!isEmailVerifiedForApp(user)) {
-    return jsonEmailNotVerified();
-  }
-
   let form: FormData;
   try {
     form = await req.formData();

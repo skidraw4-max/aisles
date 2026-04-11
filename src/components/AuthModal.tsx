@@ -4,8 +4,10 @@ import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { getPublicSiteUrl } from '@/lib/site-url';
 import { syncPrismaUserWithAuth } from '@/lib/sync-prisma-user';
-import { isEmailVerifiedForApp } from '@/lib/auth-email-verified';
 import styles from './AuthModal.module.css';
+
+const EMAIL_FIELD_HINT =
+  '차후 알림 및 비밀번호 찾기등을 사용하시려면 유효한 이메일을 입력해 주세요.';
 
 type Mode = 'login' | 'signup' | 'forgot';
 
@@ -56,12 +58,6 @@ export function AuthModal({ open, onClose, onAuthed, initialNotice = null }: Pro
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
       if (!data.session) throw new Error('세션을 받지 못했습니다.');
-      if (data.user && !isEmailVerifiedForApp(data.user)) {
-        await supabase.auth.signOut();
-        throw new Error(
-          '이메일 인증이 완료되지 않았습니다. 가입 시 받은 메일의 링크를 눌러 인증한 뒤 다시 로그인해 주세요.'
-        );
-      }
       await syncPrismaUserWithAuth(data.session.access_token);
       onAuthed();
       onClose();
@@ -92,24 +88,16 @@ export function AuthModal({ open, onClose, onAuthed, initialNotice = null }: Pro
         },
       });
       if (error) throw error;
-      if (data.session && data.user && !isEmailVerifiedForApp(data.user)) {
-        await supabase.auth.signOut();
-        setMessage({
-          type: 'ok',
-          text: 'Aisle에서 보낸 인증 메일을 확인해 주세요. 메일의 링크로 이메일을 인증한 뒤 로그인할 수 있습니다.',
-        });
+      if (data.session) {
+        await syncPrismaUserWithAuth(data.session.access_token);
+        onAuthed();
+        onClose();
         return;
       }
-      if (!data.session) {
-        setMessage({
-          type: 'ok',
-          text: 'Aisle에서 보낸 인증 메일을 확인해 주세요. 메일의 링크로 이메일을 인증한 뒤 로그인할 수 있습니다.',
-        });
-        return;
-      }
-      await syncPrismaUserWithAuth(data.session.access_token);
-      onAuthed();
-      onClose();
+      setMessage({
+        type: 'ok',
+        text: '가입이 접수되었습니다. 로그인 화면에서 이메일과 비밀번호로 로그인해 주세요.',
+      });
     } catch (err: unknown) {
       setMessage({ type: 'err', text: err instanceof Error ? err.message : '회원가입에 실패했습니다.' });
     } finally {
@@ -117,6 +105,7 @@ export function AuthModal({ open, onClose, onAuthed, initialNotice = null }: Pro
     }
   };
 
+  /** Supabase `resetPasswordForEmail`: 입력한 이메일로만 복구 메일 발송(존재 여부는 응답에 드러내지 않는 것이 권장). */
   const handleForgot = async (e: React.FormEvent) => {
     e.preventDefault();
     resetFeedback();
@@ -124,13 +113,14 @@ export function AuthModal({ open, onClose, onAuthed, initialNotice = null }: Pro
     try {
       const supabase = createClient();
       const site = getPublicSiteUrl();
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: site ? `${site}/auth/update-password` : `${window.location.origin}/auth/update-password`,
+      const redirectTo = site ? `${site}/auth/update-password` : `${window.location.origin}/auth/update-password`;
+      const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+        redirectTo,
       });
       if (error) throw error;
       setMessage({
         type: 'ok',
-        text: '비밀번호 재설정 링크를 이메일로 보냈습니다. 메일함을 확인해 주세요.',
+        text: '입력하신 이메일로 비밀번호 변경 링크를 보냈습니다. 메일함(스팸함)을 확인한 뒤 링크를 눌러 새 비밀번호를 설정해 주세요.',
       });
     } catch (err: unknown) {
       setMessage({ type: 'err', text: err instanceof Error ? err.message : '요청에 실패했습니다.' });
@@ -190,20 +180,26 @@ export function AuthModal({ open, onClose, onAuthed, initialNotice = null }: Pro
 
         {mode === 'login' && (
           <form className={styles.form} onSubmit={handleLogin}>
-            <label className={styles.label}>
+            <label className={styles.label} htmlFor="auth-login-email">
               이메일
               <input
+                id="auth-login-email"
                 className={styles.input}
                 type="email"
                 autoComplete="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                aria-describedby="auth-login-email-hint"
               />
             </label>
-            <label className={styles.label}>
+            <p id="auth-login-email-hint" className={styles.emailHint}>
+              {EMAIL_FIELD_HINT}
+            </p>
+            <label className={styles.label} htmlFor="auth-login-password">
               비밀번호
               <input
+                id="auth-login-password"
                 className={styles.input}
                 type="password"
                 autoComplete="current-password"
@@ -223,9 +219,10 @@ export function AuthModal({ open, onClose, onAuthed, initialNotice = null }: Pro
 
         {mode === 'signup' && (
           <form className={styles.form} onSubmit={handleSignup}>
-            <label className={styles.label}>
+            <label className={styles.label} htmlFor="auth-signup-username">
               닉네임
               <input
+                id="auth-signup-username"
                 className={styles.input}
                 type="text"
                 autoComplete="username"
@@ -236,20 +233,26 @@ export function AuthModal({ open, onClose, onAuthed, initialNotice = null }: Pro
                 maxLength={30}
               />
             </label>
-            <label className={styles.label}>
+            <label className={styles.label} htmlFor="auth-signup-email">
               이메일
               <input
+                id="auth-signup-email"
                 className={styles.input}
                 type="email"
                 autoComplete="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                aria-describedby="auth-signup-email-hint"
               />
             </label>
-            <label className={styles.label}>
+            <p id="auth-signup-email-hint" className={styles.emailHint}>
+              {EMAIL_FIELD_HINT}
+            </p>
+            <label className={styles.label} htmlFor="auth-signup-password">
               비밀번호
               <input
+                id="auth-signup-password"
                 className={styles.input}
                 type="password"
                 autoComplete="new-password"
@@ -267,20 +270,28 @@ export function AuthModal({ open, onClose, onAuthed, initialNotice = null }: Pro
 
         {mode === 'forgot' && (
           <form className={styles.form} onSubmit={handleForgot}>
-            <p className={styles.hint}>가입 시 사용한 이메일로 재설정 링크를 보냅니다.</p>
-            <label className={styles.label}>
+            <p className={styles.hint}>
+              가입 시 사용한 이메일을 입력해 주세요. 해당 주소로만 비밀번호 변경 링크가 전송되며, 메일에 있는
+              링크를 누르면 새 비밀번호를 설정할 수 있습니다.
+            </p>
+            <label className={styles.label} htmlFor="auth-forgot-email">
               이메일
               <input
+                id="auth-forgot-email"
                 className={styles.input}
                 type="email"
                 autoComplete="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                aria-describedby="auth-forgot-email-hint"
               />
             </label>
+            <p id="auth-forgot-email-hint" className={styles.emailHint}>
+              {EMAIL_FIELD_HINT}
+            </p>
             <button type="submit" className={styles.primary} disabled={loading}>
-              {loading ? '전송 중…' : '재설정 메일 보내기'}
+              {loading ? '전송 중…' : '비밀번호 변경 링크 보내기'}
             </button>
             <button
               type="button"

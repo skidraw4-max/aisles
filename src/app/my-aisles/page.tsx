@@ -3,7 +3,6 @@ import { redirect } from 'next/navigation';
 import { SiteHeader } from '@/components/SiteHeader';
 import { createClient } from '@/lib/supabase/server';
 import { prisma } from '@/lib/prisma';
-import { isEmailVerifiedForApp } from '@/lib/auth-email-verified';
 import { MyPostsGrid, type MyPostRow } from './MyPostsGrid';
 import styles from './my-aisles.module.css';
 
@@ -22,10 +21,6 @@ export default async function MyAislesPage() {
   if (!user?.email) {
     redirect('/login?next=/my-aisles');
   }
-  if (!isEmailVerifiedForApp(user)) {
-    redirect('/login?error=email_not_confirmed&next=/my-aisles');
-  }
-
   const rows = await prisma.post.findMany({
     where: { authorId: user.id },
     orderBy: { createdAt: 'desc' },

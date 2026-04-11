@@ -210,3 +210,13 @@
   color: #a1a1aa;
   line-height: 1.5;
 }
+
+.emailHint {
+  margin: -0.5rem 0 0;
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: #71717a;
+  line-height: 1.45;
+  text-transform: none;
+  letter-spacing: 0;
+}

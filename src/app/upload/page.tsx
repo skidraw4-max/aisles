@@ -3,7 +3,6 @@ import { redirect } from 'next/navigation';
 import { SiteHeader } from '@/components/SiteHeader';
 import { createClient } from '@/lib/supabase/server';
 import { prisma } from '@/lib/prisma';
-import { isEmailVerifiedForApp } from '@/lib/auth-email-verified';
 import { UploadForm, type UploadEditInitial } from './UploadForm';
 import styles from './upload.module.css';
 
@@ -28,13 +27,6 @@ export default async function UploadPage({ searchParams }: PageProps) {
       : '/upload';
     redirect(`/login?next=${encodeURIComponent(nextPath)}`);
   }
-  if (!isEmailVerifiedForApp(user)) {
-    const nextPath = editId
-      ? `/upload?edit=${encodeURIComponent(editId)}`
-      : '/upload';
-    redirect(`/login?error=email_not_confirmed&next=${encodeURIComponent(nextPath)}`);
-  }
-
   let editInitial: UploadEditInitial | null = null;
   if (editId) {
     const p = await prisma.post.findFirst({

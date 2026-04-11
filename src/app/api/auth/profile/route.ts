@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { prisma } from '@/lib/prisma';
-import { isEmailVerifiedForApp, jsonEmailNotVerified } from '@/lib/auth-email-verified';
 
 /** 로그인 세션으로 Prisma User의 닉네임 등을 조회 (헤더 표시용) */
 export async function GET(req: NextRequest) {
@@ -25,10 +24,6 @@ export async function GET(req: NextRequest) {
   if (error || !user) {
     return NextResponse.json({ error: 'Invalid session' }, { status: 401 });
   }
-  if (!isEmailVerifiedForApp(user)) {
-    return jsonEmailNotVerified();
-  }
-
   const row = await prisma.user.findUnique({
     where: { id: user.id },
     select: { username: true, email: true, avatarUrl: true },

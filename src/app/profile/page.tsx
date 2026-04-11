@@ -3,7 +3,6 @@ import { redirect } from 'next/navigation';
 import { SiteHeader } from '@/components/SiteHeader';
 import { createClient } from '@/lib/supabase/server';
 import { prisma } from '@/lib/prisma';
-import { isEmailVerifiedForApp } from '@/lib/auth-email-verified';
 import { ProfileForm } from './ProfileForm';
 import styles from './profile.module.css';
 
@@ -20,10 +19,6 @@ export default async function ProfilePage() {
   if (!user?.email) {
     redirect('/');
   }
-  if (!isEmailVerifiedForApp(user)) {
-    redirect('/login?error=email_not_confirmed&next=/profile');
-  }
-
   const row = await prisma.user.findUnique({
     where: { id: user.id },
     select: { username: true, avatarUrl: true },

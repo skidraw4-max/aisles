@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { prisma } from '@/lib/prisma';
 import { sanitizeUsername } from '@/lib/username';
-import { isEmailVerifiedForApp, jsonEmailNotVerified } from '@/lib/auth-email-verified';
 
 export async function PATCH(req: NextRequest) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -25,10 +24,6 @@ export async function PATCH(req: NextRequest) {
   if (error || !user?.email) {
     return NextResponse.json({ error: 'Invalid session' }, { status: 401 });
   }
-  if (!isEmailVerifiedForApp(user)) {
-    return jsonEmailNotVerified();
-  }
-
   let body: { username?: unknown };
   try {
     body = await req.json();

@@ -34,7 +34,9 @@ export default function UpdatePasswordPage() {
     <div className={styles.wrap}>
       <div className={styles.card}>
         <h1 className={styles.title}>새 비밀번호 설정</h1>
-        <p className={styles.lead}>이메일로 받은 링크로 들어온 뒤 새 비밀번호를 입력하세요.</p>
+        <p className={styles.lead}>
+          비밀번호 찾기로 요청한 이메일의 링크를 연 뒤, 아래에 새 비밀번호를 입력해 저장하세요.
+        </p>
         {msg && <p className={msg.ok ? styles.ok : styles.err}>{msg.text}</p>}
         <form className={styles.form} onSubmit={handleSubmit}>
           <label className={styles.label}>
