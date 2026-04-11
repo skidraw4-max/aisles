@@ -10,12 +10,6 @@ const WM_WIDTH_RATIO = 0.33;
 /** 로고 알파 — 최대에 가깝게 */
 const WM_ALPHA_SCALE = 1;
 const MIN_WM_WIDTH = 100;
-const BACKDROP_PAD = 14;
-/** 패널 배경 + 흰 테두리로 밝은/어두운 배경 모두에서 대비 */
-const BACKDROP_FILL = 'rgba(10,12,20,0.82)';
-const BACKDROP_STROKE = 'rgba(255,255,255,0.5)';
-const BACKDROP_STROKE_W = 2;
-const BACKDROP_RADIUS = 12;
 
 const WATERMARK_MIME = new Set(['image/jpeg', 'image/png', 'image/webp']);
 
@@ -133,26 +127,7 @@ export async function applyWatermarkForUpload(payload: WatermarkUploadPayload): 
     const left = Math.max(MARGIN_PX, Math.round(bw - ow - MARGIN_PX));
     const top = Math.max(MARGIN_PX, Math.round(bh - oh - MARGIN_PX));
 
-    const bgLeft = Math.max(0, left - BACKDROP_PAD);
-    const bgTop = Math.max(0, top - BACKDROP_PAD);
-    const bgW = Math.min(bw - bgLeft, ow + 2 * BACKDROP_PAD);
-    const bgH = Math.min(bh - bgTop, oh + 2 * BACKDROP_PAD);
-
-    let composited: ReturnType<typeof sharp>;
-    if (bgW >= 8 && bgH >= 8) {
-      const s = BACKDROP_STROKE_W;
-      const rw = Math.max(4, bgW - s);
-      const rh = Math.max(4, bgH - s);
-      const rx = Math.min(BACKDROP_RADIUS, rw / 2, rh / 2);
-      const svg = `<svg width="${bgW}" height="${bgH}" xmlns="http://www.w3.org/2000/svg"><rect x="${s / 2}" y="${s / 2}" width="${rw}" height="${rh}" rx="${rx}" ry="${rx}" fill="${BACKDROP_FILL}" stroke="${BACKDROP_STROKE}" stroke-width="${s}"/></svg>`;
-      const backdrop = await sharp(Buffer.from(svg)).png().toBuffer();
-      composited = basePipeline.clone().composite([
-        { input: backdrop, left: bgLeft, top: bgTop },
-        { input: wmOverlay, left, top },
-      ]);
-    } else {
-      composited = basePipeline.clone().composite([{ input: wmOverlay, left, top }]);
-    }
+    const composited = basePipeline.clone().composite([{ input: wmOverlay, left, top }]);
 
     let out: Buffer;
     if (mimeType === 'image/jpeg') {
