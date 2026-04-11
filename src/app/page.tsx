@@ -11,6 +11,7 @@ import { HomeQuasarBoard } from '@/components/HomeQuasarBoard';
 import { SHOW_HOME_MAIN_HERO } from '@/lib/home-flags';
 import { prisma } from '@/lib/prisma';
 import { homeViewFromSearchParams } from '@/lib/content-tab';
+import { isSupabaseAuthLinkError } from '@/lib/supabase-auth-url-errors';
 import { fetchFeedPosts, serializeFeedPost } from '@/lib/home-feed';
 import { POST_CATEGORY_OPTIONS } from '@/lib/post-categories';
 import type { Category } from '@prisma/client';
@@ -19,8 +20,19 @@ import styles from './page.module.css';
 export const dynamic = 'force-dynamic';
 
 type PageProps = {
-  searchParams: Promise<{ category?: string | string[]; sort?: string | string[] }>;
+  searchParams: Promise<{
+    category?: string | string[];
+    sort?: string | string[];
+    error?: string | string[];
+    error_code?: string | string[];
+    error_description?: string | string[];
+  }>;
 };
+
+function pickSearchParam(v: string | string[] | undefined): string | undefined {
+  if (v === undefined) return undefined;
+  return Array.isArray(v) ? v[0] : v;
+}
 
 function categoryUiLabel(c: Category) {
   return POST_CATEGORY_OPTIONS.find((o) => o.value === c)?.label ?? c;
@@ -29,6 +41,15 @@ function categoryUiLabel(c: Category) {
 export default async function HomePage({ searchParams }: PageProps) {
   const sp = await searchParams;
   const { category: filterCategory, sort: feedSort } = homeViewFromSearchParams(sp);
+
+  const authErrParams = new URLSearchParams();
+  const ec = pickSearchParam(sp.error_code);
+  const er = pickSearchParam(sp.error);
+  const ed = pickSearchParam(sp.error_description);
+  if (ec) authErrParams.set('error_code', ec);
+  if (er) authErrParams.set('error', er);
+  if (ed) authErrParams.set('error_description', ed);
+  const showInvalidEmailLinkBanner = isSupabaseAuthLinkError(authErrParams);
 
   const recentAll = await prisma.post.findMany({
     orderBy: { createdAt: 'desc' },
@@ -50,6 +71,18 @@ export default async function HomePage({ searchParams }: PageProps) {
   return (
     <>
       <SiteHeader />
+      {showInvalidEmailLinkBanner ? (
+        <div className={styles.supabaseLinkError} role="alert">
+          <p className={styles.supabaseLinkErrorTitle}>이메일 링크가 만료되었거나 유효하지 않습니다.</p>
+          <p className={styles.supabaseLinkErrorHint}>
+            비밀번호 재설정이 필요하면{' '}
+            <Link href="/login" className={styles.supabaseLinkErrorLink}>
+              로그인
+            </Link>{' '}
+            화면에서 다시 요청해 주세요.
+          </p>
+        </div>
+      ) : null}
       <main className={styles.mainShell}>
         <section className={styles.hero}>
           <p className={styles.eyebrow}>Four aisles, one workspace</p>

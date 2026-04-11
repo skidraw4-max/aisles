@@ -1,0 +1,36 @@
+.banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 9999;
+  padding: 0.85rem 1.25rem;
+  background: rgba(127, 29, 29, 0.92);
+  border-bottom: 1px solid rgba(252, 165, 165, 0.35);
+  color: #fecaca;
+  font-size: 0.92rem;
+  line-height: 1.45;
+  text-align: center;
+}
+
+.bannerTitle {
+  margin: 0;
+  font-weight: 600;
+  color: #fff;
+}
+
+.bannerHint {
+  margin: 0.35rem 0 0;
+  font-size: 0.86rem;
+  opacity: 0.95;
+}
+
+.bannerLink {
+  color: #fde68a;
+  text-decoration: underline;
+  font-weight: 600;
+}
+
+.bannerLink:hover {
+  color: #fef3c7;
+}

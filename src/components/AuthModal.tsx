@@ -116,9 +116,15 @@ export function AuthModal({ open, onClose, onAuthed, initialNotice = null }: Pro
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: email.trim() }),
       });
-      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      const raw = await res.text();
+      let data: { error?: string } = {};
+      try {
+        data = raw ? (JSON.parse(raw) as { error?: string }) : {};
+      } catch {
+        /* 비 JSON(프록시 HTML 등) */
+      }
       if (!res.ok) {
-        throw new Error(data.error || '요청에 실패했습니다.');
+        throw new Error(data.error || raw?.slice(0, 160) || '요청에 실패했습니다.');
       }
       setMessage({
         type: 'ok',

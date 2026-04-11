@@ -2735,3 +2735,42 @@
   color: var(--muted);
   text-align: center;
 }
+
+/* Supabase 이메일 링크 만료·무효 → Site URL 쿼리로 돌아온 경우 (서버에서 쿼리만 감지) */
+.supabaseLinkError {
+  max-width: var(--aisle-max);
+  margin: 0 auto;
+  padding: 1rem var(--aisle-gutter-sm) 0;
+}
+
+@media (min-width: 640px) {
+  .supabaseLinkError {
+    padding-left: var(--aisle-gutter);
+    padding-right: var(--aisle-gutter);
+  }
+}
+
+.supabaseLinkErrorTitle {
+  margin: 0;
+  padding: 0.85rem 1rem;
+  border-radius: 12px;
+  background: rgba(127, 29, 29, 0.35);
+  border: 1px solid rgba(252, 165, 165, 0.35);
+  color: #fecaca;
+  font-size: var(--type-14);
+  font-weight: 600;
+}
+
+.supabaseLinkErrorHint {
+  margin: 0.5rem 0 0;
+  padding: 0 0.25rem;
+  font-size: var(--type-13);
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.supabaseLinkErrorLink {
+  color: var(--accent);
+  font-weight: 600;
+  text-decoration: underline;
+}

@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Script from 'next/script';
 import { Syne, DM_Sans, Roboto_Mono } from 'next/font/google';
-import { RootRecoveryCodeBridge } from '@/components/RootRecoveryCodeBridge';
+import { HomeSupabaseRedirectHandler } from '@/components/HomeSupabaseRedirectHandler';
 import { SessionProvider, type InitialSession } from '@/components/SessionProvider';
 import { createClient } from '@/lib/supabase/server';
 import { prisma } from '@/lib/prisma';
@@ -184,7 +184,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             gtag('config', '${GA_MEASUREMENT_ID}');
           `}
         </Script>
-        <RootRecoveryCodeBridge />
+        <HomeSupabaseRedirectHandler />
         <SessionProvider initialSession={initialSession}>{children}</SessionProvider>
       </body>
     </html>
