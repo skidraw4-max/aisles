@@ -1,5 +1,10 @@
 import { Prisma } from '@prisma/client';
 import type { Category } from '@prisma/client';
+import {
+  HOT_POPULARITY_LIKE_WEIGHT,
+  HOT_POPULARITY_VIEW_WEIGHT,
+  hotPopularityCutoffDate,
+} from '@/lib/hot-popularity';
 import { prisma } from '@/lib/prisma';
 
 export const HOME_FEED_INCLUDE = {
@@ -34,12 +39,8 @@ export async function fetchFeaturedForHome(category: Category | null): Promise<H
   }
 }
 
-/** Hot 정렬 가중치: 조회 1pt, 좋아요 5pt */
-const HOT_VIEW_WEIGHT = 1;
-const HOT_LIKE_WEIGHT = 5;
-
 /**
- * 메인 피드(비-featured만). Hot: 가중 점수 내림차순.
+ * 메인 피드(비-featured만). Hot: (좋아요×10)+조회 내림차순, 선택적 최근 N일만.
  * `excludeIds`: 상단 쇼케이스에 이미 노출된 글 제외(중복 방지).
  */
 export async function fetchFeedPosts(
@@ -76,11 +77,15 @@ export async function fetchFeedPosts(
       const idParams = excludeIds.map((id) => Prisma.sql`${id}`);
       conditions.push(Prisma.sql`p.id NOT IN (${Prisma.join(idParams, ', ')})`);
     }
+    const hotSince = hotPopularityCutoffDate();
+    if (hotSince) {
+      conditions.push(Prisma.sql`p."createdAt" >= ${hotSince}`);
+    }
 
     const idRows = await prisma.$queryRaw<{ id: string }[]>`
       SELECT p.id FROM "Post" p
       WHERE ${Prisma.join(conditions, ' AND ')}
-      ORDER BY (p."views" * ${HOT_VIEW_WEIGHT} + p."likeCount" * ${HOT_LIKE_WEIGHT}) DESC, p."createdAt" DESC
+      ORDER BY (p."likeCount" * ${HOT_POPULARITY_LIKE_WEIGHT} + p."views" * ${HOT_POPULARITY_VIEW_WEIGHT}) DESC, p."createdAt" DESC
       LIMIT ${take + 1} OFFSET ${skip}
     `;
 
