@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import styles from './SiteHeader.module.css';
 
 /** ALL + 퀘이사존 스타일 탭 순서 (LAB … LAUNCH) */
@@ -23,9 +23,11 @@ function navClassName(active: boolean) {
 
 /** `useSearchParams` 사용 — 상위에서 `<Suspense>`로 감쌀 것 */
 export function MainNav() {
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const raw = searchParams.get('category');
   const current = raw?.trim() ? raw.trim().toUpperCase() : null;
+  const aboutActive = pathname === '/about';
 
   return (
     <nav className={`${styles.nav} ${styles.navQuasi}`} aria-label="주요 메뉴">
@@ -43,6 +45,13 @@ export function MainNav() {
           </Link>
         );
       })}
+      <Link
+        href="/about"
+        className={navClassName(aboutActive)}
+        aria-current={aboutActive ? 'page' : undefined}
+      >
+        ABOUT
+      </Link>
     </nav>
   );
 }
@@ -56,6 +65,9 @@ export function MainNavFallback() {
           {item.label}
         </Link>
       ))}
+      <Link href="/about" className={`${styles.navLink} ${styles.navLinkQuasi}`}>
+        ABOUT
+      </Link>
     </nav>
   );
 }
