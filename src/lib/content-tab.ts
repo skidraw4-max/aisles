@@ -1,11 +1,9 @@
 import type { Category } from '@prisma/client';
-import { parseHomeFeedSort } from '@/lib/feed-sort';
 import { parseHomeCategoryQuery } from '@/lib/post-categories';
 
 /** 콘텐츠 탭 바 활성 키 */
 export type ContentTabId =
   | 'latest'
-  | 'hot'
   | 'lab'
   | 'gallery'
   | 'lounge'
@@ -23,17 +21,14 @@ export function getContentTabFromSearchParams(search: {
   if (cat === 'GOSSIP') return 'gossip';
   if (cat === 'BUILD') return 'build';
   if (cat === 'LAUNCH') return 'launch';
-  if (parseHomeFeedSort(search.get('sort')) === 'hot') return 'hot';
   return 'latest';
 }
 
-/** 서버에서 URL → 쇼케이스/피드용. 인기 점수는 전체(복도 미선택)일 때만 적용. */
+/** 서버에서 URL → 피드용 복도 필터 (`sort` 등 기타 쿼리는 무시) */
 export function homeViewFromSearchParams(sp: {
   category?: string | string[];
   sort?: string | string[];
-}): { category: Category | null; sort: 'new' | 'hot' } {
+}): { category: Category | null } {
   const category = parseHomeCategoryQuery(sp.category);
-  const raw = parseHomeFeedSort(sp.sort);
-  const sort = raw === 'hot' && category !== null ? 'new' : raw;
-  return { category, sort };
+  return { category };
 }

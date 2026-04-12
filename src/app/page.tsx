@@ -40,7 +40,7 @@ function categoryUiLabel(c: Category) {
 
 export default async function HomePage({ searchParams }: PageProps) {
   const sp = await searchParams;
-  const { category: filterCategory, sort: feedSort } = homeViewFromSearchParams(sp);
+  const { category: filterCategory } = homeViewFromSearchParams(sp);
 
   const authErrParams = new URLSearchParams();
   const ec = pickSearchParam(sp.error_code);
@@ -57,13 +57,11 @@ export default async function HomePage({ searchParams }: PageProps) {
     include: { author: { select: { username: true } } },
   });
 
-  const firstHomeFeed = await fetchFeedPosts(feedSort, 0, 12, filterCategory, []);
+  const firstHomeFeed = await fetchFeedPosts(0, 12, filterCategory, []);
 
   let heroLead: string;
   if (filterCategory) {
-    heroLead = `${categoryUiLabel(filterCategory)} 복도입니다. 콘텐츠 탭으로 전체·인기·다른 복도를 전환할 수 있습니다.`;
-  } else if (feedSort === 'hot') {
-    heroLead = '조회·좋아요 반응을 반영한 인기 피드입니다. 탭으로 최신이나 복도별 보기로 바꿀 수 있습니다.';
+    heroLead = `${categoryUiLabel(filterCategory)} 복도입니다. 콘텐츠 탭으로 전체나 다른 복도를 전환할 수 있습니다.`;
   } else {
     heroLead = '세상의 모든 AI 창작자와 함께 실험하고, 만들고, 성장하세요.';
   }
@@ -179,8 +177,7 @@ export default async function HomePage({ searchParams }: PageProps) {
             </div>
             <div className={styles.feedLayoutMainFeed}>
               <HomeAllFeed
-                key={`${feedSort}-${filterCategory ?? 'all'}`}
-                sort={feedSort}
+                key={filterCategory ?? 'all'}
                 category={filterCategory}
                 excludeIds={[]}
                 initialPosts={firstHomeFeed.posts.map(serializeFeedPost)}

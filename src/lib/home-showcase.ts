@@ -1,17 +1,14 @@
 import type { Category } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
-import { fetchFeedPosts, HOME_FEED_INCLUDE, type HomeFeedPost } from '@/lib/home-feed';
+import { HOME_FEED_INCLUDE, type HomeFeedPost } from '@/lib/home-feed';
 
 export type HomeShowcaseOptions = {
   category: Category | null;
-  /** 전체 기준: 최신(에디터픽+채움) vs 인기(Hot 8칸 분할) */
-  sort: 'new' | 'hot';
 };
 
 /**
  * 메인 70/30 쇼케이스.
- * - 전체+인기: Hot 순위 상위 8개를 좌4·우4.
- * - 그 외: 해당 범위에서 에디터 픽 최대 4 + 최신으로 채운 뒤, 우측에 다음 최신 4.
+ * 해당 범위에서 에디터 픽 최대 4 + 최신으로 채운 뒤, 우측에 다음 최신 4.
  */
 export async function fetchHomeShowcasePosts(
   options: HomeShowcaseOptions
@@ -20,18 +17,7 @@ export async function fetchHomeShowcasePosts(
   rightPosts: HomeFeedPost[];
   showcaseIds: string[];
 }> {
-  const { category, sort } = options;
-
-  if (!category && sort === 'hot') {
-    const batch = await fetchFeedPosts('hot', 0, 8, null, []);
-    const posts = batch.posts;
-    return {
-      leftPosts: posts.slice(0, 4),
-      rightPosts: posts.slice(4, 8),
-      showcaseIds: posts.map((p) => p.id),
-    };
-  }
-
+  const { category } = options;
   const catWhere = category ? { category } : {};
 
   const featured = await prisma.post.findMany({

@@ -11,7 +11,6 @@ import {
   POST_CATEGORY_OPTIONS,
 } from '@/lib/post-categories';
 import type { Category } from '@prisma/client';
-import type { HomeFeedSort } from '@/lib/feed-sort';
 import type { FeedPostJson } from '@/lib/home-feed';
 import styles from '@/app/page.module.css';
 
@@ -183,14 +182,13 @@ function FeedBoardTable({ posts, gossipReportStyle }: { posts: FeedPostJson[]; g
 }
 
 type Props = {
-  sort: HomeFeedSort;
   category: Category | null;
   excludeIds: string[];
   initialPosts: FeedPostJson[];
   initialHasMore: boolean;
 };
 
-export function HomeAllFeed({ sort, category, excludeIds, initialPosts, initialHasMore }: Props) {
+export function HomeAllFeed({ category, excludeIds, initialPosts, initialHasMore }: Props) {
   const [posts, setPosts] = useState<FeedPostJson[]>(initialPosts);
   const [hasMore, setHasMore] = useState(initialHasMore);
   const [loading, setLoading] = useState(false);
@@ -221,11 +219,11 @@ export function HomeAllFeed({ sort, category, excludeIds, initialPosts, initialH
   );
 
   const loadPage = useCallback(
-    async (nextSort: HomeFeedSort, skip: number, replace: boolean) => {
+    async (skip: number, replace: boolean) => {
       abortRef.current?.abort();
       const ac = new AbortController();
       abortRef.current = ac;
-      const base = `/api/feed?sort=${nextSort}&skip=${skip}&limit=${PAGE_SIZE}${catQs}${excludeQs}`;
+      const base = `/api/feed?skip=${skip}&limit=${PAGE_SIZE}${catQs}${excludeQs}`;
       try {
         const data = await fetchJson(base, ac.signal);
         if (replace) {
@@ -263,8 +261,8 @@ export function HomeAllFeed({ sort, category, excludeIds, initialPosts, initialH
   useEffect(() => {
     if (!inView || !hasMore || loading) return;
     setLoading(true);
-    void loadPage(sort, posts.length, false);
-  }, [inView, hasMore, loading, sort, posts.length, loadPage]);
+    void loadPage(posts.length, false);
+  }, [inView, hasMore, loading, posts.length, loadPage]);
 
   return (
     <>

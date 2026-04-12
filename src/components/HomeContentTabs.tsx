@@ -8,7 +8,6 @@ import styles from '@/app/page.module.css';
 
 const TABS: { id: ContentTabId; label: string; href: string }[] = [
   { id: 'latest', label: '최신', href: '/' },
-  { id: 'hot', label: '인기', href: '/?sort=hot' },
   { id: 'lab', label: 'LAB', href: '/?category=LAB' },
   { id: 'gallery', label: 'GALLERY', href: '/?category=GALLERY' },
   { id: 'lounge', label: 'LOUNGE', href: '/?category=LOUNGE' },
