@@ -1,14 +1,11 @@
-import { Prisma } from '@prisma/client';
 import type { Category } from '@prisma/client';
-import {
-  HOT_POPULARITY_LIKE_WEIGHT,
-  HOT_POPULARITY_VIEW_WEIGHT,
-  hotPopularityCutoffDate,
-} from '@/lib/hot-popularity';
 import { prisma } from '@/lib/prisma';
 import { HOME_FEED_INCLUDE, type HomeFeedPost } from '@/lib/home-feed';
 
-/** 복도별 인기 상위 N (메인 인기 탭과 동일 점수·기간) */
+const HOT_VIEW_WEIGHT = 1;
+const HOT_LIKE_WEIGHT = 5;
+
+/** 복도별 인기 상위 N (쇼케이스용·메인「인기」탭 피드와 별도) */
 export async function fetchHotTopForCategory(
   category: Category,
   take: number
@@ -16,16 +13,10 @@ export async function fetchHotTopForCategory(
   if (take <= 0) return [];
 
   try {
-    const conditions = [Prisma.sql`p.category = ${category}::"Category"`];
-    const hotSince = hotPopularityCutoffDate();
-    if (hotSince) {
-      conditions.push(Prisma.sql`p."createdAt" >= ${hotSince}`);
-    }
-
     const idRows = await prisma.$queryRaw<{ id: string }[]>`
       SELECT p.id FROM "Post" p
-      WHERE ${Prisma.join(conditions, ' AND ')}
-      ORDER BY (p."likeCount" * ${HOT_POPULARITY_LIKE_WEIGHT} + p."views" * ${HOT_POPULARITY_VIEW_WEIGHT}) DESC, p."createdAt" DESC
+      WHERE p.category = ${category}::"Category"
+      ORDER BY (p."views" * ${HOT_VIEW_WEIGHT} + p."likeCount" * ${HOT_LIKE_WEIGHT}) DESC, p."createdAt" DESC
       LIMIT ${take}
     `;
 

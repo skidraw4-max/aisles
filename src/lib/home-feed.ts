@@ -51,13 +51,16 @@ export async function fetchFeedPosts(
   excludeIds: string[] = []
 ): Promise<{ posts: HomeFeedPost[]; hasMore: boolean }> {
   try {
+    /** 인기 점수 정렬은 상단「인기」탭(전체·복도 필터 없음)일 때만. 복도 탭은 항상 등록일순. */
+    const effectiveSort: 'new' | 'hot' = sort === 'hot' && category === null ? 'hot' : 'new';
+
     const where = {
       isFeatured: false,
       ...(category ? { category } : {}),
       ...(excludeIds.length > 0 ? { id: { notIn: excludeIds } } : {}),
     };
 
-    if (sort === 'new') {
+    if (effectiveSort === 'new') {
       const posts = await prisma.post.findMany({
         where,
         orderBy: { createdAt: 'desc' },

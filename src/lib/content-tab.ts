@@ -27,12 +27,13 @@ export function getContentTabFromSearchParams(search: {
   return 'latest';
 }
 
-/** 서버에서 URL → 쇼케이스/피드용 */
+/** 서버에서 URL → 쇼케이스/피드용. 인기 점수는 전체(복도 미선택)일 때만 적용. */
 export function homeViewFromSearchParams(sp: {
   category?: string | string[];
   sort?: string | string[];
 }): { category: Category | null; sort: 'new' | 'hot' } {
   const category = parseHomeCategoryQuery(sp.category);
-  const sort = parseHomeFeedSort(sp.sort);
+  const raw = parseHomeFeedSort(sp.sort);
+  const sort = raw === 'hot' && category !== null ? 'new' : raw;
   return { category, sort };
 }

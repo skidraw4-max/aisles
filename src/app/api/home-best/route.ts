@@ -1,10 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Prisma } from '@prisma/client';
 import type { Category } from '@prisma/client';
-import {
-  HOT_POPULARITY_LIKE_WEIGHT,
-  HOT_POPULARITY_VIEW_WEIGHT,
-} from '@/lib/hot-popularity';
 import { prisma } from '@/lib/prisma';
 
 const PAGE_SIZE = 10;
@@ -46,7 +42,7 @@ export async function GET(req: NextRequest) {
       LEFT JOIN "Comment" c ON c."postId" = p.id
       WHERE ${whereSql}
       GROUP BY p.id
-      ORDER BY COUNT(c.id) DESC, (p."likeCount" * ${HOT_POPULARITY_LIKE_WEIGHT} + p."views" * ${HOT_POPULARITY_VIEW_WEIGHT}) DESC, p."createdAt" DESC
+      ORDER BY COUNT(c.id) DESC, (p."views" * 1 + p."likeCount" * 5) DESC, p."createdAt" DESC
       LIMIT ${PAGE_SIZE} OFFSET ${skip}
     `;
 
