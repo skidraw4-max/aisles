@@ -5,8 +5,9 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/components/SessionProvider';
+import { Menu } from 'lucide-react';
 import { AuthModal } from './AuthModal';
-import { MainNav, MainNavFallback } from './MainNav';
+import { MainNav, MainNavFallback, MobileMainNavPanel, MobileMainNavPanelFallback } from './MainNav';
 import { HeaderSearch } from './HeaderSearch';
 import styles from './SiteHeader.module.css';
 
@@ -15,6 +16,7 @@ export function SiteHeader() {
   const { isAuthenticated, displayName } = useAuth();
   const [modalOpen, setModalOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [mainNavOpen, setMainNavOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -45,9 +47,21 @@ export function SiteHeader() {
     <>
       <header className={styles.header}>
         <div className={styles.inner}>
-          <Link href="/" className={styles.logo}>
-            AIsle
-          </Link>
+          <div className={styles.leftBrand}>
+            <button
+              type="button"
+              className={styles.mobileNavToggle}
+              aria-label="주요 메뉴 열기"
+              aria-expanded={mainNavOpen}
+              aria-controls="mobile-main-nav-panel"
+              onClick={() => setMainNavOpen(true)}
+            >
+              <Menu className="h-5 w-5" strokeWidth={2} aria-hidden />
+            </button>
+            <Link href="/" className={styles.logo}>
+              AIsle
+            </Link>
+          </div>
           <Suspense fallback={<MainNavFallback />}>
             <MainNav />
           </Suspense>
@@ -128,6 +142,13 @@ export function SiteHeader() {
           </div>
         </div>
       </header>
+      {mainNavOpen ? (
+        <Suspense
+          fallback={<MobileMainNavPanelFallback onClose={() => setMainNavOpen(false)} />}
+        >
+          <MobileMainNavPanel onClose={() => setMainNavOpen(false)} />
+        </Suspense>
+      ) : null}
       <AuthModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}

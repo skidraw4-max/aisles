@@ -1,7 +1,9 @@
 'use client';
 
+import { useEffect, type ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
+import { X } from 'lucide-react';
 import styles from './SiteHeader.module.css';
 
 /** ALL + 퀘이사존 스타일 탭 순서 (LAB … LAUNCH) */
@@ -69,5 +71,109 @@ export function MainNavFallback() {
         ABOUT
       </Link>
     </nav>
+  );
+}
+
+function mobileNavLinkClass(active: boolean) {
+  return active ? `${styles.mobileNavLink} ${styles.mobileNavLinkActive}` : styles.mobileNavLink;
+}
+
+function MobileNavShell({
+  onClose,
+  children,
+}: {
+  onClose: () => void;
+  children: ReactNode;
+}) {
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.body.style.overflow = prev;
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [onClose]);
+
+  return (
+    <div className={styles.mobileNavRoot} role="dialog" aria-modal="true" aria-label="주요 메뉴">
+      <nav className={styles.mobileNavDrawer} id="mobile-main-nav-panel" onClick={(e) => e.stopPropagation()}>
+        <div className={styles.mobileNavDrawerHeader}>
+          <button type="button" className={styles.mobileNavClose} aria-label="메뉴 닫기" onClick={onClose}>
+            <X className="h-5 w-5" strokeWidth={2} aria-hidden />
+          </button>
+        </div>
+        <ul className={styles.mobileNavList}>{children}</ul>
+      </nav>
+      <button type="button" className={styles.mobileNavBackdrop} aria-label="메뉴 닫기" onClick={onClose} />
+    </div>
+  );
+}
+
+/** Suspense 폴백: 활성 표시 없이 동일 링크 */
+export function MobileMainNavPanelFallback({ onClose }: { onClose: () => void }) {
+  return (
+    <MobileNavShell onClose={onClose}>
+      {HOME_NAV_ITEMS.map((item) => (
+        <li key={item.href}>
+          <Link
+            href={item.href}
+            className={styles.mobileNavLink}
+            scroll={false}
+            onClick={onClose}
+          >
+            {item.label}
+          </Link>
+        </li>
+      ))}
+      <li>
+        <Link href="/about" className={styles.mobileNavLink} onClick={onClose}>
+          ABOUT
+        </Link>
+      </li>
+    </MobileNavShell>
+  );
+}
+
+/** 모바일 햄버거 드로어 — `useSearchParams` 사용, 상위에서 `<Suspense>`로 감쌀 것 */
+export function MobileMainNavPanel({ onClose }: { onClose: () => void }) {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const raw = searchParams.get('category');
+  const current = raw?.trim() ? raw.trim().toUpperCase() : null;
+  const aboutActive = pathname === '/about';
+
+  return (
+    <MobileNavShell onClose={onClose}>
+      {HOME_NAV_ITEMS.map((item) => {
+        const active = item.queryKey === null ? current === null : current === item.queryKey;
+        return (
+          <li key={item.href}>
+            <Link
+              href={item.href}
+              className={mobileNavLinkClass(active)}
+              aria-current={active ? 'page' : undefined}
+              scroll={false}
+              onClick={onClose}
+            >
+              {item.label}
+            </Link>
+          </li>
+        );
+      })}
+      <li>
+        <Link
+          href="/about"
+          className={mobileNavLinkClass(aboutActive)}
+          aria-current={aboutActive ? 'page' : undefined}
+          onClick={onClose}
+        >
+          ABOUT
+        </Link>
+      </li>
+    </MobileNavShell>
   );
 }
