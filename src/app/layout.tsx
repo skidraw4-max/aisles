@@ -167,6 +167,13 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
   return (
     <html lang="ko" className={`${display.variable} ${body.variable} ${mono.variable}`}>
+      <head>
+        <script
+          async
+          src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT_ID}`}
+          crossOrigin="anonymous"
+        />
+      </head>
       <body className={body.className}>
         <script
           type="application/ld+json"
@@ -185,12 +192,6 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             gtag('config', '${GA_MEASUREMENT_ID}');
           `}
         </Script>
-        <Script
-          async
-          src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT_ID}`}
-          crossOrigin="anonymous"
-          strategy="afterInteractive"
-        />
         <HomeSupabaseRedirectHandler />
         <SessionProvider initialSession={initialSession}>{children}</SessionProvider>
       </body>
