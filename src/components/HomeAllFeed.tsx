@@ -34,7 +34,7 @@ function formatDate(iso: string) {
 }
 
 function commentCount(post: FeedPostJson): number {
-  return post._count?.comments ?? 0;
+  return post.commentCount ?? 0;
 }
 
 function CardFooter({ username, likeCount }: { username: string; likeCount: number }) {
@@ -174,7 +174,7 @@ export function HomeAllFeed({ category, excludeIds, initialPosts, initialHasMore
 
   const fetchJson = useCallback(
     async (url: string, signal: AbortSignal) => {
-      const res = await fetch(url, { signal });
+      const res = await fetch(url, { signal, cache: 'no-store' });
       if (!res.ok) throw new Error('feed failed');
       return res.json() as Promise<{ posts: FeedPostJson[]; hasMore?: boolean }>;
     },

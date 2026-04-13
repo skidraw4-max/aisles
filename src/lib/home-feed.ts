@@ -10,12 +10,18 @@ export const HOME_FEED_INCLUDE = {
 
 export type HomeFeedPost = Prisma.PostGetPayload<{ include: typeof HOME_FEED_INCLUDE }>;
 
-export type FeedPostJson = Omit<HomeFeedPost, 'createdAt'> & { createdAt: string };
+/** 클라이언트·JSON으로 넘길 때 `_count` 등이 누락되지 않도록 댓글 수를 평문 필드로 둡니다. */
+export type FeedPostJson = Omit<HomeFeedPost, 'createdAt' | '_count'> & {
+  createdAt: string;
+  commentCount: number;
+};
 
 export function serializeFeedPost(post: HomeFeedPost): FeedPostJson {
+  const { createdAt, _count, ...rest } = post;
   return {
-    ...post,
-    createdAt: post.createdAt.toISOString(),
+    ...rest,
+    createdAt: createdAt.toISOString(),
+    commentCount: _count.comments,
   };
 }
 
