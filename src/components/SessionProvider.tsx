@@ -9,6 +9,7 @@ import {
   useState,
 } from 'react';
 import type { User } from '@supabase/supabase-js';
+import type { Role } from '@prisma/client';
 import { createClient } from '@/lib/supabase/client';
 
 export type InitialSession = {
@@ -16,6 +17,8 @@ export type InitialSession = {
   email: string | null;
   usernameFromMetadata: string | null;
   dbUsername: string | null;
+  /** Prisma `User.role` — 클라이언트 표시용(실제 권한은 서버 액션에서 재검증) */
+  dbRole: Role | null;
 } | null;
 
 function displayFromParts(dbUsername: string | null, user: User | null): string {
@@ -30,6 +33,8 @@ type AuthContextValue = {
   user: User | null;
   displayName: string;
   isAuthenticated: boolean;
+  role: Role | null;
+  isAdmin: boolean;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -52,6 +57,7 @@ export function SessionProvider({ initialSession, children }: Props) {
   const [dbUsername, setDbUsername] = useState<string | null>(
     initialSession?.dbUsername ?? null
   );
+  const [dbRole, setDbRole] = useState<Role | null>(initialSession?.dbRole ?? null);
   const [hydrated, setHydrated] = useState(false);
 
   const applyProfile = useCallback(async (accessToken: string) => {
@@ -67,8 +73,9 @@ export function SessionProvider({ initialSession, children }: Props) {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
     if (res.ok) {
-      const body = (await res.json()) as { username?: string | null };
+      const body = (await res.json()) as { username?: string | null; role?: Role | null };
       setDbUsername(body.username ?? null);
+      setDbRole(body.role ?? null);
     }
   }, []);
 
@@ -80,6 +87,7 @@ export function SessionProvider({ initialSession, children }: Props) {
       setUser(u ?? null);
       if (!u) {
         setDbUsername(null);
+        setDbRole(null);
         setHydrated(true);
         return;
       }
@@ -99,6 +107,7 @@ export function SessionProvider({ initialSession, children }: Props) {
       setUser(next);
       if (!session?.access_token) {
         setDbUsername(null);
+        setDbRole(null);
         return;
       }
       if (
@@ -127,13 +136,24 @@ export function SessionProvider({ initialSession, children }: Props) {
 
   const isAuthenticated = hydrated ? Boolean(user) : Boolean(initialSession);
 
+  const role = useMemo<Role | null>(() => {
+    if (!hydrated && initialSession) {
+      return initialSession.dbRole ?? null;
+    }
+    return dbRole;
+  }, [hydrated, initialSession, dbRole]);
+
+  const isAdmin = role === 'ADMIN';
+
   const value = useMemo<AuthContextValue>(
     () => ({
       user,
       displayName,
       isAuthenticated,
+      role,
+      isAdmin,
     }),
-    [user, displayName, isAuthenticated]
+    [user, displayName, isAuthenticated, role, isAdmin]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

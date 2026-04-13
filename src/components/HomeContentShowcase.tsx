@@ -4,7 +4,7 @@ import { MediaThumb } from '@/components/MediaThumb';
 import { POST_CATEGORY_OPTIONS } from '@/lib/post-categories';
 import type { Category } from '@prisma/client';
 import type { HomeFeedPost } from '@/lib/home-feed';
-import styles from '@/app/page.module.css';
+import styles from '@/app/(root)/page.module.css';
 
 function categoryUiLabel(c: Category) {
   return POST_CATEGORY_OPTIONS.find((o) => o.value === c)?.label ?? c;

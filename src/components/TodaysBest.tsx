@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ChevronLeft, ChevronRight, MessageCircle } from 'lucide-react';
-import styles from '@/app/page.module.css';
+import styles from '@/app/(root)/page.module.css';
 
 type BestCategory = 'ALL' | 'LAB' | 'GALLERY' | 'LOUNGE' | 'GOSSIP' | 'BUILD' | 'LAUNCH';
 

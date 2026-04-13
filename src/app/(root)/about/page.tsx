@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import { SiteFooter } from '@/components/SiteFooter';
-import { SiteHeader } from '@/components/SiteHeader';
 import { AboutPageClient } from './AboutPageClient';
 
 export const metadata: Metadata = {
@@ -17,7 +16,6 @@ export const metadata: Metadata = {
 export default function AboutPage() {
   return (
     <>
-      <SiteHeader />
       <AboutPageClient />
       <SiteFooter />
     </>

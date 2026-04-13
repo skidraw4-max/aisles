@@ -13,7 +13,7 @@ import {
 import type { Category } from '@prisma/client';
 import { ALL_CARD_FEED_INITIAL_COUNT } from '@/lib/home-all-card-feed';
 import type { FeedPostJson } from '@/lib/home-feed';
-import styles from '@/app/page.module.css';
+import styles from '@/app/(root)/page.module.css';
 
 const PAGE_SIZE = 12;
 

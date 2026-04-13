@@ -10,7 +10,7 @@ import {
   fetchAiWorkShowcasePosts,
   fetchCommunityPreviewPosts,
 } from '@/lib/home-composite';
-import styles from '@/app/page.module.css';
+import styles from '@/app/(root)/page.module.css';
 
 function categoryUiLabel(c: Category) {
   return POST_CATEGORY_OPTIONS.find((o) => o.value === c)?.label ?? c;

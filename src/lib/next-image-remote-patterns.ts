@@ -18,6 +18,7 @@ export function buildImageRemotePatterns(): RemotePattern[] {
   };
 
   const patterns: RemotePattern[] = [
+    { protocol: 'https', hostname: 'img.aisleshub.com', pathname: '/**' },
     { protocol: 'https', hostname: '*.r2.dev', pathname: '/**' },
     { protocol: 'https', hostname: '**.supabase.co', pathname: '/**' },
     { protocol: 'https', hostname: '**.amazonaws.com', pathname: '/**' },

@@ -12,7 +12,7 @@ import {
   fetchLatestLabGalleryEight,
 } from '@/lib/home-composite';
 import type { QuasarAsidePost } from '@/components/HomeQuasarAsideLists';
-import styles from '@/app/page.module.css';
+import styles from '@/app/(root)/page.module.css';
 
 function serializeAsidePost(post: HomeFeedPost): QuasarAsidePost {
   return {

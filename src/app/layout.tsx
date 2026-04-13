@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import type { Role } from '@prisma/client';
 import Script from 'next/script';
 import { Syne, DM_Sans, Roboto_Mono } from 'next/font/google';
 import { HomeSupabaseRedirectHandler } from '@/components/HomeSupabaseRedirectHandler';
@@ -119,12 +120,14 @@ async function getInitialSession(): Promise<InitialSession> {
     if (!user) return null;
 
     let dbUsername: string | null = null;
+    let dbRole: Role | null = null;
     try {
       const row = await prisma.user.findUnique({
         where: { id: user.id },
-        select: { username: true },
+        select: { username: true, role: true },
       });
       dbUsername = row?.username ?? null;
+      dbRole = row?.role ?? null;
     } catch {
       /* DB 일시 오류 시 메타/이메일로 표시 */
     }
@@ -134,6 +137,7 @@ async function getInitialSession(): Promise<InitialSession> {
       email: user.email ?? null,
       usernameFromMetadata: (user.user_metadata?.username as string | undefined) ?? null,
       dbUsername,
+      dbRole,
     };
   } catch {
     return null;

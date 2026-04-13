@@ -6,6 +6,7 @@ import { isTrustedMediaUrl } from '@/lib/r2-url';
 import { parseMediaUrlsField } from '@/lib/post-media-urls';
 import { normalizePostTagsInput } from '@/lib/post-tags';
 import type { Category } from '@prisma/client';
+import { validateContentMinForCategory } from '@/lib/post-description-policy';
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -123,6 +124,10 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
   if (typeof b.content === 'string') {
     const c = b.content.trim();
     data.content = c ? c.slice(0, 20000) : null;
+    const contentErr = validateContentMinForCategory(post.category, data.content);
+    if (contentErr) {
+      return NextResponse.json({ error: contentErr }, { status: 400 });
+    }
   }
 
   if ('mediaUrls' in b) {

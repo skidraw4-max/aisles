@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import styles from '@/app/page.module.css';
+import styles from '@/app/(root)/page.module.css';
 
 const CAROUSEL_SLIDES = [
   {

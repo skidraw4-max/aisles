@@ -5,7 +5,7 @@ import nextDynamic from 'next/dynamic';
 import type { Category } from '@prisma/client';
 import type { FeedPostJson } from '@/lib/home-feed';
 import type { LaunchFeedSlide } from '@/components/LaunchFeedSlider';
-import styles from '@/app/page.module.css';
+import styles from '@/app/(root)/page.module.css';
 
 const TodaysBest = nextDynamic(
   () => import('@/components/TodaysBest').then((m) => ({ default: m.TodaysBest })),

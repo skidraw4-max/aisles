@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import type { ContentTabId } from '@/lib/content-tab';
 import { getContentTabFromSearchParams } from '@/lib/content-tab';
-import styles from '@/app/page.module.css';
+import styles from '@/app/(root)/page.module.css';
 
 const TABS: { id: ContentTabId; label: string; href: string }[] = [
   { id: 'latest', label: '최신', href: '/' },

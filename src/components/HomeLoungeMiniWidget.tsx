@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { fetchLatestForCategory } from '@/lib/home-composite';
 import { homeHrefForCategory } from '@/lib/post-categories';
-import styles from '@/app/page.module.css';
+import styles from '@/app/(root)/page.module.css';
 
 function formatShortDate(iso: Date) {
   try {

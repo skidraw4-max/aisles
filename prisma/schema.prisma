@@ -16,6 +16,7 @@ model User {
   username   String   @unique
   email      String   @unique
   avatarUrl  String? // Cloudflare R2 등 퍼블릭 URL
+  /// USER · BUILDER · ADMIN — 공지 관리 등은 ADMIN 만 (세션·서버 액션에서 검증)
   role       Role     @default(USER)
   posts      Post[]
   postLikes  PostLike[]
@@ -124,4 +125,22 @@ enum Category {
   GOSSIP  // 소셜·가십 복도
   BUILD   // 빌드 복도
   LAUNCH  // 서비스 복도
+}
+
+/// 사이트 상단 롤링 공지 등
+model Notice {
+  id        String   @id @default(cuid())
+  title     String
+  /// 공지 본문 (상세 페이지 `/notices/[id]` 에 표시)
+  content   String   @default("") @db.Text
+  /// 선택: 본문 외 추가 이동 링크(외부·내부). 롤링 바는 항상 상세 페이지로만 연결
+  link      String?
+  /// 상단 롤링 바 노출 여부
+  isRolling Boolean  @default(false)
+  /// 높을수록 먼저 노출
+  priority  Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isRolling, priority(sort: Desc), createdAt(sort: Desc)])
 }

@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { homeHrefForCategory } from '@/lib/post-categories';
 import type { Category } from '@prisma/client';
-import styles from '@/app/page.module.css';
+import styles from '@/app/(root)/page.module.css';
 
 export type QuasarAsidePost = {
   id: string;

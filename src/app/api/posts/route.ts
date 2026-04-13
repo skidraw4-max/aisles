@@ -13,6 +13,7 @@ import { normalizePostTagsInput } from '@/lib/post-tags';
 import { UPLOAD_IMAGE_MAX_BYTES, formatUploadMaxSizeLabel } from '@/lib/upload-limits';
 import { resolveUploadMimeType } from '@/lib/upload-media-types';
 import { applyWatermarkForUpload } from '@/lib/watermark-image';
+import { validateContentMinForCategory } from '@/lib/post-description-policy';
 
 const EXTERNAL_LINK_MAX = 2048;
 
@@ -108,6 +109,11 @@ async function postFromJson(req: NextRequest) {
 
   const contentRaw = typeof b.content === 'string' ? b.content.trim() : '';
   const content = contentRaw ? contentRaw.slice(0, 20000) : null;
+
+  const contentPolicyErr = validateContentMinForCategory(category, content);
+  if (contentPolicyErr) {
+    return NextResponse.json({ error: contentPolicyErr }, { status: 400 });
+  }
 
   const promptRaw = typeof b.prompt === 'string' ? b.prompt.trim() : '';
   if (category === 'RECIPE') {
@@ -228,6 +234,11 @@ async function postFromMultipart(req: NextRequest) {
   const contentRaw = form.get('content');
   const content =
     typeof contentRaw === 'string' && contentRaw.trim() ? contentRaw.trim().slice(0, 20000) : null;
+
+  const multipartContentErr = validateContentMinForCategory(category, content);
+  if (multipartContentErr) {
+    return NextResponse.json({ error: multipartContentErr }, { status: 400 });
+  }
 
   const linkResult = normalizeExternalLink(category, form.get('externalLink'));
   if (!linkResult.ok) {

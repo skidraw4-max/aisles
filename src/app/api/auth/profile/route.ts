@@ -26,16 +26,22 @@ export async function GET(req: NextRequest) {
   }
   const row = await prisma.user.findUnique({
     where: { id: user.id },
-    select: { username: true, email: true, avatarUrl: true },
+    select: { username: true, email: true, avatarUrl: true, role: true },
   });
 
   if (!row) {
-    return NextResponse.json({ username: null, email: user.email, avatarUrl: null });
+    return NextResponse.json({
+      username: null,
+      email: user.email,
+      avatarUrl: null,
+      role: null,
+    });
   }
 
   return NextResponse.json({
     username: row.username,
     email: row.email,
     avatarUrl: row.avatarUrl,
+    role: row.role,
   });
 }

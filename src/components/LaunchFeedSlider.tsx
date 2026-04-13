@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { MediaThumb } from '@/components/MediaThumb';
-import pageStyles from '@/app/page.module.css';
+import pageStyles from '@/app/(root)/page.module.css';
 import styles from './LaunchFeedSlider.module.css';
 
 export type LaunchFeedSlide = {

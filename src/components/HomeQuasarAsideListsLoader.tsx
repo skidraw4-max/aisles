@@ -2,7 +2,7 @@
 
 import nextDynamic from 'next/dynamic';
 import type { QuasarAsidePost } from '@/components/HomeQuasarAsideLists';
-import styles from '@/app/page.module.css';
+import styles from '@/app/(root)/page.module.css';
 
 const HomeQuasarAsideLists = nextDynamic(
   () => import('@/components/HomeQuasarAsideLists').then((m) => ({ default: m.HomeQuasarAsideLists })),
