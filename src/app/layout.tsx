@@ -28,14 +28,16 @@ const mono = Roboto_Mono({
 
 const GA_MEASUREMENT_ID = 'G-BH4L4PYCJT';
 
+const ADSENSE_CLIENT_ID = 'ca-pub-2237287742271246';
+
 const siteUrl = getCanonicalSiteUrl();
 
-const siteTitle = 'AIsleHub - AI 프롬프트 레시피 & 커뮤니티';
+const siteTitle = 'AIsle - AI 프롬프트 레시피 & 커뮤니티';
 
 const siteDescription =
   'AI 프롬프트 공유부터 커뮤니티 소통까지, 나만의 AI 레시피를 발견하세요.';
 
-const ogTitle = 'AIsleHub';
+const ogTitle = 'AIsle';
 
 const ogDescription = 'AI 프롬프트 공유 및 커뮤니티 플랫폼';
 
@@ -44,7 +46,6 @@ export const metadata: Metadata = {
   title: siteTitle,
   description: siteDescription,
   keywords: [
-    'AIsleHub',
     'AIsle',
     'AI',
     '프롬프트',
@@ -56,10 +57,10 @@ export const metadata: Metadata = {
     'Launch',
     '크리에이터',
   ],
-  applicationName: 'AIsleHub',
-  authors: [{ name: 'AIsleHub', url: siteUrl }],
-  creator: 'AIsleHub',
-  publisher: 'AIsleHub',
+  applicationName: 'AIsle',
+  authors: [{ name: 'AIsle', url: siteUrl }],
+  creator: 'AIsle',
+  publisher: 'AIsle',
   formatDetection: {
     email: false,
     address: false,
@@ -69,7 +70,7 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'ko_KR',
     url: siteUrl,
-    siteName: 'AIsleHub',
+    siteName: 'AIsle',
     title: ogTitle,
     description: ogDescription,
     images: [
@@ -77,7 +78,7 @@ export const metadata: Metadata = {
         url: '/og-image.png',
         width: 1200,
         height: 630,
-        alt: 'AIsleHub — AI 프롬프트 레시피 & 커뮤니티',
+        alt: 'AIsle — AI 프롬프트 레시피 & 커뮤니티',
       },
     ],
   },
@@ -145,13 +146,13 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const siteJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
-    name: 'AIsleHub',
+    name: 'AIsle',
     url: siteUrl,
     description: siteDescription,
     inLanguage: 'ko-KR',
     publisher: {
       '@type': 'Organization',
-      name: 'AIsleHub',
+      name: 'AIsle',
       url: siteUrl,
     },
     potentialAction: {
@@ -184,6 +185,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             gtag('config', '${GA_MEASUREMENT_ID}');
           `}
         </Script>
+        <Script
+          async
+          src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT_ID}`}
+          crossOrigin="anonymous"
+          strategy="afterInteractive"
+        />
         <HomeSupabaseRedirectHandler />
         <SessionProvider initialSession={initialSession}>{children}</SessionProvider>
       </body>
