@@ -1,4 +1,3 @@
-import { unstable_cache } from 'next/cache';
 import Link from 'next/link';
 import { MediaThumb } from '@/components/MediaThumb';
 import { HomeQuasarAsideListsLoader } from '@/components/HomeQuasarAsideListsLoader';
@@ -7,7 +6,7 @@ import {
   POST_CATEGORY_OPTIONS,
 } from '@/lib/post-categories';
 import type { Category } from '@prisma/client';
-import type { HomeFeedPost } from '@/lib/home-feed';
+import { homeFeedCreatedAtToIso, type HomeFeedPost } from '@/lib/home-feed';
 import {
   fetchCommunityPreviewPosts,
   fetchLatestLabGalleryEight,
@@ -21,21 +20,17 @@ function serializeAsidePost(post: HomeFeedPost): QuasarAsidePost {
     title: post.title,
     authorUsername: post.author.username,
     commentCount: post._count?.comments ?? 0,
-    createdAtIso: post.createdAt.toISOString(),
+    createdAtIso: homeFeedCreatedAtToIso(post.createdAt as Date | string),
   };
 }
 
-const getCachedQuasarPayload = unstable_cache(
-  async () => {
-    const [labGallery, community] = await Promise.all([
-      fetchLatestLabGalleryEight(),
-      fetchCommunityPreviewPosts(),
-    ]);
-    return { labGallery, community };
-  },
-  ['home-quasar-board'],
-  { revalidate: 60, tags: ['home'] }
-);
+async function loadQuasarPayload() {
+  const [labGallery, community] = await Promise.all([
+    fetchLatestLabGalleryEight(),
+    fetchCommunityPreviewPosts(),
+  ]);
+  return { labGallery, community };
+}
 
 function categoryUiLabel(c: Category) {
   return POST_CATEGORY_OPTIONS.find((o) => o.value === c)?.label ?? c;
@@ -104,7 +99,7 @@ function ShowcaseCard({ post, imagePriority }: { post: HomeFeedPost; imagePriori
 
 /** 퀘이사존식 메인: 좌측 LAB·GALLERY 최신 8칸(4×2), 우측 LOUNGE·GOSSIP 최신 리스트 */
 export async function HomeQuasarBoard() {
-  const { labGallery, community } = await getCachedQuasarPayload();
+  const { labGallery, community } = await loadQuasarPayload();
 
   return (
     <div className={styles.quasarBoardOuter}>

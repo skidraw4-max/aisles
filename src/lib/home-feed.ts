@@ -16,11 +16,18 @@ export type FeedPostJson = Omit<HomeFeedPost, 'createdAt' | '_count'> & {
   commentCount: number;
 };
 
+/** Prisma `Date` 또는 JSON/캐시에서 복원된 ISO 문자열 모두 처리 */
+export function homeFeedCreatedAtToIso(createdAt: Date | string): string {
+  if (createdAt instanceof Date) return createdAt.toISOString();
+  if (typeof createdAt === 'string') return createdAt;
+  return new Date(createdAt as unknown as string).toISOString();
+}
+
 export function serializeFeedPost(post: HomeFeedPost): FeedPostJson {
   const { createdAt, _count, ...rest } = post;
   return {
     ...rest,
-    createdAt: createdAt.toISOString(),
+    createdAt: homeFeedCreatedAtToIso(createdAt as Date | string),
     commentCount: _count.comments,
   };
 }

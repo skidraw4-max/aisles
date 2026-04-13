@@ -10,7 +10,7 @@ import { HomeDeferredLower } from '@/components/HomeDeferredLower';
 import { SHOW_HOME_MAIN_HERO } from '@/lib/home-flags';
 import { homeViewFromSearchParams } from '@/lib/content-tab';
 import { isSupabaseAuthLinkError } from '@/lib/supabase-auth-url-errors';
-import { categoryKeyForCache, getCachedHomePageQueries } from '@/lib/home-page-data';
+import { categoryKeyForCache, getHomePageQueries } from '@/lib/home-page-data';
 import { serializeFeedPost, type HomeFeedPost } from '@/lib/home-feed';
 import { POST_CATEGORY_OPTIONS } from '@/lib/post-categories';
 import type { Category } from '@prisma/client';
@@ -58,7 +58,7 @@ export default async function HomePage({ searchParams }: PageProps) {
   if (ed) authErrParams.set('error_description', ed);
   const showInvalidEmailLinkBanner = isSupabaseAuthLinkError(authErrParams);
 
-  const { recentAll, firstHomeFeed, launchBannerPosts } = await getCachedHomePageQueries(
+  const { recentAll, firstHomeFeed, launchBannerPosts } = await getHomePageQueries(
     categoryKeyForCache(filterCategory)
   );
 

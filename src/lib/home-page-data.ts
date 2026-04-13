@@ -1,4 +1,3 @@
-import { unstable_cache } from 'next/cache';
 import type { Category } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { fetchLatestForCategory } from '@/lib/home-composite';
@@ -11,10 +10,11 @@ function parseCategoryKey(categoryKey: string): Category | null {
 }
 
 /**
- * 메인 페이지 DB 조회 — 60초 ISR 캐시(복도 필터별 키).
- * `searchParams` 때문에 라우트가 동적이어도 동일 키는 DB를 재조회하지 않습니다.
+ * 메인 페이지 DB 조회.
+ * (과거 `unstable_cache`는 JSON 직렬화로 `Date`가 문자열이 되어 `serializeFeedPost` 등에서
+ * `toISOString` 런타임 오류가 났습니다. 라우트 `revalidate`로 페이지 단 캐시를 사용합니다.)
  */
-async function loadHomePageQueries(categoryKey: string) {
+export async function getHomePageQueries(categoryKey: string) {
   const filterCategory = parseCategoryKey(categoryKey);
 
   const recentAll = await prisma.post.findMany({
@@ -36,8 +36,3 @@ async function loadHomePageQueries(categoryKey: string) {
 export function categoryKeyForCache(filterCategory: Category | null): string {
   return filterCategory ?? 'all';
 }
-
-export const getCachedHomePageQueries = unstable_cache(loadHomePageQueries, ['home-page-queries'], {
-  revalidate: 60,
-  tags: ['home'],
-});
