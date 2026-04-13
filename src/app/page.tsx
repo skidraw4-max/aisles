@@ -8,11 +8,14 @@ import { HomeMainHero } from '@/components/HomeMainHero';
 import { TodaysBest } from '@/components/TodaysBest';
 import { HomeContentTabs } from '@/components/HomeContentTabs';
 import { HomeQuasarBoard } from '@/components/HomeQuasarBoard';
+import { LaunchFeedSlider } from '@/components/LaunchFeedSlider';
 import { SHOW_HOME_MAIN_HERO } from '@/lib/home-flags';
+import { fetchLatestForCategory } from '@/lib/home-composite';
 import { prisma } from '@/lib/prisma';
 import { homeViewFromSearchParams } from '@/lib/content-tab';
 import { isSupabaseAuthLinkError } from '@/lib/supabase-auth-url-errors';
-import { fetchFeedPosts, serializeFeedPost } from '@/lib/home-feed';
+import { ALL_CARD_FEED_INITIAL_COUNT } from '@/lib/home-all-card-feed';
+import { fetchFeedPosts, serializeFeedPost, type HomeFeedPost } from '@/lib/home-feed';
 import { POST_CATEGORY_OPTIONS } from '@/lib/post-categories';
 import type { Category } from '@prisma/client';
 import styles from './page.module.css';
@@ -38,6 +41,13 @@ function categoryUiLabel(c: Category) {
   return POST_CATEGORY_OPTIONS.find((o) => o.value === c)?.label ?? c;
 }
 
+function launchBannerImageUrl(post: Pick<HomeFeedPost, 'thumbnail' | 'attachmentUrls'>): string | null {
+  const t = post.thumbnail?.trim();
+  if (t) return t;
+  const u = post.attachmentUrls?.find((x) => Boolean(x?.trim()));
+  return u?.trim() || null;
+}
+
 export default async function HomePage({ searchParams }: PageProps) {
   const sp = await searchParams;
   const { category: filterCategory } = homeViewFromSearchParams(sp);
@@ -57,7 +67,18 @@ export default async function HomePage({ searchParams }: PageProps) {
     include: { author: { select: { username: true } } },
   });
 
-  const firstHomeFeed = await fetchFeedPosts(0, 12, filterCategory, []);
+  const [firstHomeFeed, launchBannerPosts] = await Promise.all([
+    fetchFeedPosts(0, filterCategory ? 12 : ALL_CARD_FEED_INITIAL_COUNT, filterCategory, [], {
+      excludeLoungeGossipFromAll: !filterCategory,
+    }),
+    filterCategory ? Promise.resolve([] as HomeFeedPost[]) : fetchLatestForCategory('LAUNCH', 3),
+  ]);
+
+  const launchSlides = launchBannerPosts.map((p) => ({
+    id: p.id,
+    title: p.title,
+    imageUrl: launchBannerImageUrl(p),
+  }));
 
   let heroLead: string;
   if (filterCategory) {
@@ -115,15 +136,22 @@ export default async function HomePage({ searchParams }: PageProps) {
         ) : null}
 
         {!filterCategory ? (
-          <section className={styles.section} style={{ paddingTop: 8 }}>
+          <section
+            className={`${styles.section} ${styles.sectionQuasarBeforeFeed}`}
+            style={{ paddingTop: 8 }}
+          >
             <HomeQuasarBoard />
           </section>
         ) : null}
 
-        <section className={styles.section}>
-          <div className={styles.feedBadgeRow}>
-            <span className={styles.badge}>{filterCategory ? categoryUiLabel(filterCategory) : 'ALL'}</span>
-          </div>
+        <section
+          className={`${styles.section} ${!filterCategory ? styles.sectionFeedAfterQuasar : ''}`}
+        >
+          {filterCategory ? (
+            <div className={styles.feedBadgeRow}>
+              <span className={styles.badge}>{categoryUiLabel(filterCategory)}</span>
+            </div>
+          ) : null}
           <div
             className={[
               styles.feedLayoutRow,
@@ -176,6 +204,15 @@ export default async function HomePage({ searchParams }: PageProps) {
               </div>
             </div>
             <div className={styles.feedLayoutMainFeed}>
+              {!filterCategory ? (
+                <div className={styles.launchBlockWrap}>
+                  <h2 className={styles.launchSectionHeading}>LAUNCH</h2>
+                  {launchSlides.length > 0 ? <LaunchFeedSlider slides={launchSlides} /> : null}
+                </div>
+              ) : null}
+              {!filterCategory ? (
+                <h2 className={styles.allFeedSectionHeading}>ALL</h2>
+              ) : null}
               <HomeAllFeed
                 key={filterCategory ?? 'all'}
                 category={filterCategory}

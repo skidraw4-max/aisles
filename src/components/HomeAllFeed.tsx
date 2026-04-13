@@ -11,6 +11,7 @@ import {
   POST_CATEGORY_OPTIONS,
 } from '@/lib/post-categories';
 import type { Category } from '@prisma/client';
+import { ALL_CARD_FEED_INITIAL_COUNT } from '@/lib/home-all-card-feed';
 import type { FeedPostJson } from '@/lib/home-feed';
 import styles from '@/app/page.module.css';
 
@@ -120,44 +121,6 @@ function FeedBoardRow({ post, gossipReportStyle }: { post: FeedPostJson; gossipR
   );
 }
 
-/** 메인 ALL: Lounge·Gossip만 제목·작성일·작성자 리스트 */
-function AllFeedLoungeGossipList({ posts }: { posts: FeedPostJson[] }) {
-  if (posts.length === 0) return null;
-  return (
-    <section className={styles.allFeedMixBoard} aria-labelledby="all-feed-lounge-gossip-heading">
-      <h2 id="all-feed-lounge-gossip-heading" className={styles.allFeedMixBoardHeading}>
-        Lounge · Gossip
-      </h2>
-      <div className={styles.allFeedMixBoardSurface}>
-        <div className={styles.allFeedMixBoardHead} role="row">
-          <span className={styles.allFeedMixBoardColTitle} role="columnheader">
-            제목
-          </span>
-          <span className={styles.allFeedMixBoardColDate} role="columnheader">
-            작성일
-          </span>
-          <span className={styles.allFeedMixBoardColAuthor} role="columnheader">
-            작성자
-          </span>
-        </div>
-        <ul className={styles.allFeedMixBoardList} role="list">
-          {posts.map((post) => (
-            <li key={post.id} className={styles.allFeedMixBoardRow}>
-              <Link href={`/post/${post.id}`} className={styles.allFeedMixBoardLink}>
-                <span className={styles.allFeedMixBoardTitleStr}>{post.title}</span>
-                <span className={styles.allFeedMixBoardDate}>{formatDate(post.createdAt)}</span>
-                <span className={styles.allFeedMixBoardAuthor} title={post.author.username}>
-                  {post.author.username}
-                </span>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </div>
-    </section>
-  );
-}
-
 function FeedBoardTable({ posts, gossipReportStyle }: { posts: FeedPostJson[]; gossipReportStyle: boolean }) {
   return (
     <div className={`${styles.feedBoardSurface} ${gossipReportStyle ? styles.feedBoardSurfaceGossip : ''}`}>
@@ -193,21 +156,21 @@ export function HomeAllFeed({ category, excludeIds, initialPosts, initialHasMore
   const [hasMore, setHasMore] = useState(initialHasMore);
   const [loading, setLoading] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
+  const wasLoadingRef = useRef(false);
   const excludeQs =
     excludeIds.length > 0 ? `&exclude=${excludeIds.map(encodeURIComponent).join('%2C')}` : '';
   const catQs = category
     ? `&category=${encodeURIComponent(categoryToHomeQuery(category))}`
     : '';
+  const excludeCommunityQs = category === null ? '&excludeCommunity=1' : '';
 
   const boardList = isFeedBoardListCategory(category);
   const gossipReportStyle = category === 'GOSSIP';
-  const isAllView = category === null;
-  const loungeGossipPosts = isAllView
-    ? posts.filter((p) => p.category === 'LOUNGE' || p.category === 'GOSSIP')
-    : [];
-  const cardPosts = isAllView
-    ? posts.filter((p) => p.category !== 'LOUNGE' && p.category !== 'GOSSIP')
-    : posts;
+  const allCardFeed = category === null && !boardList;
+
+  const [visibleCount, setVisibleCount] = useState(() =>
+    Math.min(ALL_CARD_FEED_INITIAL_COUNT, initialPosts.length)
+  );
 
   const fetchJson = useCallback(
     async (url: string, signal: AbortSignal) => {
@@ -223,7 +186,7 @@ export function HomeAllFeed({ category, excludeIds, initialPosts, initialHasMore
       abortRef.current?.abort();
       const ac = new AbortController();
       abortRef.current = ac;
-      const base = `/api/feed?skip=${skip}&limit=${PAGE_SIZE}${catQs}${excludeQs}`;
+      const base = `/api/feed?skip=${skip}&limit=${PAGE_SIZE}${catQs}${excludeQs}${excludeCommunityQs}`;
       try {
         const data = await fetchJson(base, ac.signal);
         if (replace) {
@@ -250,8 +213,17 @@ export function HomeAllFeed({ category, excludeIds, initialPosts, initialHasMore
         }
       }
     },
-    [fetchJson, excludeQs, catQs]
+    [fetchJson, excludeQs, catQs, excludeCommunityQs]
   );
+
+  useEffect(() => {
+    if (!allCardFeed || !wasLoadingRef.current || loading) {
+      wasLoadingRef.current = loading;
+      return;
+    }
+    wasLoadingRef.current = loading;
+    setVisibleCount(posts.length);
+  }, [allCardFeed, loading, posts.length]);
 
   const { ref: sentinelRef, inView } = useInView({
     rootMargin: '240px 0px',
@@ -259,10 +231,28 @@ export function HomeAllFeed({ category, excludeIds, initialPosts, initialHasMore
   });
 
   useEffect(() => {
+    if (category === null) return;
     if (!inView || !hasMore || loading) return;
     setLoading(true);
     void loadPage(posts.length, false);
-  }, [inView, hasMore, loading, posts.length, loadPage]);
+  }, [inView, hasMore, loading, posts.length, loadPage, category]);
+
+  const handleAllCardLoadMore = useCallback(() => {
+    if (!allCardFeed) return;
+    if (visibleCount < posts.length) {
+      setVisibleCount(posts.length);
+      return;
+    }
+    if (!hasMore || loading) return;
+    setLoading(true);
+    void loadPage(posts.length, false);
+  }, [allCardFeed, visibleCount, posts.length, hasMore, loading, loadPage]);
+
+  const cardGridPosts = allCardFeed ? posts.slice(0, visibleCount) : posts;
+  const showAllCardMoreBtn =
+    allCardFeed &&
+    posts.length > 0 &&
+    (visibleCount < posts.length || hasMore);
 
   return (
     <>
@@ -274,21 +264,31 @@ export function HomeAllFeed({ category, excludeIds, initialPosts, initialHasMore
       ) : boardList ? (
         <FeedBoardTable posts={posts} gossipReportStyle={gossipReportStyle} />
       ) : (
-        <>
-          <AllFeedLoungeGossipList posts={loungeGossipPosts} />
-          {cardPosts.length > 0 ? (
-            <ul className={styles.allFeed}>
-              {cardPosts.map((post) => (
-                <li key={post.id}>
-                  <FeedPostCard post={post} />
-                </li>
-              ))}
-            </ul>
-          ) : null}
-        </>
+        <ul className={styles.allFeed}>
+          {cardGridPosts.map((post) => (
+            <li key={post.id}>
+              <FeedPostCard post={post} />
+            </li>
+          ))}
+        </ul>
       )}
 
-      <div ref={sentinelRef} className={styles.feedSentinel} aria-hidden />
+      {showAllCardMoreBtn ? (
+        <div className={styles.allFeedMoreWrap}>
+          <button
+            type="button"
+            className={styles.allFeedMoreBtn}
+            onClick={handleAllCardLoadMore}
+            disabled={loading}
+          >
+            +더보기
+          </button>
+        </div>
+      ) : null}
+
+      {category !== null ? (
+        <div ref={sentinelRef} className={styles.feedSentinel} aria-hidden />
+      ) : null}
 
       {loading && posts.length > 0 ? (
         <p className={styles.feedLoadingMore} role="status">
@@ -296,7 +296,7 @@ export function HomeAllFeed({ category, excludeIds, initialPosts, initialHasMore
         </p>
       ) : null}
 
-      {!hasMore && posts.length > 0 ? (
+      {!hasMore && posts.length > 0 && (!allCardFeed || visibleCount >= posts.length) ? (
         <p className={styles.feedEndNote} role="status">
           모든 글을 불러왔습니다.
         </p>

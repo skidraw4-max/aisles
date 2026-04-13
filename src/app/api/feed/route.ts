@@ -23,8 +23,11 @@ export async function GET(req: NextRequest) {
     const limit = Math.min(24, Math.max(1, parseInt(url.searchParams.get('limit') || '12', 10) || 12));
     const category = parseHomeCategoryQuery(url.searchParams.get('category'));
     const excludeIds = parseFeedExcludeIds(url.searchParams.get('exclude'));
+    const excludeCommunity = url.searchParams.get('excludeCommunity') === '1';
 
-    const { posts, hasMore } = await fetchFeedPosts(skip, limit, category, excludeIds);
+    const { posts, hasMore } = await fetchFeedPosts(skip, limit, category, excludeIds, {
+      excludeLoungeGossipFromAll: excludeCommunity && category === null,
+    });
     return NextResponse.json({ posts: posts.map(serializeFeedPost), hasMore });
   } catch (err) {
     console.error('[api/feed GET]', err);

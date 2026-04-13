@@ -60,6 +60,20 @@
   }
 }
 
+/* 메인 ALL: AI Work~LAUNCH 간격은 피드 섹션 상단만 사용(이중 여백 방지), LAUNCH 위·아래 동일 */
+.sectionQuasarBeforeFeed {
+  padding-bottom: 0;
+}
+
+.sectionFeedAfterQuasar {
+  --launch-block-gap: 22px;
+  padding-top: var(--launch-block-gap);
+}
+
+.launchBlockWrap {
+  margin-bottom: var(--launch-block-gap);
+}
+
 .sectionHead h2 {
   margin: 0.35rem 0 0.5rem;
   font-size: var(--type-22);
@@ -289,6 +303,18 @@
   font-size: var(--type-13);
   color: var(--muted);
   line-height: 1.4;
+}
+
+/* 메인 피드 열 — LAUNCH / ALL 섹션 제목 (AI Work 톤과 맞춤) */
+.launchSectionHeading,
+.allFeedSectionHeading {
+  margin: 0 0 0.75rem;
+  font-size: var(--type-22);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  color: var(--text);
+  font-family: var(--font-display), var(--font-body), system-ui, sans-serif;
 }
 
 .quasarAsidePanel {
@@ -668,6 +694,42 @@
 
 .allFeed > li {
   min-width: 0;
+}
+
+.allFeedMoreWrap {
+  display: flex;
+  justify-content: center;
+  margin: 1.35rem 0 0;
+}
+
+.allFeedMoreBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 10rem;
+  padding: 0.55rem 1.35rem;
+  border-radius: 999px;
+  font-size: var(--type-14);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: rgba(248, 250, 252, 0.92);
+  background: rgba(30, 36, 52, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    opacity 0.15s ease;
+}
+
+.allFeedMoreBtn:hover:not(:disabled) {
+  background: rgba(40, 48, 68, 0.98);
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+.allFeedMoreBtn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 @media (max-width: 959px) {

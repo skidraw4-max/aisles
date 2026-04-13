@@ -34,6 +34,11 @@ export async function fetchFeaturedForHome(category: Category | null): Promise<H
   }
 }
 
+export type FetchFeedPostsOptions = {
+  /** 전체(ALL) 카드 피드에서 라운지·가십 글 제외 */
+  excludeLoungeGossipFromAll?: boolean;
+};
+
 /**
  * 메인 피드(비-featured만). 등록일 최신순.
  * `excludeIds`: 상단 쇼케이스에 이미 노출된 글 제외(중복 방지).
@@ -42,12 +47,20 @@ export async function fetchFeedPosts(
   skip: number,
   take: number,
   category: Category | null,
-  excludeIds: string[] = []
+  excludeIds: string[] = [],
+  options: FetchFeedPostsOptions = {}
 ): Promise<{ posts: HomeFeedPost[]; hasMore: boolean }> {
   try {
+    const excludeLoungeGossip = Boolean(
+      !category && options.excludeLoungeGossipFromAll
+    );
     const where = {
       isFeatured: false,
-      ...(category ? { category } : {}),
+      ...(category
+        ? { category }
+        : excludeLoungeGossip
+          ? { category: { notIn: ['LOUNGE', 'GOSSIP'] satisfies Category[] } }
+          : {}),
       ...(excludeIds.length > 0 ? { id: { notIn: excludeIds } } : {}),
     };
 
