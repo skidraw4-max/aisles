@@ -12,7 +12,7 @@ import { getCanonicalSiteUrl } from '@/lib/canonical-site-url';
 export function getPublicSiteUrl(): string {
   const env = process.env.NEXT_PUBLIC_SITE_URL?.trim();
   if (env) {
-    return env.replace(/\/$/, '');
+    return getCanonicalSiteUrl();
   }
   if (typeof window !== 'undefined') {
     const origin = window.location.origin;
@@ -45,15 +45,14 @@ export function getPasswordRecoveryRedirectToForServer(): string {
   if (explicit) {
     return explicit.replace(/\/$/, '');
   }
-  const envBase = process.env.NEXT_PUBLIC_SITE_URL?.trim().replace(/\/$/, '');
-  const base = envBase || getCanonicalSiteUrl();
+  const base = getCanonicalSiteUrl();
   return new URL('/auth/reset-callback', `${base}/`).href;
 }
 
 /** Prisma 유저용: 메일의 redirect_to 에 토큰이 붙은 재설정 페이지 */
 export function buildPasswordRecoveryPageUrlWithToken(token: string): string {
-  const envBase = process.env.NEXT_PUBLIC_SITE_URL?.trim().replace(/\/$/, '') || getCanonicalSiteUrl();
-  const u = new URL('/reset-password', `${envBase}/`);
+  const base = getCanonicalSiteUrl();
+  const u = new URL('/reset-password', `${base}/`);
   u.searchParams.set('token', token);
   return u.href;
 }
