@@ -49,7 +49,7 @@ export function LaunchFeedSlider({ slides }: Props) {
           className={styles.track}
           style={{ transform: `translateX(-${index * 100}%)` }}
         >
-          {slides.map((slide) => (
+          {slides.map((slide, slideIndex) => (
             <Link
               key={slide.id}
               href={`/post/${slide.id}`}
@@ -67,6 +67,8 @@ export function LaunchFeedSlider({ slides }: Props) {
                     className={pageStyles.mediaFill}
                     objectFit="cover"
                     objectPosition="center"
+                    priority={slideIndex === 0}
+                    sizes="(max-width: 520px) 100vw, 40vw"
                   />
                 ) : (
                   <span className={styles.imagePlaceholder} aria-hidden />

@@ -1,5 +1,7 @@
+import { unstable_cache } from 'next/cache';
 import Link from 'next/link';
 import { MediaThumb } from '@/components/MediaThumb';
+import { HomeQuasarAsideListsLoader } from '@/components/HomeQuasarAsideListsLoader';
 import {
   homeHrefForCategory,
   POST_CATEGORY_OPTIONS,
@@ -10,7 +12,30 @@ import {
   fetchCommunityPreviewPosts,
   fetchLatestLabGalleryEight,
 } from '@/lib/home-composite';
+import type { QuasarAsidePost } from '@/components/HomeQuasarAsideLists';
 import styles from '@/app/page.module.css';
+
+function serializeAsidePost(post: HomeFeedPost): QuasarAsidePost {
+  return {
+    id: post.id,
+    title: post.title,
+    authorUsername: post.author.username,
+    commentCount: post._count?.comments ?? 0,
+    createdAtIso: post.createdAt.toISOString(),
+  };
+}
+
+const getCachedQuasarPayload = unstable_cache(
+  async () => {
+    const [labGallery, community] = await Promise.all([
+      fetchLatestLabGalleryEight(),
+      fetchCommunityPreviewPosts(),
+    ]);
+    return { labGallery, community };
+  },
+  ['home-quasar-board'],
+  { revalidate: 60, tags: ['home'] }
+);
 
 function categoryUiLabel(c: Category) {
   return POST_CATEGORY_OPTIONS.find((o) => o.value === c)?.label ?? c;
@@ -36,13 +61,19 @@ function MoreLink({ category, label }: { category: Category; label: string }) {
   );
 }
 
-function ShowcaseCard({ post }: { post: HomeFeedPost }) {
+function ShowcaseCard({ post, imagePriority }: { post: HomeFeedPost; imagePriority?: boolean }) {
   return (
     <div className={styles.feedCardWrap}>
       <Link href={`/post/${post.id}`} className={styles.feedCard}>
         <div className={styles.feedCardMedia}>
           {post.thumbnail ? (
-            <MediaThumb url={post.thumbnail} alt="" objectFit="cover" />
+            <MediaThumb
+              url={post.thumbnail}
+              alt=""
+              objectFit="cover"
+              priority={imagePriority}
+              sizes="(max-width: 479px) 100vw, (max-width: 959px) 50vw, 25vw"
+            />
           ) : (
             <div className={styles.feedCardPlaceholder} aria-hidden />
           )}
@@ -71,27 +102,9 @@ function ShowcaseCard({ post }: { post: HomeFeedPost }) {
   );
 }
 
-function AsideListItem({ post }: { post: HomeFeedPost }) {
-  const cc = post._count?.comments ?? 0;
-  return (
-    <li className={styles.quasarAsideListItem}>
-      <Link href={`/post/${post.id}`} className={styles.quasarAsideListLink}>
-        <span className={styles.quasarAsideListTitle}>{post.title}</span>
-        <span className={styles.quasarAsideListMeta}>
-          {post.author.username}
-          {cc > 0 ? ` · 댓글 ${cc}` : ''} · {formatDate(post.createdAt)}
-        </span>
-      </Link>
-    </li>
-  );
-}
-
 /** 퀘이사존식 메인: 좌측 LAB·GALLERY 최신 8칸(4×2), 우측 LOUNGE·GOSSIP 최신 리스트 */
 export async function HomeQuasarBoard() {
-  const [labGallery, community] = await Promise.all([
-    fetchLatestLabGalleryEight(),
-    fetchCommunityPreviewPosts(),
-  ]);
+  const { labGallery, community } = await getCachedQuasarPayload();
 
   return (
     <div className={styles.quasarBoardOuter}>
@@ -111,47 +124,19 @@ export async function HomeQuasarBoard() {
             <p className={styles.compositeEmpty}>아직 노출할 글이 없습니다.</p>
           ) : (
             <ul className={styles.aiWorkGrid}>
-              {labGallery.map((post) => (
+              {labGallery.map((post, i) => (
                 <li key={post.id} className={styles.aiWorkGridCell}>
-                  <ShowcaseCard post={post} />
+                  <ShowcaseCard post={post} imagePriority={i < 4} />
                 </li>
               ))}
             </ul>
           )}
         </div>
 
-        <aside className={styles.quasarBoardAside} aria-label="라운지·가십 최신">
-          <div className={styles.quasarAsidePanel}>
-            <header className={styles.quasarAsidePanelHead}>
-              <h2 className={styles.quasarAsidePanelTitle}>LOUNGE</h2>
-              <MoreLink category="LOUNGE" label="LOUNGE" />
-            </header>
-            {community.lounge.length === 0 ? (
-              <p className={styles.quasarAsideEmpty}>글이 없습니다.</p>
-            ) : (
-              <ul className={styles.quasarAsideList}>
-                {community.lounge.map((post) => (
-                  <AsideListItem key={post.id} post={post} />
-                ))}
-              </ul>
-            )}
-          </div>
-          <div className={styles.quasarAsidePanel}>
-            <header className={styles.quasarAsidePanelHead}>
-              <h2 className={styles.quasarAsidePanelTitle}>GOSSIP</h2>
-              <MoreLink category="GOSSIP" label="GOSSIP" />
-            </header>
-            {community.gossip.length === 0 ? (
-              <p className={styles.quasarAsideEmpty}>글이 없습니다.</p>
-            ) : (
-              <ul className={styles.quasarAsideList}>
-                {community.gossip.map((post) => (
-                  <AsideListItem key={post.id} post={post} />
-                ))}
-              </ul>
-            )}
-          </div>
-        </aside>
+        <HomeQuasarAsideListsLoader
+          lounge={community.lounge.map(serializeAsidePost)}
+          gossip={community.gossip.map(serializeAsidePost)}
+        />
       </div>
     </div>
   );

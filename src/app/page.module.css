@@ -324,6 +324,33 @@
   background: var(--surface);
 }
 
+/** next/dynamic ssr:false 로딩 플레이스홀더 */
+.dynamicClientAsideFallback {
+  min-height: 10.5rem;
+  background: rgba(18, 20, 28, 0.5);
+}
+
+.dynamicClientTodaysBestFallback {
+  min-height: 14rem;
+  border-radius: 16px;
+  background: rgba(18, 20, 28, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.dynamicClientLaunchFallback {
+  min-height: 8.5rem;
+  border-radius: 14px;
+  background: rgba(18, 20, 28, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.dynamicClientFeedFallback {
+  min-height: 28rem;
+  border-radius: 16px;
+  background: rgba(18, 20, 28, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
 .quasarAsidePanelHead {
   display: flex;
   align-items: center;

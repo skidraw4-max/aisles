@@ -3,24 +3,21 @@ import { Suspense } from 'react';
 import { SiteHeader } from '@/components/SiteHeader';
 import { SiteFooter } from '@/components/SiteFooter';
 import { MediaThumb } from '@/components/MediaThumb';
-import { HomeAllFeed } from '@/components/HomeAllFeed';
 import { HomeMainHero } from '@/components/HomeMainHero';
-import { TodaysBest } from '@/components/TodaysBest';
 import { HomeContentTabs } from '@/components/HomeContentTabs';
 import { HomeQuasarBoard } from '@/components/HomeQuasarBoard';
-import { LaunchFeedSlider } from '@/components/LaunchFeedSlider';
+import { HomeDeferredLower } from '@/components/HomeDeferredLower';
 import { SHOW_HOME_MAIN_HERO } from '@/lib/home-flags';
-import { fetchLatestForCategory } from '@/lib/home-composite';
-import { prisma } from '@/lib/prisma';
 import { homeViewFromSearchParams } from '@/lib/content-tab';
 import { isSupabaseAuthLinkError } from '@/lib/supabase-auth-url-errors';
-import { ALL_CARD_FEED_INITIAL_COUNT } from '@/lib/home-all-card-feed';
-import { fetchFeedPosts, serializeFeedPost, type HomeFeedPost } from '@/lib/home-feed';
+import { categoryKeyForCache, getCachedHomePageQueries } from '@/lib/home-page-data';
+import { serializeFeedPost, type HomeFeedPost } from '@/lib/home-feed';
 import { POST_CATEGORY_OPTIONS } from '@/lib/post-categories';
 import type { Category } from '@prisma/client';
 import styles from './page.module.css';
 
-export const dynamic = 'force-dynamic';
+/** 60초 ISR — 동일 URL·복도 조합은 캐시된 RSC 페이로드 재사용 */
+export const revalidate = 60;
 
 type PageProps = {
   searchParams: Promise<{
@@ -61,18 +58,9 @@ export default async function HomePage({ searchParams }: PageProps) {
   if (ed) authErrParams.set('error_description', ed);
   const showInvalidEmailLinkBanner = isSupabaseAuthLinkError(authErrParams);
 
-  const recentAll = await prisma.post.findMany({
-    orderBy: { createdAt: 'desc' },
-    take: 8,
-    include: { author: { select: { username: true } } },
-  });
-
-  const [firstHomeFeed, launchBannerPosts] = await Promise.all([
-    fetchFeedPosts(0, filterCategory ? 12 : ALL_CARD_FEED_INITIAL_COUNT, filterCategory, [], {
-      excludeLoungeGossipFromAll: !filterCategory,
-    }),
-    filterCategory ? Promise.resolve([] as HomeFeedPost[]) : fetchLatestForCategory('LAUNCH', 3),
-  ]);
+  const { recentAll, firstHomeFeed, launchBannerPosts } = await getCachedHomePageQueries(
+    categoryKeyForCache(filterCategory)
+  );
 
   const launchSlides = launchBannerPosts.map((p) => ({
     id: p.id,
@@ -152,76 +140,60 @@ export default async function HomePage({ searchParams }: PageProps) {
               <span className={styles.badge}>{categoryUiLabel(filterCategory)}</span>
             </div>
           ) : null}
-          <div
-            className={[
-              styles.feedLayoutRow,
-              !filterCategory || !SHOW_HOME_MAIN_HERO ? styles.feedLayoutRowNoHero : '',
-            ]
-              .filter(Boolean)
-              .join(' ')}
-          >
-            {filterCategory && SHOW_HOME_MAIN_HERO ? (
-              <div className={styles.feedLayoutHeroFull}>
-                <HomeMainHero />
-              </div>
-            ) : null}
-            <div className={styles.feedLayoutAside}>
-              <div className={styles.feedAsideStack}>
-                <TodaysBest />
-                <aside className={styles.recentPostsAside} aria-labelledby="recent-posts-aside-heading">
-                  <h3 id="recent-posts-aside-heading" className={styles.recentPostsAsideTitle}>
-                    최근 게시물
-                  </h3>
-                  {recentAll.length === 0 ? (
-                    <p className={styles.recentPostsAsideEmpty}>
-                      아직 게시글이 없습니다.{' '}
-                      <Link href="/upload">업로드</Link>
-                    </p>
-                  ) : (
-                    <ul className={styles.builders}>
-                      {recentAll.map((post) => (
-                        <li key={post.id} className={styles.builderRow}>
-                          <Link href={`/post/${post.id}`} className={styles.recentLink}>
-                            {post.thumbnail ? (
-                              <div className={styles.recentThumb}>
-                                <MediaThumb url={post.thumbnail} alt={post.title} />
-                              </div>
-                            ) : (
-                              <span className={styles.avatar} aria-hidden />
-                            )}
-                            <div style={{ minWidth: 0, flex: 1 }}>
-                              <div className={styles.recentTitle}>{post.title}</div>
-                              <div className={styles.recentMeta}>
-                                {categoryUiLabel(post.category)} · {post.author.username}
-                              </div>
-                            </div>
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </aside>
-              </div>
-            </div>
-            <div className={styles.feedLayoutMainFeed}>
-              {!filterCategory ? (
-                <div className={styles.launchBlockWrap}>
-                  <h2 className={styles.launchSectionHeading}>LAUNCH</h2>
-                  {launchSlides.length > 0 ? <LaunchFeedSlider slides={launchSlides} /> : null}
+          <HomeDeferredLower
+            heroColumn={
+              filterCategory && SHOW_HOME_MAIN_HERO ? (
+                <div className={styles.feedLayoutHeroFull}>
+                  <HomeMainHero />
                 </div>
-              ) : null}
-              {!filterCategory ? (
-                <h2 className={styles.allFeedSectionHeading}>ALL</h2>
-              ) : null}
-              <HomeAllFeed
-                key={filterCategory ?? 'all'}
-                category={filterCategory}
-                excludeIds={[]}
-                initialPosts={firstHomeFeed.posts.map(serializeFeedPost)}
-                initialHasMore={firstHomeFeed.hasMore}
-              />
-            </div>
-          </div>
+              ) : null
+            }
+            layoutRowNoHero={!filterCategory || !SHOW_HOME_MAIN_HERO}
+            recentAside={
+              <aside className={styles.recentPostsAside} aria-labelledby="recent-posts-aside-heading">
+                <h3 id="recent-posts-aside-heading" className={styles.recentPostsAsideTitle}>
+                  최근 게시물
+                </h3>
+                {recentAll.length === 0 ? (
+                  <p className={styles.recentPostsAsideEmpty}>
+                    아직 게시글이 없습니다.{' '}
+                    <Link href="/upload">업로드</Link>
+                  </p>
+                ) : (
+                  <ul className={styles.builders}>
+                    {recentAll.map((post) => (
+                      <li key={post.id} className={styles.builderRow}>
+                        <Link href={`/post/${post.id}`} className={styles.recentLink}>
+                          {post.thumbnail ? (
+                            <div className={styles.recentThumb}>
+                              <MediaThumb url={post.thumbnail} alt={post.title} />
+                            </div>
+                          ) : (
+                            <span className={styles.avatar} aria-hidden />
+                          )}
+                          <div style={{ minWidth: 0, flex: 1 }}>
+                            <div className={styles.recentTitle}>{post.title}</div>
+                            <div className={styles.recentMeta}>
+                              {categoryUiLabel(post.category)} · {post.author.username}
+                            </div>
+                          </div>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </aside>
+            }
+            filterCategory={filterCategory}
+            launchSlides={launchSlides}
+            homeAllFeed={{
+              feedKey: filterCategory ?? 'all',
+              category: filterCategory,
+              excludeIds: [],
+              initialPosts: firstHomeFeed.posts.map(serializeFeedPost),
+              initialHasMore: firstHomeFeed.hasMore,
+            }}
+          />
         </section>
       </main>
       <SiteFooter />

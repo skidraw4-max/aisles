@@ -51,13 +51,19 @@ function CardFooter({ username, likeCount }: { username: string; likeCount: numb
   );
 }
 
-function FeedPostCard({ post }: { post: FeedPostJson }) {
+function FeedPostCard({ post, imagePriority }: { post: FeedPostJson; imagePriority?: boolean }) {
   return (
     <div className={styles.feedCardWrap}>
       <Link href={`/post/${post.id}`} className={styles.feedCard}>
         <div className={styles.feedCardMedia}>
           {post.thumbnail ? (
-            <MediaThumb url={post.thumbnail} alt="" objectFit="cover" />
+            <MediaThumb
+              url={post.thumbnail}
+              alt=""
+              objectFit="cover"
+              priority={imagePriority}
+              sizes="(max-width: 479px) 100vw, (max-width: 959px) 50vw, 25vw"
+            />
           ) : (
             <div className={styles.feedCardPlaceholder} aria-hidden />
           )}
@@ -265,9 +271,9 @@ export function HomeAllFeed({ category, excludeIds, initialPosts, initialHasMore
         <FeedBoardTable posts={posts} gossipReportStyle={gossipReportStyle} />
       ) : (
         <ul className={styles.allFeed}>
-          {cardGridPosts.map((post) => (
+          {cardGridPosts.map((post, i) => (
             <li key={post.id}>
-              <FeedPostCard post={post} />
+              <FeedPostCard post={post} imagePriority={i < 4} />
             </li>
           ))}
         </ul>
