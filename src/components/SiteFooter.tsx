@@ -30,7 +30,7 @@ export function SiteFooter() {
           <Link href="/" className={styles.logo}>
             AIsle
           </Link>
-          <p className={styles.copyright}>© 2026 AIsleHub. All rights reserved.</p>
+          <p className={styles.copyright}>© 2026 AIsle. All rights reserved.</p>
         </div>
 
         <nav className={styles.colCenter} aria-label="정책·고객지원">

@@ -90,7 +90,7 @@ export function AboutPageClient() {
             </span>
           </h1>
           <p className="mt-8 max-w-2xl text-base leading-relaxed text-slate-400 md:text-lg">
-            AisleHub is an editorial research space where artificial intelligence and human creativity intersect to refine
+            AIsle is an editorial research space where artificial intelligence and human creativity intersect to refine
             the &apos;recipes&apos; of tomorrow.
           </p>
         </motion.div>
@@ -110,10 +110,10 @@ export function AboutPageClient() {
             </p>
             <p>
               저는 이 과정을 하나의 <strong className="font-semibold text-slate-200">「레시피」</strong>로 구조화하여,
-              누구나 고품질 결과물을 재현하고 공유할 수 있는 공간을 만들고자 AIsleHub를 시작했습니다.
+              누구나 고품질 결과물을 재현하고 공유할 수 있는 공간을 만들고자 AIsle을 시작했습니다.
             </p>
             <blockquote className="border-l-4 border-cyan-400 bg-slate-900/60 py-5 pl-6 pr-5 text-slate-300 backdrop-blur-sm">
-              AisleHub는 단순한 저장소가 아닙니다. 지능적인 창의성이 모여 실현 가능한 미래를 설계하는 디지털
+              AIsle은 단순한 저장소가 아닙니다. 지능적인 창의성이 모여 실현 가능한 미래를 설계하는 디지털
               실험실입니다.
             </blockquote>
             <p>
@@ -128,7 +128,7 @@ export function AboutPageClient() {
             <div>
               <h2 className="font-sans text-3xl font-bold tracking-tight text-white md:text-4xl">주요 게시판 안내</h2>
               <p className="mt-3 max-w-xl text-sm text-slate-500 md:text-base">
-                AisleHub의 생태계를 구성하는 네 개의 핵심 기둥
+                AIsle의 생태계를 구성하는 네 개의 핵심 기둥
               </p>
             </div>
             <p className="shrink-0 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-400">

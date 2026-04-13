@@ -114,7 +114,7 @@ export default async function HomePage({ searchParams }: PageProps) {
               <>
                 Collect. Build. Launch.
                 <br />
-                with AIsleHub.
+                with AIsle.
               </>
             )}
           </h1>
