@@ -14,6 +14,7 @@ import {
   GoogleGenerativeAIResponseError,
 } from '@google/generative-ai';
 import { prisma } from '@/lib/prisma';
+import { createClient } from '@/lib/supabase/server';
 import { fingerprintPrompt } from '@/lib/prompt-analysis-fingerprint';
 import {
   isPlainRecord,
@@ -134,6 +135,7 @@ function validateGeminiApiKeyShape(apiKey: string): { ok: true } | { ok: false; 
 }
 
 export type AnalyzePromptErrorCode =
+  | 'UNAUTHENTICATED'
   | 'MISSING_API_KEY'
   | 'INVALID_API_KEY'
   | 'EMPTY_PROMPT'
@@ -142,8 +144,22 @@ export type AnalyzePromptErrorCode =
   | 'VALIDATION';
 
 export type AnalyzePromptResult =
-  | { ok: true; data: PromptAnalysis }
+  | { ok: true; data: PromptAnalysis; /** 원격 재분석 대신 DB 캐시만 쓴 경우 등 */ notice?: string }
   | { ok: false; error: string; code: AnalyzePromptErrorCode };
+
+async function loadCachedPromptAnalysisForPost(
+  postId: string,
+  expectedHash: string,
+): Promise<PromptAnalysis | null> {
+  const row = await prisma.aiMetadata.findUnique({
+    where: { postId },
+    select: { promptAnalysis: true, promptAnalysisPromptHash: true },
+  });
+  if (row?.promptAnalysisPromptHash !== expectedHash || row.promptAnalysis == null) {
+    return null;
+  }
+  return parseStoredPromptAnalysisJson(row.promptAnalysis);
+}
 
 function extractJsonObjectSubstring(raw: string): string | null {
   let s = raw.trim();
@@ -334,6 +350,15 @@ function classifyGeminiFailure(err: unknown): ClassifiedFailure {
   };
 }
 
+async function requireUserForPromptAnalysis(): Promise<{ ok: true } | { ok: false }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user?.id) return { ok: false };
+  return { ok: true };
+}
+
 /**
  * Gemini만 호출(캐시 없음). 모델은 문자열 리터럴 `"gemini-2.5-flash"` 고정 (대시보드 텍스트 출력·Gemini 2.5 Flash).
  */
@@ -346,6 +371,15 @@ export async function analyzePrompt(userPrompt: string): Promise<AnalyzePromptRe
       ok: false,
       error: '분석할 프롬프트를 입력해 주세요.',
       code: 'EMPTY_PROMPT',
+    };
+  }
+
+  const auth = await requireUserForPromptAnalysis();
+  if (!auth.ok) {
+    return {
+      ok: false,
+      error: 'AI 분석은 로그인한 회원만 이용할 수 있습니다.',
+      code: 'UNAUTHENTICATED',
     };
   }
 
@@ -472,22 +506,52 @@ export async function analyzePostPromptAnalysis(
     };
   }
 
+  const auth = await requireUserForPromptAnalysis();
+  if (!auth.ok) {
+    return {
+      ok: false,
+      error: 'AI 분석은 로그인한 회원만 이용할 수 있습니다.',
+      code: 'UNAUTHENTICATED',
+    };
+  }
+
   const hash = fingerprintPrompt(trimmed);
 
   if (!opts?.forceRefresh) {
-    const row = await prisma.aiMetadata.findUnique({
-      where: { postId },
-      select: { promptAnalysis: true, promptAnalysisPromptHash: true },
-    });
-    if (row?.promptAnalysisPromptHash === hash && row.promptAnalysis != null) {
-      const cached = parseStoredPromptAnalysisJson(row.promptAnalysis);
-      if (cached) {
-        if (process.env.NODE_ENV === 'development') {
-          console.info(`[analyzePostPromptAnalysis] cache hit postId=${postId}`);
-        }
-        return { ok: true, data: cached };
+    const cached = await loadCachedPromptAnalysisForPost(postId, hash);
+    if (cached) {
+      if (process.env.NODE_ENV === 'development') {
+        console.info(`[analyzePostPromptAnalysis] cache hit postId=${postId}`);
       }
+      return { ok: true, data: cached };
     }
+  }
+
+  const keyResolved = readGeminiApiKeyFromEnv();
+  if (!keyResolved.ok) {
+    const stale = await loadCachedPromptAnalysisForPost(postId, hash);
+    if (stale) {
+      console.warn(
+        `[analyzePostPromptAnalysis] Gemini API key missing; returning DB cache instead of remote refresh. postId=${postId}`,
+      );
+      return {
+        ok: true,
+        data: stale,
+        notice:
+          '서버에 Gemini API 키가 설정되어 있지 않아 원격으로 새로 분석하지 못했습니다. 이전에 저장된 분석 결과를 그대로 보여 드립니다. 새 분석을 받으려면 호스팅 환경 변수에 GOOGLE_GENERATIVE_AI_API_KEY(또는 GEMINI_API_KEY)를 넣고 재배포해 주세요.',
+      };
+    }
+    console.error(
+      '[analyzePostPromptAnalysis] Missing API Key (server). Checked env names:',
+      GEMINI_API_KEY_ENV_NAMES.join(', '),
+    );
+    logGeminiKeyEnvDiagnostics();
+    return {
+      ok: false,
+      error:
+        '서버에 Gemini API 키가 없습니다. Google AI Studio(https://aistudio.google.com/apikey)에서 키를 만든 뒤, Vercel → Project → Settings → Environment Variables에 이름 GOOGLE_GENERATIVE_AI_API_KEY(또는 GEMINI_API_KEY)로 값을 넣고 Environment에 Production과 Preview를 모두 선택한 다음 저장하고 재배포해 주세요.',
+      code: 'MISSING_API_KEY',
+    };
   }
 
   const res = await analyzePrompt(trimmed);
