@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { Suspense } from 'react';
 import { SiteFooter } from '@/components/SiteFooter';
-import { MediaThumb } from '@/components/MediaThumb';
+import { RecentPostListThumb } from '@/components/RecentPostListThumb';
 import { HomeMainHero } from '@/components/HomeMainHero';
 import { HomeContentTabs } from '@/components/HomeContentTabs';
 import { HomeQuasarBoard } from '@/components/HomeQuasarBoard';
@@ -162,13 +162,13 @@ export default async function HomePage({ searchParams }: PageProps) {
                     {recentAll.map((post) => (
                       <li key={post.id} className={styles.builderRow}>
                         <Link href={`/post/${post.id}`} className={styles.recentLink}>
-                          {post.thumbnail ? (
-                            <div className={styles.recentThumb}>
-                              <MediaThumb url={post.thumbnail} alt={post.title} />
-                            </div>
-                          ) : (
-                            <span className={styles.avatar} aria-hidden />
-                          )}
+                          <div className={styles.recentThumb}>
+                            <RecentPostListThumb
+                              thumbnail={post.thumbnail}
+                              category={post.category}
+                              title={post.title}
+                            />
+                          </div>
                           <div style={{ minWidth: 0, flex: 1 }}>
                             <div className={styles.recentTitle}>{post.title}</div>
                             <div className={styles.recentMeta}>

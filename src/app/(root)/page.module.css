@@ -1499,6 +1499,27 @@
   border: 1px solid var(--border);
 }
 
+.recentThumbImg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.recentThumbFallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  background: #e4e4e7;
+}
+
+.recentThumbFallbackIcon {
+  display: block;
+  object-fit: contain;
+}
+
 .recentLink {
   display: flex;
   align-items: center;
