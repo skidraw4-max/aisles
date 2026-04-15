@@ -1,17 +1,21 @@
 'use client';
 
 import { useCallback, useEffect, useState, useTransition } from 'react';
+import Link from 'next/link';
 import {
   Boxes,
   Frame,
   Hash,
   Layers,
+  Lock,
   Palette,
   Sparkles,
   SunMedium,
 } from 'lucide-react';
+import { useAuth } from '@/components/SessionProvider';
 import {
   analyzePostPromptAnalysis,
+  type AnalyzePromptErrorCode,
   type PromptAnalysis,
 } from '@/app/actions/gemini';
 
@@ -66,42 +70,74 @@ export type PostAiAnalysisProps = {
   promptText: string;
   /** 서버에서 프롬프트 지문이 DB와 일치할 때만 전달 — 로드 시 API 호출 없음 */
   initialCachedAnalysis: PromptAnalysis | null;
+  isLoggedIn: boolean;
+  /** 로그인 완료 후 돌아올 경로 (`/login?next=` — LoginClient와 동일) */
+  loginNextPath: string;
 };
 
-export function PostAiAnalysis({ postId, promptText, initialCachedAnalysis }: PostAiAnalysisProps) {
+export function PostAiAnalysis({
+  postId,
+  promptText,
+  initialCachedAnalysis,
+  isLoggedIn,
+  loginNextPath,
+}: PostAiAnalysisProps) {
+  const { isAuthenticated } = useAuth();
+  /** 서버(RSC)와 클라이언트 세션 둘 다 true일 때만 분석 허용 — 로그아웃 직후 RSC prop이 늦게 갱신되는 경우 방지 */
+  const canUseAiAnalysis = Boolean(isLoggedIn) && isAuthenticated;
+
   const trimmed = typeof promptText === 'string' ? promptText.trim() : '';
   const [result, setResult] = useState<PromptAnalysis | null>(initialCachedAnalysis);
   const [error, setError] = useState<string | null>(null);
+  const [errorCode, setErrorCode] = useState<AnalyzePromptErrorCode | null>(null);
+  const [serverNotice, setServerNotice] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
+  const loginHref = `/login?next=${encodeURIComponent(loginNextPath)}`;
+
   useEffect(() => {
+    if (!canUseAiAnalysis) {
+      setResult(null);
+      setError(null);
+      setErrorCode(null);
+      setServerNotice(null);
+      return;
+    }
     setResult(initialCachedAnalysis);
     setError(null);
-  }, [postId, initialCachedAnalysis]);
+    setErrorCode(null);
+    setServerNotice(null);
+  }, [canUseAiAnalysis, postId, initialCachedAnalysis]);
 
   const runAnalyze = useCallback(
     (forceRefresh: boolean) => {
       const p = trimmed;
-      if (!p) return;
+      if (!p || !canUseAiAnalysis) return;
       setError(null);
+      setErrorCode(null);
+      setServerNotice(null);
       startTransition(async () => {
         const res = await analyzePostPromptAnalysis(postId, p, { forceRefresh });
         if (res.ok) {
           setResult(res.data);
           setError(null);
+          setErrorCode(null);
+          setServerNotice(typeof res.notice === 'string' && res.notice.trim() ? res.notice.trim() : null);
         } else {
           if (!forceRefresh) {
             setResult(null);
           }
           setError(res.error);
+          setErrorCode(res.code);
+          setServerNotice(null);
         }
       });
     },
-    [postId, trimmed],
+    [canUseAiAnalysis, postId, trimmed],
   );
 
-  const showPrimaryCta = !result && !isPending && !error;
-  const showRefreshCta = Boolean(result) && !isPending;
+  const showPrimaryCta = canUseAiAnalysis && !result && !isPending && !error;
+  const showRefreshCta = canUseAiAnalysis && Boolean(result) && !isPending;
 
   if (!trimmed) {
     return null;
@@ -148,8 +184,14 @@ export function PostAiAnalysis({ postId, promptText, initialCachedAnalysis }: Po
               프롬프트 AI 해석
             </h2>
             <p className="mt-2 max-w-xl text-[var(--muted)]" style={{ fontSize: 'var(--type-14)' }}>
-              위 레시피 프롬프트를 기준으로 구조·스타일·조명·구도와 추천 키워드를 정리합니다. 분석은 버튼을 눌렀을 때만
-              요청되며, 한 번 분석된 결과는 저장되어 다시 불러옵니다.
+              {canUseAiAnalysis ? (
+                <>
+                  위 레시피 프롬프트를 기준으로 구조·스타일·조명·구도와 추천 키워드를 정리합니다. 분석은 버튼을 눌렀을 때만
+                  요청되며, 한 번 분석된 결과는 저장되어 다시 불러옵니다.
+                </>
+              ) : (
+                <>로그인한 회원만 AI 분석을 실행할 수 있습니다. 로그인하면 이 레시피의 프롬프트를 바로 해석해 드립니다.</>
+              )}
             </p>
           </div>
           <div className="flex flex-col gap-2 sm:items-end">
@@ -189,16 +231,83 @@ export function PostAiAnalysis({ postId, promptText, initialCachedAnalysis }: Po
           </div>
         </div>
 
-        {error ? (
+        {canUseAiAnalysis && error ? (
           <div
             role="alert"
             className="mb-6 rounded-2xl border border-red-500/35 bg-red-950/35 px-5 py-4 text-[length:var(--type-15)] text-red-100"
           >
-            {error}
+            <p className="mb-0">{error}</p>
+            {errorCode === 'UNAUTHENTICATED' ? (
+              <p className="mt-3 mb-0">
+                <Link
+                  href={loginHref}
+                  className="inline-flex min-h-[44px] items-center justify-center rounded-xl bg-white/15 px-5 font-semibold text-white underline-offset-2 transition hover:bg-white/25 hover:underline"
+                >
+                  로그인
+                </Link>
+              </p>
+            ) : null}
           </div>
         ) : null}
 
-        {isPending ? (
+        {canUseAiAnalysis && serverNotice ? (
+          <div
+            role="status"
+            className="mb-6 rounded-2xl border border-amber-500/40 bg-amber-950/25 px-5 py-4 text-[length:var(--type-14)] leading-relaxed text-amber-50"
+          >
+            {serverNotice}
+          </div>
+        ) : null}
+
+        {!canUseAiAnalysis ? (
+          <div className="relative mt-2 min-h-[280px] overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface-2)]/60">
+            <div className="pointer-events-none select-none p-4 blur-md sm:p-6" aria-hidden>
+              <div className="mb-4 flex gap-3">
+                <div className="h-11 w-11 shrink-0 rounded-xl bg-[var(--accent-soft)]" />
+                <div className="min-w-0 flex-1 space-y-2 pt-1">
+                  <div className="h-4 w-32 rounded bg-[var(--border)]" />
+                  <div className="h-3 w-48 rounded bg-[var(--border)]" />
+                </div>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="h-28 rounded-xl border border-[var(--border)] bg-[var(--surface)]/80" />
+                ))}
+              </div>
+            </div>
+            <div
+              className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-[var(--bg)]/75 px-5 py-8 text-center backdrop-blur-sm"
+              role="region"
+              aria-label="AI 분석 로그인 필요"
+            >
+              <div
+                className="flex h-14 w-14 items-center justify-center rounded-2xl border border-[var(--border)] bg-[var(--surface)] text-[var(--accent)] shadow-lg shadow-black/20"
+                aria-hidden
+              >
+                <Lock className="h-7 w-7" strokeWidth={2} />
+              </div>
+              <p
+                className="max-w-md font-medium leading-relaxed text-[var(--text)]"
+                style={{ fontSize: 'var(--type-16)' }}
+              >
+                AI 분석은 로그인 후 이용 가능합니다. 지금 가입하고 프롬프트 레시피를 분석해보세요!
+              </p>
+              <Link
+                href={loginHref}
+                className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-2xl px-8 font-semibold text-white shadow-lg transition hover:opacity-95"
+                style={{
+                  background:
+                    'linear-gradient(120deg, #7c3aed 0%, #a855f7 35%, #ec4899 65%, #06b6d4 100%)',
+                  boxShadow: '0 12px 40px -8px rgba(124, 58, 237, 0.55), 0 0 0 1px rgba(255,255,255,0.08) inset',
+                }}
+              >
+                로그인
+              </Link>
+            </div>
+          </div>
+        ) : null}
+
+        {canUseAiAnalysis && isPending ? (
           <div className="space-y-6" aria-busy="true" aria-live="polite">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <p
@@ -218,7 +327,7 @@ export function PostAiAnalysis({ postId, promptText, initialCachedAnalysis }: Po
           </div>
         ) : null}
 
-        {!isPending && result ? (
+        {canUseAiAnalysis && !isPending && result ? (
           <div className="space-y-6">
             <h3 className="font-semibold text-[var(--text)]" style={{ fontSize: 'var(--type-17)' }}>
               분석 결과
