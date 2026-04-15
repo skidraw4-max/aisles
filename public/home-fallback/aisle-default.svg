@@ -1,6 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" width="40" height="40" role="img" aria-label="AIsle">
-  <path
+  <text
+    x="50%"
+    y="50%"
+    text-anchor="middle"
+    dominant-baseline="central"
+    font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif"
+    font-size="28"
+    font-weight="800"
     fill="#7c3aed"
-    d="M20 9 12 29h3.2l1.6-4.4h6.4L25 29h3.2L20 9Zm-1.1 12.2 2.2-6.1 2.2 6.1h-4.4Z"
-  />
+  >A</text>
 </svg>

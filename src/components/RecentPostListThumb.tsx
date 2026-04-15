@@ -66,8 +66,8 @@ export function RecentPostListThumb({ thumbnail, category, title }: Props) {
         <Image
           src={fallback}
           alt=""
-          width={28}
-          height={28}
+          width={32}
+          height={32}
           className={styles.recentThumbFallbackIcon}
           unoptimized
         />
