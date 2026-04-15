@@ -102,13 +102,18 @@ export const metadata: Metadata = {
       'max-snippet': -1,
     },
   },
-  ...(process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION?.trim()
-    ? {
-        verification: {
-          google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION.trim(),
-        },
-      }
-    : {}),
+  ...(() => {
+    const google =
+      process.env.GOOGLE_SITE_VERIFICATION?.trim() ||
+      process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION?.trim();
+    return google
+      ? {
+          verification: {
+            google,
+          },
+        }
+      : {};
+  })(),
 };
 
 async function getInitialSession(): Promise<InitialSession> {
