@@ -261,6 +261,7 @@ export default async function PostPage({ params }: Props) {
   const labPromptText = resolveRecipePrompt(post);
   const labPromptFingerprint = labPromptText.trim() ? fingerprintPrompt(labPromptText) : '';
   const initialCachedPromptAnalysis =
+    Boolean(user) &&
     isLab &&
     labPromptFingerprint &&
     post.metadata?.promptAnalysisPromptHash === labPromptFingerprint &&
@@ -449,6 +450,8 @@ export default async function PostPage({ params }: Props) {
                     postId={post.id}
                     promptText={labPromptText}
                     initialCachedAnalysis={initialCachedPromptAnalysis}
+                    isLoggedIn={Boolean(user)}
+                    loginNextPath={`/post/${post.id}`}
                   />
                 ) : null}
 
