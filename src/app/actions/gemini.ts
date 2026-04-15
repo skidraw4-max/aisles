@@ -1,5 +1,7 @@
 'use server';
 
+import { unstable_noStore as noStore } from 'next/cache';
+
 /**
  * Gemini: `@google/generative-ai` — package.json 기준 최신 안내는 npm `0.24.1` (프로젝트와 동일한지 배포 시 확인).
  * 모델: Google AI Studio 할당량 기준 **Gemini 2.5 Flash** → API ID `gemini-2.5-flash`.
@@ -26,8 +28,35 @@ export type { PromptAnalysis };
 const GEMINI_API_KEY_ENV_NAMES = [
   'GOOGLE_GENERATIVE_AI_API_KEY',
   'GEMINI_API_KEY',
+  'GOOGLE_GENAI_API_KEY',
   'GOOGLE_AI_API_KEY',
 ] as const;
+
+function logGeminiKeyEnvDiagnostics(): void {
+  console.error('[analyzePrompt] Gemini API key — per-variable state (value not logged):');
+  for (const name of GEMINI_API_KEY_ENV_NAMES) {
+    const v = process.env[name];
+    if (v === undefined) {
+      console.error(`  ${name}: undefined`);
+    } else if (v === null) {
+      console.error(`  ${name}: null`);
+    } else if (typeof v !== 'string') {
+      console.error(`  ${name}: unexpected type ${typeof v}`);
+    } else if (!v.trim()) {
+      console.error(`  ${name}: empty or whitespace only`);
+    } else {
+      console.error(`  ${name}: present (trimmed length=${v.trim().length})`);
+    }
+  }
+  console.error(
+    '[analyzePrompt] Context: NODE_ENV=',
+    process.env.NODE_ENV,
+    'VERCEL_ENV=',
+    process.env.VERCEL_ENV ?? '(unset)',
+    'VERCEL=',
+    process.env.VERCEL ?? '(unset)',
+  );
+}
 
 function readGeminiApiKeyFromEnv():
   | { ok: true; key: string; source: (typeof GEMINI_API_KEY_ENV_NAMES)[number] }
@@ -309,6 +338,8 @@ function classifyGeminiFailure(err: unknown): ClassifiedFailure {
  * Gemini만 호출(캐시 없음). 모델은 문자열 리터럴 `"gemini-2.5-flash"` 고정 (대시보드 텍스트 출력·Gemini 2.5 Flash).
  */
 export async function analyzePrompt(userPrompt: string): Promise<AnalyzePromptResult> {
+  noStore();
+
   const trimmed = typeof userPrompt === 'string' ? userPrompt.trim() : '';
   if (!trimmed) {
     return {
@@ -323,13 +354,12 @@ export async function analyzePrompt(userPrompt: string): Promise<AnalyzePromptRe
     console.error(
       '[analyzePrompt] Missing API Key (server). Checked env names:',
       GEMINI_API_KEY_ENV_NAMES.join(', '),
-      '| NODE_ENV:',
-      process.env.NODE_ENV,
     );
+    logGeminiKeyEnvDiagnostics();
     return {
       ok: false,
       error:
-        'Google Generative AI API 키가 설정되지 않았습니다. 호스팅(Vercel 등) 환경 변수에 GOOGLE_GENERATIVE_AI_API_KEY(또는 GEMINI_API_KEY)를 Production·Preview에 등록한 뒤 재배포해 주세요.',
+        '서버에 Gemini API 키가 없습니다. Google AI Studio(https://aistudio.google.com/apikey)에서 키를 만든 뒤, Vercel → Project → Settings → Environment Variables에 이름 GOOGLE_GENERATIVE_AI_API_KEY(또는 GEMINI_API_KEY)로 값을 넣고 Environment에 Production과 Preview를 모두 선택한 다음 저장하고 재배포해 주세요.',
       code: 'MISSING_API_KEY',
     };
   }
@@ -431,6 +461,8 @@ export async function analyzePostPromptAnalysis(
   promptText: string,
   opts?: { forceRefresh?: boolean },
 ): Promise<AnalyzePromptResult> {
+  noStore();
+
   const trimmed = typeof promptText === 'string' ? promptText.trim() : '';
   if (!trimmed) {
     return {
