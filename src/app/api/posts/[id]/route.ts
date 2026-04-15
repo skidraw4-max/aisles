@@ -7,6 +7,7 @@ import { parseMediaUrlsField } from '@/lib/post-media-urls';
 import { normalizePostTagsInput } from '@/lib/post-tags';
 import type { Category } from '@prisma/client';
 import { validateContentMinForCategory } from '@/lib/post-description-policy';
+import { categoryAllowsOptionalThumbnail } from '@/lib/post-categories';
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -136,7 +137,7 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
       return NextResponse.json({ error: parsed.message }, { status: 400 });
     }
     if (parsed.urls.length === 0) {
-      if (post.category === 'LOUNGE') {
+      if (categoryAllowsOptionalThumbnail(post.category)) {
         data.thumbnail = null;
         data.attachmentUrls = [];
       } else {
@@ -152,7 +153,7 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
   } else if (typeof b.thumbnailUrl === 'string') {
     const url = b.thumbnailUrl.trim();
     if (!url) {
-      if (post.category === 'LOUNGE') {
+      if (categoryAllowsOptionalThumbnail(post.category)) {
         data.thumbnail = null;
       } else {
         return NextResponse.json(

@@ -70,9 +70,9 @@ export function parsePostCategory(raw: string | null | undefined): Category | nu
   return raw as Category;
 }
 
-/** 썸네일 없이 글 작성 가능 (제목 + 본문) */
+/** 썸네일 없이 글 작성 가능 (제목 + 본문) — 커뮤니티 복도 */
 export function categoryAllowsOptionalThumbnail(category: Category): boolean {
-  return category === 'LOUNGE';
+  return category === 'LOUNGE' || category === 'GOSSIP';
 }
 
 /** 메인 피드: 퀘이사존식 한 줄 리스트 (LAB·GALLERY는 그리드) */

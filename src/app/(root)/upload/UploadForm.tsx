@@ -492,7 +492,9 @@ export function UploadForm({ editInitial = null }: Props) {
         <div className={styles.fileRow}>
           <span className={styles.label} style={{ textTransform: 'none', letterSpacing: 'normal' }}>
             대표·첨부 미디어 (최대 {MAX_POST_MEDIA}개)
-            {mediaOptional ? <span className={styles.optionalMark}> · LOUNGE는 생략 가능</span> : null}
+            {mediaOptional ? (
+              <span className={styles.optionalMark}> · LOUNGE·GOSSIP: 대표 미디어 생략 가능</span>
+            ) : null}
           </span>
           <label className={styles.fileLabel}>
             <span className={styles.fileBtn}>
