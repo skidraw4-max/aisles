@@ -223,6 +223,9 @@ export function PostAiAnalysis({ postId, promptText, initialCachedAnalysis }: Po
             <h3 className="font-semibold text-[var(--text)]" style={{ fontSize: 'var(--type-17)' }}>
               분석 결과
             </h3>
+            <p className="mb-1 text-[length:var(--type-13)] text-[var(--muted)]">
+              본문은 한국어로 생성됩니다. 이전에 저장된 영어 결과는 「다시 분석」으로 갱신할 수 있습니다.
+            </p>
             <div className="grid gap-4 sm:grid-cols-2">
               {analysisCards.map(({ key, title, subtitle, Icon }) => (
                 <article

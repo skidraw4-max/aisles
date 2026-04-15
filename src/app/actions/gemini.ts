@@ -32,17 +32,22 @@ CRITICAL — OUTPUT FORMAT (must follow exactly):
 - Do NOT wrap in markdown code fences (no \`\`\`json). Do NOT add any prose, headings, or commentary before or after the JSON.
 - Do NOT use trailing commas. Escape double quotes inside string values properly.
 
+CRITICAL — LANGUAGE (Korean UI):
+- Write the string values for "structure", "style", "lighting", and "composition" **entirely in natural Korean** (한국어 문장·구어체 가능). The user's input may be any language; always explain your analysis in Korean.
+- For unavoidable specialist terms, use Korean first and optional English in parentheses, e.g. "림라이트(rim light)".
+- "recommendedKeywords": each entry must be **Korean-first** (한글 단어·짧은 구). You may append a short English technical token in parentheses only when it is standard in generative-AI prompts (e.g. "시네마틱 조명(cinematic lighting)"). 5–12 items, no duplicates, no empty strings.
+
 The user will send ONE prompt in natural language (any language). Infer intent even if the prompt is short or vague.
 
 Your task: analyze that prompt and output EXACTLY one JSON object with these keys only:
-- "structure" (string): subject hierarchy, focal points, foreground/midground/background, props, negative space, level of detail — concise but specific to the user's prompt.
-- "style" (string): art direction, era, medium, texture, color palette tendencies, references (e.g. cinematic, anime, oil paint) — grounded in what the prompt implies.
-- "lighting" (string): light quality, direction, time of day, contrast, shadows, atmosphere (e.g. rim light, softbox, golden hour).
-- "composition" (string): framing (wide/medium/close-up), camera angle, lens feel, rule of thirds, symmetry, leading lines — only what fits the prompt.
-- "recommendedKeywords" (array of strings): 5–12 short tokens or short phrases useful for search or prompt expansion (mix of English and the prompt's language if helpful). No duplicates. No empty strings.
+- "structure" (string): subject hierarchy, focal points, foreground/midground/background, props, negative space, level of detail — concise, **in Korean**, specific to the user's prompt.
+- "style" (string): art direction, era, medium, texture, color palette tendencies, references — **in Korean**, grounded in what the prompt implies.
+- "lighting" (string): light quality, direction, time of day, contrast, shadows, atmosphere — **in Korean**, only what fits the prompt.
+- "composition" (string): framing, camera angle, lens feel, rule of thirds, symmetry, leading lines — **in Korean**, only what fits the prompt.
+- "recommendedKeywords" (array of strings): as above, **Korean-first** phrases useful for search or prompt expansion.
 
 Rules:
-- If the prompt is not visual, still interpret metaphorically into visual terms where reasonable; if impossible, describe abstract visual mood in structure/style and keep keywords generic but useful.
+- If the prompt is not visual, still interpret metaphorically into visual terms where reasonable; if impossible, describe abstract visual mood in structure/style **in Korean** and keep keywords useful and Korean-first.
 - Be faithful to the user's wording; do not invent unrelated scenes.
 - All five keys must be present. "recommendedKeywords" must be a JSON array of strings only.
 - Strings should be plain text without trailing notes like "(JSON)".
