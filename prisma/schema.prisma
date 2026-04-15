@@ -101,6 +101,9 @@ model AiMetadata {
   modelName   String? // 예: GPT-4o, Midjourney
   prompt      String? @db.Text
   params      Json?   // Seed, Temp 등 설정을 JSON 형태로 저장
+  /// `analyzePostPromptAnalysis` 결과 캐시 (프롬프트 지문과 함께만 유효)
+  promptAnalysis           Json?
+  promptAnalysisPromptHash String? @db.VarChar(64)
 }
 
 // 5. 서비스 홍보 정보 (Launchpad 복도용 상세 데이터)

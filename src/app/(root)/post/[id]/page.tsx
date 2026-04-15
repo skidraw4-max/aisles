@@ -6,6 +6,8 @@ import { prisma } from '@/lib/prisma';
 import { createClient } from '@/lib/supabase/server';
 import { POST_CATEGORY_OPTIONS, homeHrefForCategory } from '@/lib/post-categories';
 import { resolveRecipePrompt } from '@/lib/recipe-prompt';
+import { fingerprintPrompt } from '@/lib/prompt-analysis-fingerprint';
+import { parseStoredPromptAnalysisJson } from '@/lib/prompt-analysis';
 import { PostEngagement } from './PostEngagement';
 import { PostLikeProvider } from './PostLikeContext';
 import { PostSocialIndicatorBar } from './PostSocialIndicatorBar';
@@ -18,6 +20,7 @@ import { PostAdjacentNav } from './PostAdjacentNav';
 import { DosDontsSection } from './DosDontsSection';
 import { ExternalServiceCta } from './ExternalServiceCta';
 import { LaunchVisitProjectCta } from './LaunchVisitProjectCta';
+import { PostAiAnalysis } from '@/components/post/PostAiAnalysis';
 import { PostCategoryBoardList } from './PostCategoryBoardList';
 import { PostTags } from './PostTags';
 import { incrementPostViews } from './actions';
@@ -30,7 +33,9 @@ import styles from './post.module.css';
 
 export const dynamic = 'force-dynamic';
 
-type Props = { params: Promise<{ id: string }> };
+type Props = {
+  params: Promise<{ id: string }>;
+};
 
 function categoryLabel(value: string) {
   return POST_CATEGORY_OPTIONS.find((o) => o.value === value)?.label ?? value;
@@ -254,6 +259,14 @@ export default async function PostPage({ params }: Props) {
   const hasHeroMedia = Boolean(post.thumbnail?.trim());
   const metaPrompt = post.metadata?.prompt?.trim() ?? '';
   const labPromptText = resolveRecipePrompt(post);
+  const labPromptFingerprint = labPromptText.trim() ? fingerprintPrompt(labPromptText) : '';
+  const initialCachedPromptAnalysis =
+    isLab &&
+    labPromptFingerprint &&
+    post.metadata?.promptAnalysisPromptHash === labPromptFingerprint &&
+    post.metadata.promptAnalysis != null
+      ? parseStoredPromptAnalysisJson(post.metadata.promptAnalysis)
+      : null;
   const showLabDescription = isLab && Boolean(post.content?.trim()) && Boolean(metaPrompt);
 
   const relatedSidebar = relatedPosts.map((p) => ({
@@ -431,6 +444,13 @@ export default async function PostPage({ params }: Props) {
 
                 {isLab ? <RecipePromptSection promptText={labPromptText} /> : null}
                 {isLab ? <DosDontsSection /> : null}
+                {isLab && labPromptText.trim() ? (
+                  <PostAiAnalysis
+                    postId={post.id}
+                    promptText={labPromptText}
+                    initialCachedAnalysis={initialCachedPromptAnalysis}
+                  />
+                ) : null}
 
                 {!isGallery && isBuildOrLaunch ? (
                   <>
