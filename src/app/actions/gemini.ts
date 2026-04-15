@@ -22,6 +22,28 @@ import {
 
 export type { PromptAnalysis };
 
+/** Vercel/호스팅에서 이름이 다르게 등록된 경우 대비 (런타임 동적 조회로 빌드 시 고정 치환 완화) */
+const GEMINI_API_KEY_ENV_NAMES = [
+  'GOOGLE_GENERATIVE_AI_API_KEY',
+  'GEMINI_API_KEY',
+  'GOOGLE_AI_API_KEY',
+] as const;
+
+function readGeminiApiKeyFromEnv():
+  | { ok: true; key: string; source: (typeof GEMINI_API_KEY_ENV_NAMES)[number] }
+  | { ok: false } {
+  for (const name of GEMINI_API_KEY_ENV_NAMES) {
+    const raw = process.env[name];
+    if (raw === undefined || raw === null) continue;
+    if (typeof raw !== 'string') continue;
+    const trimmed = raw.trim();
+    if (trimmed) {
+      return { ok: true, key: trimmed, source: name };
+    }
+  }
+  return { ok: false };
+}
+
 const MINIMAL_SYSTEM_INSTRUCTION = '너는 도우미야.';
 
 const ANALYSIS_SYSTEM_INSTRUCTION = `You are a senior creative director and prompt engineer specialized in visual media (illustration, photography, 3D, film frames, concept art).
@@ -296,37 +318,23 @@ export async function analyzePrompt(userPrompt: string): Promise<AnalyzePromptRe
     };
   }
 
-  const rawKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
-  if (rawKey === undefined || rawKey === null) {
+  const resolved = readGeminiApiKeyFromEnv();
+  if (!resolved.ok) {
     console.error(
-      '[analyzePrompt] Missing API Key: GOOGLE_GENERATIVE_AI_API_KEY is undefined or null (server-side).',
+      '[analyzePrompt] Missing API Key (server). Checked env names:',
+      GEMINI_API_KEY_ENV_NAMES.join(', '),
+      '| NODE_ENV:',
+      process.env.NODE_ENV,
     );
     return {
       ok: false,
       error:
-        'Google Generative AI API 키가 설정되지 않았습니다. 환경 변수 GOOGLE_GENERATIVE_AI_API_KEY를 추가한 뒤 다시 시도해 주세요.',
+        'Google Generative AI API 키가 설정되지 않았습니다. 호스팅(Vercel 등) 환경 변수에 GOOGLE_GENERATIVE_AI_API_KEY(또는 GEMINI_API_KEY)를 Production·Preview에 등록한 뒤 재배포해 주세요.',
       code: 'MISSING_API_KEY',
-    };
-  }
-  if (typeof rawKey !== 'string') {
-    console.error('[analyzePrompt] GOOGLE_GENERATIVE_AI_API_KEY must be a string, got:', typeof rawKey);
-    return {
-      ok: false,
-      error: 'API 키 환경 변수 형식이 올바르지 않습니다.',
-      code: 'INVALID_API_KEY',
     };
   }
 
-  const apiKey = rawKey.trim();
-  if (!apiKey) {
-    console.error('[analyzePrompt] Missing API Key: GOOGLE_GENERATIVE_AI_API_KEY is empty after trim.');
-    return {
-      ok: false,
-      error:
-        'Google Generative AI API 키가 설정되지 않았습니다. 환경 변수 GOOGLE_GENERATIVE_AI_API_KEY를 추가한 뒤 다시 시도해 주세요.',
-      code: 'MISSING_API_KEY',
-    };
-  }
+  const apiKey = resolved.key;
 
   const keyCheck = validateGeminiApiKeyShape(apiKey);
   if (!keyCheck.ok) {
@@ -335,7 +343,7 @@ export async function analyzePrompt(userPrompt: string): Promise<AnalyzePromptRe
 
   if (process.env.NODE_ENV === 'development') {
     console.info(
-      `[analyzePrompt] API key OK (length=${apiKey.length}), model="gemini-2.5-flash", minimalSystem=${process.env.GEMINI_MINIMAL_SYSTEM === '1'}`,
+      `[analyzePrompt] API key OK (length=${apiKey.length}, from=${resolved.source}), model="gemini-2.5-flash", minimalSystem=${process.env.GEMINI_MINIMAL_SYSTEM === '1'}`,
     );
   }
 
