@@ -76,7 +76,8 @@ function readGeminiApiKeyFromEnv():
 
 const MINIMAL_SYSTEM_INSTRUCTION = '너는 도우미야.';
 
-const ANALYSIS_SYSTEM_INSTRUCTION = `You are a senior creative director and prompt engineer specialized in visual media (illustration, photography, 3D, film frames, concept art).
+/** 이미지·영상 생성용 프롬프트 분석 (LAB 레시피) */
+const VISUAL_ANALYSIS_SYSTEM_INSTRUCTION = `You are a senior creative director and prompt engineer specialized in visual media (illustration, photography, 3D, film frames, concept art).
 
 CRITICAL — OUTPUT FORMAT (must follow exactly):
 - Respond with PURE JSON ONLY: a single JSON object, RFC 8259 compliant.
@@ -92,6 +93,7 @@ CRITICAL — LANGUAGE (Korean UI):
 The user will send ONE prompt in natural language (any language). Infer intent even if the prompt is short or vague.
 
 Your task: analyze that prompt and output EXACTLY one JSON object with these keys only:
+- "mode" (string): MUST always be exactly "visual".
 - "structure" (string): subject hierarchy, focal points, foreground/midground/background, props, negative space, level of detail — concise, **in Korean**, specific to the user's prompt.
 - "style" (string): art direction, era, medium, texture, color palette tendencies, references — **in Korean**, grounded in what the prompt implies.
 - "lighting" (string): light quality, direction, time of day, contrast, shadows, atmosphere — **in Korean**, only what fits the prompt.
@@ -101,15 +103,66 @@ Your task: analyze that prompt and output EXACTLY one JSON object with these key
 Rules:
 - If the prompt is not visual, still interpret metaphorically into visual terms where reasonable; if impossible, describe abstract visual mood in structure/style **in Korean** and keep keywords useful and Korean-first.
 - Be faithful to the user's wording; do not invent unrelated scenes.
-- All five keys must be present. "recommendedKeywords" must be a JSON array of strings only.
+- All keys above must be present. "recommendedKeywords" must be a JSON array of strings only.
 - Strings should be plain text without trailing notes like "(JSON)".
 `;
 
-function resolveSystemInstruction(): string {
-  if (process.env.GEMINI_MINIMAL_SYSTEM === '1') {
-    return MINIMAL_SYSTEM_INSTRUCTION;
+/** 마케팅·카피라이팅용 프롬프트 분석 */
+const MARKETING_ANALYSIS_SYSTEM_INSTRUCTION = `You are a senior marketing strategist and copy chief (Korean market).
+
+CRITICAL — OUTPUT FORMAT (must follow exactly):
+- Respond with PURE JSON ONLY: a single JSON object, RFC 8259 compliant.
+- Do NOT wrap in markdown code fences. No prose outside the JSON.
+
+CRITICAL — LANGUAGE:
+- All string values must be **natural Korean**.
+
+Output EXACTLY one JSON object with these keys only:
+- "mode" (string): MUST always be exactly "marketing".
+- "targetAnalysis" (string): 타겟 독자·상황·니즈, 브랜드 톤/어조, 채널에 맞는 메시지 방향 — **한국어**로 구체적으로.
+- "persuasionScore" (string): 설득력을 0–10 점 형태로 제시하고, 한 줄 근거(왜 그 점수인지) — **한국어**.
+- "alternativePhrases" (array of strings): **정확히 3개**의 대안 문구(헤드라인·본문 훅·CTA 등 프롬프트 성격에 맞게). 각 항목은 한국어 문자열. 중복 금지, 빈 문자열 금지.
+
+Rules:
+- Be faithful to the user's brief; suggest realistic alternatives.
+`;
+
+const CLASSIFY_PROMPT_INTENT_SYSTEM = `You classify a single user message (a "prompt" for LAB).
+
+Decide the primary intent:
+- "image" — Visual / generative media: scenes, illustration, photo, video look, camera, lighting, composition, characters, art style, UI shown as image, Midjourney/Stable Diffusion/DALL·E style instructions, etc.
+- "marketing" — Copywriting & messaging: ad headlines, SNS posts, product descriptions, brand slogans, email/marketing copy, landing text, persuasion without describing a picture to generate.
+
+Respond with PURE JSON only, one line: {"intent":"image"} OR {"intent":"marketing"}`;
+
+async function classifyPromptIntent(
+  genAI: GoogleGenerativeAI,
+  userPrompt: string,
+): Promise<'image' | 'marketing'> {
+  try {
+    const model = genAI.getGenerativeModel({
+      model: 'gemini-2.5-flash',
+      systemInstruction: CLASSIFY_PROMPT_INTENT_SYSTEM,
+      generationConfig: {
+        temperature: 0.15,
+        responseMimeType: 'application/json',
+      },
+    });
+    const result = await model.generateContent(userPrompt);
+    const text = result.response.text().trim();
+    const parsed = tryParseJsonFromModelText(text);
+    if (!parsed.ok || !isPlainRecord(parsed.value)) {
+      return 'image';
+    }
+    const intent = parsed.value.intent;
+    if (intent === 'marketing') {
+      return 'marketing';
+    }
+    return 'image';
+  } catch (e) {
+    console.warn('[analyzePrompt] classifyPromptIntent failed, defaulting to image:', e);
+    return 'image';
   }
-  return ANALYSIS_SYSTEM_INSTRUCTION;
 }
 
 /** Google AI Studio 키는 보통 `AIza` 로 시작 */
@@ -414,9 +467,20 @@ export async function analyzePrompt(userPrompt: string): Promise<AnalyzePromptRe
   try {
     const genAI = new GoogleGenerativeAI(apiKey);
 
+    let systemInstruction: string;
+    if (process.env.GEMINI_MINIMAL_SYSTEM === '1') {
+      systemInstruction = MINIMAL_SYSTEM_INSTRUCTION;
+    } else {
+      const intent = await classifyPromptIntent(genAI, trimmed);
+      systemInstruction =
+        intent === 'marketing'
+          ? MARKETING_ANALYSIS_SYSTEM_INSTRUCTION
+          : VISUAL_ANALYSIS_SYSTEM_INSTRUCTION;
+    }
+
     const model = genAI.getGenerativeModel({
       model: 'gemini-2.5-flash',
-      systemInstruction: resolveSystemInstruction(),
+      systemInstruction,
       generationConfig: {
         temperature: 0.35,
         responseMimeType: 'application/json',

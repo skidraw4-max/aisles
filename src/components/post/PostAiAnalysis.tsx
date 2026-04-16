@@ -3,14 +3,17 @@
 import { useCallback, useEffect, useState, useTransition } from 'react';
 import Link from 'next/link';
 import {
+  BarChart3,
   Boxes,
   Frame,
   Hash,
   Layers,
+  ListOrdered,
   Lock,
   Palette,
   Sparkles,
   SunMedium,
+  Target,
 } from 'lucide-react';
 import { useAuth } from '@/components/SessionProvider';
 import {
@@ -18,6 +21,7 @@ import {
   type AnalyzePromptErrorCode,
   type PromptAnalysis,
 } from '@/app/actions/gemini';
+import { isMarketingAnalysis, isVisualAnalysis, type VisualPromptAnalysis } from '@/lib/prompt-analysis';
 
 function SkeletonBar({ className = '' }: { className?: string }) {
   return (
@@ -53,8 +57,8 @@ function SkeletonCard() {
   );
 }
 
-const analysisCards: {
-  key: keyof Omit<PromptAnalysis, 'recommendedKeywords'>;
+const visualAnalysisCards: {
+  key: keyof Pick<VisualPromptAnalysis, 'structure' | 'style' | 'lighting' | 'composition'>;
   title: string;
   subtitle: string;
   Icon: typeof Layers;
@@ -181,13 +185,18 @@ export function PostAiAnalysis({
               className="font-semibold tracking-tight text-[var(--text)]"
               style={{ fontSize: 'var(--type-22)' }}
             >
+              {result && isMarketingAnalysis(result) ? (
+                <span className="mr-1.5 inline-block align-middle" aria-hidden title="마케팅·카피 분석">
+                  📢
+                </span>
+              ) : null}
               프롬프트 AI 해석
             </h2>
             <p className="mt-2 max-w-xl text-[var(--muted)]" style={{ fontSize: 'var(--type-14)' }}>
               {canUseAiAnalysis ? (
                 <>
-                  위 레시피 프롬프트를 기준으로 구조·스타일·조명·구도와 추천 키워드를 정리합니다. 분석은 버튼을 눌렀을 때만
-                  요청되며, 한 번 분석된 결과는 저장되어 다시 불러옵니다.
+                  이미지 생성용·마케팅/글쓰기용 프롬프트를 자동으로 구분해 분석합니다. 분석은 버튼을 눌렀을 때만 요청되며,
+                  한 번 분석된 결과는 저장되어 다시 불러옵니다.
                 </>
               ) : (
                 <>로그인한 회원만 AI 분석을 실행할 수 있습니다. 로그인하면 이 레시피의 프롬프트를 바로 해석해 드립니다.</>
@@ -327,7 +336,7 @@ export function PostAiAnalysis({
           </div>
         ) : null}
 
-        {canUseAiAnalysis && !isPending && result ? (
+        {canUseAiAnalysis && !isPending && result && isVisualAnalysis(result) ? (
           <div className="space-y-6">
             <h3 className="font-semibold text-[var(--text)]" style={{ fontSize: 'var(--type-17)' }}>
               분석 결과
@@ -336,7 +345,7 @@ export function PostAiAnalysis({
               본문은 한국어로 생성됩니다. 이전에 저장된 영어 결과는 「다시 분석」으로 갱신할 수 있습니다.
             </p>
             <div className="grid gap-4 sm:grid-cols-2">
-              {analysisCards.map(({ key, title, subtitle, Icon }) => (
+              {visualAnalysisCards.map(({ key, title, subtitle, Icon }) => (
                 <article
                   key={key}
                   className="rounded-2xl border border-[var(--border)] bg-gradient-to-br from-[var(--surface)] to-[var(--surface-2)] p-5 shadow-lg shadow-black/20 transition hover:border-[var(--accent)]/25"
@@ -380,7 +389,7 @@ export function PostAiAnalysis({
                   </div>
                 </div>
                 <ul className="flex flex-wrap gap-2">
-                  {result.recommendedKeywords.map((kw, i) => (
+                  {result.recommendedKeywords.map((kw: string, i: number) => (
                     <li key={`${i}-${kw}`}>
                       <span className="inline-flex rounded-full border border-[var(--border)] bg-[var(--bg)] px-3 py-1.5 text-[length:var(--type-13)] text-[var(--text)]">
                         {kw}
@@ -388,6 +397,88 @@ export function PostAiAnalysis({
                     </li>
                   ))}
                 </ul>
+              </article>
+            </div>
+          </div>
+        ) : null}
+
+        {canUseAiAnalysis && !isPending && result && isMarketingAnalysis(result) ? (
+          <div className="space-y-6">
+            <h3 className="font-semibold text-[var(--text)]" style={{ fontSize: 'var(--type-17)' }}>
+              분석 결과
+            </h3>
+            <p className="mb-1 text-[length:var(--type-13)] text-[var(--muted)]">
+              마케팅·카피 관점의 타겟, 설득력, 대안 문구입니다. 본문은 한국어로 생성됩니다.
+            </p>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <article className="rounded-2xl border border-[var(--border)] bg-gradient-to-br from-[var(--surface)] to-[var(--surface-2)] p-5 shadow-lg shadow-black/20 transition hover:border-[var(--accent)]/25">
+                <div className="mb-4 flex items-start gap-3">
+                  <div
+                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]"
+                    aria-hidden
+                  >
+                    <Target className="h-5 w-5" strokeWidth={2} />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-[var(--text)]" style={{ fontSize: 'var(--type-17)' }}>
+                      타겟 분석
+                    </h4>
+                    <p className="text-[length:var(--type-12)] text-[var(--muted)]">어조·타겟팅·메시지 방향</p>
+                  </div>
+                </div>
+                <p
+                  className="whitespace-pre-wrap leading-relaxed text-[var(--muted)]"
+                  style={{ fontSize: 'var(--type-15)' }}
+                >
+                  {result.targetAnalysis}
+                </p>
+              </article>
+
+              <article className="rounded-2xl border border-[var(--border)] bg-gradient-to-br from-[var(--surface)] to-[var(--surface-2)] p-5 shadow-lg shadow-black/20 transition hover:border-[var(--accent)]/25">
+                <div className="mb-4 flex items-start gap-3">
+                  <div
+                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]"
+                    aria-hidden
+                  >
+                    <BarChart3 className="h-5 w-5" strokeWidth={2} />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-[var(--text)]" style={{ fontSize: 'var(--type-17)' }}>
+                      설득력 점수
+                    </h4>
+                    <p className="text-[length:var(--type-12)] text-[var(--muted)]">전환·클릭 유도 가능성</p>
+                  </div>
+                </div>
+                <p
+                  className="whitespace-pre-wrap leading-relaxed text-[var(--muted)]"
+                  style={{ fontSize: 'var(--type-15)' }}
+                >
+                  {result.persuasionScore}
+                </p>
+              </article>
+
+              <article className="rounded-2xl border border-[var(--border)] bg-gradient-to-br from-[var(--surface)] to-[var(--surface-2)] p-5 shadow-lg shadow-black/20 sm:col-span-2">
+                <div className="mb-4 flex items-start gap-3">
+                  <div
+                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]"
+                    aria-hidden
+                  >
+                    <ListOrdered className="h-5 w-5" strokeWidth={2} />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-[var(--text)]" style={{ fontSize: 'var(--type-17)' }}>
+                      대안 문구 3가지
+                    </h4>
+                    <p className="text-[length:var(--type-12)] text-[var(--muted)]">클릭·공유에 쓸 수 있는 변형</p>
+                  </div>
+                </div>
+                <ol className="list-decimal space-y-3 pl-5 text-[var(--muted)]" style={{ fontSize: 'var(--type-15)' }}>
+                  {result.alternativePhrases.map((line, idx) => (
+                    <li key={idx} className="leading-relaxed">
+                      <span className="text-[var(--text)]">{line}</span>
+                    </li>
+                  ))}
+                </ol>
               </article>
             </div>
           </div>
