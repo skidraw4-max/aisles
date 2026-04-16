@@ -7,13 +7,19 @@ import {
   GoogleGenerativeAI,
   GoogleGenerativeAIFetchError,
   GoogleGenerativeAIResponseError,
+  type RequestOptions,
 } from '@google/generative-ai';
 import {
   isPlainRecord,
   normalizePromptAnalysis,
   type PromptAnalysis,
 } from '@/lib/prompt-analysis';
-import { GEMINI_MODEL_FALLBACK, GEMINI_MODEL_PRIMARY, GEMINI_MODEL_TERTIARY } from '@/lib/gemini-models';
+import {
+  GEMINI_API_VERSION_CHAIN,
+  GEMINI_MODEL_FALLBACK,
+  GEMINI_MODEL_PRIMARY,
+  GEMINI_MODEL_TERTIARY,
+} from '@/lib/gemini-models';
 
 export type { PromptAnalysis };
 
@@ -162,30 +168,39 @@ async function classifyPromptIntent(
   genAI: GoogleGenerativeAI,
   userPrompt: string,
 ): Promise<'image' | 'marketing'> {
-  try {
-    const model = genAI.getGenerativeModel({
-      model: GEMINI_MODEL_PRIMARY,
-      systemInstruction: CLASSIFY_PROMPT_INTENT_SYSTEM,
-      generationConfig: {
-        temperature: 0.15,
-        responseMimeType: 'application/json',
-      },
-    });
-    const result = await model.generateContent(userPrompt);
-    const text = result.response.text().trim();
-    const parsed = tryParseJsonFromModelText(text);
-    if (!parsed.ok || !isPlainRecord(parsed.value)) {
+  for (const apiVersion of GEMINI_API_VERSION_CHAIN) {
+    try {
+      const model = genAI.getGenerativeModel(
+        {
+          model: GEMINI_MODEL_PRIMARY,
+          systemInstruction: CLASSIFY_PROMPT_INTENT_SYSTEM,
+          generationConfig: {
+            temperature: 0.15,
+          },
+        },
+        { apiVersion },
+      );
+      const result = await model.generateContent(userPrompt);
+      const text = result.response.text().trim();
+      const parsed = tryParseJsonFromModelText(text);
+      if (!parsed.ok || !isPlainRecord(parsed.value)) {
+        return 'image';
+      }
+      const intent = parsed.value.intent;
+      if (intent === 'marketing') {
+        return 'marketing';
+      }
+      return 'image';
+    } catch (e) {
+      if (e instanceof GoogleGenerativeAIFetchError && e.status === 404) {
+        console.warn('[analyzePrompt] classifyPromptIntent 404, next apiVersion', { apiVersion });
+        continue;
+      }
+      console.warn('[analyzePrompt] classifyPromptIntent failed, defaulting to image:', e);
       return 'image';
     }
-    const intent = parsed.value.intent;
-    if (intent === 'marketing') {
-      return 'marketing';
-    }
-    return 'image';
-  } catch (e) {
-    console.warn('[analyzePrompt] classifyPromptIntent failed, defaulting to image:', e);
-    return 'image';
   }
+  return 'image';
 }
 
 export function validateGeminiApiKeyShape(apiKey: string): { ok: true } | { ok: false; message: string } {
@@ -314,7 +329,7 @@ export function classifyGeminiFailure(err: unknown): ClassifiedFailure {
       return {
         category: 'NOT_FOUND',
         userMessage:
-          'API가 요청한 모델·경로를 찾지 못했습니다(HTTP 404). Google AI Studio에서 API 키와 사용 가능한 모델 ID를 확인해 주세요. 할당량·RPM 초과는 보통 429입니다. 요청 한도 안내: https://ai.google.dev/gemini-api/docs/rate-limits?hl=ko',
+          'API가 요청한 모델·경로를 찾지 못했습니다(HTTP 404). 서버는 v1beta와 v1을 순서대로 시도합니다. AI Studio의 「로그·데이터 세트」에는 REST generateContent 호출이 안 보일 수 있습니다. 사용량은 키가 연결된 Google Cloud 프로젝트의 API 및 서비스 대시보드에서 Generative Language API를 확인해 주세요. 할당량 초과는 보통 429입니다. 한도 안내: https://ai.google.dev/gemini-api/docs/rate-limits?hl=ko',
         evidence: { ...base, rule: 'http_404' },
       };
     }
@@ -445,6 +460,7 @@ async function getAnalysisModel(
   genAI: GoogleGenerativeAI,
   trimmed: string,
   modelId: string = GEMINI_MODEL_PRIMARY,
+  requestOptions?: RequestOptions,
 ) {
   let systemInstruction: string;
   if (process.env.GEMINI_MINIMAL_SYSTEM === '1') {
@@ -457,14 +473,16 @@ async function getAnalysisModel(
         : VISUAL_ANALYSIS_SYSTEM_INSTRUCTION;
   }
 
-  return genAI.getGenerativeModel({
-    model: modelId,
-    systemInstruction,
-    generationConfig: {
-      temperature: 0.35,
-      responseMimeType: 'application/json',
+  return genAI.getGenerativeModel(
+    {
+      model: modelId,
+      systemInstruction,
+      generationConfig: {
+        temperature: 0.35,
+      },
     },
-  });
+    requestOptions,
+  );
 }
 
 function isGeminiModelNotFoundForFallback(e: unknown): boolean {
@@ -485,22 +503,38 @@ export async function executeGeminiPromptAnalysisWithApiKey(
   });
 
   const runOnce = async (modelId: string): Promise<AnalyzePromptResult> => {
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = await getAnalysisModel(genAI, trimmed, modelId);
-    const result = await model.generateContent(trimmed);
+    let lastVersionErr: unknown;
+    for (const apiVersion of GEMINI_API_VERSION_CHAIN) {
+      try {
+        const genAI = new GoogleGenerativeAI(apiKey);
+        const model = await getAnalysisModel(genAI, trimmed, modelId, { apiVersion });
+        const result = await model.generateContent(trimmed);
 
-    let text: string;
-    try {
-      text = result.response.text().trim();
-    } catch (textErr) {
-      console.error('Gemini API Error Details:', textErr);
-      if (textErr instanceof GoogleGenerativeAIResponseError) {
-        throw textErr;
+        let text: string;
+        try {
+          text = result.response.text().trim();
+        } catch (textErr) {
+          console.error('Gemini API Error Details:', textErr);
+          if (textErr instanceof GoogleGenerativeAIResponseError) {
+            throw textErr;
+          }
+          throw textErr instanceof Error ? textErr : new Error(String(textErr));
+        }
+
+        return parseModelJsonTextToResult(text);
+      } catch (e) {
+        lastVersionErr = e;
+        if (e instanceof GoogleGenerativeAIFetchError && e.status === 404) {
+          console.warn('[executeGeminiPromptAnalysis] 404 on path, trying next apiVersion', {
+            modelId,
+            apiVersion,
+          });
+          continue;
+        }
+        throw e;
       }
-      throw textErr instanceof Error ? textErr : new Error(String(textErr));
     }
-
-    return parseModelJsonTextToResult(text);
+    throw lastVersionErr ?? new Error('Gemini: all API versions failed');
   };
 
   try {
@@ -538,29 +572,45 @@ export async function streamGeminiPromptAnalysisWithApiKey(
   });
 
   const runStreamOnce = async (modelId: string): Promise<AnalyzePromptResult> => {
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = await getAnalysisModel(genAI, trimmed, modelId);
-    const streamResult = await model.generateContentStream(trimmed);
-
-    let fullText = '';
-    for await (const chunk of streamResult.stream) {
-      let piece = '';
+    let lastVersionErr: unknown;
+    for (const apiVersion of GEMINI_API_VERSION_CHAIN) {
       try {
-        piece = chunk.text();
-      } catch (textErr) {
-        console.error('Gemini stream chunk text() error:', textErr);
-        if (textErr instanceof GoogleGenerativeAIResponseError) {
-          throw textErr;
+        const genAI = new GoogleGenerativeAI(apiKey);
+        const model = await getAnalysisModel(genAI, trimmed, modelId, { apiVersion });
+        const streamResult = await model.generateContentStream(trimmed);
+
+        let fullText = '';
+        for await (const chunk of streamResult.stream) {
+          let piece = '';
+          try {
+            piece = chunk.text();
+          } catch (textErr) {
+            console.error('Gemini stream chunk text() error:', textErr);
+            if (textErr instanceof GoogleGenerativeAIResponseError) {
+              throw textErr;
+            }
+            throw textErr instanceof Error ? textErr : new Error(String(textErr));
+          }
+          if (piece) {
+            fullText += piece;
+            onTextDelta(piece);
+          }
         }
-        throw textErr instanceof Error ? textErr : new Error(String(textErr));
-      }
-      if (piece) {
-        fullText += piece;
-        onTextDelta(piece);
+
+        return parseModelJsonTextToResult(fullText.trim());
+      } catch (e) {
+        lastVersionErr = e;
+        if (e instanceof GoogleGenerativeAIFetchError && e.status === 404) {
+          console.warn('[streamGeminiPromptAnalysis] 404 on path, trying next apiVersion', {
+            modelId,
+            apiVersion,
+          });
+          continue;
+        }
+        throw e;
       }
     }
-
-    return parseModelJsonTextToResult(fullText.trim());
+    throw lastVersionErr ?? new Error('Gemini: all API versions failed');
   };
 
   try {

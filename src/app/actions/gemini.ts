@@ -11,7 +11,8 @@ import { unstable_noStore as noStore } from 'next/cache';
  *
  * 이미지 역분석: `analyzeImage` — 업로드 이미지는 **생성 대상이 아니라 역분석용 참고 입력**만.
  * 모델 체인은 `@/lib/gemini-models`의 `GEMINI_IMAGE_MODEL_CHAIN`.
- * `systemInstruction` + 사용자 프롬프트로 JSON만 유도. 멀티모달+`responseMimeType: application/json`은 간헐 404가 있어 **미설정**.
+ * `systemInstruction` + 사용자 프롬프트로 JSON만 유도. `responseMimeType: application/json`은 **미설정**(간헐 404 완화).
+ * API 경로는 `GEMINI_API_VERSION_CHAIN`(v1beta→v1) 순으로 시도(`@/lib/gemini-models`).
  */
 
 import {
@@ -40,7 +41,11 @@ import {
 } from '@/lib/gemini-prompt-analysis-engine';
 import { isPlainRecord, parseStoredPromptAnalysisJson } from '@/lib/prompt-analysis';
 import { pickEstimatedPromptFromAnalysis } from '@/lib/gallery-image-analysis';
-import { GEMINI_IMAGE_MODEL_CHAIN, GEMINI_MODEL_PRIMARY } from '@/lib/gemini-models';
+import {
+  GEMINI_API_VERSION_CHAIN,
+  GEMINI_IMAGE_MODEL_CHAIN,
+  GEMINI_MODEL_PRIMARY,
+} from '@/lib/gemini-models';
 
 export type { PromptAnalysis, AnalyzePromptErrorCode, AnalyzePromptResult };
 
@@ -252,8 +257,8 @@ function isTransientImageApiError(e: unknown): boolean {
   }
   if (e instanceof GoogleGenerativeAIFetchError) {
     const s = e.status ?? 0;
-    /** 404 포함: Google 쪽 간헐적 404는 다음 모델로 바로 넘기지 말고 동일 모델에서 재시도하는 편이 안전 */
-    return s === 404 || s === 429 || s === 500 || s === 502 || s === 503 || s === 504;
+    /** 404은 v1beta↔v1 폴백으로 처리. 여기서는 지연 재시도 대상에서 제외 */
+    return s === 429 || s === 500 || s === 502 || s === 503 || s === 504;
   }
   const msg = (e instanceof Error ? e.message : String(e)).toLowerCase();
   if (
@@ -321,69 +326,76 @@ export async function analyzeImage(input: AnalyzeImageInput): Promise<AnalyzeIma
   let lastFailure: unknown = null;
 
   modelLoop: for (const modelId of IMAGE_REVERSE_MODELS) {
-    for (let attempt = 0; attempt < IMAGE_REVERSE_ATTEMPTS_PER_MODEL; attempt++) {
-      try {
-        const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({
-          model: modelId,
-          systemInstruction: IMAGE_REVERSE_SYSTEM_INSTRUCTION,
-          generationConfig: {
-            temperature: 0.2,
-            // 멀티모달(이미지)+application/json 조합이 일부 키/엔드포인트에서 404·실패를 유발할 수 있어 생략.
-            // 스키마는 사용자 프롬프트로 고정하고 `tryParseJsonFromModelText`로 파싱.
-          },
-        });
-
-        // Part[]: 이미지는 참고용 inlineData — MIME은 JPEG 바이트와 일치. data는 접두어 없는 base64.
-        // @see https://ai.google.dev/api/rest/v1beta/Content#Part
-        const result = await model.generateContent([
-          {
-            inlineData: {
-              mimeType: 'image/jpeg',
-              data: optimized.data,
-            },
-          },
-          { text: IMAGE_REVERSE_USER_PROMPT },
-        ]);
-
-        let text: string;
+    versionLoop: for (const apiVersion of GEMINI_API_VERSION_CHAIN) {
+      for (let attempt = 0; attempt < IMAGE_REVERSE_ATTEMPTS_PER_MODEL; attempt++) {
         try {
-          text = result.response.text().trim();
-        } catch (textErr) {
-          console.error('[analyzeImage] response.text() error', { modelId, attempt, textErr });
-          lastFailure = textErr;
-          if (textErr instanceof GoogleGenerativeAIResponseError) {
-            return imageErrorFromGeminiFailure(textErr);
+          const genAI = new GoogleGenerativeAI(apiKey);
+          const model = genAI.getGenerativeModel(
+            {
+              model: modelId,
+              systemInstruction: IMAGE_REVERSE_SYSTEM_INSTRUCTION,
+              generationConfig: {
+                temperature: 0.2,
+              },
+            },
+            { apiVersion },
+          );
+
+          // Part[]: 이미지는 참고용 inlineData — MIME은 JPEG 바이트와 일치. data는 접두어 없는 base64.
+          // @see https://ai.google.dev/api/rest/v1beta/Content#Part
+          const result = await model.generateContent([
+            {
+              inlineData: {
+                mimeType: 'image/jpeg',
+                data: optimized.data,
+              },
+            },
+            { text: IMAGE_REVERSE_USER_PROMPT },
+          ]);
+
+          let text: string;
+          try {
+            text = result.response.text().trim();
+          } catch (textErr) {
+            console.error('[analyzeImage] response.text() error', {
+              modelId,
+              apiVersion,
+              attempt,
+              textErr,
+            });
+            lastFailure = textErr;
+            if (textErr instanceof GoogleGenerativeAIResponseError) {
+              return imageErrorFromGeminiFailure(textErr);
+            }
+            throw textErr instanceof Error ? textErr : new Error(String(textErr));
           }
-          throw textErr instanceof Error ? textErr : new Error(String(textErr));
-        }
 
-        const parsed = tryParseJsonFromModelText(text);
-        if (!parsed.ok || !isPlainRecord(parsed.value)) {
-          return {
-            ok: false,
-            error: '모델 응답을 JSON으로 해석할 수 없습니다.',
-            code: 'INVALID_JSON',
-          };
-        }
+          const parsed = tryParseJsonFromModelText(text);
+          if (!parsed.ok || !isPlainRecord(parsed.value)) {
+            return {
+              ok: false,
+              error: '모델 응답을 JSON으로 해석할 수 없습니다.',
+              code: 'INVALID_JSON',
+            };
+          }
 
-        return { ok: true, data: parsed.value };
-      } catch (e) {
-        lastFailure = e;
-        console.error('[analyzeImage] attempt failed', { modelId, attempt, e });
-        if (shouldStopImageRetries(e)) {
-          return imageErrorFromGeminiFailure(e);
+          return { ok: true, data: parsed.value };
+        } catch (e) {
+          lastFailure = e;
+          console.error('[analyzeImage] attempt failed', { modelId, apiVersion, attempt, e });
+          if (shouldStopImageRetries(e)) {
+            return imageErrorFromGeminiFailure(e);
+          }
+          if (e instanceof GoogleGenerativeAIFetchError && e.status === 404) {
+            continue versionLoop;
+          }
+          if (isTransientImageApiError(e) && attempt < IMAGE_REVERSE_ATTEMPTS_PER_MODEL - 1) {
+            const jitter = Math.floor(Math.random() * 350);
+            await delay(IMAGE_REVERSE_RETRY_BASE_MS * 2 ** attempt + jitter);
+            continue;
+          }
+          continue versionLoop;
         }
-        if (isTransientImageApiError(e) && attempt < IMAGE_REVERSE_ATTEMPTS_PER_MODEL - 1) {
-          const jitter = Math.floor(Math.random() * 350);
-          await delay(IMAGE_REVERSE_RETRY_BASE_MS * 2 ** attempt + jitter);
-          continue;
-        }
-        const hasAnotherModel = modelId !== IMAGE_REVERSE_MODELS[IMAGE_REVERSE_MODELS.length - 1];
-        if (hasAnotherModel) {
-          continue modelLoop;
-        }
-        return imageErrorFromGeminiFailure(e);
       }
     }
   }
