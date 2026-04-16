@@ -9,9 +9,9 @@ import { unstable_noStore as noStore } from 'next/cache';
  *
  * 스트리밍 UI는 `POST /api/posts/[id]/prompt-analysis-stream` + `@/lib/gemini-prompt-analysis-engine`.
  *
- * 이미지 역분석: `analyzeImage` → **gemini-2.5-flash**, 404 시 **gemini-2-flash** (`@/lib/gemini-models`).
- * `@google/generative-ai` Part: `{ inlineData: { mimeType, data } }` — data는 원시 바이트 base64(접두어 없음).
- * 프롬프트로 JSON만 요청하고 `tryParseJsonFromModelText`로 파싱.
+ * 이미지 역분석: `analyzeImage` — 업로드 이미지는 **생성 대상이 아니라 역분석용 참고 입력**만.
+ * 모델 체인은 `@/lib/gemini-models`의 `GEMINI_IMAGE_MODEL_CHAIN`.
+ * `systemInstruction` + `responseMimeType: application/json`으로 텍스트·JSON 출력만 유도.
  */
 
 import {
@@ -64,8 +64,30 @@ const MAX_IMAGE_BYTES = 12 * 1024 * 1024;
 const GEMINI_IMAGE_MAX_WIDTH = 768;
 const GEMINI_IMAGE_JPEG_QUALITY = 85;
 
-const IMAGE_REVERSE_PROMPT =
-  '이 이미지를 분석해서 사용된 것으로 추정되는 프롬프트, 화풍, 조명, 구도, 주요 키워드를 상세히 추출해줘. 결과는 반드시 JSON 형식으로 반환해줘.';
+/** 시스템: 역공학 역할 고정 — 이미지 생성 지시 금지 */
+const IMAGE_REVERSE_SYSTEM_INSTRUCTION = `너는 세계 최고의 AI 이미지 역공학 전문가야. 이 이미지를 보고 원본 프롬프트를 역추적해서 텍스트로만 알려줘.
+
+[역할 경계]
+- 목적은 새 이미지를 만드는 것이 아니라, 이미 업로드된 이미지를 읽고 그에 대응하는 텍스트(추정 프롬프트·메타 설명)만 산출하는 것이다.
+- 응답에 이미지 생성을 요청하거나, 생성 AI용 "만들어라" 류의 지시·도구 호출·바이너리 출력을 포함하지 마라.
+- 최종 출력은 오직 하나의 JSON 객체이며, 마크다운 코드펜스·서두/맺음말 없이 JSON만 출력하라.`;
+
+/**
+ * 사용자 텍스트: 인라인 이미지는 참고 자료로만 명시 + UI가 기대하는 키만 허용하는 JSON 스키마 고정.
+ * (Gallery 역분석 카드: estimatedPrompt, artStyle, lighting, composition, keywords)
+ */
+const IMAGE_REVERSE_USER_PROMPT = `첫 번째 콘텐츠 파트에 붙은 이미지는 **이미지를 새로 생성하기 위한 입력이 아니다**. 텍스트 분석·역추적을 위한 **참고 자료(읽기 전용)** 로만 사용하라.
+
+반드시 아래 키만 포함하는 **단일 JSON 객체**만 출력하라. 키 이름을 바꾸거나 누락하지 마라. 값은 모두 UTF-8 문자열이거나, keywords만 문자열의 배열이다.
+
+키 정의:
+- "estimatedPrompt": 역추적한 원본에 가까운 생성용 프롬프트 한 덩어리(한국어 위주, 순수 텍스트).
+- "artStyle": 화풍·미디엄·스타일 요약.
+- "lighting": 조명·광질.
+- "composition": 구도·앵글.
+- "keywords": 주요 키워드 5~15개의 배열(각 원소는 짧은 문자열).
+
+금지: JSON 바깥의 문장, \`\`\`json 래핑, 이미지 재생성·편집 지시, 위 키 이외의 최상위 필드.`;
 
 function stripDataUrlBase64(raw: string): { mimeType: string; base64: string } | null {
   const t = raw.trim();
@@ -310,12 +332,14 @@ export async function analyzeImage(input: AnalyzeImageInput): Promise<AnalyzeIma
         const genAI = new GoogleGenerativeAI(apiKey);
         const model = genAI.getGenerativeModel({
           model: modelId,
+          systemInstruction: IMAGE_REVERSE_SYSTEM_INSTRUCTION,
           generationConfig: {
-            temperature: 0.25,
+            temperature: 0.2,
+            responseMimeType: 'application/json',
           },
         });
 
-        // Part[]: 이미지는 inlineData — MIME은 실제 바이트와 일치해야 함(JPEG → image/jpeg). data는 표준 base64 문자열.
+        // Part[]: 이미지는 참고용 inlineData — MIME은 JPEG 바이트와 일치. data는 접두어 없는 base64.
         // @see https://ai.google.dev/api/rest/v1beta/Content#Part
         const result = await model.generateContent([
           {
@@ -324,7 +348,7 @@ export async function analyzeImage(input: AnalyzeImageInput): Promise<AnalyzeIma
               data: optimized.data,
             },
           },
-          { text: IMAGE_REVERSE_PROMPT },
+          { text: IMAGE_REVERSE_USER_PROMPT },
         ]);
 
         let text: string;

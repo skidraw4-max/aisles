@@ -13,7 +13,7 @@ import {
   normalizePromptAnalysis,
   type PromptAnalysis,
 } from '@/lib/prompt-analysis';
-import { GEMINI_MODEL_FALLBACK, GEMINI_MODEL_PRIMARY } from '@/lib/gemini-models';
+import { GEMINI_MODEL_FALLBACK, GEMINI_MODEL_PRIMARY, GEMINI_MODEL_TERTIARY } from '@/lib/gemini-models';
 
 export type { PromptAnalysis };
 
@@ -314,7 +314,7 @@ export function classifyGeminiFailure(err: unknown): ClassifiedFailure {
       return {
         category: 'NOT_FOUND',
         userMessage:
-          'Gemini가 해당 모델 요청을 거부했습니다(HTTP 404). 앱이 아니라 API·키 권한 또는 모델 미제공일 수 있습니다. Google AI Studio에서 키·사용 가능 모델을 확인하거나 잠시 후 다시 시도해 주세요.',
+          'HTTP 404: 요청한 모델·경로를 API에서 찾지 못했습니다. 할당량·RPM 제한은 보통 429입니다. 한도: https://ai.google.dev/gemini-api/docs/rate-limits?hl=ko — 모델 ID·키는 Google AI Studio에서 확인해 주세요.',
         evidence: { ...base, rule: 'http_404' },
       };
     }
@@ -511,6 +511,14 @@ export async function executeGeminiPromptAnalysisWithApiKey(
       try {
         return await runOnce(GEMINI_MODEL_FALLBACK);
       } catch (e2) {
+        if (isGeminiModelNotFoundForFallback(e2)) {
+          console.warn('[executeGeminiPromptAnalysis] fallback unavailable, trying tertiary', GEMINI_MODEL_TERTIARY);
+          try {
+            return await runOnce(GEMINI_MODEL_TERTIARY);
+          } catch (e3) {
+            return geminiFailureToResult(e3);
+          }
+        }
         return geminiFailureToResult(e2);
       }
     }
@@ -563,6 +571,14 @@ export async function streamGeminiPromptAnalysisWithApiKey(
       try {
         return await runStreamOnce(GEMINI_MODEL_FALLBACK);
       } catch (e2) {
+        if (isGeminiModelNotFoundForFallback(e2)) {
+          console.warn('[streamGeminiPromptAnalysis] fallback unavailable, trying tertiary', GEMINI_MODEL_TERTIARY);
+          try {
+            return await runStreamOnce(GEMINI_MODEL_TERTIARY);
+          } catch (e3) {
+            return geminiFailureToResult(e3);
+          }
+        }
         return geminiFailureToResult(e2);
       }
     }
