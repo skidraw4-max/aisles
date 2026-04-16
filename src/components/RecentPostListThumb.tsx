@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { useCallback, useEffect, useState } from 'react';
 import type { Category } from '@prisma/client';
 import { MediaThumb } from '@/components/MediaThumb';
+import { LabNoMediaThumb, type LabNoMediaThumbKind } from '@/components/LabNoMediaThumb';
 import styles from '@/app/(root)/page.module.css';
 
 function isVideoUrl(url: string) {
@@ -47,15 +48,20 @@ type Props = {
   thumbnail: string | null | undefined;
   category: Category;
   title: string;
+  /** LAB만 — `metadata.params` 기반(부모에서 계산) */
+  labPromptKind?: LabNoMediaThumbKind;
 };
 
 function RecentRemoteImageThumb({
   src,
   letterVariant,
+  labKind,
   alt,
 }: {
   src: string;
   letterVariant: RecentPostLetterVariant;
+  /** LAB 이미지 로드 실패 시 그라데이션 썸네일 */
+  labKind?: LabNoMediaThumbKind;
   alt: string;
 }) {
   const [failed, setFailed] = useState(false);
@@ -69,6 +75,9 @@ function RecentRemoteImageThumb({
   }, []);
 
   if (failed) {
+    if (labKind) {
+      return <LabNoMediaThumb kind={labKind} layout="compact" />;
+    }
     return <RecentPostLetterThumb variant={letterVariant} />;
   }
 
@@ -87,11 +96,16 @@ function RecentRemoteImageThumb({
 /**
  * 메인 우측 "최근 게시물" 썸네일 — 미디어 없음·로드 실패 시 카테고리별 이니셜 타일
  */
-export function RecentPostListThumb({ thumbnail, category, title }: Props) {
+export function RecentPostListThumb({ thumbnail, category, title, labPromptKind }: Props) {
   const letterVariant = categoryToLetterVariant(category);
   const raw = typeof thumbnail === 'string' ? thumbnail.trim() : '';
+  const labKind: LabNoMediaThumbKind | undefined =
+    category === 'RECIPE' ? (labPromptKind ?? 'visual') : undefined;
 
   if (!raw) {
+    if (category === 'RECIPE' && labKind) {
+      return <LabNoMediaThumb kind={labKind} layout="compact" />;
+    }
     return <RecentPostLetterThumb variant={letterVariant} />;
   }
 
@@ -99,5 +113,12 @@ export function RecentPostListThumb({ thumbnail, category, title }: Props) {
     return <MediaThumb url={raw} alt={title} className={styles.mediaFill} />;
   }
 
-  return <RecentRemoteImageThumb src={raw} letterVariant={letterVariant} alt={title} />;
+  return (
+    <RecentRemoteImageThumb
+      src={raw}
+      letterVariant={letterVariant}
+      labKind={labKind}
+      alt={title}
+    />
+  );
 }

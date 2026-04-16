@@ -6,6 +6,8 @@ export const HOME_FEED_INCLUDE = {
   author: { select: { username: true } },
   launchInfo: { select: { serviceUrl: true, status: true } },
   _count: { select: { comments: true } },
+  /** LAB 썸네일 플레이스홀더(마케팅·비주얼 구분) */
+  metadata: { select: { params: true } },
 } as const;
 
 export type HomeFeedPost = Prisma.PostGetPayload<{ include: typeof HOME_FEED_INCLUDE }>;

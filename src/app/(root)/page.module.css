@@ -811,6 +811,13 @@
   background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #0f172a 100%);
 }
 
+.labNoMediaThumbCard {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
 .feedCardBadge {
   position: absolute;
   top: 0.65rem;

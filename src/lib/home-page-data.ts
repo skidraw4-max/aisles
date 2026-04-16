@@ -20,7 +20,10 @@ export async function getHomePageQueries(categoryKey: string) {
   const recentAll = await prisma.post.findMany({
     orderBy: { createdAt: 'desc' },
     take: 8,
-    include: { author: { select: { username: true } } },
+    include: {
+      author: { select: { username: true } },
+      metadata: { select: { params: true } },
+    },
   });
 
   const [firstHomeFeed, launchBannerPosts] = await Promise.all([

@@ -8,8 +8,10 @@ import { MediaThumb } from '@/components/MediaThumb';
 import {
   categoryToHomeQuery,
   isFeedBoardListCategory,
+  labKindFromMetadataParams,
   POST_CATEGORY_OPTIONS,
 } from '@/lib/post-categories';
+import { LabNoMediaThumb } from '@/components/LabNoMediaThumb';
 import type { Category } from '@prisma/client';
 import { ALL_CARD_FEED_INITIAL_COUNT } from '@/lib/home-all-card-feed';
 import type { FeedPostJson } from '@/lib/home-feed';
@@ -56,7 +58,7 @@ function FeedPostCard({ post, imagePriority }: { post: FeedPostJson; imagePriori
     <div className={styles.feedCardWrap}>
       <Link href={`/post/${post.id}`} className={styles.feedCard}>
         <div className={styles.feedCardMedia}>
-          {post.thumbnail ? (
+          {post.thumbnail?.trim() ? (
             <MediaThumb
               url={post.thumbnail}
               alt=""
@@ -64,6 +66,8 @@ function FeedPostCard({ post, imagePriority }: { post: FeedPostJson; imagePriori
               priority={imagePriority}
               sizes="(max-width: 479px) 100vw, (max-width: 959px) 50vw, 25vw"
             />
+          ) : post.category === 'RECIPE' ? (
+            <LabNoMediaThumb kind={labKindFromMetadataParams(post.metadata?.params)} layout="card" />
           ) : (
             <div className={styles.feedCardPlaceholder} aria-hidden />
           )}
