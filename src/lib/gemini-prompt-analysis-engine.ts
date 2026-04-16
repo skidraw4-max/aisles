@@ -137,7 +137,7 @@ function extractJsonObjectSubstring(raw: string): string | null {
   return s.slice(start, end + 1);
 }
 
-function tryParseJsonFromModelText(raw: string): { ok: true; value: unknown } | { ok: false } {
+export function tryParseJsonFromModelText(raw: string): { ok: true; value: unknown } | { ok: false } {
   const candidates: string[] = [];
   const extracted = extractJsonObjectSubstring(raw);
   if (extracted) {
@@ -425,7 +425,7 @@ function parseModelJsonTextToResult(text: string): AnalyzePromptResult {
   return { ok: true, data };
 }
 
-function geminiFailureToResult(e: unknown): AnalyzePromptResult {
+export function geminiFailureToResult(e: unknown): AnalyzePromptResult {
   console.error('[gemini-engine] Gemini API Error Details:', e);
   const classified = classifyGeminiFailure(e);
   console.error('[gemini-engine] classified:', classified.category, classified.evidence);

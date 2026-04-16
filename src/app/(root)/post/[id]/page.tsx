@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import type { Role } from '@prisma/client';
 import { MediaThumb } from '@/components/MediaThumb';
@@ -25,6 +26,12 @@ import { DosDontsSection } from './DosDontsSection';
 import { ExternalServiceCta } from './ExternalServiceCta';
 import { LaunchVisitProjectCta } from './LaunchVisitProjectCta';
 import { PostAiAnalysis } from '@/components/post/PostAiAnalysis';
+import {
+  GalleryImageReverseFallback,
+  GalleryImageReverseFromDb,
+  GalleryImageReverseLoginShell,
+  GalleryImageReverseSection,
+} from './GalleryImageReverse';
 import { PostCategoryBoardList } from './PostCategoryBoardList';
 import { PostTags } from './PostTags';
 import { incrementPostViews } from './actions';
@@ -86,6 +93,24 @@ function excerptFrom(text: string | null | undefined) {
   const t = text?.trim() ?? '';
   if (!t) return 'AIsle에서 인기 있는 글입니다.';
   return t.length > 96 ? `${t.slice(0, 96)}…` : t;
+}
+
+function galleryHeroImageUrl(post: { thumbnail: string | null; attachmentUrls: string[] }): string | null {
+  const t = post.thumbnail?.trim();
+  if (t) return t;
+  const a = post.attachmentUrls.find((u) => u?.trim());
+  return a?.trim() ?? null;
+}
+
+function isProbablyVideoAssetUrl(url: string): boolean {
+  return /\.(mp4|webm|mov)(\?|#|$)/i.test(url);
+}
+
+function toAbsoluteMediaUrl(raw: string, siteBase: string): string {
+  const u = raw.trim();
+  if (u.startsWith('http://') || u.startsWith('https://')) return u;
+  if (u.startsWith('//')) return `https:${u}`;
+  return new URL(u.startsWith('/') ? u : `/${u}`, siteBase).href;
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -274,11 +299,18 @@ export default async function PostPage({ params }: Props) {
 
   const isLab = post.category === 'RECIPE';
   const isGallery = post.category === 'GALLERY';
+  const siteBase = getCanonicalSiteUrl();
+  const galleryRawUrl = isGallery ? galleryHeroImageUrl(post) : null;
+  const galleryAnalysisUrl =
+    galleryRawUrl && !isProbablyVideoAssetUrl(galleryRawUrl)
+      ? toAbsoluteMediaUrl(galleryRawUrl, siteBase)
+      : null;
   const isLoungeOrGossip = post.category === 'LOUNGE' || post.category === 'GOSSIP';
   const isBuildOrLaunch = post.category === 'BUILD' || post.category === 'LAUNCH';
   const hasHeroMedia = Boolean(post.thumbnail?.trim());
   const metaPrompt = post.metadata?.prompt?.trim() ?? '';
   const labPromptText = resolveRecipePrompt(post);
+  const galleryAuthorPromptText = isGallery ? resolveRecipePrompt(post) : '';
   const labPromptFingerprint = labPromptText.trim() ? fingerprintPrompt(labPromptText) : '';
   const promptJobStatus = post.metadata?.promptAnalysisStatus ?? null;
   const initialCachedPromptAnalysis =
@@ -462,6 +494,32 @@ export default async function PostPage({ params }: Props) {
                       embedMediaClassName={styles.postBodyEmbed}
                     />
                   </div>
+                ) : null}
+
+                {isGallery && galleryAnalysisUrl ? (
+                  post.aiReversePrompt?.trim() ? (
+                    <GalleryImageReverseFromDb
+                      authorOriginalPrompt={galleryAuthorPromptText}
+                      aiReversePrompt={post.aiReversePrompt}
+                      aiImageAnalysis={
+                        post.aiImageAnalysis != null &&
+                        typeof post.aiImageAnalysis === 'object' &&
+                        !Array.isArray(post.aiImageAnalysis)
+                          ? (post.aiImageAnalysis as Record<string, unknown>)
+                          : null
+                      }
+                    />
+                  ) : user ? (
+                    <Suspense fallback={<GalleryImageReverseFallback />}>
+                      <GalleryImageReverseSection
+                        postId={post.id}
+                        imageUrl={galleryAnalysisUrl}
+                        authorOriginalPrompt={galleryAuthorPromptText}
+                      />
+                    </Suspense>
+                  ) : (
+                    <GalleryImageReverseLoginShell loginNextPath={`/post/${post.id}`} />
+                  )
                 ) : null}
 
                 {isGallery && post.category === 'BUILD' && externalHref ? (

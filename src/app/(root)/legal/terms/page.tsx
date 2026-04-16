@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { SiteFooter } from '@/components/SiteFooter';
+import { LEGAL_LAST_REVISED } from '@/lib/legal-site';
 import styles from '../legal.module.css';
 
 export const metadata: Metadata = {
@@ -17,14 +18,12 @@ export default function TermsPage() {
             ← 홈으로
           </Link>
           <h1 className={styles.title}>이용약관</h1>
-          <p className={styles.updated}>시행일: 2026년 4월 10일</p>
+          <p className={styles.updated}>시행일: 2026년 4월 10일 · 본 개정 반영: {LEGAL_LAST_REVISED}</p>
           <article className={styles.prose}>
             <p>
               AIsle(이하 &quot;서비스&quot;)는 AI 창작·실험 콘텐츠를 네 개의 복도(Lab, Gallery, Lounge·Gossip, Build·Launch)에서
-              탐색·공유·협업할 수 있도록 제공하는 커뮤니티 플랫폼입니다. 본 약관은 회원과 비회원의 서비스 이용 조건 및 절차,
-              권리·의무 및 책임 사항을 규정합니다. Side-Sync 등 유사 커뮤니티 서비스에서 흔히 안내하는{' '}
-              <strong>프로필·게시·팀·프로젝트 단위 활동</strong>에 준하여, AIsle은 <strong>게시글·댓글·미디어 업로드</strong>를
-              중심으로 운영됩니다.
+              탐색·공유할 수 있도록 제공하는 커뮤니티 플랫폼입니다. 본 약관은 회원과 비회원의 서비스 이용 조건 및 절차, 권리·의무
+              및 책임 사항을 규정합니다. AIsle은 <strong>게시글·댓글·미디어 업로드</strong>를 중심으로 운영됩니다.
             </p>
 
             <h2>제1조 (목적)</h2>
@@ -39,8 +38,8 @@ export default function TermsPage() {
                 <strong>&quot;회원&quot;</strong>: 계정을 등록하고 서비스를 이용하는 자를 말합니다.
               </li>
               <li>
-                <strong>&quot;게시물&quot;</strong>: 회원이 서비스에 게시한 문자, 이미지, 영상, 링크, 파일 등 모든 형태의 정보를
-                말합니다.
+                <strong>&quot;게시물&quot;</strong>: 회원이 서비스에 게시한 문자, 이미지, 영상, 링크, 파일, 프롬프트, AI 출력물 등
+                모든 형태의 정보를 말합니다.
               </li>
             </ul>
 
@@ -82,12 +81,35 @@ export default function TermsPage() {
               홍보(검색 노출, 썸네일 표시 등)에 필요한 범위에서 이를 이용·표시할 수 있는 비독점적 이용 권한을 부여합니다. 운영자는
               약관 또는 법령 위반, 권리 침해 신고가 있는 게시물에 대해 사전 통지 없이 삭제·비공개 등 조치를 할 수 있습니다.
             </p>
-
-            <h2>제8조 (면책)</h2>
             <p>
-              서비스는 &quot;있는 그대로&quot; 제공됩니다. 운영자는 천재지변, 시스템 장애, 제3자 서비스(호스팅·인증·스토리지 등)
-              장애로 인한 손해에 대해 책임을 지지 않습니다. 이용자 간 또는 이용자와 제3자 간에 서비스를 매개로 발생한 분쟁에
-              운영자는 개입 의무가 없으며, 법령이 정한 경우를 제외하고 손해배상 책임을 지지 않습니다.
+              <strong>AI 생성물</strong>: 이용자가 AI 도구·모델을 사용하여 생성한 텍스트·이미지·코드 등을 게시하는 경우, 해당
+              결과물의 적법성·저작권·라이선스 준수 여부를 포함한 <strong>모든 책임은 이용자 본인에게 있습니다</strong>. 운영자는
+              이용자가 선택한 외부 AI 서비스와의 관계에서 발생하는 분쟁에 개입하지 않으며, 이에 대한 보증을 하지 않습니다.
+            </p>
+
+            <h2>제8조 (AI 생성물·저작권 및 면책)</h2>
+            <p>
+              <strong>제1항 (이용자 책임)</strong> 이용자는 게시물이 제3자의 저작권, 상표권, 초상권, 개인정보, 퍼블리시티권 등
+              일체의 권리를 침해하지 않도록 할 의무가 있으며, AI가 생성·변형한 콘텐츠를 포함하여 <strong>
+                저작권 분쟁·라이선스 위반·출처 표기 누락 등으로 인한 모든 법적·금전적 결과는 전적으로 이용자에게 귀속
+              </strong>
+              됩니다.
+            </p>
+            <p>
+              <strong>제2항 (운영자 면책)</strong> 서비스 운영자 및 그 관계사는 이용자가 게시하거나 AI를 통해 생산한 콘텐츠로 인해
+              발생하는 <strong>저작권 침해 주장, 소송, 손해배상 청구, 행정 조치 등 일체의 분쟁에 대하여 책임을 지지 않습니다</strong>
+              . 운영자는 분쟁의 당사자가 아니며, 중재·조정 의무도 부담하지 않습니다. 다만 법령에 따라 불가피하게 요구되는 범위(예:
+              적법한 권리침해 신고에 따른 게시 중단 등)는 예외로 할 수 있습니다.
+            </p>
+            <p>
+              <strong>제3항 (AI 출력의 불확실성)</strong> AI 출력물은 사실과 다르거나 타인의 저작물과 유사할 수 있으며, 이용자는
+              이를 최종 검토·편집한 후 게시해야 합니다. 운영자는 AI의 정확성·완전성·적법성을 보증하지 않습니다.
+            </p>
+            <p>
+              <strong>제4항 (일반 면책)</strong> 그 밖에 서비스는 &quot;있는 그대로&quot; 제공됩니다. 운영자는 천재지변, 시스템
+              장애, 제3자 서비스(호스팅·인증·스토리지·광고 네트워크 등) 장애로 인한 손해에 대해 책임을 지지 않습니다. 이용자 간
+              또는 이용자와 제3자 간에 서비스를 매개로 발생한 분쟁에 운영자는 법령이 정한 경우를 제외하고 손해배상 책임을 지지
+              않습니다.
             </p>
 
             <h2>제9조 (서비스 중단)</h2>
@@ -104,6 +126,8 @@ export default function TermsPage() {
             <p>
               문의는 <Link href="/support">고객지원</Link> 페이지를 이용해 주세요.
             </p>
+
+            <p className={styles.legalLastRevised}>최종 수정일: {LEGAL_LAST_REVISED}</p>
           </article>
         </div>
       </main>

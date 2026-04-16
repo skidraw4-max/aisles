@@ -89,3 +89,35 @@
 .prose a:hover {
   text-decoration: underline;
 }
+
+.faqItem {
+  margin-bottom: 1.35rem;
+}
+
+.faqItem:last-of-type {
+  margin-bottom: 0;
+}
+
+.faqQ {
+  margin: 0 0 0.4rem;
+  font-size: var(--type-15);
+  font-weight: 700;
+  color: var(--text);
+}
+
+.faqA {
+  margin: 0;
+  padding-left: 0;
+  font-size: var(--type-15);
+  line-height: 1.7;
+  color: #e2e8f0;
+}
+
+.legalLastRevised {
+  margin-top: 2.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--border);
+  font-size: var(--type-13);
+  color: var(--muted);
+  line-height: 1.5;
+}

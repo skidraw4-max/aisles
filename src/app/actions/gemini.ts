@@ -8,26 +8,311 @@ import { unstable_noStore as noStore } from 'next/cache';
  * 연결만 검증하려면 `GEMINI_MINIMAL_SYSTEM=1` → 시스템 문구가 "너는 도우미야." 로 바뀜(기본은 정교한 분석 프롬프트).
  *
  * 스트리밍 UI는 `POST /api/posts/[id]/prompt-analysis-stream` + `@/lib/gemini-prompt-analysis-engine`.
+ *
+ * 이미지 역분석: `analyzeImage` → **gemini-2.5-flash** (멀티모달, 프롬프트 분석과 동일 API ID). API 키는 서버 환경 변수만 사용.
+ * 전송 전 `sharp`로 가로 최대 768px·JPEG 변환 후 base64 인라인 전달.
  */
 
+import { GoogleGenerativeAI, GoogleGenerativeAIResponseError } from '@google/generative-ai';
+import sharp from 'sharp';
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { createClient } from '@/lib/supabase/server';
 import { fingerprintPrompt } from '@/lib/prompt-analysis-fingerprint';
 import {
   executeGeminiPromptAnalysisWithApiKey,
+  geminiFailureToResult,
   GEMINI_API_KEY_ENV_NAMES,
   logGeminiKeyEnvDiagnostics,
   missingApiKeyResult,
   readGeminiApiKeyFromEnv,
+  tryParseJsonFromModelText,
   validateGeminiApiKeyShape,
   type AnalyzePromptErrorCode,
   type AnalyzePromptResult,
   type PromptAnalysis,
 } from '@/lib/gemini-prompt-analysis-engine';
-import { parseStoredPromptAnalysisJson } from '@/lib/prompt-analysis';
+import { isPlainRecord, parseStoredPromptAnalysisJson } from '@/lib/prompt-analysis';
+import { pickEstimatedPromptFromAnalysis } from '@/lib/gallery-image-analysis';
 
 export type { PromptAnalysis, AnalyzePromptErrorCode, AnalyzePromptResult };
+
+/** 이미지 URL 또는 base64(선택 `mimeType`) — 서버에서만 Gemini로 전달 */
+export type AnalyzeImageInput =
+  | { imageUrl: string }
+  | { imageBase64: string; mimeType?: string };
+
+/** 역분석 결과 JSON 객체 — 키는 모델이 채움 */
+export type AnalyzeImageResult =
+  | { ok: true; data: Record<string, unknown> }
+  | { ok: false; error: string; code: AnalyzePromptErrorCode };
+
+const IMAGE_REVERSE_MODEL = 'gemini-2.5-flash' as const;
+/** 원본 다운로드·디코드 상한 (리사이즈 전) */
+const MAX_IMAGE_BYTES = 12 * 1024 * 1024;
+/** Gemini 분석용 리사이즈 — 가로 최대 px */
+const GEMINI_IMAGE_MAX_WIDTH = 768;
+const GEMINI_IMAGE_JPEG_QUALITY = 85;
+
+const IMAGE_REVERSE_PROMPT =
+  '이 이미지를 분석해서 사용된 것으로 추정되는 프롬프트, 화풍, 조명, 구도, 주요 키워드를 상세히 추출해줘. 결과는 반드시 JSON 형식으로 반환해줘.';
+
+function stripDataUrlBase64(raw: string): { mimeType: string; base64: string } | null {
+  const t = raw.trim();
+  const m = /^data:([^;]+);base64,([\s\S]+)$/i.exec(t);
+  if (!m) return null;
+  return { mimeType: m[1].trim(), base64: m[2].replace(/\s/g, '') };
+}
+
+/**
+ * URL·base64 입력을 디코드한 원시 바이너리로만 반환 (리사이즈·포맷 변환은 호출부에서 sharp 처리).
+ */
+async function resolveImageRawBuffer(
+  input: AnalyzeImageInput,
+): Promise<{ ok: true; buffer: Buffer } | { ok: false; error: string; code: AnalyzePromptErrorCode }> {
+  if ('imageBase64' in input && typeof input.imageBase64 === 'string') {
+    let base64 = input.imageBase64.trim();
+    const dataUrl = stripDataUrlBase64(base64);
+    if (dataUrl) {
+      base64 = dataUrl.base64;
+    }
+    if (!base64) {
+      return { ok: false, error: '이미지 데이터가 비어 있습니다.', code: 'VALIDATION' };
+    }
+    let buffer: Buffer;
+    try {
+      buffer = Buffer.from(base64, 'base64');
+    } catch {
+      return { ok: false, error: '이미지 데이터(base64) 형식이 올바르지 않습니다.', code: 'VALIDATION' };
+    }
+    if (buffer.byteLength > MAX_IMAGE_BYTES) {
+      return {
+        ok: false,
+        error: '이미지 크기가 너무 큽니다. 더 작은 이미지를 사용해 주세요.',
+        code: 'VALIDATION',
+      };
+    }
+    return { ok: true, buffer };
+  }
+
+  if ('imageUrl' in input && typeof input.imageUrl === 'string') {
+    const urlStr = input.imageUrl.trim();
+    if (!urlStr) {
+      return { ok: false, error: '이미지 URL이 비어 있습니다.', code: 'VALIDATION' };
+    }
+
+    const dataUrl = stripDataUrlBase64(urlStr);
+    if (dataUrl) {
+      let buffer: Buffer;
+      try {
+        buffer = Buffer.from(dataUrl.base64, 'base64');
+      } catch {
+        return { ok: false, error: 'data URL 이미지를 디코드할 수 없습니다.', code: 'VALIDATION' };
+      }
+      if (buffer.byteLength > MAX_IMAGE_BYTES) {
+        return { ok: false, error: '이미지 크기가 너무 큽니다.', code: 'VALIDATION' };
+      }
+      return { ok: true, buffer };
+    }
+
+    let url: URL;
+    try {
+      url = new URL(urlStr);
+    } catch {
+      return { ok: false, error: '올바른 이미지 URL이 아닙니다.', code: 'VALIDATION' };
+    }
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+      return { ok: false, error: 'http(s) URL만 지원합니다.', code: 'VALIDATION' };
+    }
+
+    const ac = new AbortController();
+    const timer = setTimeout(() => ac.abort(), 30_000);
+    try {
+      const res = await fetch(urlStr, {
+        signal: ac.signal,
+        redirect: 'follow',
+        headers: { 'User-Agent': 'AIsle-image-reverse/1.0' },
+      });
+      clearTimeout(timer);
+      if (!res.ok) {
+        return { ok: false, error: '이미지를 불러오지 못했습니다.', code: 'API_ERROR' };
+      }
+      const ct = res.headers.get('content-type') || '';
+      if (!ct.toLowerCase().startsWith('image/')) {
+        return {
+          ok: false,
+          error: 'URL이 image/* 콘텐츠를 가리키지 않습니다.',
+          code: 'VALIDATION',
+        };
+      }
+      const buf = await res.arrayBuffer();
+      if (buf.byteLength > MAX_IMAGE_BYTES) {
+        return { ok: false, error: '이미지 크기가 너무 큽니다.', code: 'VALIDATION' };
+      }
+      return { ok: true, buffer: Buffer.from(buf) };
+    } catch (e) {
+      clearTimeout(timer);
+      const name = e instanceof Error ? e.name : '';
+      if (name === 'AbortError') {
+        return { ok: false, error: '이미지 다운로드 시간이 초과되었습니다.', code: 'TIMEOUT' };
+      }
+      return { ok: false, error: '이미지를 불러오지 못했습니다.', code: 'API_ERROR' };
+    }
+  }
+
+  return {
+    ok: false,
+    error: 'imageUrl 또는 imageBase64 중 하나를 지정해 주세요.',
+    code: 'VALIDATION',
+  };
+}
+
+/** 가로 최대 768px, JPEG로 통일 — Gemini 인라인 전송용 base64 */
+async function resizeToGeminiJpegBase64(
+  input: Buffer,
+): Promise<
+  { ok: true; data: string } | { ok: false; error: string; code: AnalyzePromptErrorCode }
+> {
+  try {
+    const out = await sharp(input)
+      .rotate()
+      .resize({
+        width: GEMINI_IMAGE_MAX_WIDTH,
+        withoutEnlargement: true,
+      })
+      .jpeg({
+        quality: GEMINI_IMAGE_JPEG_QUALITY,
+        mozjpeg: true,
+      })
+      .toBuffer();
+    return { ok: true, data: out.toString('base64') };
+  } catch (e) {
+    console.error('[analyzeImage] sharp resize/jpeg failed', e);
+    return {
+      ok: false,
+      error: '이미지를 처리할 수 없습니다. 지원되는 이미지 형식인지 확인해 주세요.',
+      code: 'VALIDATION',
+    };
+  }
+}
+
+/**
+ * 이미지 역분석 — 추정 프롬프트·화풍·조명·구도·키워드를 JSON으로 반환.
+ * API 키는 서버 전용. 원본은 서버에서만 fetch/디코드 후 sharp로 리사이즈·JPEG·base64 인라인 전송.
+ */
+export async function analyzeImage(input: AnalyzeImageInput): Promise<AnalyzeImageResult> {
+  noStore();
+
+  const auth = await requireUserForPromptAnalysis();
+  if (!auth.ok) {
+    return {
+      ok: false,
+      error: 'AI 분석은 로그인한 회원만 이용할 수 있습니다.',
+      code: 'UNAUTHENTICATED',
+    };
+  }
+
+  const resolvedKey = readGeminiApiKeyFromEnv();
+  if (!resolvedKey.ok) {
+    logGeminiKeyEnvDiagnostics();
+    const miss = missingApiKeyResult();
+    if (!miss.ok) {
+      return { ok: false, error: miss.error, code: miss.code };
+    }
+    return { ok: false, error: '서버 설정 오류입니다.', code: 'API_ERROR' };
+  }
+
+  const apiKey = resolvedKey.key;
+  const keyCheck = validateGeminiApiKeyShape(apiKey);
+  if (!keyCheck.ok) {
+    return { ok: false, error: keyCheck.message, code: 'INVALID_API_KEY' };
+  }
+
+  const raw = await resolveImageRawBuffer(input);
+  if (!raw.ok) {
+    return raw;
+  }
+
+  const optimized = await resizeToGeminiJpegBase64(raw.buffer);
+  if (!optimized.ok) {
+    return optimized;
+  }
+
+  try {
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({
+      model: IMAGE_REVERSE_MODEL,
+      generationConfig: {
+        temperature: 0.25,
+        responseMimeType: 'application/json',
+      },
+    });
+
+    const result = await model.generateContent([
+      {
+        inlineData: {
+          mimeType: 'image/jpeg',
+          data: optimized.data,
+        },
+      },
+      { text: IMAGE_REVERSE_PROMPT },
+    ]);
+
+    let text: string;
+    try {
+      text = result.response.text().trim();
+    } catch (textErr) {
+      console.error('[analyzeImage] response.text() error', textErr);
+      if (textErr instanceof GoogleGenerativeAIResponseError) {
+        throw textErr;
+      }
+      throw textErr instanceof Error ? textErr : new Error(String(textErr));
+    }
+
+    const parsed = tryParseJsonFromModelText(text);
+    if (!parsed.ok || !isPlainRecord(parsed.value)) {
+      return {
+        ok: false,
+        error: '모델 응답을 JSON으로 해석할 수 없습니다.',
+        code: 'INVALID_JSON',
+      };
+    }
+
+    return { ok: true, data: parsed.value };
+  } catch (e) {
+    const r = geminiFailureToResult(e);
+    if (!r.ok) {
+      return { ok: false, error: r.error, code: r.code };
+    }
+    return { ok: false, error: '이미지 분석 중 오류가 발생했습니다.', code: 'API_ERROR' };
+  }
+}
+
+/**
+ * 갤러리 포스트 이미지 역분석 후 `Post.aiReversePrompt`·`aiImageAnalysis`에 저장해 재방문 시 API를 생략합니다.
+ */
+export async function analyzeImageForGalleryPost(
+  postId: string,
+  input: AnalyzeImageInput,
+): Promise<AnalyzeImageResult> {
+  const res = await analyzeImage(input);
+  if (!res.ok) return res;
+
+  const estimated = pickEstimatedPromptFromAnalysis(res.data);
+  try {
+    await prisma.post.update({
+      where: { id: postId },
+      data: {
+        aiReversePrompt: estimated || null,
+        aiImageAnalysis: res.data as Prisma.InputJsonValue,
+      },
+    });
+  } catch (e) {
+    console.error('[analyzeImageForGalleryPost] prisma update failed', e);
+  }
+
+  return res;
+}
 
 async function loadCachedPromptAnalysisForPost(
   postId: string,

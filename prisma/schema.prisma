@@ -58,6 +58,10 @@ model Post {
   externalLink String?
   /// 해시태그 (#은 표시 시만 붙임)
   tags        String[]    @default([])
+  /// 갤러리 이미지 역분석 — AI가 추정한 프롬프트 (캐시)
+  aiReversePrompt String? @db.Text
+  /// 갤러리 이미지 역분석 전체 JSON (Gemini 응답)
+  aiImageAnalysis Json?
   author      User        @relation(fields: [authorId], references: [id])
   authorId    String
   metadata    AiMetadata?
