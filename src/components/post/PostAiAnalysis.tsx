@@ -17,34 +17,11 @@ import {
   Target,
 } from 'lucide-react';
 import { useAuth } from '@/components/SessionProvider';
-import {
-  analyzePostPromptAnalysis,
-  type AnalyzePromptErrorCode,
-  type PromptAnalysis,
-} from '@/app/actions/gemini';
+import type { AnalyzePromptErrorCode, PromptAnalysis } from '@/app/actions/gemini';
 import { isMarketingAnalysis, isVisualAnalysis, type VisualPromptAnalysis } from '@/lib/prompt-analysis';
 
-const ANALYSIS_CLIENT_TIMEOUT_MS = 15_000;
 const POLL_FETCH_TIMEOUT_MS = 15_000;
 const AUTO_ANALYSIS_MAX_WAIT_MS = 120_000;
-
-function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
-  return new Promise((resolve, reject) => {
-    const t = setTimeout(() => {
-      reject(new Error(label));
-    }, ms);
-    promise.then(
-      (v) => {
-        clearTimeout(t);
-        resolve(v);
-      },
-      (e) => {
-        clearTimeout(t);
-        reject(e);
-      },
-    );
-  });
-}
 
 function SkeletonBar({ className = '' }: { className?: string }) {
   return (
@@ -121,7 +98,10 @@ export function PostAiAnalysis({
   const [error, setError] = useState<string | null>(null);
   const [errorCode, setErrorCode] = useState<AnalyzePromptErrorCode | null>(null);
   const [serverNotice, setServerNotice] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  /** 수동 「AI 분석 보기」— Gemini 스트리밍 수신 중 */
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [streamText, setStreamText] = useState('');
+  const streamAbortRef = useRef<AbortController | null>(null);
   const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const pollDeadlineRef = useRef<number | null>(null);
 
@@ -217,44 +197,133 @@ export function PostAiAnalysis({
   const runAnalyze = useCallback(() => {
     const p = trimmed;
     if (!p || !canUseAiAnalysis) return;
+    streamAbortRef.current?.abort();
     setError(null);
     setErrorCode(null);
     setServerNotice(null);
-    setIsLoading(true);
+    setStreamText('');
+    setResult(null);
+    setIsStreaming(true);
+
+    const ac = new AbortController();
+    streamAbortRef.current = ac;
+
     void (async () => {
       try {
-        const res = await withTimeout(
-          analyzePostPromptAnalysis(postId, p),
-          ANALYSIS_CLIENT_TIMEOUT_MS,
-          'CLIENT_TIMEOUT',
-        );
-        if (res.ok) {
-          setResult(res.data);
-          setError(null);
-          setErrorCode(null);
-          setServerNotice(typeof res.notice === 'string' && res.notice.trim() ? res.notice.trim() : null);
-        } else {
+        const res = await fetch(`/api/posts/${postId}/prompt-analysis-stream`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ promptText: p }),
+          signal: ac.signal,
+        });
+
+        if (!res.ok) {
+          const j = (await res.json().catch(() => ({}))) as {
+            error?: string;
+            code?: AnalyzePromptErrorCode;
+          };
           setResult(null);
-          setError(res.error);
-          setErrorCode(res.code);
-          setServerNotice(null);
+          setError(j.error ?? '요청에 실패했습니다.');
+          setErrorCode(j.code ?? 'API_ERROR');
+          return;
+        }
+
+        const reader = res.body?.getReader();
+        if (!reader) {
+          setError('스트림을 열 수 없습니다.');
+          setErrorCode('API_ERROR');
+          return;
+        }
+
+        const decoder = new TextDecoder();
+        let buffer = '';
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+          let nl: number;
+          while ((nl = buffer.indexOf('\n')) >= 0) {
+            const line = buffer.slice(0, nl).trim();
+            buffer = buffer.slice(nl + 1);
+            if (!line) continue;
+            try {
+              const ev = JSON.parse(line) as
+                | { type: 'delta'; text: string }
+                | {
+                    type: 'complete';
+                    ok: true;
+                    data: PromptAnalysis;
+                    notice?: string;
+                  }
+                | { type: 'complete'; ok: false; error: string; code: AnalyzePromptErrorCode };
+
+              if (ev.type === 'delta' && typeof ev.text === 'string') {
+                setStreamText((prev) => prev + ev.text);
+              } else if (ev.type === 'complete' && ev.ok === true) {
+                setResult(ev.data);
+                setError(null);
+                setErrorCode(null);
+                setServerNotice(
+                  typeof ev.notice === 'string' && ev.notice.trim() ? ev.notice.trim() : null
+                );
+                setStreamText('');
+              } else if (ev.type === 'complete' && ev.ok === false) {
+                setResult(null);
+                setError(ev.error);
+                setErrorCode(ev.code);
+                setServerNotice(null);
+              }
+            } catch {
+              /* 줄 단위 JSON 파싱 실패는 무시 */
+            }
+          }
+        }
+
+        const tail = buffer.trim();
+        if (tail) {
+          try {
+            const ev = JSON.parse(tail) as {
+              type: string;
+              ok?: boolean;
+              data?: PromptAnalysis;
+              error?: string;
+              code?: AnalyzePromptErrorCode;
+              notice?: string;
+            };
+            if (ev.type === 'complete' && ev.ok === true && ev.data) {
+              setResult(ev.data);
+              setError(null);
+              setErrorCode(null);
+              setServerNotice(
+                typeof ev.notice === 'string' && ev.notice.trim() ? ev.notice.trim() : null
+              );
+              setStreamText('');
+            }
+          } catch {
+            /* ignore */
+          }
         }
       } catch (e) {
-        const msg = e instanceof Error ? e.message : '';
-        if (msg === 'CLIENT_TIMEOUT') {
-          setError('요청 시간이 초과되었습니다');
-          setErrorCode('TIMEOUT');
-        } else {
-          setError(e instanceof Error ? e.message : '요청 처리 중 오류가 발생했습니다.');
-          setErrorCode('API_ERROR');
+        if (e instanceof DOMException && e.name === 'AbortError') {
+          return;
         }
         setResult(null);
+        setError(e instanceof Error ? e.message : '요청 처리 중 오류가 발생했습니다.');
+        setErrorCode('API_ERROR');
         setServerNotice(null);
       } finally {
-        setIsLoading(false);
+        setIsStreaming(false);
+        streamAbortRef.current = null;
       }
     })();
   }, [canUseAiAnalysis, postId, trimmed]);
+
+  useEffect(() => {
+    return () => {
+      streamAbortRef.current?.abort();
+    };
+  }, []);
 
   const waitingAutoJob =
     canUseAiAnalysis &&
@@ -265,7 +334,7 @@ export function PostAiAnalysis({
   const showPrimaryCta =
     canUseAiAnalysis &&
     !result &&
-    !isLoading &&
+    !isStreaming &&
     !error &&
     promptAnalysisJobStatus !== 'PENDING';
 
@@ -443,7 +512,7 @@ export function PostAiAnalysis({
           </div>
         ) : null}
 
-        {canUseAiAnalysis && (waitingAutoJob || isLoading) ? (
+        {canUseAiAnalysis && waitingAutoJob && !isStreaming ? (
           <div className="space-y-6" aria-busy="true" aria-live="polite">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <p
@@ -451,9 +520,7 @@ export function PostAiAnalysis({
                 style={{ fontSize: 'var(--type-17)' }}
               >
                 <Boxes className="h-5 w-5 animate-pulse text-[var(--accent)]" aria-hidden />
-                {waitingAutoJob
-                  ? '등록 직후 자동 분석을 진행 중입니다…'
-                  : 'AI가 프롬프트를 해부하는 중입니다…'}
+                등록 직후 자동 분석을 진행 중입니다…
               </p>
               <span className="text-[length:var(--type-13)] text-[var(--muted)]">잠시만 기다려 주세요</span>
             </div>
@@ -465,7 +532,35 @@ export function PostAiAnalysis({
           </div>
         ) : null}
 
-        {canUseAiAnalysis && !isLoading && result && isVisualAnalysis(result) ? (
+        {canUseAiAnalysis && isStreaming ? (
+          <div className="space-y-4" aria-busy="true" aria-live="polite">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <p
+                className="flex items-center gap-2 font-medium text-[var(--text)]"
+                style={{ fontSize: 'var(--type-17)' }}
+              >
+                <Sparkles className="h-5 w-5 animate-pulse text-[var(--accent)]" aria-hidden />
+                AI가 분석 결과(JSON)를 실시간으로 작성 중입니다…
+              </p>
+              <span className="text-[length:var(--type-13)] text-[var(--muted)]">
+                스트리밍 · 잠시만 기다려 주세요
+              </span>
+            </div>
+            <div
+              className="max-h-[min(50vh,420px)] overflow-auto rounded-2xl border border-[var(--border)] bg-[var(--bg)]/90 p-4 shadow-inner"
+              style={{ fontSize: 'var(--type-13)' }}
+            >
+              <pre
+                className="whitespace-pre-wrap break-words font-mono leading-relaxed text-[var(--text)]"
+                style={{ margin: 0 }}
+              >
+                {streamText || '…'}
+              </pre>
+            </div>
+          </div>
+        ) : null}
+
+        {canUseAiAnalysis && !isStreaming && result && isVisualAnalysis(result) ? (
           <div className="space-y-6">
             <h3 className="font-semibold text-[var(--text)]" style={{ fontSize: 'var(--type-17)' }}>
               분석 결과
@@ -531,7 +626,7 @@ export function PostAiAnalysis({
           </div>
         ) : null}
 
-        {canUseAiAnalysis && !isLoading && result && isMarketingAnalysis(result) ? (
+        {canUseAiAnalysis && !isStreaming && result && isMarketingAnalysis(result) ? (
           <div className="space-y-6">
             <h3 className="font-semibold text-[var(--text)]" style={{ fontSize: 'var(--type-17)' }}>
               분석 결과
