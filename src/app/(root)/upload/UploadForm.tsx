@@ -4,7 +4,11 @@ import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { MediaThumb } from '@/components/MediaThumb';
-import { UPLOAD_CATEGORY_OPTIONS, categoryAllowsOptionalThumbnail } from '@/lib/post-categories';
+import {
+  UPLOAD_CATEGORY_OPTIONS,
+  categoryAllowsOptionalThumbnail,
+  type LabPromptKind,
+} from '@/lib/post-categories';
 import { MAX_POST_MEDIA } from '@/lib/post-media-urls';
 import { MIN_POST_DESCRIPTION_LENGTH } from '@/lib/post-description-policy';
 import { UPLOAD_IMAGE_MAX_BYTES, formatUploadMaxSizeLabel } from '@/lib/upload-limits';
@@ -18,6 +22,7 @@ export type UploadEditInitial = {
   content: string;
   externalLink: string;
   prompt: string;
+  labPromptKind?: LabPromptKind;
   thumbnail: string;
   attachmentUrls: string[];
   tags: string[];
@@ -68,6 +73,7 @@ export function UploadForm({ editInitial = null }: Props) {
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [tags, setTags] = useState('');
+  const [labPromptKind, setLabPromptKind] = useState<LabPromptKind>('visual');
 
   const beginUpload = useCallback(() => {
     setUploadCount((c) => c + 1);
@@ -131,6 +137,7 @@ export function UploadForm({ editInitial = null }: Props) {
     setPrompt('');
     setExternalLink('');
     setTags('');
+    setLabPromptKind('visual');
     setMediaSlots([]);
     setPasteMessage(null);
   }, [editInitial]);
@@ -143,6 +150,9 @@ export function UploadForm({ editInitial = null }: Props) {
     if (category !== 'BUILD' && category !== 'LAUNCH') {
       setExternalLink('');
     }
+    if (category !== 'RECIPE') {
+      setLabPromptKind('visual');
+    }
   }, [category, editInitial]);
 
   useEffect(() => {
@@ -151,6 +161,7 @@ export function UploadForm({ editInitial = null }: Props) {
     setTitle(editInitial.title);
     setDescription(editInitial.content);
     setPrompt(editInitial.prompt);
+    setLabPromptKind(editInitial.labPromptKind ?? 'visual');
     setExternalLink(editInitial.externalLink);
     setTags((editInitial.tags ?? []).filter(Boolean).join(', '));
     const slots: MediaSlot[] = [];
@@ -237,7 +248,8 @@ export function UploadForm({ editInitial = null }: Props) {
 
   const isLab = category === 'RECIPE';
   const isLounge = category === 'LOUNGE';
-  const mediaOptional = categoryAllowsOptionalThumbnail(category);
+  const thumbnailOptional =
+    categoryAllowsOptionalThumbnail(category) || (isLab && labPromptKind === 'marketing');
   const showServiceLink = category === 'BUILD' || category === 'LAUNCH';
   const filledSlots = mediaSlots.filter((s) => s.url);
   const hasMedia = filledSlots.length > 0;
@@ -248,12 +260,12 @@ export function UploadForm({ editInitial = null }: Props) {
     !uploading &&
     !submitting &&
     (!isLab || prompt.trim()) &&
-    (mediaOptional || hasMedia);
+    (thumbnailOptional || hasMedia);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setFormError(null);
-    if (!mediaOptional && !hasMedia) {
+    if (!thumbnailOptional && !hasMedia) {
       setFormError('미디어를 최소 1개 등록해 주세요.');
       return;
     }
@@ -302,6 +314,7 @@ export function UploadForm({ editInitial = null }: Props) {
         };
         if (isLab) {
           patchBody.prompt = prompt.trim();
+          patchBody.labPromptKind = labPromptKind;
         }
         if (showServiceLink) {
           patchBody.externalLink = linkTrim;
@@ -330,6 +343,7 @@ export function UploadForm({ editInitial = null }: Props) {
       };
       if (isLab) {
         body.prompt = prompt.trim();
+        body.labPromptKind = labPromptKind;
       }
       if (showServiceLink && linkTrim) {
         body.externalLink = linkTrim;
@@ -489,16 +503,63 @@ export function UploadForm({ editInitial = null }: Props) {
           </label>
         ) : null}
 
+        {isLab ? (
+          <div className={styles.labKindSection}>
+            <span className={styles.label} style={{ textTransform: 'none', letterSpacing: 'normal' }}>
+              LAB 콘텐츠 유형
+            </span>
+            <div className={styles.labKindRow} role="radiogroup" aria-label="LAB 프롬프트 유형">
+              <label
+                className={`${styles.labKindOption} ${labPromptKind === 'visual' ? styles.labKindOptionActive : ''}`}
+              >
+                <input
+                  type="radio"
+                  name="labPromptKind"
+                  value="visual"
+                  checked={labPromptKind === 'visual'}
+                  onChange={() => setLabPromptKind('visual')}
+                />
+                이미지·비주얼
+              </label>
+              <label
+                className={`${styles.labKindOption} ${labPromptKind === 'marketing' ? styles.labKindOptionActive : ''}`}
+              >
+                <input
+                  type="radio"
+                  name="labPromptKind"
+                  value="marketing"
+                  checked={labPromptKind === 'marketing'}
+                  onChange={() => setLabPromptKind('marketing')}
+                />
+                마케팅·카피(텍스트)
+              </label>
+            </div>
+            <p className={styles.labKindHint}>
+              마케팅·카피는 텍스트 중심일 때 대표 미디어 없이도 저장할 수 있습니다.
+            </p>
+          </div>
+        ) : null}
+
         <div className={styles.fileRow}>
           <span className={styles.label} style={{ textTransform: 'none', letterSpacing: 'normal' }}>
             대표·첨부 미디어 (최대 {MAX_POST_MEDIA}개)
-            {mediaOptional ? (
-              <span className={styles.optionalMark}> · LOUNGE·GOSSIP: 대표 미디어 생략 가능</span>
+            {thumbnailOptional ? (
+              <span className={styles.optionalMark}>
+                {category === 'LOUNGE' || category === 'GOSSIP'
+                  ? ' · LOUNGE·GOSSIP: 대표 미디어 생략 가능'
+                  : isLab && labPromptKind === 'marketing'
+                    ? ' · LAB 마케팅·카피: 대표 미디어 생략 가능'
+                    : ''}
+              </span>
             ) : null}
           </span>
           <label className={styles.fileLabel}>
             <span className={styles.fileBtn}>
-              {mediaSlots.length >= MAX_POST_MEDIA ? '개수 한도 도달' : '파일 추가'}
+              {mediaSlots.length >= MAX_POST_MEDIA
+                ? '개수 한도 도달'
+                : isLab && labPromptKind === 'marketing'
+                  ? '파일 추가 (선택)'
+                  : '파일 추가'}
             </span>
             <input
               className={styles.fileInput}

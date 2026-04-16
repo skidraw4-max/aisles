@@ -7,7 +7,13 @@ import { ensurePrismaUser } from '@/lib/ensure-user';
 import { MEDIA_STORAGE_NOT_CONFIGURED, uploadPublicObject } from '@/lib/r2';
 import { isTrustedMediaUrl } from '@/lib/r2-url';
 import type { Category } from '@prisma/client';
-import { categoryAllowsOptionalThumbnail, parsePostCategory } from '@/lib/post-categories';
+import {
+  categoryAllowsOptionalMedia,
+  categoryAllowsOptionalThumbnail,
+  parseLabPromptKindFromBody,
+  parsePostCategory,
+  type LabPromptKind,
+} from '@/lib/post-categories';
 import { parseMediaUrlsField } from '@/lib/post-media-urls';
 import { normalizePostTagsInput } from '@/lib/post-tags';
 import { UPLOAD_IMAGE_MAX_BYTES, formatUploadMaxSizeLabel } from '@/lib/upload-limits';
@@ -116,6 +122,7 @@ async function postFromJson(req: NextRequest) {
   }
 
   const promptRaw = typeof b.prompt === 'string' ? b.prompt.trim() : '';
+  let recipeLabKind: LabPromptKind = 'visual';
   if (category === 'RECIPE') {
     if (!promptRaw) {
       return NextResponse.json(
@@ -126,6 +133,7 @@ async function postFromJson(req: NextRequest) {
     if (promptRaw.length > 50000) {
       return NextResponse.json({ error: '프롬프트는 5만 자 이하여야 합니다.' }, { status: 400 });
     }
+    recipeLabKind = parseLabPromptKindFromBody(b.labPromptKind) ?? 'visual';
   }
 
   const mediaParsed = parseMediaUrlsField(b);
@@ -149,7 +157,7 @@ async function postFromJson(req: NextRequest) {
         );
       }
       thumbnail = thumbnailRaw;
-    } else if (!categoryAllowsOptionalThumbnail(category)) {
+    } else if (!categoryAllowsOptionalMedia(category, category === 'RECIPE' ? recipeLabKind : null)) {
       return NextResponse.json(
         { error: '허용된 저장소에서 업로드된 썸네일 URL이 필요합니다. 미디어 업로드를 먼저 완료해 주세요.' },
         { status: 400 }
@@ -181,6 +189,7 @@ async function postFromJson(req: NextRequest) {
               metadata: {
                 create: {
                   prompt: promptRaw.slice(0, 50000),
+                  params: { labPromptKind: recipeLabKind },
                 },
               },
             }

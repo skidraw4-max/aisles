@@ -75,6 +75,35 @@ export function categoryAllowsOptionalThumbnail(category: Category): boolean {
   return category === 'LOUNGE' || category === 'GOSSIP';
 }
 
+/** LAB(RECIPE) 프롬프트 유형 — 이미지·비주얼 vs 마케팅·카피(텍스트) */
+export type LabPromptKind = 'visual' | 'marketing';
+
+export function labKindFromMetadataParams(params: unknown): LabPromptKind {
+  if (!params || typeof params !== 'object' || params === null) return 'visual';
+  const k = (params as { labPromptKind?: unknown }).labPromptKind;
+  return k === 'marketing' ? 'marketing' : 'visual';
+}
+
+/** 요청 본문의 labPromptKind — 없거나 형식이 아니면 null (기본값은 호출부에서 처리) */
+export function parseLabPromptKindFromBody(raw: unknown): LabPromptKind | null {
+  if (typeof raw !== 'string') return null;
+  const t = raw.trim();
+  if (t === 'marketing') return 'marketing';
+  if (t === 'visual') return 'visual';
+  return null;
+}
+
+/**
+ * LOUNGE/GOSSIP 또는 LAB에서 「마케팅·카피」 선택 시 대표 미디어 없이 저장 가능
+ */
+export function categoryAllowsOptionalMedia(
+  category: Category,
+  recipeLabKind?: LabPromptKind | null
+): boolean {
+  if (categoryAllowsOptionalThumbnail(category)) return true;
+  return category === 'RECIPE' && recipeLabKind === 'marketing';
+}
+
 /** 메인 피드: 퀘이사존식 한 줄 리스트 (LAB·GALLERY는 그리드) */
 export function isFeedBoardListCategory(category: Category | null): boolean {
   return category === 'LOUNGE' || category === 'GOSSIP';

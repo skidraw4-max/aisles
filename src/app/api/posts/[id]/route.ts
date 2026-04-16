@@ -5,9 +5,13 @@ import { ensurePrismaUser } from '@/lib/ensure-user';
 import { isTrustedMediaUrl } from '@/lib/r2-url';
 import { parseMediaUrlsField } from '@/lib/post-media-urls';
 import { normalizePostTagsInput } from '@/lib/post-tags';
-import type { Category } from '@prisma/client';
+import type { Category, Prisma } from '@prisma/client';
 import { validateContentMinForCategory } from '@/lib/post-description-policy';
-import { categoryAllowsOptionalThumbnail } from '@/lib/post-categories';
+import {
+  categoryAllowsOptionalMedia,
+  labKindFromMetadataParams,
+  parseLabPromptKindFromBody,
+} from '@/lib/post-categories';
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -91,7 +95,12 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
 
   const post = await prisma.post.findUnique({
     where: { id },
-    select: { id: true, authorId: true, category: true },
+    select: {
+      id: true,
+      authorId: true,
+      category: true,
+      metadata: { select: { prompt: true, params: true } },
+    },
   });
   if (!post) {
     return NextResponse.json({ error: '게시글을 찾을 수 없습니다.' }, { status: 404 });
@@ -101,6 +110,12 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
   }
 
   await ensurePrismaUser(auth.user);
+
+  const recipeLabKindResolved =
+    post.category === 'RECIPE'
+      ? (parseLabPromptKindFromBody(b.labPromptKind) ?? labKindFromMetadataParams(post.metadata?.params))
+      : null;
+  const optionalMedia = categoryAllowsOptionalMedia(post.category, recipeLabKindResolved);
 
   const data: {
     title?: string;
@@ -137,7 +152,7 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
       return NextResponse.json({ error: parsed.message }, { status: 400 });
     }
     if (parsed.urls.length === 0) {
-      if (categoryAllowsOptionalThumbnail(post.category)) {
+      if (optionalMedia) {
         data.thumbnail = null;
         data.attachmentUrls = [];
       } else {
@@ -153,7 +168,7 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
   } else if (typeof b.thumbnailUrl === 'string') {
     const url = b.thumbnailUrl.trim();
     if (!url) {
-      if (categoryAllowsOptionalThumbnail(post.category)) {
+      if (optionalMedia) {
         data.thumbnail = null;
       } else {
         return NextResponse.json(
@@ -185,14 +200,50 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
     data.tags = normalizePostTagsInput(b.tags);
   }
 
-  let metadataUpsert: { create: { prompt: string }; update: { prompt: string } } | undefined;
-  if (post.category === 'RECIPE' && typeof b.prompt === 'string') {
-    const promptRaw = b.prompt.trim();
-    if (!promptRaw) {
-      return NextResponse.json({ error: 'LAB 카테고리는 프롬프트가 필요합니다.' }, { status: 400 });
+  let metadataUpsert:
+    | {
+        create: { prompt: string; params?: Prisma.InputJsonValue };
+        update: { prompt: string; params?: Prisma.InputJsonValue };
+      }
+    | undefined;
+  const labKindInBody = 'labPromptKind' in b && typeof b.labPromptKind === 'string';
+  if (post.category === 'RECIPE' && (typeof b.prompt === 'string' || labKindInBody)) {
+    let nextPrompt: string;
+    if (typeof b.prompt === 'string') {
+      const promptRaw = b.prompt.trim();
+      if (!promptRaw) {
+        return NextResponse.json({ error: 'LAB 카테고리는 프롬프트가 필요합니다.' }, { status: 400 });
+      }
+      nextPrompt = promptRaw.slice(0, 50000);
+    } else {
+      const existing = post.metadata?.prompt?.trim();
+      if (!existing) {
+        return NextResponse.json(
+          { error: 'LAB 프롬프트를 찾을 수 없습니다. 프롬프트를 함께 보내 주세요.' },
+          { status: 400 }
+        );
+      }
+      nextPrompt = existing;
     }
-    const prompt = promptRaw.slice(0, 50000);
-    metadataUpsert = { create: { prompt }, update: { prompt } };
+
+    const prevParams =
+      post.metadata?.params &&
+      typeof post.metadata.params === 'object' &&
+      post.metadata.params !== null &&
+      !Array.isArray(post.metadata.params)
+        ? { ...(post.metadata.params as Record<string, unknown>) }
+        : {};
+    let nextParams = { ...prevParams };
+    if (labKindInBody) {
+      const k = parseLabPromptKindFromBody(b.labPromptKind) ?? 'visual';
+      nextParams = { ...nextParams, labPromptKind: k };
+    }
+
+    const paramsJson = nextParams as Prisma.InputJsonValue;
+    metadataUpsert = {
+      create: { prompt: nextPrompt, params: paramsJson },
+      update: { prompt: nextPrompt, params: paramsJson },
+    };
   }
 
   if (Object.keys(data).length === 0 && metadataUpsert === undefined) {

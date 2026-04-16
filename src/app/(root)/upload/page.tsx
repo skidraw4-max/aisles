@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { prisma } from '@/lib/prisma';
+import { labKindFromMetadataParams } from '@/lib/post-categories';
 import { UploadForm, type UploadEditInitial } from './UploadForm';
 import styles from './upload.module.css';
 
@@ -30,7 +31,7 @@ export default async function UploadPage({ searchParams }: PageProps) {
   if (editId) {
     const p = await prisma.post.findFirst({
       where: { id: editId, authorId: user.id },
-      include: { metadata: { select: { prompt: true } } },
+      include: { metadata: { select: { prompt: true, params: true } } },
     });
     if (!p) {
       redirect('/my-aisles');
@@ -42,6 +43,7 @@ export default async function UploadPage({ searchParams }: PageProps) {
       content: p.content ?? '',
       externalLink: p.externalLink ?? '',
       prompt: p.metadata?.prompt ?? '',
+      labPromptKind: labKindFromMetadataParams(p.metadata?.params),
       thumbnail: p.thumbnail ?? '',
       attachmentUrls: p.attachmentUrls ?? [],
       tags: p.tags ?? [],
