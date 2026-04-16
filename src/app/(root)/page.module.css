@@ -2534,6 +2534,25 @@
   min-width: 0;
 }
 
+/*
+ * 카테고리 복도 진입 시( LAB·GALLERY 등 ) 모바일에서만:
+ * 메인 피드 → 그 아래 오늘의 베스트 + 최근 게시물 순으로 쌓기.
+ * PC(1100px 이상)는 grid-column 배치만 사용하므로 order 미적용.
+ */
+@media (max-width: 1099px) {
+  .feedLayoutRowMobileCategory .feedLayoutHeroFull {
+    order: 0;
+  }
+
+  .feedLayoutRowMobileCategory .feedLayoutMainFeed {
+    order: 1;
+  }
+
+  .feedLayoutRowMobileCategory .feedLayoutAside {
+    order: 2;
+  }
+}
+
 /* 우측: 오늘의 베스트 + 최근 게시물 (동일 너비 스택) */
 .feedAsideStack {
   display: flex;

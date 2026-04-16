@@ -9,17 +9,23 @@ import { unstable_noStore as noStore } from 'next/cache';
  *
  * 스트리밍 UI는 `POST /api/posts/[id]/prompt-analysis-stream` + `@/lib/gemini-prompt-analysis-engine`.
  *
- * 이미지 역분석: `analyzeImage` → **gemini-2.5-flash** (멀티모달, 프롬프트 분석과 동일 API ID). API 키는 서버 환경 변수만 사용.
+ * 이미지 역분석: `analyzeImage` → 우선 **gemini-2.5-flash**, 일시 오류·404 시 **gemini-2.0-flash** 폴백 + 재시도.
+ * 멀티모달에서는 `responseMimeType: application/json`이 간헐적으로 실패해 프롬프트로 JSON만 요청하고 파서로 추출.
  * 전송 전 `sharp`로 가로 최대 768px·JPEG 변환 후 base64 인라인 전달.
  */
 
-import { GoogleGenerativeAI, GoogleGenerativeAIResponseError } from '@google/generative-ai';
+import {
+  GoogleGenerativeAI,
+  GoogleGenerativeAIFetchError,
+  GoogleGenerativeAIResponseError,
+} from '@google/generative-ai';
 import sharp from 'sharp';
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { createClient } from '@/lib/supabase/server';
 import { fingerprintPrompt } from '@/lib/prompt-analysis-fingerprint';
 import {
+  classifyGeminiFailure,
   executeGeminiPromptAnalysisWithApiKey,
   geminiFailureToResult,
   GEMINI_API_KEY_ENV_NAMES,
@@ -47,7 +53,10 @@ export type AnalyzeImageResult =
   | { ok: true; data: Record<string, unknown> }
   | { ok: false; error: string; code: AnalyzePromptErrorCode };
 
-const IMAGE_REVERSE_MODEL = 'gemini-2.5-flash' as const;
+/** 이미지 역분석: 과부하(503)·할당량 등에 대비해 순차 시도 */
+const IMAGE_REVERSE_MODELS = ['gemini-2.5-flash', 'gemini-2.0-flash'] as const;
+const IMAGE_REVERSE_ATTEMPTS_PER_MODEL = 3;
+const IMAGE_REVERSE_RETRY_BASE_MS = 700;
 /** 원본 다운로드·디코드 상한 (리사이즈 전) */
 const MAX_IMAGE_BYTES = 12 * 1024 * 1024;
 /** Gemini 분석용 리사이즈 — 가로 최대 px */
@@ -196,9 +205,63 @@ async function resizeToGeminiJpegBase64(
   }
 }
 
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/** 응답 블록·API 키 오류 등 — 재시도해도 의미 없음 */
+function shouldStopImageRetries(e: unknown): boolean {
+  if (e instanceof GoogleGenerativeAIResponseError) {
+    return true;
+  }
+  if (e instanceof GoogleGenerativeAIFetchError) {
+    const s = e.status ?? 0;
+    if (s === 400 || s === 401 || s === 403) {
+      return true;
+    }
+  }
+  return classifyGeminiFailure(e).category === 'AUTH';
+}
+
+function shouldSwitchImageModel(e: unknown): boolean {
+  if (e instanceof GoogleGenerativeAIFetchError && e.status === 404) {
+    return true;
+  }
+  return classifyGeminiFailure(e).category === 'NOT_FOUND';
+}
+
+function isTransientImageApiError(e: unknown): boolean {
+  if (e instanceof GoogleGenerativeAIResponseError) {
+    return false;
+  }
+  if (e instanceof GoogleGenerativeAIFetchError) {
+    const s = e.status ?? 0;
+    return s === 429 || s === 500 || s === 502 || s === 503 || s === 504;
+  }
+  const msg = (e instanceof Error ? e.message : String(e)).toLowerCase();
+  if (
+    msg.includes('fetch failed') ||
+    msg.includes('econnreset') ||
+    msg.includes('etimedout') ||
+    msg.includes('socket hang up')
+  ) {
+    return true;
+  }
+  const c = classifyGeminiFailure(e).category;
+  return c === 'RATE_LIMIT' || c === 'SERVER';
+}
+
+function imageErrorFromGeminiFailure(err: unknown): AnalyzeImageResult {
+  const r = geminiFailureToResult(err);
+  if (!r.ok) {
+    return { ok: false, error: r.error, code: r.code };
+  }
+  return { ok: false, error: '이미지 분석 중 오류가 발생했습니다.', code: 'API_ERROR' };
+}
+
 /**
  * 이미지 역분석 — 추정 프롬프트·화풍·조명·구도·키워드를 JSON으로 반환.
- * API 키는 서버 전용. 원본은 서버에서만 fetch/디코드 후 sharp로 리사이즈·JPEG·base64 인라인 전송.
+ * API 키는 서버 전용. 원본은 서버에서만 fetch/디코드 후 sharp로 리사이즈·JPEG·base64 인라인 전달.
  */
 export async function analyzeImage(input: AnalyzeImageInput): Promise<AnalyzeImageResult> {
   noStore();
@@ -238,54 +301,74 @@ export async function analyzeImage(input: AnalyzeImageInput): Promise<AnalyzeIma
     return optimized;
   }
 
-  try {
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({
-      model: IMAGE_REVERSE_MODEL,
-      generationConfig: {
-        temperature: 0.25,
-        responseMimeType: 'application/json',
-      },
-    });
+  let lastFailure: unknown = null;
 
-    const result = await model.generateContent([
-      {
-        inlineData: {
-          mimeType: 'image/jpeg',
-          data: optimized.data,
-        },
-      },
-      { text: IMAGE_REVERSE_PROMPT },
-    ]);
+  modelLoop: for (const modelId of IMAGE_REVERSE_MODELS) {
+    for (let attempt = 0; attempt < IMAGE_REVERSE_ATTEMPTS_PER_MODEL; attempt++) {
+      try {
+        const genAI = new GoogleGenerativeAI(apiKey);
+        const model = genAI.getGenerativeModel({
+          model: modelId,
+          generationConfig: {
+            temperature: 0.25,
+          },
+        });
 
-    let text: string;
-    try {
-      text = result.response.text().trim();
-    } catch (textErr) {
-      console.error('[analyzeImage] response.text() error', textErr);
-      if (textErr instanceof GoogleGenerativeAIResponseError) {
-        throw textErr;
+        const result = await model.generateContent([
+          {
+            inlineData: {
+              mimeType: 'image/jpeg',
+              data: optimized.data,
+            },
+          },
+          { text: IMAGE_REVERSE_PROMPT },
+        ]);
+
+        let text: string;
+        try {
+          text = result.response.text().trim();
+        } catch (textErr) {
+          console.error('[analyzeImage] response.text() error', { modelId, attempt, textErr });
+          lastFailure = textErr;
+          if (textErr instanceof GoogleGenerativeAIResponseError) {
+            return imageErrorFromGeminiFailure(textErr);
+          }
+          throw textErr instanceof Error ? textErr : new Error(String(textErr));
+        }
+
+        const parsed = tryParseJsonFromModelText(text);
+        if (!parsed.ok || !isPlainRecord(parsed.value)) {
+          return {
+            ok: false,
+            error: '모델 응답을 JSON으로 해석할 수 없습니다.',
+            code: 'INVALID_JSON',
+          };
+        }
+
+        return { ok: true, data: parsed.value };
+      } catch (e) {
+        lastFailure = e;
+        console.error('[analyzeImage] attempt failed', { modelId, attempt, e });
+        if (shouldStopImageRetries(e)) {
+          return imageErrorFromGeminiFailure(e);
+        }
+        if (shouldSwitchImageModel(e)) {
+          continue modelLoop;
+        }
+        if (isTransientImageApiError(e) && attempt < IMAGE_REVERSE_ATTEMPTS_PER_MODEL - 1) {
+          await delay(IMAGE_REVERSE_RETRY_BASE_MS * 2 ** attempt);
+          continue;
+        }
+        const hasAnotherModel = modelId !== IMAGE_REVERSE_MODELS[IMAGE_REVERSE_MODELS.length - 1];
+        if (hasAnotherModel) {
+          continue modelLoop;
+        }
+        return imageErrorFromGeminiFailure(e);
       }
-      throw textErr instanceof Error ? textErr : new Error(String(textErr));
     }
-
-    const parsed = tryParseJsonFromModelText(text);
-    if (!parsed.ok || !isPlainRecord(parsed.value)) {
-      return {
-        ok: false,
-        error: '모델 응답을 JSON으로 해석할 수 없습니다.',
-        code: 'INVALID_JSON',
-      };
-    }
-
-    return { ok: true, data: parsed.value };
-  } catch (e) {
-    const r = geminiFailureToResult(e);
-    if (!r.ok) {
-      return { ok: false, error: r.error, code: r.code };
-    }
-    return { ok: false, error: '이미지 분석 중 오류가 발생했습니다.', code: 'API_ERROR' };
   }
+
+  return imageErrorFromGeminiFailure(lastFailure ?? new Error('Gemini 이미지 분석 실패'));
 }
 
 /**

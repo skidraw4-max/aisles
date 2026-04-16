@@ -273,7 +273,8 @@ function rateLimitEvidence(err: unknown, msgLower: string): Record<string, unkno
   return null;
 }
 
-function classifyGeminiFailure(err: unknown): ClassifiedFailure {
+/** 서버 액션 등에서 재시도·폴백 판별용으로 노출 */
+export function classifyGeminiFailure(err: unknown): ClassifiedFailure {
   const msg = errorMessageString(err);
   const lower = msg.toLowerCase();
 

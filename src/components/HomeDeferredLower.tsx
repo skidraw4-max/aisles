@@ -64,7 +64,11 @@ export function HomeDeferredLower({
 }: HomeDeferredLowerProps) {
   return (
     <div
-      className={[styles.feedLayoutRow, layoutRowNoHero ? styles.feedLayoutRowNoHero : '']
+      className={[
+        styles.feedLayoutRow,
+        layoutRowNoHero ? styles.feedLayoutRowNoHero : '',
+        filterCategory ? styles.feedLayoutRowMobileCategory : '',
+      ]
         .filter(Boolean)
         .join(' ')}
     >
