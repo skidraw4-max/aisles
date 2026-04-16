@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import type { Category } from '@prisma/client';
+import { PostThumbnail } from '@/components/post/PostThumbnail';
 import { POST_CATEGORY_OPTIONS } from '@/lib/post-categories';
 import { ExternalServiceCta } from './ExternalServiceCta';
 import { LaunchVisitProjectCta } from './LaunchVisitProjectCta';
@@ -17,6 +18,8 @@ export type SidebarPopularItem = {
   thumbnail: string | null;
   likeCount: number;
   excerpt: string;
+  category: Category;
+  metadataParams?: unknown;
 };
 
 type Props = {
@@ -74,12 +77,13 @@ export function PostSidebar({ category, related, popular, externalLink }: Props)
               <li key={p.id}>
                 <Link href={`/post/${p.id}`} className={styles.sidebarPopularCard}>
                   <div className={styles.sidebarPopularThumb}>
-                    {p.thumbnail ? (
-                      // eslint-disable-next-line @next/next/no-img-element -- 외부 R2 URL
-                      <img src={p.thumbnail} alt="" className={styles.sidebarPopularThumbImg} />
-                    ) : (
-                      <div className={styles.sidebarPopularThumbPh} aria-hidden />
-                    )}
+                    <PostThumbnail
+                      thumbnail={p.thumbnail}
+                      category={p.category}
+                      alt=""
+                      layout="sidebarPopular"
+                      metadataParams={p.metadataParams}
+                    />
                   </div>
                   <div className={styles.sidebarPopularBody}>
                     <p className={styles.sidebarPopularTitle}>{p.title}</p>

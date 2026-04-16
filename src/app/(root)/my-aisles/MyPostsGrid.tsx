@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import { MediaThumb } from '@/components/MediaThumb';
+import { PostThumbnail } from '@/components/post/PostThumbnail';
 import { POST_CATEGORY_OPTIONS } from '@/lib/post-categories';
 import type { Category } from '@prisma/client';
 import styles from './my-aisles.module.css';
@@ -14,6 +14,8 @@ export type MyPostRow = {
   title: string;
   category: Category;
   thumbnail: string | null;
+  /** LAB `metadata.params` — 썸네일 플레이스홀더 구분 */
+  metadataParams?: unknown;
   createdAt: string;
   views: number;
   likeCount: number;
@@ -179,11 +181,13 @@ export function MyPostsGrid({ posts }: { posts: MyPostRow[] }) {
             <li key={post.id}>
               <article className={styles.card}>
                 <Link href={`/post/${post.id}`} className={styles.cardMedia} aria-label={`${post.title} 상세`}>
-                  {post.thumbnail ? (
-                    <MediaThumb url={post.thumbnail} alt="" objectFit="cover" />
-                  ) : (
-                    <div className={styles.placeholder} aria-hidden />
-                  )}
+                  <PostThumbnail
+                    thumbnail={post.thumbnail}
+                    category={post.category}
+                    alt=""
+                    layout="myAislesCard"
+                    metadataParams={post.metadataParams}
+                  />
                   <span className={styles.badge}>{categoryLabel(post.category)}</span>
                 </Link>
                 <div className={styles.cardBody}>

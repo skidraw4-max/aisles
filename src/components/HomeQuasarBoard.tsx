@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { MediaThumb } from '@/components/MediaThumb';
+import { PostThumbnail } from '@/components/post/PostThumbnail';
 import { HomeQuasarAsideListsLoader } from '@/components/HomeQuasarAsideListsLoader';
 import {
   homeHrefForCategory,
@@ -61,17 +61,15 @@ function ShowcaseCard({ post, imagePriority }: { post: HomeFeedPost; imagePriori
     <div className={styles.feedCardWrap}>
       <Link href={`/post/${post.id}`} className={styles.feedCard}>
         <div className={styles.feedCardMedia}>
-          {post.thumbnail ? (
-            <MediaThumb
-              url={post.thumbnail}
-              alt=""
-              objectFit="cover"
-              priority={imagePriority}
-              sizes="(max-width: 479px) 100vw, (max-width: 959px) 50vw, 25vw"
-            />
-          ) : (
-            <div className={styles.feedCardPlaceholder} aria-hidden />
-          )}
+          <PostThumbnail
+            thumbnail={post.thumbnail}
+            category={post.category}
+            alt=""
+            layout="card"
+            metadataParams={post.metadata?.params}
+            priority={imagePriority}
+            sizes="(max-width: 479px) 100vw, (max-width: 959px) 50vw, 25vw"
+          />
           <span className={styles.feedCardBadge}>{categoryUiLabel(post.category)}</span>
         </div>
         <div className={styles.feedCardBody}>

@@ -11,7 +11,7 @@ import { homeViewFromSearchParams } from '@/lib/content-tab';
 import { isSupabaseAuthLinkError } from '@/lib/supabase-auth-url-errors';
 import { categoryKeyForCache, getHomePageQueries } from '@/lib/home-page-data';
 import { serializeFeedPost, type HomeFeedPost } from '@/lib/home-feed';
-import { labKindFromMetadataParams, POST_CATEGORY_OPTIONS } from '@/lib/post-categories';
+import { POST_CATEGORY_OPTIONS } from '@/lib/post-categories';
 import type { Category } from '@prisma/client';
 import styles from './page.module.css';
 
@@ -167,11 +167,7 @@ export default async function HomePage({ searchParams }: PageProps) {
                               thumbnail={post.thumbnail}
                               category={post.category}
                               title={post.title}
-                              labPromptKind={
-                                post.category === 'RECIPE'
-                                  ? labKindFromMetadataParams(post.metadata?.params)
-                                  : undefined
-                              }
+                              metadataParams={post.metadata?.params}
                             />
                           </div>
                           <div style={{ minWidth: 0, flex: 1 }}>

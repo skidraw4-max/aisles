@@ -8,10 +8,9 @@ import { MediaThumb } from '@/components/MediaThumb';
 import {
   categoryToHomeQuery,
   isFeedBoardListCategory,
-  labKindFromMetadataParams,
   POST_CATEGORY_OPTIONS,
 } from '@/lib/post-categories';
-import { LabNoMediaThumb } from '@/components/LabNoMediaThumb';
+import { PostThumbnail } from '@/components/post/PostThumbnail';
 import type { Category } from '@prisma/client';
 import { ALL_CARD_FEED_INITIAL_COUNT } from '@/lib/home-all-card-feed';
 import type { FeedPostJson } from '@/lib/home-feed';
@@ -58,19 +57,15 @@ function FeedPostCard({ post, imagePriority }: { post: FeedPostJson; imagePriori
     <div className={styles.feedCardWrap}>
       <Link href={`/post/${post.id}`} className={styles.feedCard}>
         <div className={styles.feedCardMedia}>
-          {post.thumbnail?.trim() ? (
-            <MediaThumb
-              url={post.thumbnail}
-              alt=""
-              objectFit="cover"
-              priority={imagePriority}
-              sizes="(max-width: 479px) 100vw, (max-width: 959px) 50vw, 25vw"
-            />
-          ) : post.category === 'RECIPE' ? (
-            <LabNoMediaThumb kind={labKindFromMetadataParams(post.metadata?.params)} layout="card" />
-          ) : (
-            <div className={styles.feedCardPlaceholder} aria-hidden />
-          )}
+          <PostThumbnail
+            thumbnail={post.thumbnail}
+            category={post.category}
+            alt=""
+            layout="card"
+            metadataParams={post.metadata?.params}
+            priority={imagePriority}
+            sizes="(max-width: 479px) 100vw, (max-width: 959px) 50vw, 25vw"
+          />
           <span className={styles.feedCardBadge}>{categoryUiLabel(post.category)}</span>
         </div>
         <div className={styles.feedCardBody}>

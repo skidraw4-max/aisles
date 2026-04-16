@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import Link from 'next/link';
-import { MediaThumb } from '@/components/MediaThumb';
+import { PostThumbnail } from '@/components/post/PostThumbnail';
 import { POST_CATEGORY_OPTIONS } from '@/lib/post-categories';
 import type { Category } from '@prisma/client';
 import type { HomeFeedPost } from '@/lib/home-feed';
@@ -47,11 +47,13 @@ export function HomeContentShowcase({ toolbar, leftPosts, rightPosts }: Props) {
                   <li key={post.id}>
                     <Link href={`/post/${post.id}`} className={styles.contentShowcaseLargeCard}>
                       <div className={styles.contentShowcaseLargeMedia}>
-                        {post.thumbnail ? (
-                          <MediaThumb url={post.thumbnail} alt="" objectFit="cover" />
-                        ) : (
-                          <div className={styles.contentShowcaseLargePh} aria-hidden />
-                        )}
+                        <PostThumbnail
+                          thumbnail={post.thumbnail}
+                          category={post.category}
+                          alt=""
+                          layout="showcaseLarge"
+                          metadataParams={post.metadata?.params}
+                        />
                         <span className={styles.contentShowcaseCat}>{categoryUiLabel(post.category)}</span>
                         {post.isFeatured ? (
                           <span className={styles.contentShowcasePick}>Pick</span>
@@ -81,11 +83,13 @@ export function HomeContentShowcase({ toolbar, leftPosts, rightPosts }: Props) {
                   <li key={post.id}>
                     <Link href={`/post/${post.id}`} className={styles.contentShowcaseListRow}>
                       <div className={styles.contentShowcaseListThumb}>
-                        {post.thumbnail ? (
-                          <MediaThumb url={post.thumbnail} alt="" objectFit="cover" />
-                        ) : (
-                          <div className={styles.contentShowcaseListPh} aria-hidden />
-                        )}
+                        <PostThumbnail
+                          thumbnail={post.thumbnail}
+                          category={post.category}
+                          alt=""
+                          layout="showcaseList"
+                          metadataParams={post.metadata?.params}
+                        />
                       </div>
                       <div className={styles.contentShowcaseListText}>
                         <p className={styles.contentShowcaseListTitle}>{post.title}</p>

@@ -195,7 +195,15 @@ export default async function PostPage({ params }: Props) {
       where: { id: { not: id }, createdAt: { gte: weekAgo } },
       orderBy: { likeCount: 'desc' },
       take: 3,
-      select: { id: true, title: true, thumbnail: true, likeCount: true, content: true },
+      select: {
+        id: true,
+        title: true,
+        thumbnail: true,
+        likeCount: true,
+        content: true,
+        category: true,
+        metadata: { select: { params: true } },
+      },
     }),
     prisma.post.findFirst({
       where: {
@@ -242,7 +250,15 @@ export default async function PostPage({ params }: Props) {
       where: { id: { notIn: [...exclude] } },
       orderBy: { likeCount: 'desc' },
       take: 3 - popularPosts.length,
-      select: { id: true, title: true, thumbnail: true, likeCount: true, content: true },
+      select: {
+        id: true,
+        title: true,
+        thumbnail: true,
+        likeCount: true,
+        content: true,
+        category: true,
+        metadata: { select: { params: true } },
+      },
     });
     popularPosts = [...popularPosts, ...more];
   }
@@ -289,6 +305,8 @@ export default async function PostPage({ params }: Props) {
     thumbnail: p.thumbnail,
     likeCount: p.likeCount,
     excerpt: excerptFrom(p.content),
+    category: p.category,
+    metadataParams: p.metadata?.params,
   }));
 
   const listHref = homeHrefForCategory(post.category);
