@@ -11,7 +11,7 @@ import { unstable_noStore as noStore } from 'next/cache';
  *
  * 이미지 역분석: `analyzeImage` — 업로드 이미지는 **생성 대상이 아니라 역분석용 참고 입력**만.
  * 모델 체인은 `@/lib/gemini-models`의 `GEMINI_IMAGE_MODEL_CHAIN`.
- * `systemInstruction` + `responseMimeType: application/json`으로 텍스트·JSON 출력만 유도.
+ * `systemInstruction` + 사용자 프롬프트로 JSON만 유도. 멀티모달+`responseMimeType: application/json`은 간헐 404가 있어 **미설정**.
  */
 
 import {
@@ -329,7 +329,8 @@ export async function analyzeImage(input: AnalyzeImageInput): Promise<AnalyzeIma
           systemInstruction: IMAGE_REVERSE_SYSTEM_INSTRUCTION,
           generationConfig: {
             temperature: 0.2,
-            responseMimeType: 'application/json',
+            // 멀티모달(이미지)+application/json 조합이 일부 키/엔드포인트에서 404·실패를 유발할 수 있어 생략.
+            // 스키마는 사용자 프롬프트로 고정하고 `tryParseJsonFromModelText`로 파싱.
           },
         });
 
