@@ -13,6 +13,7 @@ import {
   normalizePromptAnalysis,
   type PromptAnalysis,
 } from '@/lib/prompt-analysis';
+import { GEMINI_MODEL_FALLBACK, GEMINI_MODEL_PRIMARY } from '@/lib/gemini-models';
 
 export type { PromptAnalysis };
 
@@ -163,7 +164,7 @@ async function classifyPromptIntent(
 ): Promise<'image' | 'marketing'> {
   try {
     const model = genAI.getGenerativeModel({
-      model: 'gemini-2.5-flash',
+      model: GEMINI_MODEL_PRIMARY,
       systemInstruction: CLASSIFY_PROMPT_INTENT_SYSTEM,
       generationConfig: {
         temperature: 0.15,
@@ -440,7 +441,11 @@ export function geminiFailureToResult(e: unknown): AnalyzePromptResult {
   };
 }
 
-async function getAnalysisModel(genAI: GoogleGenerativeAI, trimmed: string) {
+async function getAnalysisModel(
+  genAI: GoogleGenerativeAI,
+  trimmed: string,
+  modelId: string = GEMINI_MODEL_PRIMARY,
+) {
   let systemInstruction: string;
   if (process.env.GEMINI_MINIMAL_SYSTEM === '1') {
     systemInstruction = MINIMAL_SYSTEM_INSTRUCTION;
@@ -453,13 +458,20 @@ async function getAnalysisModel(genAI: GoogleGenerativeAI, trimmed: string) {
   }
 
   return genAI.getGenerativeModel({
-    model: 'gemini-2.5-flash',
+    model: modelId,
     systemInstruction,
     generationConfig: {
       temperature: 0.35,
       responseMimeType: 'application/json',
     },
   });
+}
+
+function isGeminiModelNotFoundForFallback(e: unknown): boolean {
+  if (e instanceof GoogleGenerativeAIFetchError && e.status === 404) {
+    return true;
+  }
+  return classifyGeminiFailure(e).category === 'NOT_FOUND';
 }
 
 /** 동기 `generateContent` — 백그라운드 작업·기존 경로 */
@@ -472,9 +484,9 @@ export async function executeGeminiPromptAnalysisWithApiKey(
     promptPreview: `${trimmed.slice(0, 120)}${trimmed.length > 120 ? '…' : ''}`,
   });
 
-  try {
+  const runOnce = async (modelId: string): Promise<AnalyzePromptResult> => {
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = await getAnalysisModel(genAI, trimmed);
+    const model = await getAnalysisModel(genAI, trimmed, modelId);
     const result = await model.generateContent(trimmed);
 
     let text: string;
@@ -489,7 +501,19 @@ export async function executeGeminiPromptAnalysisWithApiKey(
     }
 
     return parseModelJsonTextToResult(text);
+  };
+
+  try {
+    return await runOnce(GEMINI_MODEL_PRIMARY);
   } catch (e) {
+    if (isGeminiModelNotFoundForFallback(e)) {
+      console.warn('[executeGeminiPromptAnalysis] primary model unavailable, trying fallback', GEMINI_MODEL_FALLBACK);
+      try {
+        return await runOnce(GEMINI_MODEL_FALLBACK);
+      } catch (e2) {
+        return geminiFailureToResult(e2);
+      }
+    }
     return geminiFailureToResult(e);
   }
 }
@@ -505,9 +529,9 @@ export async function streamGeminiPromptAnalysisWithApiKey(
     promptPreview: `${trimmed.slice(0, 120)}${trimmed.length > 120 ? '…' : ''}`,
   });
 
-  try {
+  const runStreamOnce = async (modelId: string): Promise<AnalyzePromptResult> => {
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = await getAnalysisModel(genAI, trimmed);
+    const model = await getAnalysisModel(genAI, trimmed, modelId);
     const streamResult = await model.generateContentStream(trimmed);
 
     let fullText = '';
@@ -529,7 +553,19 @@ export async function streamGeminiPromptAnalysisWithApiKey(
     }
 
     return parseModelJsonTextToResult(fullText.trim());
+  };
+
+  try {
+    return await runStreamOnce(GEMINI_MODEL_PRIMARY);
   } catch (e) {
+    if (isGeminiModelNotFoundForFallback(e)) {
+      console.warn('[streamGeminiPromptAnalysis] primary model unavailable, trying fallback', GEMINI_MODEL_FALLBACK);
+      try {
+        return await runStreamOnce(GEMINI_MODEL_FALLBACK);
+      } catch (e2) {
+        return geminiFailureToResult(e2);
+      }
+    }
     return geminiFailureToResult(e);
   }
 }

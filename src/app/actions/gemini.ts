@@ -9,9 +9,9 @@ import { unstable_noStore as noStore } from 'next/cache';
  *
  * 스트리밍 UI는 `POST /api/posts/[id]/prompt-analysis-stream` + `@/lib/gemini-prompt-analysis-engine`.
  *
- * 이미지 역분석: `analyzeImage` → **gemini-1.5-flash** (멀티모달). 과부하 등에 대비해 동일 모델로 재시도.
+ * 이미지 역분석: `analyzeImage` → **gemini-2.5-flash**, 404 시 **gemini-2-flash** (`@/lib/gemini-models`).
+ * `@google/generative-ai` Part: `{ inlineData: { mimeType, data } }` — data는 원시 바이트 base64(접두어 없음).
  * 프롬프트로 JSON만 요청하고 `tryParseJsonFromModelText`로 파싱.
- * 전송 전 `sharp`로 가로 최대 768px·JPEG·base64(프리픽스 없음) 후 `inlineData.mimeType` + `inlineData.data` 로 전달.
  */
 
 import {
@@ -40,6 +40,7 @@ import {
 } from '@/lib/gemini-prompt-analysis-engine';
 import { isPlainRecord, parseStoredPromptAnalysisJson } from '@/lib/prompt-analysis';
 import { pickEstimatedPromptFromAnalysis } from '@/lib/gallery-image-analysis';
+import { GEMINI_IMAGE_MODEL_CHAIN, GEMINI_MODEL_PRIMARY } from '@/lib/gemini-models';
 
 export type { PromptAnalysis, AnalyzePromptErrorCode, AnalyzePromptResult };
 
@@ -53,9 +54,8 @@ export type AnalyzeImageResult =
   | { ok: true; data: Record<string, unknown> }
   | { ok: false; error: string; code: AnalyzePromptErrorCode };
 
-/** 이미지 역분석 전용 — Google AI `generateContent` 모델 ID (구 gemini-pro-vision 미사용) */
-const IMAGE_REVERSE_MODEL = 'gemini-1.5-flash' as const;
-const IMAGE_REVERSE_MODELS = [IMAGE_REVERSE_MODEL] as const;
+/** 이미지 역분석 — `GEMINI_IMAGE_MODEL_CHAIN` 순서로 시도 (2.5 → 2 flash 폴백) */
+const IMAGE_REVERSE_MODELS = GEMINI_IMAGE_MODEL_CHAIN;
 const IMAGE_REVERSE_ATTEMPTS_PER_MODEL = 3;
 const IMAGE_REVERSE_RETRY_BASE_MS = 700;
 /** 원본 다운로드·디코드 상한 (리사이즈 전) */
@@ -447,7 +447,7 @@ export async function executeGeminiPromptAnalysis(trimmed: string): Promise<Anal
 
   if (process.env.NODE_ENV === 'development') {
     console.info(
-      `[executeGeminiPromptAnalysis] API key OK (length=${apiKey.length}, from=${resolved.source}), model="gemini-2.5-flash", minimalSystem=${process.env.GEMINI_MINIMAL_SYSTEM === '1'}`,
+      `[executeGeminiPromptAnalysis] API key OK (length=${apiKey.length}, from=${resolved.source}), model="${GEMINI_MODEL_PRIMARY}", minimalSystem=${process.env.GEMINI_MINIMAL_SYSTEM === '1'}`,
     );
   }
 
@@ -455,7 +455,7 @@ export async function executeGeminiPromptAnalysis(trimmed: string): Promise<Anal
 }
 
 /**
- * Gemini만 호출(캐시 없음). 모델은 문자열 리터럴 `"gemini-2.5-flash"` 고정 (대시보드 텍스트 출력·Gemini 2.5 Flash).
+ * Gemini만 호출(캐시 없음). 텍스트 분석 모델은 `@/lib/gemini-models`의 primary·fallback과 동일 체인.
  */
 export async function analyzePrompt(userPrompt: string): Promise<AnalyzePromptResult> {
   noStore();
