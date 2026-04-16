@@ -56,7 +56,7 @@ export type AnalyzeImageResult =
 
 /** 이미지 역분석 — `GEMINI_IMAGE_MODEL_CHAIN` 순서로 시도 (2.5 → 2 flash 폴백) */
 const IMAGE_REVERSE_MODELS = GEMINI_IMAGE_MODEL_CHAIN;
-const IMAGE_REVERSE_ATTEMPTS_PER_MODEL = 3;
+const IMAGE_REVERSE_ATTEMPTS_PER_MODEL = 4;
 const IMAGE_REVERSE_RETRY_BASE_MS = 700;
 /** 원본 다운로드·디코드 상한 (리사이즈 전) */
 const MAX_IMAGE_BYTES = 12 * 1024 * 1024;
@@ -246,20 +246,14 @@ function shouldStopImageRetries(e: unknown): boolean {
   return classifyGeminiFailure(e).category === 'AUTH';
 }
 
-function shouldSwitchImageModel(e: unknown): boolean {
-  if (e instanceof GoogleGenerativeAIFetchError && e.status === 404) {
-    return true;
-  }
-  return classifyGeminiFailure(e).category === 'NOT_FOUND';
-}
-
 function isTransientImageApiError(e: unknown): boolean {
   if (e instanceof GoogleGenerativeAIResponseError) {
     return false;
   }
   if (e instanceof GoogleGenerativeAIFetchError) {
     const s = e.status ?? 0;
-    return s === 429 || s === 500 || s === 502 || s === 503 || s === 504;
+    /** 404 포함: Google 쪽 간헐적 404는 다음 모델로 바로 넘기지 말고 동일 모델에서 재시도하는 편이 안전 */
+    return s === 404 || s === 429 || s === 500 || s === 502 || s === 503 || s === 504;
   }
   const msg = (e instanceof Error ? e.message : String(e)).toLowerCase();
   if (
@@ -379,11 +373,9 @@ export async function analyzeImage(input: AnalyzeImageInput): Promise<AnalyzeIma
         if (shouldStopImageRetries(e)) {
           return imageErrorFromGeminiFailure(e);
         }
-        if (shouldSwitchImageModel(e)) {
-          continue modelLoop;
-        }
         if (isTransientImageApiError(e) && attempt < IMAGE_REVERSE_ATTEMPTS_PER_MODEL - 1) {
-          await delay(IMAGE_REVERSE_RETRY_BASE_MS * 2 ** attempt);
+          const jitter = Math.floor(Math.random() * 350);
+          await delay(IMAGE_REVERSE_RETRY_BASE_MS * 2 ** attempt + jitter);
           continue;
         }
         const hasAnotherModel = modelId !== IMAGE_REVERSE_MODELS[IMAGE_REVERSE_MODELS.length - 1];

@@ -314,7 +314,7 @@ export function classifyGeminiFailure(err: unknown): ClassifiedFailure {
       return {
         category: 'NOT_FOUND',
         userMessage:
-          'HTTP 404: 요청한 모델·경로를 API에서 찾지 못했습니다. 할당량·RPM 제한은 보통 429입니다. 한도: https://ai.google.dev/gemini-api/docs/rate-limits?hl=ko — 모델 ID·키는 Google AI Studio에서 확인해 주세요.',
+          'API가 요청한 모델·경로를 찾지 못했습니다(HTTP 404). Google AI Studio에서 API 키와 사용 가능한 모델 ID를 확인해 주세요. 할당량·RPM 초과는 보통 429입니다. 요청 한도 안내: https://ai.google.dev/gemini-api/docs/rate-limits?hl=ko',
         evidence: { ...base, rule: 'http_404' },
       };
     }
