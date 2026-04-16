@@ -9,9 +9,9 @@ import { unstable_noStore as noStore } from 'next/cache';
  *
  * 스트리밍 UI는 `POST /api/posts/[id]/prompt-analysis-stream` + `@/lib/gemini-prompt-analysis-engine`.
  *
- * 이미지 역분석: `analyzeImage` → 우선 **gemini-2.5-flash**, 일시 오류·404 시 **gemini-2.0-flash** 폴백 + 재시도.
- * 멀티모달에서는 `responseMimeType: application/json`이 간헐적으로 실패해 프롬프트로 JSON만 요청하고 파서로 추출.
- * 전송 전 `sharp`로 가로 최대 768px·JPEG 변환 후 base64 인라인 전달.
+ * 이미지 역분석: `analyzeImage` → **gemini-1.5-flash** (멀티모달). 과부하 등에 대비해 동일 모델로 재시도.
+ * 프롬프트로 JSON만 요청하고 `tryParseJsonFromModelText`로 파싱.
+ * 전송 전 `sharp`로 가로 최대 768px·JPEG·base64(프리픽스 없음) 후 `inlineData.mimeType` + `inlineData.data` 로 전달.
  */
 
 import {
@@ -53,8 +53,9 @@ export type AnalyzeImageResult =
   | { ok: true; data: Record<string, unknown> }
   | { ok: false; error: string; code: AnalyzePromptErrorCode };
 
-/** 이미지 역분석: 과부하(503)·할당량 등에 대비해 순차 시도 */
-const IMAGE_REVERSE_MODELS = ['gemini-2.5-flash', 'gemini-2.0-flash'] as const;
+/** 이미지 역분석 전용 — Google AI `generateContent` 모델 ID (구 gemini-pro-vision 미사용) */
+const IMAGE_REVERSE_MODEL = 'gemini-1.5-flash' as const;
+const IMAGE_REVERSE_MODELS = [IMAGE_REVERSE_MODEL] as const;
 const IMAGE_REVERSE_ATTEMPTS_PER_MODEL = 3;
 const IMAGE_REVERSE_RETRY_BASE_MS = 700;
 /** 원본 다운로드·디코드 상한 (리사이즈 전) */
@@ -314,6 +315,8 @@ export async function analyzeImage(input: AnalyzeImageInput): Promise<AnalyzeIma
           },
         });
 
+        // Part[]: 이미지는 inlineData — MIME은 실제 바이트와 일치해야 함(JPEG → image/jpeg). data는 표준 base64 문자열.
+        // @see https://ai.google.dev/api/rest/v1beta/Content#Part
         const result = await model.generateContent([
           {
             inlineData: {

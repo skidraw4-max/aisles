@@ -312,7 +312,8 @@ export function classifyGeminiFailure(err: unknown): ClassifiedFailure {
     if (err.status === 404) {
       return {
         category: 'NOT_FOUND',
-        userMessage: '모델 설정 오류입니다. 잠시 후 다시 시도해 주세요.',
+        userMessage:
+          'Gemini가 해당 모델 요청을 거부했습니다(HTTP 404). 앱이 아니라 API·키 권한 또는 모델 미제공일 수 있습니다. Google AI Studio에서 키·사용 가능 모델을 확인하거나 잠시 후 다시 시도해 주세요.',
         evidence: { ...base, rule: 'http_404' },
       };
     }
