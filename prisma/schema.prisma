@@ -104,6 +104,8 @@ model AiMetadata {
   /// `analyzePostPromptAnalysis` 결과 캐시 (프롬프트 지문과 함께만 유효)
   promptAnalysis           Json?
   promptAnalysisPromptHash String? @db.VarChar(64)
+  /// 등록 직후 백그라운드 Gemini 분석 작업 상태 (null = 레거시·수동 분석만 해당)
+  promptAnalysisStatus     PromptAnalysisJobStatus?
 }
 
 // 5. 서비스 홍보 정보 (Launchpad 복도용 상세 데이터)
@@ -112,6 +114,13 @@ model LaunchInfo {
   post        Post    @relation(fields: [postId], references: [id], onDelete: Cascade)
   serviceUrl  String? // 서비스 바로가기 링크
   status      String? // BETA, LIVE 등 상태
+}
+
+/// LAB 프롬프트 자동 분석(등록 후 비동기) 작업 상태
+enum PromptAnalysisJobStatus {
+  PENDING
+  READY
+  FAILED
 }
 
 // 6. 열거형 데이터 (고정된 선택지)

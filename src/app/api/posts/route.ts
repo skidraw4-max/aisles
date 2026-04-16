@@ -1,5 +1,6 @@
 import { randomUUID } from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
+import { after } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import type { User } from '@supabase/supabase-js';
 import { prisma } from '@/lib/prisma';
@@ -20,6 +21,7 @@ import { UPLOAD_IMAGE_MAX_BYTES, formatUploadMaxSizeLabel } from '@/lib/upload-l
 import { resolveUploadMimeType } from '@/lib/upload-media-types';
 import { applyWatermarkForUpload } from '@/lib/watermark-image';
 import { validateContentMinForCategory } from '@/lib/post-description-policy';
+import { runPostPromptAnalysisJob } from '@/app/actions/gemini';
 
 const EXTERNAL_LINK_MAX = 2048;
 
@@ -190,6 +192,7 @@ async function postFromJson(req: NextRequest) {
                 create: {
                   prompt: promptRaw.slice(0, 50000),
                   params: { labPromptKind: recipeLabKind },
+                  promptAnalysisStatus: 'PENDING',
                 },
               },
             }
@@ -206,6 +209,15 @@ async function postFromJson(req: NextRequest) {
         createdAt: true,
       },
     });
+    if (post.category === 'RECIPE') {
+      const promptForJob = promptRaw.slice(0, 50000);
+      after(() => {
+        void runPostPromptAnalysisJob(post.id, promptForJob).catch((err) => {
+          console.error('[POST /api/posts] runPostPromptAnalysisJob', post.id, err);
+        });
+      });
+    }
+
     return NextResponse.json({ ok: true, post });
   } catch (e) {
     console.error(e);

@@ -1,6 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useState, useTransition } from 'react';
+import { useCallback, useEffect, useRef, useState, useTransition } from 'react';
+import type { PromptAnalysisJobStatus } from '@prisma/client';
 import Link from 'next/link';
 import {
   BarChart3,
@@ -72,8 +73,10 @@ const visualAnalysisCards: {
 export type PostAiAnalysisProps = {
   postId: string;
   promptText: string;
-  /** 서버에서 프롬프트 지문이 DB와 일치할 때만 전달 — 로드 시 API 호출 없음 */
+  /** 서버에서 프롬프트 지문이 DB와 일치할 때만 전달 — 로드 시 Gemini 재호출 없음 */
   initialCachedAnalysis: PromptAnalysis | null;
+  /** LAB 등록 후 자동 분석 작업 상태 (null = 레거시·수동만) */
+  promptAnalysisJobStatus: PromptAnalysisJobStatus | null;
   isLoggedIn: boolean;
   /** 로그인 완료 후 돌아올 경로 (`/login?next=` — LoginClient와 동일) */
   loginNextPath: string;
@@ -83,6 +86,7 @@ export function PostAiAnalysis({
   postId,
   promptText,
   initialCachedAnalysis,
+  promptAnalysisJobStatus,
   isLoggedIn,
   loginNextPath,
 }: PostAiAnalysisProps) {
@@ -96,6 +100,7 @@ export function PostAiAnalysis({
   const [errorCode, setErrorCode] = useState<AnalyzePromptErrorCode | null>(null);
   const [serverNotice, setServerNotice] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const loginHref = `/login?next=${encodeURIComponent(loginNextPath)}`;
 
@@ -112,6 +117,55 @@ export function PostAiAnalysis({
     setErrorCode(null);
     setServerNotice(null);
   }, [canUseAiAnalysis, postId, initialCachedAnalysis]);
+
+  useEffect(() => {
+    if (!canUseAiAnalysis) return;
+    if (promptAnalysisJobStatus !== 'PENDING') return;
+    if (initialCachedAnalysis != null) return;
+
+    let cancelled = false;
+
+    const clearPoll = () => {
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+        pollIntervalRef.current = null;
+      }
+    };
+
+    const tick = async () => {
+      if (cancelled) return;
+      try {
+        const res = await fetch(`/api/posts/${postId}/prompt-analysis-status`);
+        if (!res.ok || cancelled) return;
+        const data = (await res.json()) as {
+          promptAnalysisStatus: PromptAnalysisJobStatus | null;
+          analysis: PromptAnalysis | null;
+        };
+        if (cancelled) return;
+        if (data.analysis) {
+          setResult(data.analysis);
+          setError(null);
+          setErrorCode(null);
+          clearPoll();
+          return;
+        }
+        if (data.promptAnalysisStatus === 'FAILED') {
+          setError('자동 분석을 완료하지 못했습니다. 아래 버튼으로 다시 시도해 주세요.');
+          setErrorCode('API_ERROR');
+          clearPoll();
+        }
+      } catch {
+        /* 네트워크 오류는 다음 폴링에서 재시도 */
+      }
+    };
+
+    void tick();
+    pollIntervalRef.current = setInterval(tick, 2500);
+    return () => {
+      cancelled = true;
+      clearPoll();
+    };
+  }, [canUseAiAnalysis, postId, promptAnalysisJobStatus, initialCachedAnalysis]);
 
   const runAnalyze = useCallback(
     (forceRefresh: boolean) => {
@@ -140,7 +194,18 @@ export function PostAiAnalysis({
     [canUseAiAnalysis, postId, trimmed],
   );
 
-  const showPrimaryCta = canUseAiAnalysis && !result && !isPending && !error;
+  const waitingAutoJob =
+    canUseAiAnalysis &&
+    promptAnalysisJobStatus === 'PENDING' &&
+    !result &&
+    !error;
+
+  const showPrimaryCta =
+    canUseAiAnalysis &&
+    !result &&
+    !isPending &&
+    !error &&
+    promptAnalysisJobStatus !== 'PENDING';
   const showRefreshCta = canUseAiAnalysis && Boolean(result) && !isPending;
 
   if (!trimmed) {
@@ -195,8 +260,8 @@ export function PostAiAnalysis({
             <p className="mt-2 max-w-xl text-[var(--muted)]" style={{ fontSize: 'var(--type-14)' }}>
               {canUseAiAnalysis ? (
                 <>
-                  이미지 생성용·마케팅/글쓰기용 프롬프트를 자동으로 구분해 분석합니다. 분석은 버튼을 눌렀을 때만 요청되며,
-                  한 번 분석된 결과는 저장되어 다시 불러옵니다.
+                  이미지 생성용·마케팅/글쓰기용 프롬프트를 자동으로 구분해 분석합니다. 새 글은 등록 직후 서버에서 자동
+                  분석하며, 완료된 결과는 DB에 저장되어 같은 프롬프트에 대해 Gemini를 다시 호출하지 않습니다.
                 </>
               ) : (
                 <>로그인한 회원만 AI 분석을 실행할 수 있습니다. 로그인하면 이 레시피의 프롬프트를 바로 해석해 드립니다.</>
@@ -255,7 +320,17 @@ export function PostAiAnalysis({
                   로그인
                 </Link>
               </p>
-            ) : null}
+            ) : (
+              <p className="mt-3 mb-0">
+                <button
+                  type="button"
+                  onClick={() => runAnalyze(false)}
+                  className="inline-flex min-h-[44px] items-center justify-center rounded-xl bg-white/15 px-5 font-semibold text-white underline-offset-2 transition hover:bg-white/25"
+                >
+                  다시 시도
+                </button>
+              </p>
+            )}
           </div>
         ) : null}
 
@@ -316,7 +391,7 @@ export function PostAiAnalysis({
           </div>
         ) : null}
 
-        {canUseAiAnalysis && isPending ? (
+        {canUseAiAnalysis && (waitingAutoJob || isPending) ? (
           <div className="space-y-6" aria-busy="true" aria-live="polite">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <p
@@ -324,7 +399,9 @@ export function PostAiAnalysis({
                 style={{ fontSize: 'var(--type-17)' }}
               >
                 <Boxes className="h-5 w-5 animate-pulse text-[var(--accent)]" aria-hidden />
-                AI가 프롬프트를 해부하는 중입니다…
+                {waitingAutoJob
+                  ? '등록 직후 자동 분석을 진행 중입니다…'
+                  : 'AI가 프롬프트를 해부하는 중입니다…'}
               </p>
               <span className="text-[length:var(--type-13)] text-[var(--muted)]">잠시만 기다려 주세요</span>
             </div>

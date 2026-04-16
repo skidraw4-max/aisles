@@ -260,12 +260,15 @@ export default async function PostPage({ params }: Props) {
   const metaPrompt = post.metadata?.prompt?.trim() ?? '';
   const labPromptText = resolveRecipePrompt(post);
   const labPromptFingerprint = labPromptText.trim() ? fingerprintPrompt(labPromptText) : '';
+  const promptJobStatus = post.metadata?.promptAnalysisStatus ?? null;
   const initialCachedPromptAnalysis =
     Boolean(user) &&
     isLab &&
     labPromptFingerprint &&
     post.metadata?.promptAnalysisPromptHash === labPromptFingerprint &&
-    post.metadata.promptAnalysis != null
+    post.metadata.promptAnalysis != null &&
+    promptJobStatus !== 'PENDING' &&
+    promptJobStatus !== 'FAILED'
       ? parseStoredPromptAnalysisJson(post.metadata.promptAnalysis)
       : null;
   const showLabDescription = isLab && Boolean(post.content?.trim()) && Boolean(metaPrompt);
@@ -450,6 +453,7 @@ export default async function PostPage({ params }: Props) {
                     postId={post.id}
                     promptText={labPromptText}
                     initialCachedAnalysis={initialCachedPromptAnalysis}
+                    promptAnalysisJobStatus={promptJobStatus}
                     isLoggedIn={Boolean(user)}
                     loginNextPath={`/post/${post.id}`}
                   />

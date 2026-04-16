@@ -13,6 +13,7 @@ import {
   GoogleGenerativeAIFetchError,
   GoogleGenerativeAIResponseError,
 } from '@google/generative-ai';
+import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { createClient } from '@/lib/supabase/server';
 import { fingerprintPrompt } from '@/lib/prompt-analysis-fingerprint';
@@ -413,33 +414,14 @@ async function requireUserForPromptAnalysis(): Promise<{ ok: true } | { ok: fals
 }
 
 /**
- * Gemini만 호출(캐시 없음). 모델은 문자열 리터럴 `"gemini-2.5-flash"` 고정 (대시보드 텍스트 출력·Gemini 2.5 Flash).
+ * Gemini만 호출(캐시·세션 검증 없음). 서버 액션·백그라운드 작업에서 공통 사용.
+ * @param trimmed — 공백 제거된 비빈 문자열
  */
-export async function analyzePrompt(userPrompt: string): Promise<AnalyzePromptResult> {
-  noStore();
-
-  const trimmed = typeof userPrompt === 'string' ? userPrompt.trim() : '';
-  if (!trimmed) {
-    return {
-      ok: false,
-      error: '분석할 프롬프트를 입력해 주세요.',
-      code: 'EMPTY_PROMPT',
-    };
-  }
-
-  const auth = await requireUserForPromptAnalysis();
-  if (!auth.ok) {
-    return {
-      ok: false,
-      error: 'AI 분석은 로그인한 회원만 이용할 수 있습니다.',
-      code: 'UNAUTHENTICATED',
-    };
-  }
-
+export async function executeGeminiPromptAnalysis(trimmed: string): Promise<AnalyzePromptResult> {
   const resolved = readGeminiApiKeyFromEnv();
   if (!resolved.ok) {
     console.error(
-      '[analyzePrompt] Missing API Key (server). Checked env names:',
+      '[executeGeminiPromptAnalysis] Missing API Key (server). Checked env names:',
       GEMINI_API_KEY_ENV_NAMES.join(', '),
     );
     logGeminiKeyEnvDiagnostics();
@@ -460,7 +442,7 @@ export async function analyzePrompt(userPrompt: string): Promise<AnalyzePromptRe
 
   if (process.env.NODE_ENV === 'development') {
     console.info(
-      `[analyzePrompt] API key OK (length=${apiKey.length}, from=${resolved.source}), model="gemini-2.5-flash", minimalSystem=${process.env.GEMINI_MINIMAL_SYSTEM === '1'}`,
+      `[executeGeminiPromptAnalysis] API key OK (length=${apiKey.length}, from=${resolved.source}), model="gemini-2.5-flash", minimalSystem=${process.env.GEMINI_MINIMAL_SYSTEM === '1'}`,
     );
   }
 
@@ -511,7 +493,7 @@ export async function analyzePrompt(userPrompt: string): Promise<AnalyzePromptRe
     const parsed = tryParseJsonFromModelText(text);
     if (!parsed.ok) {
       console.error(
-        '[analyzePrompt] JSON parse failed after extraction. Raw preview:',
+        '[executeGeminiPromptAnalysis] JSON parse failed after extraction. Raw preview:',
         text.slice(0, 400) + (text.length > 400 ? '…' : ''),
       );
       return {
@@ -542,13 +524,40 @@ export async function analyzePrompt(userPrompt: string): Promise<AnalyzePromptRe
   } catch (e) {
     console.error('Gemini API Error Details:', e);
     const classified = classifyGeminiFailure(e);
-    console.error('[analyzePrompt] classified:', classified.category, classified.evidence);
+    console.error('[executeGeminiPromptAnalysis] classified:', classified.category, classified.evidence);
     return {
       ok: false,
       error: classified.userMessage,
       code: 'API_ERROR',
     };
   }
+}
+
+/**
+ * Gemini만 호출(캐시 없음). 모델은 문자열 리터럴 `"gemini-2.5-flash"` 고정 (대시보드 텍스트 출력·Gemini 2.5 Flash).
+ */
+export async function analyzePrompt(userPrompt: string): Promise<AnalyzePromptResult> {
+  noStore();
+
+  const trimmed = typeof userPrompt === 'string' ? userPrompt.trim() : '';
+  if (!trimmed) {
+    return {
+      ok: false,
+      error: '분석할 프롬프트를 입력해 주세요.',
+      code: 'EMPTY_PROMPT',
+    };
+  }
+
+  const auth = await requireUserForPromptAnalysis();
+  if (!auth.ok) {
+    return {
+      ok: false,
+      error: 'AI 분석은 로그인한 회원만 이용할 수 있습니다.',
+      code: 'UNAUTHENTICATED',
+    };
+  }
+
+  return executeGeminiPromptAnalysis(trimmed);
 }
 
 /**
@@ -618,7 +627,7 @@ export async function analyzePostPromptAnalysis(
     };
   }
 
-  const res = await analyzePrompt(trimmed);
+  const res = await executeGeminiPromptAnalysis(trimmed);
   if (!res.ok) {
     return res;
   }
@@ -629,12 +638,69 @@ export async function analyzePostPromptAnalysis(
       postId,
       promptAnalysis: res.data as object,
       promptAnalysisPromptHash: hash,
+      promptAnalysisStatus: 'READY',
     },
     update: {
       promptAnalysis: res.data as object,
       promptAnalysisPromptHash: hash,
+      promptAnalysisStatus: 'READY',
     },
   });
 
   return res;
+}
+
+/**
+ * LAB 글 등록 직후 백그라운드 실행: 세션 없이 Gemini 호출 후 DB에 분석 결과 저장.
+ */
+export async function runPostPromptAnalysisJob(postId: string, promptText: string): Promise<void> {
+  const trimmed = typeof promptText === 'string' ? promptText.trim() : '';
+  if (!trimmed) {
+    try {
+      await prisma.aiMetadata.update({
+        where: { postId },
+        data: {
+          promptAnalysisStatus: 'FAILED',
+          promptAnalysis: Prisma.DbNull,
+          promptAnalysisPromptHash: null,
+        },
+      });
+    } catch (e) {
+      console.error('[runPostPromptAnalysisJob] empty prompt, metadata update failed', postId, e);
+    }
+    return;
+  }
+
+  const res = await executeGeminiPromptAnalysis(trimmed);
+  const hash = fingerprintPrompt(trimmed);
+
+  if (!res.ok) {
+    console.warn('[runPostPromptAnalysisJob] Gemini failed postId=%s code=%s', postId, res.code);
+    try {
+      await prisma.aiMetadata.update({
+        where: { postId },
+        data: {
+          promptAnalysisStatus: 'FAILED',
+          promptAnalysis: Prisma.DbNull,
+          promptAnalysisPromptHash: null,
+        },
+      });
+    } catch (e) {
+      console.error('[runPostPromptAnalysisJob] FAILED update failed', postId, e);
+    }
+    return;
+  }
+
+  try {
+    await prisma.aiMetadata.update({
+      where: { postId },
+      data: {
+        promptAnalysis: res.data as object,
+        promptAnalysisPromptHash: hash,
+        promptAnalysisStatus: 'READY',
+      },
+    });
+  } catch (e) {
+    console.error('[runPostPromptAnalysisJob] READY update failed', postId, e);
+  }
 }
