@@ -4,7 +4,11 @@ import type { Role } from '@prisma/client';
 import { MediaThumb } from '@/components/MediaThumb';
 import { prisma } from '@/lib/prisma';
 import { createClient } from '@/lib/supabase/server';
-import { POST_CATEGORY_OPTIONS, homeHrefForCategory } from '@/lib/post-categories';
+import {
+  POST_CATEGORY_OPTIONS,
+  homeHrefForCategory,
+  labKindFromMetadataParams,
+} from '@/lib/post-categories';
 import { resolveRecipePrompt } from '@/lib/recipe-prompt';
 import { fingerprintPrompt } from '@/lib/prompt-analysis-fingerprint';
 import { parseStoredPromptAnalysisJson } from '@/lib/prompt-analysis';
@@ -505,7 +509,17 @@ export default async function PostPage({ params }: Props) {
                     {post.metadata.modelName ? <div>모델: {post.metadata.modelName}</div> : null}
                     {post.metadata.params != null ? (
                       <div style={{ marginTop: '0.35rem' }}>
-                        파라미터: <code>{JSON.stringify(post.metadata.params)}</code>
+                        {post.category === 'RECIPE' ? (
+                          <span>
+                            {labKindFromMetadataParams(post.metadata.params) === 'marketing'
+                              ? 'LAB 콘텐츠 유형: 마케팅·카피(텍스트)'
+                              : 'LAB 콘텐츠 유형: 이미지·비주얼'}
+                          </span>
+                        ) : (
+                          <>
+                            파라미터: <code>{JSON.stringify(post.metadata.params)}</code>
+                          </>
+                        )}
                       </div>
                     ) : null}
                   </div>
