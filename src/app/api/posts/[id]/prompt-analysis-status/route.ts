@@ -1,4 +1,3 @@
-import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { resolveRecipePrompt } from '@/lib/recipe-prompt';
 import { fingerprintPrompt } from '@/lib/prompt-analysis-fingerprint';
@@ -30,7 +29,7 @@ export async function GET(_req: Request, ctx: Ctx) {
   });
 
   if (!post || post.category !== 'RECIPE') {
-    return NextResponse.json({
+    return Response.json({
       promptAnalysisStatus: null,
       analysis: null as PromptAnalysis | null,
     });
@@ -45,8 +44,15 @@ export async function GET(_req: Request, ctx: Ctx) {
       ? parseStoredPromptAnalysisJson(meta.promptAnalysis)
       : null;
 
-  return NextResponse.json({
+  const body = {
     promptAnalysisStatus: meta?.promptAnalysisStatus ?? null,
     analysis,
+  };
+  console.log('[prompt-analysis-status GET]', {
+    postId: id,
+    status: body.promptAnalysisStatus,
+    hasAnalysis: body.analysis != null,
+    hashMatch,
   });
+  return Response.json(body);
 }

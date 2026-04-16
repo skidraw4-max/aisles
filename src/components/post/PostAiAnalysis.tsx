@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState, useTransition } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { PromptAnalysisJobStatus } from '@prisma/client';
 import Link from 'next/link';
 import {
@@ -23,6 +23,28 @@ import {
   type PromptAnalysis,
 } from '@/app/actions/gemini';
 import { isMarketingAnalysis, isVisualAnalysis, type VisualPromptAnalysis } from '@/lib/prompt-analysis';
+
+const ANALYSIS_CLIENT_TIMEOUT_MS = 15_000;
+const POLL_FETCH_TIMEOUT_MS = 15_000;
+const AUTO_ANALYSIS_MAX_WAIT_MS = 120_000;
+
+function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const t = setTimeout(() => {
+      reject(new Error(label));
+    }, ms);
+    promise.then(
+      (v) => {
+        clearTimeout(t);
+        resolve(v);
+      },
+      (e) => {
+        clearTimeout(t);
+        reject(e);
+      },
+    );
+  });
+}
 
 function SkeletonBar({ className = '' }: { className?: string }) {
   return (
@@ -99,8 +121,9 @@ export function PostAiAnalysis({
   const [error, setError] = useState<string | null>(null);
   const [errorCode, setErrorCode] = useState<AnalyzePromptErrorCode | null>(null);
   const [serverNotice, setServerNotice] = useState<string | null>(null);
-  const [isPending, startTransition] = useTransition();
+  const [isLoading, setIsLoading] = useState(false);
   const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pollDeadlineRef = useRef<number | null>(null);
 
   const loginHref = `/login?next=${encodeURIComponent(loginNextPath)}`;
 
@@ -124,18 +147,33 @@ export function PostAiAnalysis({
     if (initialCachedAnalysis != null) return;
 
     let cancelled = false;
+    pollDeadlineRef.current = Date.now() + AUTO_ANALYSIS_MAX_WAIT_MS;
 
     const clearPoll = () => {
       if (pollIntervalRef.current) {
         clearInterval(pollIntervalRef.current);
         pollIntervalRef.current = null;
       }
+      pollDeadlineRef.current = null;
     };
 
     const tick = async () => {
       if (cancelled) return;
+      if (pollDeadlineRef.current != null && Date.now() > pollDeadlineRef.current) {
+        setError(
+          '자동 분석 응답이 지연되고 있습니다. 잠시 후 새로고침하거나 아래에서 다시 시도해 주세요.'
+        );
+        setErrorCode('API_ERROR');
+        clearPoll();
+        return;
+      }
+      const ac = new AbortController();
+      const abortTimer = setTimeout(() => ac.abort(), POLL_FETCH_TIMEOUT_MS);
       try {
-        const res = await fetch(`/api/posts/${postId}/prompt-analysis-status`);
+        const res = await fetch(`/api/posts/${postId}/prompt-analysis-status`, {
+          signal: ac.signal,
+        });
+        clearTimeout(abortTimer);
         if (!res.ok || cancelled) return;
         const data = (await res.json()) as {
           promptAnalysisStatus: PromptAnalysisJobStatus | null;
@@ -154,8 +192,17 @@ export function PostAiAnalysis({
           setErrorCode('API_ERROR');
           clearPoll();
         }
-      } catch {
-        /* 네트워크 오류는 다음 폴링에서 재시도 */
+      } catch (e) {
+        clearTimeout(abortTimer);
+        if (cancelled) return;
+        const isAbort = e instanceof DOMException && e.name === 'AbortError';
+        if (isAbort) {
+          setError('요청 시간이 초과되었습니다');
+          setErrorCode('TIMEOUT');
+          clearPoll();
+          return;
+        }
+        /* 그 외 네트워크 오류는 다음 폴링에서 재시도 */
       }
     };
 
@@ -174,22 +221,44 @@ export function PostAiAnalysis({
       setError(null);
       setErrorCode(null);
       setServerNotice(null);
-      startTransition(async () => {
-        const res = await analyzePostPromptAnalysis(postId, p, { forceRefresh });
-        if (res.ok) {
-          setResult(res.data);
-          setError(null);
-          setErrorCode(null);
-          setServerNotice(typeof res.notice === 'string' && res.notice.trim() ? res.notice.trim() : null);
-        } else {
+      setIsLoading(true);
+      void (async () => {
+        try {
+          const res = await withTimeout(
+            analyzePostPromptAnalysis(postId, p, { forceRefresh }),
+            ANALYSIS_CLIENT_TIMEOUT_MS,
+            'CLIENT_TIMEOUT',
+          );
+          if (res.ok) {
+            setResult(res.data);
+            setError(null);
+            setErrorCode(null);
+            setServerNotice(typeof res.notice === 'string' && res.notice.trim() ? res.notice.trim() : null);
+          } else {
+            if (!forceRefresh) {
+              setResult(null);
+            }
+            setError(res.error);
+            setErrorCode(res.code);
+            setServerNotice(null);
+          }
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : '';
+          if (msg === 'CLIENT_TIMEOUT') {
+            setError('요청 시간이 초과되었습니다');
+            setErrorCode('TIMEOUT');
+          } else {
+            setError(e instanceof Error ? e.message : '요청 처리 중 오류가 발생했습니다.');
+            setErrorCode('API_ERROR');
+          }
           if (!forceRefresh) {
             setResult(null);
           }
-          setError(res.error);
-          setErrorCode(res.code);
           setServerNotice(null);
+        } finally {
+          setIsLoading(false);
         }
-      });
+      })();
     },
     [canUseAiAnalysis, postId, trimmed],
   );
@@ -203,10 +272,10 @@ export function PostAiAnalysis({
   const showPrimaryCta =
     canUseAiAnalysis &&
     !result &&
-    !isPending &&
+    !isLoading &&
     !error &&
     promptAnalysisJobStatus !== 'PENDING';
-  const showRefreshCta = canUseAiAnalysis && Boolean(result) && !isPending;
+  const showRefreshCta = canUseAiAnalysis && Boolean(result) && !isLoading;
 
   if (!trimmed) {
     return null;
@@ -391,7 +460,7 @@ export function PostAiAnalysis({
           </div>
         ) : null}
 
-        {canUseAiAnalysis && (waitingAutoJob || isPending) ? (
+        {canUseAiAnalysis && (waitingAutoJob || isLoading) ? (
           <div className="space-y-6" aria-busy="true" aria-live="polite">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <p
@@ -413,7 +482,7 @@ export function PostAiAnalysis({
           </div>
         ) : null}
 
-        {canUseAiAnalysis && !isPending && result && isVisualAnalysis(result) ? (
+        {canUseAiAnalysis && !isLoading && result && isVisualAnalysis(result) ? (
           <div className="space-y-6">
             <h3 className="font-semibold text-[var(--text)]" style={{ fontSize: 'var(--type-17)' }}>
               분석 결과
@@ -479,7 +548,7 @@ export function PostAiAnalysis({
           </div>
         ) : null}
 
-        {canUseAiAnalysis && !isPending && result && isMarketingAnalysis(result) ? (
+        {canUseAiAnalysis && !isLoading && result && isMarketingAnalysis(result) ? (
           <div className="space-y-6">
             <h3 className="font-semibold text-[var(--text)]" style={{ fontSize: 'var(--type-17)' }}>
               분석 결과
