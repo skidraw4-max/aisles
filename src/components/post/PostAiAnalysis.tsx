@@ -214,54 +214,47 @@ export function PostAiAnalysis({
     };
   }, [canUseAiAnalysis, postId, promptAnalysisJobStatus, initialCachedAnalysis]);
 
-  const runAnalyze = useCallback(
-    (forceRefresh: boolean) => {
-      const p = trimmed;
-      if (!p || !canUseAiAnalysis) return;
-      setError(null);
-      setErrorCode(null);
-      setServerNotice(null);
-      setIsLoading(true);
-      void (async () => {
-        try {
-          const res = await withTimeout(
-            analyzePostPromptAnalysis(postId, p, { forceRefresh }),
-            ANALYSIS_CLIENT_TIMEOUT_MS,
-            'CLIENT_TIMEOUT',
-          );
-          if (res.ok) {
-            setResult(res.data);
-            setError(null);
-            setErrorCode(null);
-            setServerNotice(typeof res.notice === 'string' && res.notice.trim() ? res.notice.trim() : null);
-          } else {
-            if (!forceRefresh) {
-              setResult(null);
-            }
-            setError(res.error);
-            setErrorCode(res.code);
-            setServerNotice(null);
-          }
-        } catch (e) {
-          const msg = e instanceof Error ? e.message : '';
-          if (msg === 'CLIENT_TIMEOUT') {
-            setError('요청 시간이 초과되었습니다');
-            setErrorCode('TIMEOUT');
-          } else {
-            setError(e instanceof Error ? e.message : '요청 처리 중 오류가 발생했습니다.');
-            setErrorCode('API_ERROR');
-          }
-          if (!forceRefresh) {
-            setResult(null);
-          }
+  const runAnalyze = useCallback(() => {
+    const p = trimmed;
+    if (!p || !canUseAiAnalysis) return;
+    setError(null);
+    setErrorCode(null);
+    setServerNotice(null);
+    setIsLoading(true);
+    void (async () => {
+      try {
+        const res = await withTimeout(
+          analyzePostPromptAnalysis(postId, p),
+          ANALYSIS_CLIENT_TIMEOUT_MS,
+          'CLIENT_TIMEOUT',
+        );
+        if (res.ok) {
+          setResult(res.data);
+          setError(null);
+          setErrorCode(null);
+          setServerNotice(typeof res.notice === 'string' && res.notice.trim() ? res.notice.trim() : null);
+        } else {
+          setResult(null);
+          setError(res.error);
+          setErrorCode(res.code);
           setServerNotice(null);
-        } finally {
-          setIsLoading(false);
         }
-      })();
-    },
-    [canUseAiAnalysis, postId, trimmed],
-  );
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : '';
+        if (msg === 'CLIENT_TIMEOUT') {
+          setError('요청 시간이 초과되었습니다');
+          setErrorCode('TIMEOUT');
+        } else {
+          setError(e instanceof Error ? e.message : '요청 처리 중 오류가 발생했습니다.');
+          setErrorCode('API_ERROR');
+        }
+        setResult(null);
+        setServerNotice(null);
+      } finally {
+        setIsLoading(false);
+      }
+    })();
+  }, [canUseAiAnalysis, postId, trimmed]);
 
   const waitingAutoJob =
     canUseAiAnalysis &&
@@ -275,7 +268,6 @@ export function PostAiAnalysis({
     !isLoading &&
     !error &&
     promptAnalysisJobStatus !== 'PENDING';
-  const showRefreshCta = canUseAiAnalysis && Boolean(result) && !isLoading;
 
   if (!trimmed) {
     return null;
@@ -330,7 +322,7 @@ export function PostAiAnalysis({
               {canUseAiAnalysis ? (
                 <>
                   이미지 생성용·마케팅/글쓰기용 프롬프트를 자동으로 구분해 분석합니다. 새 글은 등록 직후 서버에서 자동
-                  분석하며, 완료된 결과는 DB에 저장되어 같은 프롬프트에 대해 Gemini를 다시 호출하지 않습니다.
+                  분석하며, 한 번 저장된 분석은 DB에서만 읽어 옵니다(동일 글·동일 프롬프트에 Gemini 재호출 없음).
                 </>
               ) : (
                 <>로그인한 회원만 AI 분석을 실행할 수 있습니다. 로그인하면 이 레시피의 프롬프트를 바로 해석해 드립니다.</>
@@ -341,7 +333,7 @@ export function PostAiAnalysis({
             {showPrimaryCta ? (
               <button
                 type="button"
-                onClick={() => runAnalyze(false)}
+                onClick={() => runAnalyze()}
                 className="group relative inline-flex min-h-[48px] w-full items-center justify-center gap-2 overflow-hidden rounded-2xl px-7 font-semibold text-white shadow-lg transition sm:w-auto"
                 style={{
                   background:
@@ -360,15 +352,6 @@ export function PostAiAnalysis({
                 />
                 <Sparkles className="relative h-5 w-5 shrink-0" strokeWidth={2} aria-hidden />
                 <span className="relative">AI 분석 보기</span>
-              </button>
-            ) : null}
-            {showRefreshCta ? (
-              <button
-                type="button"
-                onClick={() => runAnalyze(true)}
-                className="rounded-xl border border-[var(--border)] bg-[var(--surface-2)] px-4 py-2 text-[length:var(--type-13)] font-medium text-[var(--text)] transition hover:border-[var(--accent)]/40"
-              >
-                다시 분석
               </button>
             ) : null}
           </div>
@@ -393,7 +376,7 @@ export function PostAiAnalysis({
               <p className="mt-3 mb-0">
                 <button
                   type="button"
-                  onClick={() => runAnalyze(false)}
+                  onClick={() => runAnalyze()}
                   className="inline-flex min-h-[44px] items-center justify-center rounded-xl bg-white/15 px-5 font-semibold text-white underline-offset-2 transition hover:bg-white/25"
                 >
                   다시 시도
@@ -488,7 +471,7 @@ export function PostAiAnalysis({
               분석 결과
             </h3>
             <p className="mb-1 text-[length:var(--type-13)] text-[var(--muted)]">
-              본문은 한국어로 생성됩니다. 이전에 저장된 영어 결과는 「다시 분석」으로 갱신할 수 있습니다.
+              본문은 한국어로 생성됩니다. 분석 결과는 이 글에 대해 DB에 저장된 내용을 표시합니다.
             </p>
             <div className="grid gap-4 sm:grid-cols-2">
               {visualAnalysisCards.map(({ key, title, subtitle, Icon }) => (

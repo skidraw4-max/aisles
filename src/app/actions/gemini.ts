@@ -575,12 +575,11 @@ export async function analyzePrompt(userPrompt: string): Promise<AnalyzePromptRe
 }
 
 /**
- * 레시피 상세용: DB에 동일 프롬프트 지문의 캐시가 있으면 API를 호출하지 않음.
+ * 레시피 상세용: DB에 동일 프롬프트 해시의 분석이 있으면 **항상** DB만 사용하고 Gemini를 호출하지 않음(비용·중복 방지).
  */
 export async function analyzePostPromptAnalysis(
   postId: string,
   promptText: string,
-  opts?: { forceRefresh?: boolean },
 ): Promise<AnalyzePromptResult> {
   noStore();
 
@@ -588,7 +587,6 @@ export async function analyzePostPromptAnalysis(
   const logPrefix = `[analyzePostPromptAnalysis] postId=${postId}`;
   console.log(`${logPrefix} invoked`, {
     promptLength: trimmed.length,
-    forceRefresh: opts?.forceRefresh ?? false,
   });
 
   if (!trimmed) {
@@ -613,12 +611,10 @@ export async function analyzePostPromptAnalysis(
   const hash = fingerprintPrompt(trimmed);
 
   try {
-    if (!opts?.forceRefresh) {
-      const cached = await loadCachedPromptAnalysisForPost(postId, hash);
-      if (cached) {
-        console.log(`${logPrefix} cache hit`, { hashPrefix: hash.slice(0, 12) });
-        return { ok: true, data: cached };
-      }
+    const cached = await loadCachedPromptAnalysisForPost(postId, hash);
+    if (cached) {
+      console.log(`${logPrefix} cache hit (no Gemini)`, { hashPrefix: hash.slice(0, 12) });
+      return { ok: true, data: cached };
     }
 
     const keyResolved = readGeminiApiKeyFromEnv();
@@ -682,7 +678,7 @@ export async function analyzePostPromptAnalysis(
 }
 
 /**
- * LAB 글 등록 직후 백그라운드 실행: 세션 없이 Gemini 호출 후 DB에 분석 결과 저장.
+ * LAB 글 등록 직후 백그라운드 실행: DB에 동일 해시 분석이 이미 있으면 Gemini를 호출하지 않음.
  */
 export async function runPostPromptAnalysisJob(postId: string, promptText: string): Promise<void> {
   const trimmed = typeof promptText === 'string' ? promptText.trim() : '';
@@ -703,8 +699,25 @@ export async function runPostPromptAnalysisJob(postId: string, promptText: strin
     return;
   }
 
-  const res = await executeGeminiPromptAnalysis(trimmed);
   const hash = fingerprintPrompt(trimmed);
+  const cached = await loadCachedPromptAnalysisForPost(postId, hash);
+  if (cached) {
+    console.log('[runPostPromptAnalysisJob] skip Gemini: already in DB', {
+      postId,
+      hashPrefix: hash.slice(0, 12),
+    });
+    try {
+      await prisma.aiMetadata.update({
+        where: { postId },
+        data: { promptAnalysisStatus: 'READY' },
+      });
+    } catch (e) {
+      console.error('[runPostPromptAnalysisJob] READY status-only update failed', postId, e);
+    }
+    return;
+  }
+
+  const res = await executeGeminiPromptAnalysis(trimmed);
 
   if (!res.ok) {
     console.warn('[runPostPromptAnalysisJob] Gemini failed', { postId, code: res.code });
