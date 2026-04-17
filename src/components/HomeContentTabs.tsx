@@ -6,14 +6,15 @@ import type { ContentTabId } from '@/lib/content-tab';
 import { getContentTabFromSearchParams } from '@/lib/content-tab';
 import styles from '@/app/(root)/page.module.css';
 
+/** 상단 헤더 복도(`MainNav` HOME_NAV_ITEMS)와 동일 한글 라벨 */
 const TABS: { id: ContentTabId; label: string; href: string }[] = [
-  { id: 'latest', label: '최신', href: '/' },
-  { id: 'lab', label: 'LAB', href: '/?category=LAB' },
-  { id: 'gallery', label: 'GALLERY', href: '/?category=GALLERY' },
-  { id: 'lounge', label: 'LOUNGE', href: '/?category=LOUNGE' },
-  { id: 'gossip', label: 'GOSSIP', href: '/?category=GOSSIP' },
-  { id: 'build', label: 'BUILD', href: '/?category=BUILD' },
-  { id: 'launch', label: 'LAUNCH', href: '/?category=LAUNCH' },
+  { id: 'latest', label: '전체', href: '/' },
+  { id: 'lab', label: 'AI 연구소', href: '/?category=LAB' },
+  { id: 'gallery', label: '쇼케이스', href: '/?category=GALLERY' },
+  { id: 'lounge', label: '커뮤니티', href: '/?category=LOUNGE' },
+  { id: 'gossip', label: '트렌드', href: '/?category=GOSSIP' },
+  { id: 'build', label: '제작기', href: '/?category=BUILD' },
+  { id: 'launch', label: '출시', href: '/?category=LAUNCH' },
 ];
 
 export function HomeContentTabs() {
