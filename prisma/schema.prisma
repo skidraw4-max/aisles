@@ -56,6 +56,8 @@ model Post {
   isFeatured  Boolean     @default(false)
   /// 출시·외부 서비스 페이지 등 연결 URL (선택)
   externalLink String?
+  /// GeekNews 크론 등 — 원문 URL로 중복 방지 (고유, 선택)
+  geeknewsOriginalUrl String? @unique @db.VarChar(2048)
   /// 해시태그 (#은 표시 시만 붙임)
   tags        String[]    @default([])
   /// 갤러리 이미지 역분석 — AI가 추정한 프롬프트 (캐시)
