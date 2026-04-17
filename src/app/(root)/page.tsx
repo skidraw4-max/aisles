@@ -72,7 +72,7 @@ export default async function HomePage({ searchParams }: PageProps) {
     heroLead = `${categoryUiLabel(filterCategory)} 복도입니다. 콘텐츠 탭으로 전체나 다른 복도를 전환할 수 있습니다.`;
   } else {
     heroLead =
-      '미드저니부터 마케팅 문구까지, AI Vision으로 고수들의 프롬프트를 분석하고 나만의 워크플로우를 만드세요.';
+      '모든 AI 결과물 속 숨겨진 프롬프트를 AI Vision으로 추출하고, 최적화된 마케팅 워크플로우를 구축하세요.';
   }
 
   return (
@@ -113,7 +113,13 @@ export default async function HomePage({ searchParams }: PageProps) {
               </>
             )}
           </h1>
-          <p className={styles.heroLead}>{heroLead}</p>
+          <p
+            className={
+              filterCategory ? styles.heroLead : `${styles.heroLead} ${styles.heroLeadHome}`
+            }
+          >
+            {heroLead}
+          </p>
           {!filterCategory ? (
             <div className={styles.heroCtaRow}>
               <Link href="/?category=LAB" className={styles.heroCtaPrimary}>

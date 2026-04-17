@@ -39,14 +39,22 @@
   letter-spacing: -0.03em;
 }
 
-/* 홈: 두 줄 히어로 — extrabold, tracking-tight */
+/* 홈: 두 줄 히어로 — 1행 Bold, 2행(AIsle:~) Medium */
 .heroTitleHome {
   display: flex;
   flex-direction: column;
   gap: 0.3rem;
-  font-weight: 800;
   letter-spacing: -0.045em;
   line-height: 1.08;
+}
+
+.heroTitleHome > .heroTitleLine:first-of-type {
+  font-weight: 700;
+  color: #fafafa;
+}
+
+.heroTitleHome > .heroTitleLine:last-of-type {
+  font-weight: 500;
 }
 
 .heroTitleLine {
@@ -54,12 +62,12 @@
 }
 
 .heroTitleRest {
-  font-weight: 800;
-  color: #f4f4f5;
+  font-weight: 500;
+  color: #d4d4d8;
 }
 
 .heroTitleAccent {
-  font-weight: 800;
+  font-weight: 500;
   margin-right: 0.02em;
   background: linear-gradient(135deg, #e9d5ff 0%, #a78bfa 45%, #7c3aed 100%);
   -webkit-background-clip: text;
@@ -73,6 +81,14 @@
   color: var(--muted);
   font-size: var(--type-16);
   line-height: 1.6;
+}
+
+/* 홈 서브문구: max-w-2xl, 헤드라인과 동일 시작선(좌 정렬) */
+.heroLeadHome {
+  max-width: 42rem;
+  width: 100%;
+  margin-inline: 0;
+  text-align: start;
 }
 
 .heroCtaRow {
