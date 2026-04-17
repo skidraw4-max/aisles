@@ -55,6 +55,7 @@
 
 .heroTitleHome > .heroTitleLine:last-of-type {
   font-weight: 500;
+  font-size: 1.5rem; /* 24px — "AIsle: 당신만의 레시피 저장소" */
 }
 
 .heroTitleLine {
