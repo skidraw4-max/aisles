@@ -475,19 +475,50 @@
 }
 
 .uploadLink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
   font-size: var(--type-13);
   font-weight: 600;
   color: #a78bfa;
   text-decoration: none;
-  padding: 0.35rem 0.6rem;
+  padding: 0.4rem 0.65rem;
   border-radius: 8px;
   border: 1px solid rgba(167, 139, 250, 0.35);
+  flex-shrink: 0;
   transition:
     background 0.15s ease,
-    color 0.15s ease;
+    color 0.15s ease,
+    transform 0.15s ease;
+}
+
+.uploadLinkIcon {
+  flex-shrink: 0;
 }
 
 .uploadLink:hover {
   background: rgba(167, 139, 250, 0.12);
   color: #e9d5ff;
+}
+
+@media (max-width: 639px) {
+  .uploadLink {
+    position: relative;
+    padding: 0.45rem;
+    min-width: 2.35rem;
+    min-height: 2.35rem;
+  }
+
+  .uploadLinkLabel {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
 }

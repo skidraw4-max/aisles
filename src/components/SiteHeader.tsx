@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/components/SessionProvider';
-import { Menu } from 'lucide-react';
+import { Menu, Plus } from 'lucide-react';
 import { AuthModal } from './AuthModal';
 import { MainNav, MainNavFallback, MobileMainNavPanel, MobileMainNavPanelFallback } from './MainNav';
 import { HeaderSearch } from './HeaderSearch';
@@ -71,8 +71,9 @@ export function SiteHeader() {
             </Suspense>
             {isAuthenticated ? (
               <div className={styles.userRow}>
-                <Link href="/upload" className={styles.uploadLink}>
-                  업로드
+                <Link href="/upload" className={styles.uploadLink} aria-label="레시피 등록">
+                  <Plus className={styles.uploadLinkIcon} strokeWidth={2.25} size={18} aria-hidden />
+                  <span className={styles.uploadLinkLabel}>레시피 등록</span>
                 </Link>
                 <div className={styles.userMenu} ref={menuRef}>
                   <button
@@ -120,7 +121,7 @@ export function SiteHeader() {
                         role="menuitem"
                         onClick={() => setMenuOpen(false)}
                       >
-                        업로드
+                        레시피 등록
                       </Link>
                       <button
                         type="button"

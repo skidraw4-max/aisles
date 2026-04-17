@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { Plus } from 'lucide-react';
 import { PostThumbnail } from '@/components/post/PostThumbnail';
 import { HomeQuasarAsideListsLoader } from '@/components/HomeQuasarAsideListsLoader';
 import {
@@ -108,7 +109,15 @@ export async function HomeQuasarBoard() {
               <h2 className={styles.quasarBoardTitle}>AI Work</h2>
               <p className={styles.quasarBoardSubtitle}>Lab·Gallery 최신 글</p>
             </div>
-            <div className={styles.compositeMoreGroup} role="group" aria-label="복도로 이동">
+            <div className={styles.compositeMoreGroup} role="group" aria-label="AI Work 이동·등록">
+              <Link
+                href="/upload"
+                className={styles.aiWorkPromptRegister}
+                aria-label="나만의 프롬프트 등록"
+              >
+                <Plus className={styles.aiWorkPromptRegisterIcon} size={18} strokeWidth={2.25} aria-hidden />
+                <span className={styles.aiWorkPromptRegisterText}>나만의 프롬프트 등록</span>
+              </Link>
               <MoreLink category="RECIPE" label="LAB" />
               <MoreLink category="GALLERY" label="GALLERY" />
             </div>
