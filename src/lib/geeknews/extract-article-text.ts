@@ -1,4 +1,5 @@
-const MAX_BYTES = 1_800_000;
+/** 큰 원문도 최대한 반영(메모리·타임아웃 한도 내) */
+const MAX_BYTES = 8_000_000;
 
 /** HTML에서 본문 후보 텍스트만 거칠게 추출 (스크립트·스타일 제거) */
 export function htmlToPlainText(html: string): string {

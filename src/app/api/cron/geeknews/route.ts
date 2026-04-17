@@ -18,7 +18,8 @@ export const maxDuration = 300;
 const GEEKNEWS_NEW_URL = 'https://news.hada.io/new';
 const MAX_NEW_POSTS_PER_RUN = 5;
 const MAX_LIST_SCAN = 35;
-const MIN_BODY_CHARS = 200;
+/** 원문이 너무 짧으면 요약 품질이 떨어져 스킵 */
+const MIN_BODY_CHARS = 120;
 
 function verifyCronAuth(req: NextRequest): boolean {
   const secret = process.env.CRON_SECRET?.trim();
@@ -118,8 +119,9 @@ export async function GET(req: NextRequest) {
       continue;
     }
 
-    const content = formatGeekNewsPostBody(item.externalUrl, sum.data);
-    const title = item.title.slice(0, 200);
+    const topicUrl = `https://news.hada.io/topic?id=${encodeURIComponent(item.topicId)}`;
+    const content = formatGeekNewsPostBody(item.externalUrl, topicUrl, sum.data);
+    const title = sum.data.postTitle.trim() || item.title;
 
     try {
       const post = await prisma.post.create({
