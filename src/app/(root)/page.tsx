@@ -71,7 +71,8 @@ export default async function HomePage({ searchParams }: PageProps) {
   if (filterCategory) {
     heroLead = `${categoryUiLabel(filterCategory)} 복도입니다. 콘텐츠 탭으로 전체나 다른 복도를 전환할 수 있습니다.`;
   } else {
-    heroLead = '세상의 모든 AI 창작자와 함께 실험하고, 만들고, 성장하세요.';
+    heroLead =
+      '미드저니부터 마케팅 문구까지, AI Vision으로 고수들의 프롬프트를 분석하고 나만의 워크플로우를 만드세요.';
   }
 
   return (
@@ -90,7 +91,9 @@ export default async function HomePage({ searchParams }: PageProps) {
       ) : null}
       <main className={styles.mainShell}>
         <section className={styles.hero}>
-          <p className={styles.eyebrow}>Four aisles, one workspace</p>
+          <p className={styles.eyebrow}>
+            {filterCategory ? 'Four aisles, one workspace' : '프롬프트 레시피 · 역설계 · 워크플로우'}
+          </p>
           <h1 className={styles.heroTitle}>
             {filterCategory ? (
               <>
@@ -98,13 +101,20 @@ export default async function HomePage({ searchParams }: PageProps) {
               </>
             ) : (
               <>
-                Collect. Build. Launch.
+                AI 프롬프트를 분석하고 역설계하는 당신만의 레시피 저장소,
                 <br />
-                with AIsle.
+                <span className={styles.heroTitleAccent}>AIsle</span>
               </>
             )}
           </h1>
           <p className={styles.heroLead}>{heroLead}</p>
+          {!filterCategory ? (
+            <div className={styles.heroCtaRow}>
+              <Link href="/?category=LAB" className={styles.heroCtaPrimary}>
+                프롬프트 역분석 시작하기
+              </Link>
+            </div>
+          ) : null}
         </section>
 
         <section className={styles.section} style={{ paddingTop: 12, paddingBottom: 8 }}>

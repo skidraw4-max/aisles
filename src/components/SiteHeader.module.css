@@ -133,8 +133,34 @@
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
+  gap: 0.35rem;
   overflow-y: auto;
+}
+
+.mobileNavItemStack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding-bottom: 0.15rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.mobileNavItemStack:last-child {
+  border-bottom: none;
+}
+
+.mobileNavCaption {
+  padding: 0 0.85rem 0.35rem;
+  font-size: 0.65rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  line-height: 1.25;
+  color: #71717a;
+  font-family:
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    sans-serif;
 }
 
 .mobileNavLink {
@@ -199,9 +225,41 @@
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
+/* 링크 + 한 줄 캡션 (데스크톱 내비) */
+.navItemStack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 1px;
+  flex-shrink: 0;
+}
+
+.navItemCaption {
+  font-size: 0.55rem;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  line-height: 1.15;
+  color: #52525b;
+  white-space: nowrap;
+  max-width: 4.75rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: center;
+  font-family:
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    sans-serif;
+}
+
+.navQuasi .navLinkActive + .navItemCaption {
+  color: #a78bfa;
+}
+
 .navLinkQuasi {
   flex-shrink: 0;
-  padding: 0.45rem 0.65rem;
+  padding: 0.35rem 0.55rem 0.25rem;
   border-radius: 8px;
   font-size: 0.65rem;
   font-weight: 800;
