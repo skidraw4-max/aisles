@@ -6,23 +6,16 @@ import { usePathname, useSearchParams } from 'next/navigation';
 import { X } from 'lucide-react';
 import styles from './SiteHeader.module.css';
 
-/** ALL + 퀘이사존 스타일 탭 순서 (LAB … LAUNCH) — caption은 내비 하단 가이드용 */
-export const HOME_NAV_ITEMS: {
-  href: string;
-  queryKey: string | null;
-  label: string;
-  caption: string;
-}[] = [
-  { href: '/', queryKey: null, label: 'ALL', caption: '전체 피드' },
-  { href: '/?category=LAB', queryKey: 'LAB', label: 'LAB', caption: '분석·레시피' },
-  { href: '/?category=GALLERY', queryKey: 'GALLERY', label: 'GALLERY', caption: '비주얼 갤러리' },
-  { href: '/?category=LOUNGE', queryKey: 'LOUNGE', label: 'LOUNGE', caption: '커뮤니티' },
-  { href: '/?category=GOSSIP', queryKey: 'GOSSIP', label: 'GOSSIP', caption: '소식·토크' },
-  { href: '/?category=BUILD', queryKey: 'BUILD', label: 'BUILD', caption: '빌드·스택' },
-  { href: '/?category=LAUNCH', queryKey: 'LAUNCH', label: 'LAUNCH', caption: '런칭·쇼케이스' },
+/** 홈 상단 복도 — queryKey는 URL·필터와 동일, label은 한글 */
+export const HOME_NAV_ITEMS: { href: string; queryKey: string | null; label: string }[] = [
+  { href: '/', queryKey: null, label: '전체' },
+  { href: '/?category=LAB', queryKey: 'LAB', label: 'AI 연구소' },
+  { href: '/?category=GALLERY', queryKey: 'GALLERY', label: '쇼케이스' },
+  { href: '/?category=LOUNGE', queryKey: 'LOUNGE', label: '커뮤니티' },
+  { href: '/?category=GOSSIP', queryKey: 'GOSSIP', label: '트렌드' },
+  { href: '/?category=BUILD', queryKey: 'BUILD', label: '제작기' },
+  { href: '/?category=LAUNCH', queryKey: 'LAUNCH', label: '출시' },
 ];
-
-const ABOUT_NAV_CAPTION = '서비스 안내';
 
 function navClassName(active: boolean) {
   return active
@@ -43,33 +36,24 @@ export function MainNav() {
       {HOME_NAV_ITEMS.map((item) => {
         const active = item.queryKey === null ? current === null : current === item.queryKey;
         return (
-          <div key={item.href} className={styles.navItemStack}>
-            <Link
-              href={item.href}
-              className={navClassName(active)}
-              aria-current={active ? 'page' : undefined}
-              scroll={false}
-            >
-              {item.label}
-            </Link>
-            <span className={styles.navItemCaption} aria-hidden>
-              {item.caption}
-            </span>
-          </div>
+          <Link
+            key={item.href}
+            href={item.href}
+            className={navClassName(active)}
+            aria-current={active ? 'page' : undefined}
+            scroll={false}
+          >
+            {item.label}
+          </Link>
         );
       })}
-      <div className={styles.navItemStack}>
-        <Link
-          href="/about"
-          className={navClassName(aboutActive)}
-          aria-current={aboutActive ? 'page' : undefined}
-        >
-          ABOUT
-        </Link>
-        <span className={styles.navItemCaption} aria-hidden>
-          {ABOUT_NAV_CAPTION}
-        </span>
-      </div>
+      <Link
+        href="/about"
+        className={navClassName(aboutActive)}
+        aria-current={aboutActive ? 'page' : undefined}
+      >
+        가이드
+      </Link>
     </nav>
   );
 }
@@ -79,23 +63,13 @@ export function MainNavFallback() {
   return (
     <nav className={`${styles.nav} ${styles.navQuasi}`} aria-label="주요 메뉴">
       {HOME_NAV_ITEMS.map((item) => (
-        <div key={item.href} className={styles.navItemStack}>
-          <Link href={item.href} className={`${styles.navLink} ${styles.navLinkQuasi}`}>
-            {item.label}
-          </Link>
-          <span className={styles.navItemCaption} aria-hidden>
-            {item.caption}
-          </span>
-        </div>
-      ))}
-      <div className={styles.navItemStack}>
-        <Link href="/about" className={`${styles.navLink} ${styles.navLinkQuasi}`}>
-          ABOUT
+        <Link key={item.href} href={item.href} className={`${styles.navLink} ${styles.navLinkQuasi}`}>
+          {item.label}
         </Link>
-        <span className={styles.navItemCaption} aria-hidden>
-          {ABOUT_NAV_CAPTION}
-        </span>
-      </div>
+      ))}
+      <Link href="/about" className={`${styles.navLink} ${styles.navLinkQuasi}`}>
+        가이드
+      </Link>
     </nav>
   );
 }
@@ -144,7 +118,7 @@ export function MobileMainNavPanelFallback({ onClose }: { onClose: () => void })
   return (
     <MobileNavShell onClose={onClose}>
       {HOME_NAV_ITEMS.map((item) => (
-        <li key={item.href} className={styles.mobileNavItemStack}>
+        <li key={item.href}>
           <Link
             href={item.href}
             className={styles.mobileNavLink}
@@ -153,14 +127,12 @@ export function MobileMainNavPanelFallback({ onClose }: { onClose: () => void })
           >
             {item.label}
           </Link>
-          <span className={styles.mobileNavCaption}>{item.caption}</span>
         </li>
       ))}
-      <li className={styles.mobileNavItemStack}>
+      <li>
         <Link href="/about" className={styles.mobileNavLink} onClick={onClose}>
-          ABOUT
+          가이드
         </Link>
-        <span className={styles.mobileNavCaption}>{ABOUT_NAV_CAPTION}</span>
       </li>
     </MobileNavShell>
   );
@@ -179,7 +151,7 @@ export function MobileMainNavPanel({ onClose }: { onClose: () => void }) {
       {HOME_NAV_ITEMS.map((item) => {
         const active = item.queryKey === null ? current === null : current === item.queryKey;
         return (
-          <li key={item.href} className={styles.mobileNavItemStack}>
+          <li key={item.href}>
             <Link
               href={item.href}
               className={mobileNavLinkClass(active)}
@@ -189,20 +161,18 @@ export function MobileMainNavPanel({ onClose }: { onClose: () => void }) {
             >
               {item.label}
             </Link>
-            <span className={styles.mobileNavCaption}>{item.caption}</span>
           </li>
         );
       })}
-      <li className={styles.mobileNavItemStack}>
+      <li>
         <Link
           href="/about"
           className={mobileNavLinkClass(aboutActive)}
           aria-current={aboutActive ? 'page' : undefined}
           onClick={onClose}
         >
-          ABOUT
+          가이드
         </Link>
-        <span className={styles.mobileNavCaption}>{ABOUT_NAV_CAPTION}</span>
       </li>
     </MobileNavShell>
   );

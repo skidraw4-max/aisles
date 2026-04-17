@@ -7,7 +7,7 @@
 .hero {
   max-width: var(--aisle-max);
   margin: 0 auto;
-  padding: 48px var(--aisle-gutter-sm) 40px;
+  padding: 40px var(--aisle-gutter-sm) 32px;
 }
 
 /* 메인 상단 텍스트 히어로 — 썸네일·배너 이미지 미사용 */
@@ -23,7 +23,7 @@
 }
 
 .eyebrow {
-  margin: 0 0 0.75rem;
+  margin: 0 0 0.5rem;
   font-size: var(--type-12);
   font-weight: 600;
   letter-spacing: 0.14em;
@@ -32,15 +32,35 @@
 }
 
 .heroTitle {
-  margin: 0 0 1rem;
+  margin: 0 0 0.75rem;
   font-size: var(--type-hero);
   font-weight: 800;
   line-height: 1.15;
   letter-spacing: -0.03em;
 }
 
+/* 홈: 두 줄 히어로 — extrabold, tracking-tight */
+.heroTitleHome {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-weight: 800;
+  letter-spacing: -0.045em;
+  line-height: 1.08;
+}
+
+.heroTitleLine {
+  display: block;
+}
+
+.heroTitleRest {
+  font-weight: 800;
+  color: #f4f4f5;
+}
+
 .heroTitleAccent {
   font-weight: 800;
+  margin-right: 0.02em;
   background: linear-gradient(135deg, #e9d5ff 0%, #a78bfa 45%, #7c3aed 100%);
   -webkit-background-clip: text;
   background-clip: text;
@@ -56,7 +76,7 @@
 }
 
 .heroCtaRow {
-  margin-top: 1.5rem;
+  margin-top: 0.65rem;
   display: flex;
   flex-wrap: wrap;
   align-items: center;

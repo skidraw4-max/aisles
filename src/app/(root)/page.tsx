@@ -94,16 +94,22 @@ export default async function HomePage({ searchParams }: PageProps) {
           <p className={styles.eyebrow}>
             {filterCategory ? 'Four aisles, one workspace' : '프롬프트 레시피 · 역설계 · 워크플로우'}
           </p>
-          <h1 className={styles.heroTitle}>
+          <h1
+            className={
+              filterCategory ? styles.heroTitle : `${styles.heroTitle} ${styles.heroTitleHome}`
+            }
+          >
             {filterCategory ? (
               <>
                 {categoryUiLabel(filterCategory)} <span style={{ fontWeight: 600 }}>aisle</span>
               </>
             ) : (
               <>
-                AI 프롬프트를 분석하고 역설계하는 당신만의 레시피 저장소,
-                <br />
-                <span className={styles.heroTitleAccent}>AIsle</span>
+                <span className={styles.heroTitleLine}>AI 프롬프트를 분석하고 역설계하다</span>
+                <span className={styles.heroTitleLine}>
+                  <span className={styles.heroTitleAccent}>AIsle</span>
+                  <span className={styles.heroTitleRest}>: 당신만의 레시피 저장소</span>
+                </span>
               </>
             )}
           </h1>
