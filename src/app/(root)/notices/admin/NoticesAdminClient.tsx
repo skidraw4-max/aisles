@@ -9,6 +9,7 @@ import {
   updateNoticeAdminAction,
 } from '@/app/notices/actions';
 import { runGeekNewsSyncAdminAction } from '@/app/notices/geeknews-sync-actions';
+import type { GeekNewsItemResult } from '@/lib/geeknews/run-geeknews-sync';
 import styles from './admin.module.css';
 
 function formatGeekNewsSyncAlert(r: Awaited<ReturnType<typeof runGeekNewsSyncAdminAction>>): string {
@@ -19,7 +20,7 @@ function formatGeekNewsSyncAlert(r: Awaited<ReturnType<typeof runGeekNewsSyncAdm
     `완료: 신규 ${r.created}건 (목록에서 최대 ${r.scanned}건 스캔)`,
     `강제 모드: ${r.force ? '예' : '아니오'}`,
     '',
-    ...r.results.slice(0, 20).map((x) => {
+    ...r.results.slice(0, 20).map((x: GeekNewsItemResult) => {
       const u = x.externalUrl.length > 56 ? `${x.externalUrl.slice(0, 56)}…` : x.externalUrl;
       const extra = x.detail ? ` — ${x.detail}` : x.postId ? ` → ${x.postId}` : '';
       return `${x.status}: ${u}${extra}`;
