@@ -45,12 +45,12 @@ export function homeHrefForCategory(category: Category): string {
 
 /** UI 라벨 ↔ Prisma `Post.category` */
 export const POST_CATEGORY_OPTIONS: { value: Category; label: string }[] = [
-  { value: 'RECIPE', label: 'Lab' },
-  { value: 'GALLERY', label: 'Gallery' },
+  { value: 'RECIPE', label: 'AI 연구소' },
+  { value: 'GALLERY', label: '쇼케이스' },
   { value: 'LOUNGE', label: 'AI 트렌드' },
   { value: 'GOSSIP', label: '커뮤니티' },
-  { value: 'BUILD', label: 'Build' },
-  { value: 'LAUNCH', label: 'Launch' },
+  { value: 'BUILD', label: '제작기' },
+  { value: 'LAUNCH', label: '출시' },
 ];
 
 /** /upload 셀렉트용 (순서: LAB → GALLERY → LOUNGE → GOSSIP → BUILD → LAUNCH) */

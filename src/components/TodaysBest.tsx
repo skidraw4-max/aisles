@@ -18,12 +18,12 @@ type ApiResponse = {
 
 const CATS: { id: BestCategory; label: string }[] = [
   { id: 'ALL', label: '전체' },
-  { id: 'LAB', label: 'Lab' },
-  { id: 'GALLERY', label: 'Gallery' },
+  { id: 'LAB', label: 'AI 연구소' },
+  { id: 'GALLERY', label: '쇼케이스' },
   { id: 'LOUNGE', label: 'AI 트렌드' },
   { id: 'GOSSIP', label: '커뮤니티' },
-  { id: 'BUILD', label: 'Build' },
-  { id: 'LAUNCH', label: 'Launch' },
+  { id: 'BUILD', label: '제작기' },
+  { id: 'LAUNCH', label: '출시' },
 ];
 
 export function TodaysBest() {
