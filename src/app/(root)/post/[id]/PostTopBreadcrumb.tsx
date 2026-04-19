@@ -41,14 +41,6 @@ export function PostTopBreadcrumb({ category }: Props) {
         <li className={styles.magazineBreadcrumbSep} aria-hidden>
           /
         </li>
-        <li className={styles.magazineBreadcrumbItem}>
-          <Link href={`/?category=${q}`} className={styles.magazineBreadcrumbLink}>
-            커뮤니티
-          </Link>
-        </li>
-        <li className={styles.magazineBreadcrumbSep} aria-hidden>
-          /
-        </li>
         <li className={styles.magazineBreadcrumbCurrent}>{thirdCrumbLabel(category)}</li>
       </ol>
     </nav>

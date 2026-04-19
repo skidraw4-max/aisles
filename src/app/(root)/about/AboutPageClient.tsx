@@ -46,8 +46,8 @@ const boards: { name: string; desc: string; Icon: typeof Palette }[] = [
     Icon: FlaskConical,
   },
   {
-    name: 'Lounge',
-    desc: 'AI 트렌드와 일상의 지식을 가볍게 나누는 소통 공간입니다.',
+    name: 'AI 트렌드',
+    desc: '최신 AI·테크 트렌드와 인사이트를 나누는 라운지 복도입니다.',
     Icon: MessageCircle,
   },
   {

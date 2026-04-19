@@ -47,8 +47,8 @@ export function homeHrefForCategory(category: Category): string {
 export const POST_CATEGORY_OPTIONS: { value: Category; label: string }[] = [
   { value: 'RECIPE', label: 'Lab' },
   { value: 'GALLERY', label: 'Gallery' },
-  { value: 'LOUNGE', label: 'Lounge' },
-  { value: 'GOSSIP', label: 'Gossip' },
+  { value: 'LOUNGE', label: 'AI 트렌드' },
+  { value: 'GOSSIP', label: '커뮤니티' },
   { value: 'BUILD', label: 'Build' },
   { value: 'LAUNCH', label: 'Launch' },
 ];

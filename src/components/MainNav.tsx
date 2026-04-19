@@ -11,8 +11,8 @@ export const HOME_NAV_ITEMS: { href: string; queryKey: string | null; label: str
   { href: '/', queryKey: null, label: '전체' },
   { href: '/?category=LAB', queryKey: 'LAB', label: 'AI 연구소' },
   { href: '/?category=GALLERY', queryKey: 'GALLERY', label: '쇼케이스' },
-  { href: '/?category=LOUNGE', queryKey: 'LOUNGE', label: '커뮤니티' },
-  { href: '/?category=GOSSIP', queryKey: 'GOSSIP', label: '트렌드' },
+  { href: '/?category=LOUNGE', queryKey: 'LOUNGE', label: 'AI 트렌드' },
+  { href: '/?category=GOSSIP', queryKey: 'GOSSIP', label: '커뮤니티' },
   { href: '/?category=BUILD', queryKey: 'BUILD', label: '제작기' },
   { href: '/?category=LAUNCH', queryKey: 'LAUNCH', label: '출시' },
 ];

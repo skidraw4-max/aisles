@@ -20,8 +20,8 @@ const CATS: { id: BestCategory; label: string }[] = [
   { id: 'ALL', label: '전체' },
   { id: 'LAB', label: 'Lab' },
   { id: 'GALLERY', label: 'Gallery' },
-  { id: 'LOUNGE', label: 'Lounge' },
-  { id: 'GOSSIP', label: 'Gossip' },
+  { id: 'LOUNGE', label: 'AI 트렌드' },
+  { id: 'GOSSIP', label: '커뮤니티' },
   { id: 'BUILD', label: 'Build' },
   { id: 'LAUNCH', label: 'Launch' },
 ];

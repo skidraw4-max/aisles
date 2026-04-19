@@ -56,11 +56,11 @@ type Props = {
 /** LOUNGE / GOSSIP 사이드 리스트 — next/dynamic + ssr:false 로 지연 로드 */
 export function HomeQuasarAsideLists({ lounge, gossip }: Props) {
   return (
-    <aside className={styles.quasarBoardAside} aria-label="라운지·가십 최신">
+    <aside className={styles.quasarBoardAside} aria-label="AI 트렌드·커뮤니티 최신">
       <div className={styles.quasarAsidePanel}>
         <header className={styles.quasarAsidePanelHead}>
-          <h2 className={styles.quasarAsidePanelTitle}>LOUNGE</h2>
-          <MoreLink category="LOUNGE" label="LOUNGE" />
+          <h2 className={styles.quasarAsidePanelTitle}>AI 트렌드</h2>
+          <MoreLink category="LOUNGE" label="AI 트렌드" />
         </header>
         {lounge.length === 0 ? (
           <p className={styles.quasarAsideEmpty}>글이 없습니다.</p>
@@ -74,8 +74,8 @@ export function HomeQuasarAsideLists({ lounge, gossip }: Props) {
       </div>
       <div className={styles.quasarAsidePanel}>
         <header className={styles.quasarAsidePanelHead}>
-          <h2 className={styles.quasarAsidePanelTitle}>GOSSIP</h2>
-          <MoreLink category="GOSSIP" label="GOSSIP" />
+          <h2 className={styles.quasarAsidePanelTitle}>커뮤니티</h2>
+          <MoreLink category="GOSSIP" label="커뮤니티" />
         </header>
         {gossip.length === 0 ? (
           <p className={styles.quasarAsideEmpty}>글이 없습니다.</p>

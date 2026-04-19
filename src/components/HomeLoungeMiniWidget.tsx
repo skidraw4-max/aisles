@@ -22,14 +22,14 @@ export async function HomeLoungeMiniWidget() {
     <aside className={styles.loungeMiniWidget} aria-labelledby="lounge-mini-heading">
       <div className={styles.loungeMiniHead}>
         <h2 id="lounge-mini-heading" className={styles.loungeMiniTitle}>
-          LOUNGE 최신
+          AI 트렌드 최신
         </h2>
         <Link href={homeHrefForCategory('LOUNGE')} className={styles.loungeMiniMore}>
           더보기 +
         </Link>
       </div>
       {posts.length === 0 ? (
-        <p className={styles.loungeMiniEmpty}>아직 라운지 글이 없습니다.</p>
+        <p className={styles.loungeMiniEmpty}>아직 AI 트렌드 글이 없습니다.</p>
       ) : (
         <ul className={styles.loungeMiniList}>
           {posts.map((post) => {

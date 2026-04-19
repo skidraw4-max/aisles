@@ -128,16 +128,16 @@ export async function HomeCompositeSection() {
             <h2 id="composite-community-heading" className={styles.compositeTitle}>
               Community
             </h2>
-            <p className={styles.compositeSubtitle}>Lounge·Gossip 최신 글</p>
+            <p className={styles.compositeSubtitle}>AI 트렌드·커뮤니티 최신 글</p>
           </div>
           <div className={styles.compositeMoreGroup} role="group" aria-label="복도로 이동">
-            <MoreLink category="LOUNGE" label="LOUNGE" />
-            <MoreLink category="GOSSIP" label="GOSSIP" />
+            <MoreLink category="LOUNGE" label="AI 트렌드" />
+            <MoreLink category="GOSSIP" label="커뮤니티" />
           </div>
         </header>
         <div className={styles.communitySplit}>
           <div className={styles.communityCol}>
-            <h3 className={styles.communityColLabel}>LOUNGE</h3>
+            <h3 className={styles.communityColLabel}>AI 트렌드</h3>
             {community.lounge.length === 0 ? (
               <p className={styles.compositeEmpty}>글이 없습니다.</p>
             ) : (
@@ -149,7 +149,7 @@ export async function HomeCompositeSection() {
             )}
           </div>
           <div className={styles.communityCol}>
-            <h3 className={styles.communityColLabel}>GOSSIP</h3>
+            <h3 className={styles.communityColLabel}>커뮤니티</h3>
             {community.gossip.length === 0 ? (
               <p className={styles.compositeEmpty}>글이 없습니다.</p>
             ) : (
