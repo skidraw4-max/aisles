@@ -32,11 +32,12 @@ export type FetchExternalPlainTextResult = FetchExternalPlainTextSuccess | Fetch
  */
 export async function fetchExternalArticlePlainText(url: string): Promise<FetchExternalPlainTextResult> {
   const u = url.trim();
-  if (!u.toLowerCase().startsWith('https://')) {
+  const lower = u.toLowerCase();
+  if (!lower.startsWith('https://') && !lower.startsWith('http://')) {
     return {
       ok: false,
       code: 'invalid_url',
-      message: '원문 URL은 https:// 로 시작해야 합니다.',
+      message: '원문 URL은 http:// 또는 https:// 로 시작해야 합니다.',
     };
   }
 

@@ -126,12 +126,16 @@ export async function runGeekNewsSync(options: { force: boolean }): Promise<Geek
   console.log(`[geeknews] 링크 ${parsed.length}개 추출 완료 (스캔 상한 ${MAX_LIST_SCAN}까지 사용)`);
 
   const existingRows = await prisma.post.findMany({
-    where: { geeknewsOriginalUrl: { not: null } },
-    select: { geeknewsOriginalUrl: true },
+    where: {
+      OR: [{ geeknewsOriginalUrl: { not: null } }, { hackerNewsOriginalUrl: { not: null } }],
+    },
+    select: { geeknewsOriginalUrl: true, hackerNewsOriginalUrl: true },
   });
-  const existingUrls = new Set(
-    existingRows.map((r) => r.geeknewsOriginalUrl).filter((u): u is string => Boolean(u)),
-  );
+  const existingUrls = new Set<string>();
+  for (const r of existingRows) {
+    if (r.geeknewsOriginalUrl) existingUrls.add(r.geeknewsOriginalUrl);
+    if (r.hackerNewsOriginalUrl) existingUrls.add(r.hackerNewsOriginalUrl);
+  }
 
   const scan = parsed.slice(0, MAX_LIST_SCAN);
   const results: GeekNewsItemResult[] = [];

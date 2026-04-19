@@ -9,7 +9,9 @@ import {
   updateNoticeAdminAction,
 } from '@/app/notices/actions';
 import { runGeekNewsSyncAdminAction } from '@/app/notices/geeknews-sync-actions';
+import { runHackerNewsSyncAdminAction } from '@/app/notices/hackernews-sync-actions';
 import type { GeekNewsItemResult } from '@/lib/geeknews/run-geeknews-sync';
+import type { HackerNewsItemResult } from '@/lib/hackernews/run-hackernews-sync';
 import styles from './admin.module.css';
 
 function formatGeekNewsSyncAlert(r: Awaited<ReturnType<typeof runGeekNewsSyncAdminAction>>): string {
@@ -21,6 +23,26 @@ function formatGeekNewsSyncAlert(r: Awaited<ReturnType<typeof runGeekNewsSyncAdm
     `강제 모드: ${r.force ? '예' : '아니오'}`,
     '',
     ...r.results.slice(0, 20).map((x: GeekNewsItemResult) => {
+      const u = x.externalUrl.length > 56 ? `${x.externalUrl.slice(0, 56)}…` : x.externalUrl;
+      const extra = x.detail ? ` — ${x.detail}` : x.postId ? ` → ${x.postId}` : '';
+      return `${x.status}: ${u}${extra}`;
+    }),
+  ];
+  if (r.results.length > 20) {
+    lines.push(`… 외 ${r.results.length - 20}건`);
+  }
+  return lines.join('\n');
+}
+
+function formatHackerNewsSyncAlert(r: Awaited<ReturnType<typeof runHackerNewsSyncAdminAction>>): string {
+  if (!r.ok) {
+    return [`실패`, `단계: ${r.step}`, r.message, `코드: ${r.error}`].join('\n');
+  }
+  const lines = [
+    `완료: 신규 ${r.created}건 (후보 ${r.scanned}건 스캔)`,
+    `강제 모드: ${r.force ? '예' : '아니오'}`,
+    '',
+    ...r.results.slice(0, 20).map((x: HackerNewsItemResult) => {
       const u = x.externalUrl.length > 56 ? `${x.externalUrl.slice(0, 56)}…` : x.externalUrl;
       const extra = x.detail ? ` — ${x.detail}` : x.postId ? ` → ${x.postId}` : '';
       return `${x.status}: ${u}${extra}`;
@@ -143,6 +165,20 @@ export function NoticesAdminClient({ initialNotices }: Props) {
     });
   };
 
+  const onHackerNewsSync = (force: boolean) => {
+    if (force && !globalThis.confirm('강제 모드: 이미 등록된 원문 URL도 다시 처리합니다. DB 중복 시 오류로 표시됩니다. 계속할까요?')) {
+      return;
+    }
+    setError(null);
+    startTransition(async () => {
+      const res = await runHackerNewsSyncAdminAction(force);
+      globalThis.alert(formatHackerNewsSyncAlert(res));
+      if (res.ok && res.created > 0) {
+        router.refresh();
+      }
+    });
+  };
+
   return (
     <>
       <div className={styles.headRow}>
@@ -174,6 +210,32 @@ export function NoticesAdminClient({ initialNotices }: Props) {
             onClick={() => onGeekNewsSync(true)}
           >
             GeekNews 강제 동기화
+          </button>
+        </div>
+      </div>
+
+      <div className={styles.formCard}>
+        <h2 className={styles.formTitle}>Hacker News 동기화</h2>
+        <p className={styles.helpText}>
+          Firebase topstories에서 인기 글을 가져와 AI 키워드 우선·score 순으로 최대 5건 요약해 Lounge에 등록합니다. GeekNews와
+          동일 원문 URL은 중복되지 않습니다.
+        </p>
+        <div className={styles.actions}>
+          <button
+            type="button"
+            className={`${styles.btn} ${styles.btnPrimary}`}
+            disabled={pending}
+            onClick={() => onHackerNewsSync(false)}
+          >
+            Hacker News 수동 동기화
+          </button>
+          <button
+            type="button"
+            className={`${styles.btn} ${styles.btnGhost}`}
+            disabled={pending}
+            onClick={() => onHackerNewsSync(true)}
+          >
+            Hacker News 강제 동기화
           </button>
         </div>
       </div>

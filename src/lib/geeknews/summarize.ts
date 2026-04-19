@@ -40,7 +40,8 @@ function isNonEmptyString(v: unknown): v is string {
   return typeof v === 'string' && v.trim().length > 0;
 }
 
-function parseArticleJson(value: unknown): GeekNewsArticleJson | null {
+/** Hacker News 요약 등 동일 JSON 스키마 재사용 */
+export function parseGeekNewsArticleJson(value: unknown): GeekNewsArticleJson | null {
   if (typeof value !== 'object' || value === null) return null;
   const o = value as Record<string, unknown>;
   if (!isNonEmptyString(o.postTitle)) return null;
@@ -99,7 +100,7 @@ export async function summarizeGeekNewsArticle(
           console.warn('[geeknews/summarize] JSON 파싱 실패 → 다음 후보', { modelId, apiVersion });
           continue;
         }
-        const data = parseArticleJson(parsed.value);
+        const data = parseGeekNewsArticleJson(parsed.value);
         if (!data) {
           lastErr = new Error('Invalid article JSON shape');
           console.warn('[geeknews/summarize] 스키마 불일치 → 다음 후보', { modelId, apiVersion });
