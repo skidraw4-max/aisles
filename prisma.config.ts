@@ -5,6 +5,7 @@ import 'dotenv/config';
 
 export default defineConfig({
   datasource: {
-    url: process.env.DIRECT_URL,
+    /** 마이그레이션: Supabase는 DIRECT_URL(세션) 권장. CI에 없으면 DATABASE_URL로 폴백 */
+    url: process.env.DIRECT_URL || process.env.DATABASE_URL,
   },
 });
