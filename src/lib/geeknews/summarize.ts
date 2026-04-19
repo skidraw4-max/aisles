@@ -68,6 +68,8 @@ export async function summarizeGeekNewsArticle(
   bodyPlain: string,
 ): Promise<{ ok: true; data: GeekNewsArticleJson } | { ok: false; error: string }> {
   const user = `GeekNews 목록 제목: ${title}\n\n원문 본문(평문):\n${bodyPlain}`;
+  /** v1 `generateContent`는 `systemInstruction` 필드를 거부함 → 본문에 합쳐 전달 */
+  const prompt = `${SYSTEM}\n\n---\n\n${user}`;
 
   let lastErr: unknown;
   for (const apiVersion of GEMINI_API_VERSION_CHAIN) {
@@ -76,7 +78,6 @@ export async function summarizeGeekNewsArticle(
       const model = genAI.getGenerativeModel(
         {
           model: GEEKNEWS_SUMMARY_MODEL,
-          systemInstruction: SYSTEM,
           generationConfig: {
             temperature: 0.28,
             maxOutputTokens: 8192,
@@ -84,7 +85,7 @@ export async function summarizeGeekNewsArticle(
         },
         { apiVersion },
       );
-      const result = await model.generateContent(user);
+      const result = await model.generateContent(prompt);
       const text = result.response.text().trim();
       const parsed = tryParseJsonFromModelText(text);
       if (!parsed.ok) {
