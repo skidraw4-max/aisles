@@ -51,6 +51,13 @@
   color: var(--text);
 }
 
+.helpText {
+  font-size: var(--type-13);
+  color: var(--muted);
+  margin: 0 0 1rem;
+  line-height: 1.55;
+}
+
 .field {
   display: flex;
   flex-direction: column;

@@ -56,5 +56,9 @@ export function parseGeekNewsNewListHtml(html: string): GeekNewsListItem[] {
     out.push({ title, externalUrl, topicId });
   }
 
+  if (out.length > 0) {
+    console.log(`[geeknews/parse] topic_row에서 ${out.length}개 링크 파싱`);
+  }
+
   return out;
 }

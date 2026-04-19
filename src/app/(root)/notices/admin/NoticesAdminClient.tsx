@@ -8,7 +8,28 @@ import {
   deleteNoticeAdminAction,
   updateNoticeAdminAction,
 } from '@/app/notices/actions';
+import { runGeekNewsSyncAdminAction } from '@/app/notices/geeknews-sync-actions';
 import styles from './admin.module.css';
+
+function formatGeekNewsSyncAlert(r: Awaited<ReturnType<typeof runGeekNewsSyncAdminAction>>): string {
+  if (!r.ok) {
+    return [`실패`, `단계: ${r.step}`, r.message, `코드: ${r.error}`].join('\n');
+  }
+  const lines = [
+    `완료: 신규 ${r.created}건 (목록에서 최대 ${r.scanned}건 스캔)`,
+    `강제 모드: ${r.force ? '예' : '아니오'}`,
+    '',
+    ...r.results.slice(0, 20).map((x) => {
+      const u = x.externalUrl.length > 56 ? `${x.externalUrl.slice(0, 56)}…` : x.externalUrl;
+      const extra = x.detail ? ` — ${x.detail}` : x.postId ? ` → ${x.postId}` : '';
+      return `${x.status}: ${u}${extra}`;
+    }),
+  ];
+  if (r.results.length > 20) {
+    lines.push(`… 외 ${r.results.length - 20}건`);
+  }
+  return lines.join('\n');
+}
 
 export type NoticeAdminRow = {
   id: string;
@@ -107,6 +128,20 @@ export function NoticesAdminClient({ initialNotices }: Props) {
     });
   };
 
+  const onGeekNewsSync = (force: boolean) => {
+    if (force && !globalThis.confirm('강제 모드: 이미 등록된 원문 URL도 다시 처리합니다. DB 중복 시 오류로 표시됩니다. 계속할까요?')) {
+      return;
+    }
+    setError(null);
+    startTransition(async () => {
+      const res = await runGeekNewsSyncAdminAction(force);
+      globalThis.alert(formatGeekNewsSyncAlert(res));
+      if (res.ok && res.created > 0) {
+        router.refresh();
+      }
+    });
+  };
+
   return (
     <>
       <div className={styles.headRow}>
@@ -114,6 +149,32 @@ export function NoticesAdminClient({ initialNotices }: Props) {
         <Link href="/notices" className={styles.back}>
           ← 공지 목록
         </Link>
+      </div>
+
+      <div className={styles.formCard}>
+        <h2 className={styles.formTitle}>GeekNews 동기화</h2>
+        <p className={styles.helpText}>
+          news.hada.io 최신 목록을 가져와 요약 글을 GOSSIP에 등록합니다. 일반 동기화는 이미 등록된 원문은 건너뜁니다. 강제는
+          중복 스킵 없이 시도합니다(이미 있으면 DB 오류로 표시).
+        </p>
+        <div className={styles.actions}>
+          <button
+            type="button"
+            className={`${styles.btn} ${styles.btnPrimary}`}
+            disabled={pending}
+            onClick={() => onGeekNewsSync(false)}
+          >
+            GeekNews 수동 동기화
+          </button>
+          <button
+            type="button"
+            className={`${styles.btn} ${styles.btnGhost}`}
+            disabled={pending}
+            onClick={() => onGeekNewsSync(true)}
+          >
+            GeekNews 강제 동기화
+          </button>
+        </div>
       </div>
 
       <form className={styles.formCard} onSubmit={onSubmit}>

@@ -96,6 +96,7 @@ export async function summarizeGeekNewsArticle(
         lastErr = new Error('Invalid article JSON shape');
         continue;
       }
+      console.log('[geeknews/summarize] Gemini 요약 완료', data.postTitle.slice(0, 72));
       return { ok: true, data };
     } catch (e) {
       lastErr = e;

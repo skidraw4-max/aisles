@@ -135,24 +135,31 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         : thumbRaw
           ? new URL(thumbRaw.startsWith('/') ? thumbRaw : `/${thumbRaw}`, base).href
           : undefined;
+    const defaultOg = new URL('/og-image.png', base).href;
+    const ogImages = thumbAbs
+      ? [{ url: thumbAbs, alt: post.title }]
+      : [{ url: defaultOg, width: 1200, height: 630, alt: post.title }];
     return {
       title: `${post.title} — AIsle`,
       description,
       keywords: [post.title, categoryLabel(post.category), 'AIsle', 'AI', '프롬프트'].filter(Boolean),
       alternates: { canonical: url },
+      robots: { index: true, follow: true },
       openGraph: {
         type: 'article',
+        locale: 'ko_KR',
+        siteName: 'AIsle',
         url,
         title: post.title,
         description,
         publishedTime: post.createdAt.toISOString(),
-        ...(thumbAbs ? { images: [{ url: thumbAbs, alt: post.title }] } : {}),
+        images: ogImages,
       },
       twitter: {
-        card: thumbAbs ? 'summary_large_image' : 'summary',
+        card: 'summary_large_image',
         title: post.title,
         description,
-        ...(thumbAbs ? { images: [thumbAbs] } : {}),
+        images: ogImages.map((i) => i.url),
       },
     };
   } catch {

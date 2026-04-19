@@ -2,12 +2,29 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { SiteFooter } from '@/components/SiteFooter';
 import { getLegalContactEmail, LEGAL_LAST_REVISED } from '@/lib/legal-site';
+import { getCanonicalSiteUrl } from '@/lib/canonical-site-url';
 import styles from '../legal.module.css';
 
-export const metadata: Metadata = {
-  title: '개인정보처리방침 — AIsle',
-  description: 'AIsle 개인정보처리방침입니다.',
-};
+const privacyPath = '/legal/privacy';
+
+export const metadata: Metadata = (() => {
+  const base = getCanonicalSiteUrl().replace(/\/$/, '');
+  const url = `${base}${privacyPath}`;
+  return {
+    title: '개인정보처리방침 — AIsle',
+    description: 'AIsle 개인정보처리방침입니다.',
+    alternates: { canonical: url },
+    robots: { index: true, follow: true },
+    openGraph: {
+      type: 'website',
+      locale: 'ko_KR',
+      siteName: 'AIsle',
+      url,
+      title: '개인정보처리방침 — AIsle',
+      description: 'AIsle 개인정보처리방침입니다.',
+    },
+  };
+})();
 
 export default function PrivacyPage() {
   const dpoEmail = getLegalContactEmail();
@@ -95,6 +112,20 @@ export default function PrivacyPage() {
               이 경우 <strong>Google 및 제휴사가 쿠키를 사용</strong>하여 이용자가 이전에 방문한 웹사이트 정보를 바탕으로 광고를
               게재하거나, 광고 성과를 측정할 수 있습니다. Google의 광고 쿠키 사용 방식은 Google의 개인정보처리방침 및 광고 정책에
               따릅니다.
+            </p>
+            <p>
+              <strong>구글 애드센스 광고 쿠키</strong>: Google AdSense로 게재되는 광고에는 이용자 브라우저에{' '}
+              <strong>광고 노출·맞춤형 광고·측정·사기 방지</strong> 등을 위한 쿠키가 저장될 수 있습니다. Google 및 제휴사는 이러한
+              쿠키를 사용하여 본 사이트와 다른 사이트 방문 정보를 바탕으로 광고를 맞춤 게재할 수 있습니다. Google이 광고에 쿠키를
+              사용하는 방식은{' '}
+              <a href="https://policies.google.com/technologies/ads" target="_blank" rel="noopener noreferrer">
+                Google 광고 기술 정책
+              </a>
+              및{' '}
+              <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">
+                Google 개인정보처리방침
+              </a>
+              을 참고해 주세요.
             </p>
             <p>
               <strong>거부·Opt-out(맞춤형 광고 제한)</strong>: 이용자는 다음과 같은 방법으로 맞춤형 광고에 활용되는 정보 수집을

@@ -3,23 +3,12 @@
  *
  * - 환경: `CRON_SECRET`(필수), `GOOGLE_GENERATIVE_AI_API_KEY` 또는 `GEMINI_API_KEY`, Prisma `User.username` 기본 `Nedai` (`GEEKNEWS_AUTHOR_USERNAME`으로 변경 가능)
  * - 스케줄: `vercel.json` — `0 20 * * *` (UTC) ≈ 한국 시간 새벽 5시
- * - Vercel 대시보드 Cron에 동일 경로 등록 후, 프로젝트 환경 변수에 `CRON_SECRET` 설정
+ * - `GET` 또는 `POST` 동일 동작. `?force=true` 시 중복 URL 스킵 없이 시도(삽입 시 DB 유니크로 막힘).
  */
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { fetchExternalArticlePlainText } from '@/lib/geeknews/extract-article-text';
-import { formatGeekNewsPostBody } from '@/lib/geeknews/format-post-body';
-import { parseGeekNewsNewListHtml } from '@/lib/geeknews/parse-list';
-import { summarizeGeekNewsArticle } from '@/lib/geeknews/summarize';
-import { readGeminiApiKeyFromEnv } from '@/lib/gemini-prompt-analysis-engine';
+import { runGeekNewsSync } from '@/lib/geeknews/run-geeknews-sync';
 
 export const maxDuration = 300;
-
-const GEEKNEWS_NEW_URL = 'https://news.hada.io/new';
-const MAX_NEW_POSTS_PER_RUN = 5;
-const MAX_LIST_SCAN = 35;
-/** 원문이 너무 짧으면 요약 품질이 떨어져 스킵 */
-const MIN_BODY_CHARS = 120;
 
 function verifyCronAuth(req: NextRequest): boolean {
   const secret = process.env.CRON_SECRET?.trim();
@@ -31,124 +20,62 @@ function verifyCronAuth(req: NextRequest): boolean {
   return auth === `Bearer ${secret}`;
 }
 
-/**
- * Vercel Cron: `vercel.json`에서 스케줄 등록.
- * 한국 새벽 5시 ≈ 매일 UTC 20:00 (`0 20 * * *`).
- */
-export async function GET(req: NextRequest) {
+function httpStatusForFailure(step: string): number {
+  switch (step) {
+    case 'geeknews_list_fetch':
+      return 502;
+    case 'geeknews_parse':
+      return 422;
+    default:
+      return 500;
+  }
+}
+
+async function handle(req: NextRequest) {
   if (!verifyCronAuth(req)) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
-  const keyRes = readGeminiApiKeyFromEnv();
-  if (!keyRes.ok) {
-    return NextResponse.json({ error: 'Missing GOOGLE_GENERATIVE_AI_API_KEY / GEMINI_API_KEY' }, { status: 500 });
-  }
-
-  const authorUsername = (process.env.GEEKNEWS_AUTHOR_USERNAME ?? 'Nedai').trim();
-  const author = await prisma.user.findFirst({
-    where: { username: authorUsername },
-    select: { id: true },
-  });
-  if (!author) {
     return NextResponse.json(
       {
-        error: `Prisma User not found for username "${authorUsername}". Create Supabase user + matching User row.`,
+        ok: false,
+        step: 'auth',
+        error: 'UNAUTHORIZED',
+        message: 'CRON_SECRET이 없거나 Authorization: Bearer 가 일치하지 않습니다.',
       },
-      { status: 500 },
+      { status: 401 },
     );
   }
 
-  const listRes = await fetch(GEEKNEWS_NEW_URL, {
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (compatible; AIsle-GeekNews/1.0)',
-      Accept: 'text/html,*/*',
-    },
-    signal: AbortSignal.timeout(25_000),
-    redirect: 'follow',
-  });
-  if (!listRes.ok) {
-    return NextResponse.json({ error: `GeekNews list HTTP ${listRes.status}` }, { status: 502 });
+  const force = req.nextUrl.searchParams.get('force') === 'true';
+  if (force) {
+    console.log('[geeknews] 강제 실행 모드(force=true) — 중복 URL 스킵 없음');
   }
-  const listHtml = await listRes.text();
-  const parsed = parseGeekNewsNewListHtml(listHtml);
 
-  const existingRows = await prisma.post.findMany({
-    where: { geeknewsOriginalUrl: { not: null } },
-    select: { geeknewsOriginalUrl: true },
-  });
-  const existingUrls = new Set(
-    existingRows.map((r) => r.geeknewsOriginalUrl).filter((u): u is string => Boolean(u)),
-  );
+  const result = await runGeekNewsSync({ force });
 
-  const scan = parsed.slice(0, MAX_LIST_SCAN);
-  const results: {
-    externalUrl: string;
-    status: 'created' | 'skipped_duplicate' | 'skipped_short_body' | 'skipped_summary' | 'error';
-    detail?: string;
-    postId?: string;
-  }[] = [];
-
-  let created = 0;
-
-  for (const item of scan) {
-    if (created >= MAX_NEW_POSTS_PER_RUN) break;
-
-    if (existingUrls.has(item.externalUrl)) {
-      results.push({ externalUrl: item.externalUrl, status: 'skipped_duplicate' });
-      continue;
-    }
-
-    const plain = await fetchExternalArticlePlainText(item.externalUrl);
-    if (plain.length < MIN_BODY_CHARS) {
-      results.push({
-        externalUrl: item.externalUrl,
-        status: 'skipped_short_body',
-        detail: `plainLength=${plain.length}`,
-      });
-      continue;
-    }
-
-    const sum = await summarizeGeekNewsArticle(keyRes.key, item.title, plain);
-    if (!sum.ok) {
-      results.push({
-        externalUrl: item.externalUrl,
-        status: 'skipped_summary',
-        detail: sum.error,
-      });
-      continue;
-    }
-
-    const topicUrl = `https://news.hada.io/topic?id=${encodeURIComponent(item.topicId)}`;
-    const content = formatGeekNewsPostBody(item.externalUrl, topicUrl, sum.data);
-    const title = sum.data.postTitle.trim() || item.title;
-
-    try {
-      const post = await prisma.post.create({
-        data: {
-          category: 'GOSSIP',
-          title,
-          content,
-          thumbnail: null,
-          attachmentUrls: [],
-          tags: ['GeekNews'],
-          authorId: author.id,
-          geeknewsOriginalUrl: item.externalUrl.slice(0, 2048),
-        },
-      });
-      existingUrls.add(item.externalUrl);
-      created += 1;
-      results.push({ externalUrl: item.externalUrl, status: 'created', postId: post.id });
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      results.push({ externalUrl: item.externalUrl, status: 'error', detail: msg });
-    }
+  if (!result.ok) {
+    return NextResponse.json(
+      {
+        ok: false,
+        step: result.step,
+        error: result.error,
+        message: result.message,
+      },
+      { status: httpStatusForFailure(result.step) },
+    );
   }
 
   return NextResponse.json({
     ok: true,
-    created,
-    scanned: scan.length,
-    results,
+    created: result.created,
+    scanned: result.scanned,
+    force: result.force,
+    results: result.results,
   });
+}
+
+export async function GET(req: NextRequest) {
+  return handle(req);
+}
+
+export async function POST(req: NextRequest) {
+  return handle(req);
 }

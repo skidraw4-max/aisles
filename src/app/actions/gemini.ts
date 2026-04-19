@@ -288,6 +288,8 @@ function imageErrorFromGeminiFailure(err: unknown): AnalyzeImageResult {
 export async function analyzeImage(input: AnalyzeImageInput): Promise<AnalyzeImageResult> {
   noStore();
 
+  console.log('[analyzeImage] 시작 — 이미지 해석·Gemini 호출');
+
   const auth = await requireUserForPromptAnalysis();
   if (!auth.ok) {
     return {
@@ -317,11 +319,13 @@ export async function analyzeImage(input: AnalyzeImageInput): Promise<AnalyzeIma
   if (!raw.ok) {
     return raw;
   }
+  console.log('[analyzeImage] 원본 이미지 로드 완료');
 
   const optimized = await resizeToGeminiJpegBase64(raw.buffer);
   if (!optimized.ok) {
     return optimized;
   }
+  console.log('[analyzeImage] JPEG 최적화 완료 — 모델 루프 시작');
 
   let lastFailure: unknown = null;
 
@@ -379,6 +383,7 @@ export async function analyzeImage(input: AnalyzeImageInput): Promise<AnalyzeIma
             };
           }
 
+          console.log('[analyzeImage] Gemini 분석 완료(JSON 파싱 성공)');
           return { ok: true, data: parsed.value };
         } catch (e) {
           lastFailure = e;

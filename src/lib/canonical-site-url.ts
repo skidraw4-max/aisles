@@ -3,7 +3,8 @@
  * 배포: `NEXT_PUBLIC_SITE_URL=https://www.example.com` (프로토콜 포함 권장)
  * `www.example.com` 처럼 프로토콜이 없으면 `https://` 를 붙입니다.
  */
-const DEFAULT_ORIGIN = 'https://aisleshub.com';
+/** 환경 변수 미설정 시 기본값(실 서비스 도메인과 일치시켜 canonical·OG·사이트맵 불일치 방지) */
+const DEFAULT_ORIGIN = 'https://www.aisleshub.com';
 
 function normalizeToOrigin(raw: string): string {
   let s = raw.trim().replace(/\/$/, '');
