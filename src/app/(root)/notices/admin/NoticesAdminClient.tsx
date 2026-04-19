@@ -155,7 +155,7 @@ export function NoticesAdminClient({ initialNotices }: Props) {
       <div className={styles.formCard}>
         <h2 className={styles.formTitle}>GeekNews 동기화</h2>
         <p className={styles.helpText}>
-          news.hada.io 최신 목록을 가져와 요약 글을 GOSSIP에 등록합니다. 일반 동기화는 이미 등록된 원문은 건너뜁니다. 강제는
+          news.hada.io 최신 목록을 가져와 요약 글을 Lounge 복도에 등록합니다. 일반 동기화는 이미 등록된 원문은 건너뜁니다. 강제는
           중복 스킵 없이 시도합니다(이미 있으면 DB 오류로 표시).
         </p>
         <div className={styles.actions}>

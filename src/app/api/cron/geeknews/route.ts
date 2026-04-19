@@ -1,5 +1,5 @@
 /**
- * GeekNews → 요약 → GOSSIP 자동 등록 (Vercel Cron)
+ * GeekNews → 요약 → LOUNGE 자동 등록 (Vercel Cron)
  *
  * - 환경: `CRON_SECRET`(필수), `GOOGLE_GENERATIVE_AI_API_KEY` 또는 `GEMINI_API_KEY`, Prisma `User.username` 기본 `Nedai` (`GEEKNEWS_AUTHOR_USERNAME`으로 변경 가능)
  * - 스케줄: `vercel.json` — `0 20 * * *` (UTC) ≈ 한국 시간 새벽 5시

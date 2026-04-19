@@ -190,7 +190,7 @@ export async function runGeekNewsSync(options: { force: boolean }): Promise<Geek
     try {
       const post = await prisma.post.create({
         data: {
-          category: 'GOSSIP',
+          category: 'LOUNGE',
           title,
           content,
           thumbnail: null,

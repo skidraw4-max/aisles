@@ -1,7 +1,7 @@
 import type { GeekNewsArticleJson } from '@/lib/geeknews/summarize';
 
 /**
- * Lounge/GOSSIP `PostRichContent`용 본문.
+ * Lounge `PostRichContent`용 본문.
  * UI에서 위에 "설명" 라벨이 붙으므로 본문은 참고 글처럼 바로 도입부터 시작.
  */
 export function formatGeekNewsPostBody(
