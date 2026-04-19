@@ -5,7 +5,10 @@ import 'dotenv/config';
 
 export default defineConfig({
   datasource: {
-    /** 마이그레이션: Supabase는 DIRECT_URL(세션) 권장. CI에 없으면 DATABASE_URL로 폴백 */
+    /**
+     * Prisma CLI(migrate 등): Supabase는 **직접 연결** 권장(풀러 6543은 migrate에 부적합).
+     * 로컬에 DIRECT_URL 없으면 DATABASE_URL 폴백(주의: 풀러면 migrate 실패 가능).
+     */
     url: process.env.DIRECT_URL || process.env.DATABASE_URL,
   },
 });
