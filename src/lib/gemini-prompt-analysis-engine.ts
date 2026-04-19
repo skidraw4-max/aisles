@@ -333,6 +333,21 @@ export function classifyGeminiFailure(err: unknown): ClassifiedFailure {
         evidence: { ...base, rule: 'http_404' },
       };
     }
+    /** 예: `gemini-1.5-flash-latest is not found for API version v1` — 다른 모델·경로로 폴백 */
+    if (err.status === 400) {
+      const m = lower;
+      if (
+        (m.includes('not found') && (m.includes('model') || m.includes('api version'))) ||
+        m.includes('is not found for api version')
+      ) {
+        return {
+          category: 'NOT_FOUND',
+          userMessage:
+            '요청한 모델이 이 API 버전에서 제공되지 않습니다. 서버가 다른 모델·엔드포인트로 자동 재시도합니다.',
+          evidence: { ...base, rule: 'http_400_model_or_api_version' },
+        };
+      }
+    }
 
     return {
       category: 'UNKNOWN',
@@ -485,7 +500,8 @@ async function getAnalysisModel(
   );
 }
 
-function isGeminiModelNotFoundForFallback(e: unknown): boolean {
+/** 모델·API 버전 불일치(404, 또는 400+not found) 시 다음 후보로 넘길지 판별 */
+export function isGeminiModelNotFoundForFallback(e: unknown): boolean {
   if (e instanceof GoogleGenerativeAIFetchError && e.status === 404) {
     return true;
   }

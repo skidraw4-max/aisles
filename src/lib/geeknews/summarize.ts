@@ -1,9 +1,13 @@
-import { GoogleGenerativeAI, GoogleGenerativeAIFetchError } from '@google/generative-ai';
-import { GEMINI_API_VERSION_CHAIN } from '@/lib/gemini-models';
-import { tryParseJsonFromModelText } from '@/lib/gemini-prompt-analysis-engine';
-
-/** 요구사항: Gemini 1.5 Flash */
-const GEEKNEWS_SUMMARY_MODEL = 'gemini-1.5-flash-latest';
+import { GoogleGenerativeAI } from '@google/generative-ai';
+import {
+  GEMINI_API_VERSION_CHAIN,
+  GEMINI_GEEKNEWS_MODEL_CHAIN,
+} from '@/lib/gemini-models';
+import {
+  classifyGeminiFailure,
+  isGeminiModelNotFoundForFallback,
+  tryParseJsonFromModelText,
+} from '@/lib/gemini-prompt-analysis-engine';
 
 /**
  * 참고 톤: `post/c5f8ed2f-902b-45e7-bb86-19fbe6bad46a` — [오픈소스 소개] 스타일 제목,
@@ -72,41 +76,69 @@ export async function summarizeGeekNewsArticle(
   const prompt = `${SYSTEM}\n\n---\n\n${user}`;
 
   let lastErr: unknown;
-  for (const apiVersion of GEMINI_API_VERSION_CHAIN) {
-    try {
-      const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel(
-        {
-          model: GEEKNEWS_SUMMARY_MODEL,
-          generationConfig: {
-            temperature: 0.28,
-            maxOutputTokens: 8192,
+
+  for (const modelId of GEMINI_GEEKNEWS_MODEL_CHAIN) {
+    for (const apiVersion of GEMINI_API_VERSION_CHAIN) {
+      try {
+        const genAI = new GoogleGenerativeAI(apiKey);
+        const model = genAI.getGenerativeModel(
+          {
+            model: modelId,
+            generationConfig: {
+              temperature: 0.28,
+              maxOutputTokens: 8192,
+            },
           },
-        },
-        { apiVersion },
-      );
-      const result = await model.generateContent(prompt);
-      const text = result.response.text().trim();
-      const parsed = tryParseJsonFromModelText(text);
-      if (!parsed.ok) {
-        lastErr = new Error('JSON parse failed');
+          { apiVersion },
+        );
+        const result = await model.generateContent(prompt);
+        const text = result.response.text().trim();
+        const parsed = tryParseJsonFromModelText(text);
+        if (!parsed.ok) {
+          lastErr = new Error('JSON parse failed');
+          console.warn('[geeknews/summarize] JSON 파싱 실패 → 다음 후보', { modelId, apiVersion });
+          continue;
+        }
+        const data = parseArticleJson(parsed.value);
+        if (!data) {
+          lastErr = new Error('Invalid article JSON shape');
+          console.warn('[geeknews/summarize] 스키마 불일치 → 다음 후보', { modelId, apiVersion });
+          continue;
+        }
+        console.log('[geeknews/summarize] Gemini 요약 완료', {
+          modelId,
+          apiVersion,
+          title: data.postTitle.slice(0, 72),
+        });
+        return { ok: true, data };
+      } catch (e) {
+        lastErr = e;
+        if (isGeminiModelNotFoundForFallback(e)) {
+          console.warn('[geeknews/summarize] 모델·API 경로 불가 → 다음 후보', {
+            modelId,
+            apiVersion,
+            message: e instanceof Error ? e.message.slice(0, 200) : String(e),
+          });
+          continue;
+        }
+        const classified = classifyGeminiFailure(e);
+        if (
+          classified.category === 'AUTH' ||
+          classified.category === 'RATE_LIMIT' ||
+          classified.category === 'SERVER'
+        ) {
+          return { ok: false, error: classified.userMessage };
+        }
+        console.warn('[geeknews/summarize] 일시 오류 → 다음 후보', {
+          modelId,
+          apiVersion,
+          category: classified.category,
+        });
         continue;
       }
-      const data = parseArticleJson(parsed.value);
-      if (!data) {
-        lastErr = new Error('Invalid article JSON shape');
-        continue;
-      }
-      console.log('[geeknews/summarize] Gemini 요약 완료', data.postTitle.slice(0, 72));
-      return { ok: true, data };
-    } catch (e) {
-      lastErr = e;
-      if (e instanceof GoogleGenerativeAIFetchError && e.status === 404) {
-        continue;
-      }
-      return { ok: false, error: e instanceof Error ? e.message : String(e) };
     }
   }
+
   return {
     ok: false,
     error: lastErr instanceof Error ? lastErr.message : String(lastErr ?? 'Gemini 요약 실패'),

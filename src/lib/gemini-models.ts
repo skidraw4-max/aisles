@@ -26,3 +26,15 @@ export const GEMINI_IMAGE_MODEL_CHAIN = [
   'gemini-1.5-flash',
   GEMINI_MODEL_TERTIARY,
 ] as const;
+
+/**
+ * GeekNews 텍스트 요약: `GEMINI_API_VERSION_CHAIN`(v1beta→v1)와 함께 순차 시도.
+ * 키·프로젝트마다 특정 `*-latest` 또는 API 버전 조합이 없을 수 있어 이미지 체인과 동일한 순서.
+ */
+export const GEMINI_GEEKNEWS_MODEL_CHAIN = [
+  GEMINI_MODEL_PRIMARY,
+  'gemini-2.5-flash-latest',
+  GEMINI_MODEL_FALLBACK,
+  'gemini-1.5-flash',
+  GEMINI_MODEL_TERTIARY,
+] as const;
