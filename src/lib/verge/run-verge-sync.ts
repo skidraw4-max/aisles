@@ -126,7 +126,11 @@ export async function runVergeSync(options: { force: boolean }): Promise<VergeSy
     };
   }
 
-  const authorUsername = (process.env.VERGE_AUTHOR_USERNAME ?? 'admin').trim();
+  const authorUsername = (
+    process.env.HACKERNEWS_AUTHOR_USERNAME ??
+    process.env.GEEKNEWS_AUTHOR_USERNAME ??
+    'Nedai'
+  ).trim();
   const author = await prisma.user.findFirst({
     where: { username: authorUsername },
     select: { id: true },
@@ -136,7 +140,7 @@ export async function runVergeSync(options: { force: boolean }): Promise<VergeSy
       ok: false,
       step: 'author_missing',
       error: `USER_NOT_FOUND:${authorUsername}`,
-      message: `The Verge 전용 작성자 사용자("${authorUsername}")를 찾을 수 없습니다.`,
+      message: `The Verge 자동 수집용 작성자("${authorUsername}")를 찾을 수 없습니다. (HN·GeekNews와 동일: HACKERNEWS_AUTHOR_USERNAME → GEEKNEWS_AUTHOR_USERNAME → Nedai)`,
     };
   }
 
