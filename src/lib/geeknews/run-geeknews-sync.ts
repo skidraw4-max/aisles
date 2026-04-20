@@ -4,6 +4,7 @@ import { fetchExternalArticlePlainText } from '@/lib/geeknews/extract-article-te
 import { formatGeekNewsPostBody } from '@/lib/geeknews/format-post-body';
 import { parseGeekNewsNewListHtml } from '@/lib/geeknews/parse-list';
 import { summarizeGeekNewsArticle } from '@/lib/geeknews/summarize';
+import { titleMatchesAiKeywords } from '@/lib/hackernews/ai-title';
 import { readGeminiApiKeyFromEnv } from '@/lib/gemini-prompt-analysis-engine';
 
 const GEEKNEWS_NEW_URL = 'https://news.hada.io/new';
@@ -26,7 +27,8 @@ export type GeekNewsItemResult = {
     | 'skipped_short_body'
     | 'skipped_summary'
     | 'error'
-    | 'skipped_fetch';
+    | 'skipped_fetch'
+    | 'skipped_not_ai';
   detail?: string;
   postId?: string;
   step?: string;
@@ -151,6 +153,11 @@ export async function runGeekNewsSync(options: { force: boolean }): Promise<Geek
 
     if (!force && existingUrls.has(item.externalUrl)) {
       results.push({ externalUrl: item.externalUrl, status: 'skipped_duplicate' });
+      continue;
+    }
+
+    if (!titleMatchesAiKeywords(item.title.trim())) {
+      results.push({ externalUrl: item.externalUrl, status: 'skipped_not_ai' });
       continue;
     }
 

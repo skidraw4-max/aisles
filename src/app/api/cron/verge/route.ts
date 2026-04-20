@@ -1,5 +1,5 @@
 /**
- * The Verge Tech RSS → 요약 → TREND 자동 등록 (Vercel Cron)
+ * The Verge RSS → 요약 → LOUNGE(AI 트렌드) 자동 등록 (Vercel Cron)
  *
  * - 환경: `CRON_SECRET`(필수), `GOOGLE_GENERATIVE_AI_API_KEY` 또는 `GEMINI_API_KEY`, 작성자는 GeekNews·Hacker News와 동일 (`HACKERNEWS_AUTHOR_USERNAME` → `GEEKNEWS_AUTHOR_USERNAME` → 기본 `Nedai`)
  * - RSS URL: `VERGE_RSS_URL` (`run-verge-sync.ts`) — The Verge AI RSS

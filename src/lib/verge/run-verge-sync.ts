@@ -3,6 +3,7 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { htmlToPlainText } from '@/lib/geeknews/extract-article-text';
 import { readGeminiApiKeyFromEnv } from '@/lib/gemini-prompt-analysis-engine';
+import { titleMatchesAiKeywords } from '@/lib/hackernews/ai-title';
 import { summarizeVergeArticle } from '@/lib/verge/summarize-verge';
 import { formatVergePostBody } from '@/lib/verge/format-verge-body';
 
@@ -163,22 +164,6 @@ async function loadBlockedOriginalUrls(): Promise<Set<string>> {
   return set;
 }
 
-function extractThumbnail(item: Parser.Item): string | null {
-  const enc = item.enclosure;
-  if (enc?.url && /\.(jpe?g|png|gif|webp)(\?|$)/i.test(enc.url)) {
-    return enc.url.trim();
-  }
-  const raw = item as Record<string, unknown>;
-  const thumb = raw['media:thumbnail'] as { $?: { url?: string } } | undefined;
-  if (thumb?.$?.url) return String(thumb.$.url).trim();
-  const content = item.content ?? item.summary ?? '';
-  if (typeof content === 'string') {
-    const m = content.match(/<img[^>]+src=["']([^"']+)["']/i);
-    if (m?.[1]) return m[1].trim();
-  }
-  return null;
-}
-
 function rssPlainBody(item: Parser.Item): string {
   const raw = item as Record<string, unknown>;
   const encoded =
@@ -272,8 +257,8 @@ async function runVergeSyncInner(options: { force: boolean }): Promise<VergeSync
     };
   }
 
-  const items = (feed.items ?? []).slice(0, MAX_NEW_POSTS_PER_RUN);
-  if (items.length === 0) {
+  const rawFeed = feed.items ?? [];
+  if (rawFeed.length === 0) {
     return {
       ok: false,
       step: 'verge_rss_parse',
@@ -282,13 +267,26 @@ async function runVergeSyncInner(options: { force: boolean }): Promise<VergeSync
     };
   }
 
+  /** Hacker News `rankStoriesForSync`와 동일 — 제목에 AI 키워드가 있는 항목만 */
+  const aiItems = rawFeed.filter((it) => titleMatchesAiKeywords((it.title ?? '').trim()));
+  const items = aiItems.slice(0, MAX_NEW_POSTS_PER_RUN);
+
+  if (items.length === 0) {
+    console.warn('[verge] 피드에 AI 키워드 제목 기사 없음 — 등록 생략', { feedItems: rawFeed.length });
+    return {
+      ok: true,
+      created: 0,
+      scanned: rawFeed.length,
+      force,
+      results: [],
+    };
+  }
+
   const blocked = await loadBlockedOriginalUrls();
   const results: VergeItemResult[] = [];
   let created = 0;
 
   for (const item of items) {
-    if (created >= MAX_NEW_POSTS_PER_RUN) break;
-
     const rawLink = item.link?.trim();
     if (!isValidVergeArticleLink(rawLink)) {
       results.push({
@@ -330,17 +328,16 @@ async function runVergeSyncInner(options: { force: boolean }): Promise<VergeSync
 
     const content = formatVergePostBody(link, sum.data);
     const title = sum.data.postTitle.trim() || item.title?.trim() || 'The Verge';
-    const thumb = extractThumbnail(item);
 
     try {
       const post = await prisma.post.create({
         data: {
-          category: 'TREND',
+          category: 'LOUNGE',
           title: title.slice(0, 200),
           content,
-          thumbnail: thumb ? thumb.slice(0, 2048) : null,
+          thumbnail: null,
           attachmentUrls: [],
-          tags: ['The Verge', 'Tech'],
+          tags: ['The Verge'],
           authorId: author.id,
           externalLink: link,
           vergeOriginalUrl: link,
@@ -369,12 +366,14 @@ async function runVergeSyncInner(options: { force: boolean }): Promise<VergeSync
     }
   }
 
-  console.log(`[verge] 동기화 종료 — 신규 ${created}건, 스캔 ${items.length}건, force=${force}`);
+  console.log(
+    `[verge] 동기화 종료 — 신규 ${created}건, 피드 ${rawFeed.length}건 중 AI 제목 후보 ${items.length}건 처리, force=${force}`,
+  );
 
   return {
     ok: true,
     created,
-    scanned: items.length,
+    scanned: rawFeed.length,
     force,
     results,
   };

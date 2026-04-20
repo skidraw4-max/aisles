@@ -147,7 +147,7 @@ enum Category {
   GOSSIP  // 소셜·가십 복도
   BUILD   // 빌드 복도
   LAUNCH  // 서비스 복도
-  TREND   // 외부 테크 뉴스(The Verge RSS 등)
+  TREND   // 레거시(구 테크 트렌드) — 신규 외부 뉴스는 LOUNGE
 }
 
 /// 관리자(BO)에서 수정 가능한 UI 카피 (메뉴·헤드라인·탭 등)

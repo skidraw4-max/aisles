@@ -18,7 +18,6 @@ const POST_CATEGORY_ORDER: Category[] = [
   'GOSSIP',
   'BUILD',
   'LAUNCH',
-  'TREND',
 ];
 
 /**
@@ -40,7 +39,11 @@ export const UI_CONFIG_SEED: readonly UiConfigSeedRow[] = [
   { key: 'corridor.gossip', value: '커뮤니티', description: '복도 표시명 (GOSSIP)' },
   { key: 'corridor.build', value: '제작기', description: '복도 표시명 (BUILD)' },
   { key: 'corridor.launch', value: '출시', description: '복도 표시명 (LAUNCH)' },
-  { key: 'corridor.trend', value: '테크 트렌드', description: '복도 표시명 (TREND · The Verge 등)' },
+  {
+    key: 'corridor.trend',
+    value: '이전 분류 (TREND)',
+    description: '구 TREND 게시글 뱃지용 — 메뉴 비노출',
+  },
   { key: 'corridor.guide', value: '가이드', description: '상단 /about 링크' },
   { key: 'header.upload', value: '레시피 등록', description: '헤더 업로드 버튼 라벨' },
 

@@ -16,7 +16,6 @@ export const HOME_NAV_ITEMS: { href: string; queryKey: string | null; labelKey: 
   { href: '/?category=GOSSIP', queryKey: 'GOSSIP', labelKey: 'corridor.gossip' },
   { href: '/?category=BUILD', queryKey: 'BUILD', labelKey: 'corridor.build' },
   { href: '/?category=LAUNCH', queryKey: 'LAUNCH', labelKey: 'corridor.launch' },
-  { href: '/?category=TREND', queryKey: 'TREND', labelKey: 'corridor.trend' },
 ];
 
 function navClassName(active: boolean) {

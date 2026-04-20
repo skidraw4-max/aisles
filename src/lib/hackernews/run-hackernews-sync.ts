@@ -147,15 +147,27 @@ export async function runHackerNewsSync(options: { force: boolean }): Promise<Ha
     };
   }
 
+  const aiRanked = ranked.filter((s) => s.aiPriority);
   console.log(
-    `[hackernews] 후보 ${ranked.length}건 (AI 키워드 우선·score 정렬), 최대 ${MAX_NEW_POSTS_PER_RUN}건 등록`,
+    `[hackernews] 후보 ${ranked.length}건 중 AI 제목 ${aiRanked.length}건 (score 정렬), 최대 ${MAX_NEW_POSTS_PER_RUN}건 등록`,
   );
+
+  if (aiRanked.length === 0) {
+    console.warn('[hackernews] AI 키워드 제목 story 없음 — 등록 생략', { rankedTotal: ranked.length });
+    return {
+      ok: true,
+      created: 0,
+      scanned: ranked.length,
+      force,
+      results: [],
+    };
+  }
 
   const blockedUrls = await loadBlockedOriginalUrls();
   const results: HackerNewsItemResult[] = [];
   let created = 0;
 
-  for (const story of ranked) {
+  for (const story of aiRanked) {
     if (created >= MAX_NEW_POSTS_PER_RUN) break;
 
     const externalUrl = story.url.slice(0, 2048);
