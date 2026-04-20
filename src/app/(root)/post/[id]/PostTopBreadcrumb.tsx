@@ -7,25 +7,6 @@ type Props = {
   category: Category;
 };
 
-function thirdCrumbLabel(category: Category): string {
-  switch (category) {
-    case 'RECIPE':
-      return '튜토리얼';
-    case 'GALLERY':
-      return '피드';
-    case 'LOUNGE':
-      return '라운지';
-    case 'GOSSIP':
-      return '토픽';
-    case 'BUILD':
-      return '빌드 노트';
-    case 'LAUNCH':
-      return '런칭 스토리';
-    default:
-      return '게시글';
-  }
-}
-
 export function PostTopBreadcrumb({ category }: Props) {
   const catLabel = POST_CATEGORY_OPTIONS.find((o) => o.value === category)?.label ?? category;
   const q = categoryToHomeQuery(category);
@@ -38,10 +19,6 @@ export function PostTopBreadcrumb({ category }: Props) {
             {catLabel}
           </Link>
         </li>
-        <li className={styles.magazineBreadcrumbSep} aria-hidden>
-          /
-        </li>
-        <li className={styles.magazineBreadcrumbCurrent}>{thirdCrumbLabel(category)}</li>
       </ol>
     </nav>
   );
