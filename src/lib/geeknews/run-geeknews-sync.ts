@@ -214,6 +214,7 @@ export async function runGeekNewsSync(options: { force: boolean }): Promise<Geek
           tags: ['GeekNews'],
           authorId: author.id,
           geeknewsOriginalUrl: item.externalUrl.slice(0, 2048),
+          externalLink: item.externalUrl.slice(0, 2048),
         },
       });
       existingUrls.add(item.externalUrl);

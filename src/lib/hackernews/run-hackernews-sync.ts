@@ -229,6 +229,7 @@ export async function runHackerNewsSync(options: { force: boolean }): Promise<Ha
           tags: ['HackerNews'],
           authorId: author.id,
           hackerNewsOriginalUrl: externalUrl,
+          externalLink: externalUrl,
         },
       });
       blockedUrls.add(externalUrl);

@@ -354,7 +354,14 @@ export default async function PostPage({ params }: Props) {
     authorUsername: p.author.username,
     commentCount: p._count.comments,
   }));
-  const externalHref = (post.externalLink ?? '').trim();
+  /** 자동 수집 글(GeekNews·HN·Verge)은 원문 URL이 전용 필드에만 있을 수 있음 → 방문 CTA용으로 통합 */
+  const externalHref = (
+    post.externalLink ??
+    post.geeknewsOriginalUrl ??
+    post.hackerNewsOriginalUrl ??
+    post.vergeOriginalUrl ??
+    ''
+  ).trim();
   const extraAttachments = (post.attachmentUrls ?? []).filter((u) => u.trim().length > 0);
   const catLabel = corridorLabel(ui, post.category);
   const heroCaption = post.metadata?.modelName
