@@ -86,6 +86,13 @@ export async function summarizeVergeArticle(
           classified.category === 'RATE_LIMIT' ||
           classified.category === 'SERVER'
         ) {
+          console.error('[verge/summarize] Gemini 호출 실패(중단)', {
+            modelId,
+            apiVersion,
+            category: classified.category,
+            evidence: classified.evidence,
+            message: e instanceof Error ? e.message : String(e),
+          });
           return { ok: false, error: classified.userMessage };
         }
         continue;
