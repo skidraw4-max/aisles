@@ -81,11 +81,7 @@ export async function summarizeVergeArticle(
         lastErr = e;
         if (isGeminiModelNotFoundForFallback(e)) continue;
         const classified = classifyGeminiFailure(e);
-        if (
-          classified.category === 'AUTH' ||
-          classified.category === 'RATE_LIMIT' ||
-          classified.category === 'SERVER'
-        ) {
+        if (classified.category === 'AUTH' || classified.category === 'RATE_LIMIT') {
           console.error('[verge/summarize] Gemini 호출 실패(중단)', {
             modelId,
             apiVersion,
@@ -94,6 +90,15 @@ export async function summarizeVergeArticle(
             message: e instanceof Error ? e.message : String(e),
           });
           return { ok: false, error: classified.userMessage };
+        }
+        /** 503·과부하는 모델별로 갈리므로 체인의 다음 모델·API 버전으로 폴백 */
+        if (classified.category === 'SERVER') {
+          console.warn('[verge/summarize] 일시 과부하(503 등) → 다음 모델·버전 시도', {
+            modelId,
+            apiVersion,
+            evidence: classified.evidence,
+          });
+          continue;
         }
         continue;
       }

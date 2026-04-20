@@ -123,12 +123,15 @@ export async function summarizeGeekNewsArticle(
           continue;
         }
         const classified = classifyGeminiFailure(e);
-        if (
-          classified.category === 'AUTH' ||
-          classified.category === 'RATE_LIMIT' ||
-          classified.category === 'SERVER'
-        ) {
+        if (classified.category === 'AUTH' || classified.category === 'RATE_LIMIT') {
           return { ok: false, error: classified.userMessage };
+        }
+        if (classified.category === 'SERVER') {
+          console.warn('[geeknews/summarize] 일시 과부하(503 등) → 다음 모델·버전 시도', {
+            modelId,
+            apiVersion,
+          });
+          continue;
         }
         console.warn('[geeknews/summarize] 일시 오류 → 다음 후보', {
           modelId,
