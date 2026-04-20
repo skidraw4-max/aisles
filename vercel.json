@@ -1,16 +1,8 @@
 {
   "crons": [
     {
-      "path": "/api/cron/geeknews",
+      "path": "/api/cron/daily-news-bundled",
       "schedule": "0 20 * * *"
-    },
-    {
-      "path": "/api/cron/hackernews",
-      "schedule": "30 20 * * *"
-    },
-    {
-      "path": "/api/cron/verge",
-      "schedule": "5 20 * * *"
     }
   ]
 }

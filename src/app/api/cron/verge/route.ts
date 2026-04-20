@@ -2,7 +2,8 @@
  * The Verge Tech RSS → 요약 → TREND 자동 등록 (Vercel Cron)
  *
  * - 환경: `CRON_SECRET`(필수), `GOOGLE_GENERATIVE_AI_API_KEY` 또는 `GEMINI_API_KEY`, 작성자는 GeekNews·Hacker News와 동일 (`HACKERNEWS_AUTHOR_USERNAME` → `GEEKNEWS_AUTHOR_USERNAME` → 기본 `Nedai`)
- * - 스케줄: `vercel.json` — `5 20 * * *` (UTC) ≈ 한국 시간 새벽 5시 5분 (GeekNews 크론과 분리)
+ * - RSS URL: `VERGE_RSS_URL` (`run-verge-sync.ts`) — The Verge AI RSS
+ * - 프로덕션 일괄 실행은 `/api/cron/daily-news-bundled`(Verge→GeekNews→HN) 권장
  * - `GET` 또는 `POST` 동일 동작. `?force=true` 시 중복 URL 스킵 없이 시도(삽입 시 DB 유니크로 막힘).
  */
 import { NextRequest, NextResponse } from 'next/server';

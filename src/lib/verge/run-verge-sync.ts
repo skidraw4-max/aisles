@@ -6,9 +6,18 @@ import { readGeminiApiKeyFromEnv } from '@/lib/gemini-prompt-analysis-engine';
 import { summarizeVergeArticle } from '@/lib/verge/summarize-verge';
 import { formatVergePostBody } from '@/lib/verge/format-verge-body';
 
-export const VERGE_TECH_RSS = 'https://www.theverge.com/tech/rss/index.xml';
+/** The Verge RSS (AI / tech 뉴스 피드) */
+export const VERGE_RSS_URL = 'https://www.theverge.com/rss/ai-artificial-intelligence/index.xml';
+
+/** @deprecated VERGE_RSS_URL 사용 */
+export const VERGE_TECH_RSS = VERGE_RSS_URL;
+
 export const MAX_NEW_POSTS_PER_RUN = 5;
 const MIN_BODY_CHARS = 120;
+
+/** 브라우저와 유사한 UA (봇 차단 완화) */
+export const VERGE_FETCH_USER_AGENT =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36';
 
 export type VergeSyncStep =
   | 'admin_auth'
@@ -56,6 +65,78 @@ function normalizeUrl(url: string): string {
   } catch {
     return url.trim();
   }
+}
+
+/** item.link가 기사 원문으로 쓸 수 있는지 검사 (https/http, theverge.com 호스트) */
+export function isValidVergeArticleLink(raw: string | undefined): raw is string {
+  if (!raw || typeof raw !== 'string') return false;
+  const s = raw.trim();
+  if (!s.startsWith('https://') && !s.startsWith('http://')) return false;
+  try {
+    const u = new URL(s);
+    if (u.protocol !== 'https:' && u.protocol !== 'http:') return false;
+    const host = u.hostname.toLowerCase();
+    return host === 'theverge.com' || host.endsWith('.theverge.com');
+  } catch {
+    return false;
+  }
+}
+
+function looksLikeRssOrAtomXml(body: string): boolean {
+  const t = body.trimStart().slice(0, 4000).toLowerCase();
+  if (t.startsWith('<!doctype html') || (t.includes('<html') && t.indexOf('<html') < 200)) {
+    return false;
+  }
+  return (
+    t.includes('<rss') ||
+    t.includes('<feed') ||
+    t.includes('<rdf:rdf') ||
+    (t.startsWith('<?xml') && (t.includes('<rss') || t.includes('<feed') || t.includes('<channel')))
+  );
+}
+
+async function fetchVergeRssXml(feedUrl: string): Promise<
+  | { ok: true; xml: string }
+  | { ok: false; reason: string; status?: number; preview?: string }
+> {
+  let res: Response;
+  try {
+    res = await fetch(feedUrl, {
+      headers: {
+        'User-Agent': VERGE_FETCH_USER_AGENT,
+        Accept: 'application/rss+xml, application/xml;q=0.9, text/xml;q=0.8, */*;q=0.7',
+        'Accept-Language': 'en-US,en;q=0.9',
+      },
+      signal: AbortSignal.timeout(28_000),
+      cache: 'no-store',
+    });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    console.error('[verge] RSS fetch 네트워크 오류', { feedUrl, message: msg, err: e });
+    return { ok: false, reason: `NETWORK:${msg}` };
+  }
+
+  if (!res.ok) {
+    console.error('[verge] RSS HTTP 오류 — 응답 본문은 XML 검사 생략', {
+      feedUrl,
+      status: res.status,
+      statusText: res.statusText,
+    });
+    return { ok: false, reason: `HTTP_${res.status}`, status: res.status };
+  }
+
+  const text = await res.text();
+  const preview = text.trimStart().slice(0, 240);
+
+  if (!looksLikeRssOrAtomXml(text)) {
+    console.error('[verge] RSS 응답이 XML/RSS 형식이 아님(HTML·오류 페이지 가능)', {
+      feedUrl,
+      preview,
+    });
+    return { ok: false, reason: 'NOT_XML_OR_RSS', preview };
+  }
+
+  return { ok: true, xml: text };
 }
 
 async function loadBlockedOriginalUrls(): Promise<Set<string>> {
@@ -114,6 +195,21 @@ function rssPlainBody(item: Parser.Item): string {
 }
 
 export async function runVergeSync(options: { force: boolean }): Promise<VergeSyncResult> {
+  try {
+    return await runVergeSyncInner(options);
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    console.error('[verge] runVergeSync 예외 — 결과 객체로 반환', e);
+    return {
+      ok: false,
+      step: 'verge_rss_fetch',
+      error: `UNHANDLED:${msg}`,
+      message: `The Verge 동기화 중 예외: ${msg}`,
+    };
+  }
+}
+
+async function runVergeSyncInner(options: { force: boolean }): Promise<VergeSyncResult> {
   const { force } = options;
 
   const keyRes = readGeminiApiKeyFromEnv();
@@ -144,24 +240,35 @@ export async function runVergeSync(options: { force: boolean }): Promise<VergeSy
     };
   }
 
+  const fetched = await fetchVergeRssXml(VERGE_RSS_URL);
+  if (!fetched.ok) {
+    const detail = fetched.preview ? ` preview=${fetched.preview.slice(0, 80)}…` : '';
+    return {
+      ok: false,
+      step: 'verge_rss_fetch',
+      error: fetched.reason,
+      message: `The Verge RSS를 가져오지 못했습니다: ${fetched.reason}${detail}`,
+    };
+  }
+
   let feed: Parser.Output<{ [key: string]: unknown }>;
   try {
     const parser = new Parser({
       timeout: 25_000,
       headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; AIsle-VergeRSS/1.0; +https://github.com/skidraw4-max/aisles)',
+        'User-Agent': VERGE_FETCH_USER_AGENT,
         Accept: 'application/rss+xml, application/xml, text/xml, */*',
       },
     });
-    feed = await parser.parseURL(VERGE_TECH_RSS);
+    feed = await parser.parseString(fetched.xml);
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
-    console.error('[verge] RSS 요청 실패', e);
+    console.error('[verge] RSS 문자열 파싱 실패', e);
     return {
       ok: false,
-      step: 'verge_rss_fetch',
-      error: `NETWORK:${msg}`,
-      message: `The Verge RSS에 연결하지 못했습니다: ${msg}`,
+      step: 'verge_rss_parse',
+      error: `PARSE:${msg}`,
+      message: `The Verge RSS XML 파싱에 실패했습니다: ${msg}`,
     };
   }
 
@@ -183,8 +290,12 @@ export async function runVergeSync(options: { force: boolean }): Promise<VergeSy
     if (created >= MAX_NEW_POSTS_PER_RUN) break;
 
     const rawLink = item.link?.trim();
-    if (!rawLink || (!rawLink.startsWith('http://') && !rawLink.startsWith('https://'))) {
-      results.push({ link: rawLink ?? '', status: 'skipped_invalid_link' });
+    if (!isValidVergeArticleLink(rawLink)) {
+      results.push({
+        link: rawLink ?? '',
+        status: 'skipped_invalid_link',
+        detail: 'link가 없거나 theverge.com URL이 아님',
+      });
       continue;
     }
 
