@@ -52,7 +52,7 @@ export type HackerNewsSyncFailure = {
 export type HackerNewsSyncResult = HackerNewsSyncSuccess | HackerNewsSyncFailure;
 
 async function loadBlockedOriginalUrls(): Promise<Set<string>> {
-  const [gn, hn] = await Promise.all([
+  const [gn, hn, vg] = await Promise.all([
     prisma.post.findMany({
       where: { geeknewsOriginalUrl: { not: null } },
       select: { geeknewsOriginalUrl: true },
@@ -61,6 +61,10 @@ async function loadBlockedOriginalUrls(): Promise<Set<string>> {
       where: { hackerNewsOriginalUrl: { not: null } },
       select: { hackerNewsOriginalUrl: true },
     }),
+    prisma.post.findMany({
+      where: { vergeOriginalUrl: { not: null } },
+      select: { vergeOriginalUrl: true },
+    }),
   ]);
   const set = new Set<string>();
   for (const r of gn) {
@@ -68,6 +72,9 @@ async function loadBlockedOriginalUrls(): Promise<Set<string>> {
   }
   for (const r of hn) {
     if (r.hackerNewsOriginalUrl) set.add(r.hackerNewsOriginalUrl);
+  }
+  for (const r of vg) {
+    if (r.vergeOriginalUrl) set.add(r.vergeOriginalUrl);
   }
   return set;
 }

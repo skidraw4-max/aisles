@@ -10,8 +10,10 @@ import {
 } from '@/app/notices/actions';
 import { runGeekNewsSyncAdminAction } from '@/app/notices/geeknews-sync-actions';
 import { runHackerNewsSyncAdminAction } from '@/app/notices/hackernews-sync-actions';
+import { runVergeSyncAdminAction } from '@/app/notices/verge-sync-actions';
 import type { GeekNewsItemResult } from '@/lib/geeknews/run-geeknews-sync';
 import type { HackerNewsItemResult } from '@/lib/hackernews/run-hackernews-sync';
+import type { VergeItemResult } from '@/lib/verge/run-verge-sync';
 import styles from './admin.module.css';
 
 function formatGeekNewsSyncAlert(r: Awaited<ReturnType<typeof runGeekNewsSyncAdminAction>>): string {
@@ -44,6 +46,26 @@ function formatHackerNewsSyncAlert(r: Awaited<ReturnType<typeof runHackerNewsSyn
     '',
     ...r.results.slice(0, 20).map((x: HackerNewsItemResult) => {
       const u = x.externalUrl.length > 56 ? `${x.externalUrl.slice(0, 56)}…` : x.externalUrl;
+      const extra = x.detail ? ` — ${x.detail}` : x.postId ? ` → ${x.postId}` : '';
+      return `${x.status}: ${u}${extra}`;
+    }),
+  ];
+  if (r.results.length > 20) {
+    lines.push(`… 외 ${r.results.length - 20}건`);
+  }
+  return lines.join('\n');
+}
+
+function formatVergeSyncAlert(r: Awaited<ReturnType<typeof runVergeSyncAdminAction>>): string {
+  if (!r.ok) {
+    return [`실패`, `단계: ${r.step}`, r.message, `코드: ${r.error}`].join('\n');
+  }
+  const lines = [
+    `완료: 신규 ${r.created}건 (RSS 상위 ${r.scanned}건 스캔)`,
+    `강제 모드: ${r.force ? '예' : '아니오'}`,
+    '',
+    ...r.results.slice(0, 20).map((x: VergeItemResult) => {
+      const u = x.link.length > 56 ? `${x.link.slice(0, 56)}…` : x.link;
       const extra = x.detail ? ` — ${x.detail}` : x.postId ? ` → ${x.postId}` : '';
       return `${x.status}: ${u}${extra}`;
     }),
@@ -179,6 +201,20 @@ export function NoticesAdminClient({ initialNotices }: Props) {
     });
   };
 
+  const onVergeSync = (force: boolean) => {
+    if (force && !globalThis.confirm('강제 모드: 이미 등록된 원문 URL도 다시 처리합니다. DB 중복 시 오류로 표시됩니다. 계속할까요?')) {
+      return;
+    }
+    setError(null);
+    startTransition(async () => {
+      const res = await runVergeSyncAdminAction(force);
+      globalThis.alert(formatVergeSyncAlert(res));
+      if (res.ok && res.created > 0) {
+        router.refresh();
+      }
+    });
+  };
+
   return (
     <>
       <div className={styles.headRow}>
@@ -236,6 +272,32 @@ export function NoticesAdminClient({ initialNotices }: Props) {
             onClick={() => onHackerNewsSync(true)}
           >
             Hacker News 강제 동기화
+          </button>
+        </div>
+      </div>
+
+      <div className={styles.formCard}>
+        <h2 className={styles.formTitle}>The Verge (Tech) 동기화</h2>
+        <p className={styles.helpText}>
+          theverge.com/tech RSS 상위 5건을 가져와 AI 요약 후 Trend 복도에 등록합니다. GeekNews·HN과 동일하게 원문 URL이 겹치면
+          건너뜁니다. 강제는 중복 스킵 없이 시도합니다(이미 있으면 DB 오류로 표시).
+        </p>
+        <div className={styles.actions}>
+          <button
+            type="button"
+            className={`${styles.btn} ${styles.btnPrimary}`}
+            disabled={pending}
+            onClick={() => onVergeSync(false)}
+          >
+            The Verge 수동 동기화
+          </button>
+          <button
+            type="button"
+            className={`${styles.btn} ${styles.btnGhost}`}
+            disabled={pending}
+            onClick={() => onVergeSync(true)}
+          >
+            The Verge 강제 동기화
           </button>
         </div>
       </div>

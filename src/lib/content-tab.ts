@@ -9,7 +9,8 @@ export type ContentTabId =
   | 'lounge'
   | 'gossip'
   | 'build'
-  | 'launch';
+  | 'launch'
+  | 'trend';
 
 export function getContentTabFromSearchParams(search: {
   get: (key: string) => string | null;
@@ -21,6 +22,7 @@ export function getContentTabFromSearchParams(search: {
   if (cat === 'GOSSIP') return 'gossip';
   if (cat === 'BUILD') return 'build';
   if (cat === 'LAUNCH') return 'launch';
+  if (cat === 'TREND') return 'trend';
   return 'latest';
 }
 

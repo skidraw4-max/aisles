@@ -127,14 +127,19 @@ export async function runGeekNewsSync(options: { force: boolean }): Promise<Geek
 
   const existingRows = await prisma.post.findMany({
     where: {
-      OR: [{ geeknewsOriginalUrl: { not: null } }, { hackerNewsOriginalUrl: { not: null } }],
+      OR: [
+        { geeknewsOriginalUrl: { not: null } },
+        { hackerNewsOriginalUrl: { not: null } },
+        { vergeOriginalUrl: { not: null } },
+      ],
     },
-    select: { geeknewsOriginalUrl: true, hackerNewsOriginalUrl: true },
+    select: { geeknewsOriginalUrl: true, hackerNewsOriginalUrl: true, vergeOriginalUrl: true },
   });
   const existingUrls = new Set<string>();
   for (const r of existingRows) {
     if (r.geeknewsOriginalUrl) existingUrls.add(r.geeknewsOriginalUrl);
     if (r.hackerNewsOriginalUrl) existingUrls.add(r.hackerNewsOriginalUrl);
+    if (r.vergeOriginalUrl) existingUrls.add(r.vergeOriginalUrl);
   }
 
   const scan = parsed.slice(0, MAX_LIST_SCAN);

@@ -9,6 +9,7 @@ const HOME_QUERY_TO_CATEGORY: Record<string, Category> = {
   GOSSIP: 'GOSSIP',
   BUILD: 'BUILD',
   LAUNCH: 'LAUNCH',
+  TREND: 'TREND',
 };
 
 export function parseHomeCategoryQuery(
@@ -35,6 +36,8 @@ export function categoryToHomeQuery(category: Category): string {
       return 'BUILD';
     case 'LAUNCH':
       return 'LAUNCH';
+    case 'TREND':
+      return 'TREND';
     default:
       return 'GALLERY';
   }

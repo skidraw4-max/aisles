@@ -60,6 +60,8 @@ model Post {
   geeknewsOriginalUrl String? @unique @db.VarChar(2048)
   /// Hacker News 크론 등 — 원문 URL로 중복 방지 (고유, 선택)
   hackerNewsOriginalUrl String? @unique @db.VarChar(2048)
+  /// The Verge RSS 등 — 원문 URL로 중복 방지 (고유, 선택)
+  vergeOriginalUrl String? @unique @db.VarChar(2048)
   /// 해시태그 (#은 표시 시만 붙임)
   tags        String[]    @default([])
   /// 갤러리 이미지 역분석 — AI가 추정한 프롬프트 (캐시)
@@ -145,6 +147,7 @@ enum Category {
   GOSSIP  // 소셜·가십 복도
   BUILD   // 빌드 복도
   LAUNCH  // 서비스 복도
+  TREND   // 외부 테크 뉴스(The Verge RSS 등)
 }
 
 /// 관리자(BO)에서 수정 가능한 UI 카피 (메뉴·헤드라인·탭 등)

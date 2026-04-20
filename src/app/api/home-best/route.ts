@@ -12,6 +12,7 @@ const QUERY_TO_CATEGORY: Record<string, Category> = {
   GOSSIP: 'GOSSIP',
   BUILD: 'BUILD',
   LAUNCH: 'LAUNCH',
+  TREND: 'TREND',
 };
 
 function categoryWhere(raw: string): Prisma.Sql {

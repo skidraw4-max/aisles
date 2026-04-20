@@ -59,6 +59,8 @@ function categoryTagClass(category: string): string {
       return styles.tagBuild;
     case 'LAUNCH':
       return styles.tagLaunch;
+    case 'TREND':
+      return styles.tagTrend;
     default:
       return styles.tagDefault;
   }

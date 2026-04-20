@@ -6,7 +6,7 @@ import { ChevronLeft, ChevronRight, MessageCircle } from 'lucide-react';
 import { useUiLabels } from '@/components/UiLabelsProvider';
 import styles from '@/app/(root)/page.module.css';
 
-type BestCategory = 'ALL' | 'LAB' | 'GALLERY' | 'LOUNGE' | 'GOSSIP' | 'BUILD' | 'LAUNCH';
+type BestCategory = 'ALL' | 'LAB' | 'GALLERY' | 'LOUNGE' | 'GOSSIP' | 'BUILD' | 'LAUNCH' | 'TREND';
 
 type BestItem = { id: string; title: string; commentCount: number; rank: number };
 
@@ -25,6 +25,7 @@ const CAT_DEF: { id: BestCategory; labelKey: string }[] = [
   { id: 'GOSSIP', labelKey: 'corridor.gossip' },
   { id: 'BUILD', labelKey: 'corridor.build' },
   { id: 'LAUNCH', labelKey: 'corridor.launch' },
+  { id: 'TREND', labelKey: 'corridor.trend' },
 ];
 
 export function TodaysBest() {

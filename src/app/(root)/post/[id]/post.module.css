@@ -578,6 +578,13 @@
   border-color: rgba(251, 191, 36, 0.35);
 }
 
+.tagTrend {
+  background: rgba(236, 72, 153, 0.12);
+  color: #f9a8d4;
+  border-color: rgba(236, 72, 153, 0.32);
+  box-shadow: 0 0 16px rgba(236, 72, 153, 0.1);
+}
+
 .tagDefault {
   background: rgba(255, 255, 255, 0.08);
   color: var(--muted);
