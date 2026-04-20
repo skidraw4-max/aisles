@@ -1,4 +1,5 @@
 import type { Category } from '@prisma/client';
+import { cache } from 'react';
 import { prisma } from '@/lib/prisma';
 import {
   CATEGORY_TO_UI_KEY,
@@ -22,8 +23,9 @@ export async function getLabel(key: string): Promise<string> {
 
 /**
  * 전체 UI 라벨 맵 (DB 우선, 누락 키는 시드 기본값).
+ * 동일 요청에서 layout·page·자식 서버 컴포넌트가 각각 호출해도 DB는 1회만 조회한다.
  */
-export async function getAllUiLabels(): Promise<Record<string, string>> {
+export const getAllUiLabels = cache(async (): Promise<Record<string, string>> => {
   const merged = { ...FALLBACK };
   try {
     const rows = await prisma.uiConfig.findMany();
@@ -36,7 +38,7 @@ export async function getAllUiLabels(): Promise<Record<string, string>> {
     }
   }
   return merged;
-}
+});
 
 /** 복도(카테고리) 표시명 — `getAllUiLabels()` 맵과 함께 사용 */
 export function corridorLabel(map: Record<string, string>, category: Category): string {

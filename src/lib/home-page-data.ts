@@ -17,16 +17,15 @@ function parseCategoryKey(categoryKey: string): Category | null {
 export async function getHomePageQueries(categoryKey: string) {
   const filterCategory = parseCategoryKey(categoryKey);
 
-  const recentAll = await prisma.post.findMany({
-    orderBy: { createdAt: 'desc' },
-    take: 8,
-    include: {
-      author: { select: { username: true } },
-      metadata: { select: { params: true } },
-    },
-  });
-
-  const [firstHomeFeed, launchBannerPosts] = await Promise.all([
+  const [recentAll, firstHomeFeed, launchBannerPosts] = await Promise.all([
+    prisma.post.findMany({
+      orderBy: { createdAt: 'desc' },
+      take: 8,
+      include: {
+        author: { select: { username: true } },
+        metadata: { select: { params: true } },
+      },
+    }),
     fetchFeedPosts(0, filterCategory ? 12 : ALL_CARD_FEED_INITIAL_COUNT, filterCategory, [], {
       excludeLoungeGossipFromAll: !filterCategory,
     }),
