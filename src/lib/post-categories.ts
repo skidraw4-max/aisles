@@ -47,14 +47,14 @@ export function homeHrefForCategory(category: Category): string {
 /** UI 라벨 ↔ Prisma `Post.category` (기본값은 시드와 동일; 런타임 동기화는 `corridorLabel` + DB) */
 export const POST_CATEGORY_OPTIONS: { value: Category; label: string }[] = defaultPostCategoryOptions();
 
-/** /upload 셀렉트용 (순서: LAB → GALLERY → LOUNGE → GOSSIP → BUILD → LAUNCH) */
-export const UPLOAD_CATEGORY_OPTIONS: { value: Category; label: string }[] = [
-  { value: 'RECIPE', label: 'LAB' },
-  { value: 'GALLERY', label: 'GALLERY' },
-  { value: 'LOUNGE', label: 'LOUNGE' },
-  { value: 'GOSSIP', label: 'GOSSIP' },
-  { value: 'BUILD', label: 'BUILD' },
-  { value: 'LAUNCH', label: 'LAUNCH' },
+/** /upload 셀렉트 순서 (표시 라벨은 UI 설정 `corridor.*`와 동기화) */
+export const UPLOAD_CATEGORY_ORDER: Category[] = [
+  'RECIPE',
+  'GALLERY',
+  'LOUNGE',
+  'GOSSIP',
+  'BUILD',
+  'LAUNCH',
 ];
 
 const VALUES = new Set(POST_CATEGORY_OPTIONS.map((o) => o.value));

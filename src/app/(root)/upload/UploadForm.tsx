@@ -5,10 +5,11 @@ import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { MediaThumb } from '@/components/MediaThumb';
 import {
-  UPLOAD_CATEGORY_OPTIONS,
+  UPLOAD_CATEGORY_ORDER,
   categoryAllowsOptionalThumbnail,
   type LabPromptKind,
 } from '@/lib/post-categories';
+import { useCorridorLabel } from '@/components/UiLabelsProvider';
 import { MAX_POST_MEDIA } from '@/lib/post-media-urls';
 import { MIN_POST_DESCRIPTION_LENGTH } from '@/lib/post-description-policy';
 import { UPLOAD_IMAGE_MAX_BYTES, formatUploadMaxSizeLabel } from '@/lib/upload-limits';
@@ -29,6 +30,11 @@ export type UploadEditInitial = {
 };
 
 type Props = { editInitial?: UploadEditInitial | null };
+
+function UploadCategoryOption({ value }: { value: Category }) {
+  const label = useCorridorLabel(value);
+  return <option value={value}>{label}</option>;
+}
 
 type MediaSlot = { id: string; name: string; url: string };
 
@@ -402,10 +408,8 @@ export function UploadForm({ editInitial = null }: Props) {
             required
             disabled={!!editInitial}
           >
-            {UPLOAD_CATEGORY_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
+            {UPLOAD_CATEGORY_ORDER.map((v) => (
+              <UploadCategoryOption key={v} value={v} />
             ))}
           </select>
         </label>

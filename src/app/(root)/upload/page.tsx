@@ -1,14 +1,29 @@
 import Link from 'next/link';
+import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { prisma } from '@/lib/prisma';
 import { labKindFromMetadataParams } from '@/lib/post-categories';
+import { getLabel } from '@/lib/ui-config';
 import { UploadForm, type UploadEditInitial } from './UploadForm';
 import styles from './upload.module.css';
 
-export const metadata = {
-  title: '업로드 — AIsle',
-};
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<{ edit?: string | string[] }>;
+}): Promise<Metadata> {
+  const sp = await searchParams;
+  const editRaw = sp.edit;
+  const editId = typeof editRaw === 'string' ? editRaw.trim() : Array.isArray(editRaw) ? editRaw[0]?.trim() ?? '' : '';
+  if (editId) {
+    return { title: '게시글 수정 — AIsle' };
+  }
+  const uploadTitle = await getLabel('header.upload');
+  return {
+    title: `${uploadTitle || '업로드'} — AIsle`,
+  };
+}
 
 type PageProps = { searchParams: Promise<{ edit?: string }> };
 
@@ -51,6 +66,7 @@ export default async function UploadPage({ searchParams }: PageProps) {
   }
 
   const isEdit = Boolean(editInitial);
+  const uploadPageTitle = await getLabel('header.upload');
 
   return (
     <>
@@ -66,10 +82,10 @@ export default async function UploadPage({ searchParams }: PageProps) {
                 <span>수정</span>
               </>
             ) : (
-              <span>업로드</span>
+              <span>{uploadPageTitle || '업로드'}</span>
             )}
           </nav>
-          <h1 className={styles.title}>{isEdit ? '게시글 수정' : '업로드'}</h1>
+          <h1 className={styles.title}>{isEdit ? '게시글 수정' : uploadPageTitle || '업로드'}</h1>
           <p className={styles.hint} style={{ margin: '-0.5rem 0 1.25rem', maxWidth: 560 }}>
             {isEdit
               ? '내용을 바꾼 뒤 수정 저장하면 My Aisles로 돌아갑니다. 미디어를 바꾸려면 새 파일을 선택해 R2에 다시 올리면 됩니다.'
