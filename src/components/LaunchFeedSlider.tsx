@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { MediaThumb } from '@/components/MediaThumb';
+import { useUiLabels } from '@/components/UiLabelsProvider';
 import pageStyles from '@/app/(root)/page.module.css';
 import styles from './LaunchFeedSlider.module.css';
 
@@ -19,6 +20,10 @@ type Props = {
 };
 
 export function LaunchFeedSlider({ slides }: Props) {
+  const m = useUiLabels();
+  const badge = m?.['home.launch_slider.badge'] ?? '';
+  const ariaSection = m?.['home.launch_slider.aria_section'] ?? '';
+  const ariaSlideTpl = m?.['home.launch_slider.aria_slide'] ?? '';
   const [index, setIndex] = useState(0);
 
   const go = useCallback(
@@ -42,8 +47,8 @@ export function LaunchFeedSlider({ slides }: Props) {
   if (slides.length === 0) return null;
 
   return (
-    <section className={styles.banner} aria-label="Launch 최신">
-      <span className={styles.badge}>Launch</span>
+    <section className={styles.banner} aria-label={ariaSection || undefined}>
+      <span className={styles.badge}>{badge}</span>
       <div className={styles.viewport}>
         <div
           className={styles.track}
@@ -86,7 +91,11 @@ export function LaunchFeedSlider({ slides }: Props) {
               type="button"
               role="tab"
               aria-selected={i === index}
-              aria-label={`${i + 1}번째 Launch 글`}
+              aria-label={
+                ariaSlideTpl
+                  ? ariaSlideTpl.split('{{n}}').join(String(i + 1))
+                  : `${i + 1}번째 Launch 글`
+              }
               className={`${styles.dot} ${i === index ? styles.dotActive : ''}`}
               onClick={() => go(i)}
             />

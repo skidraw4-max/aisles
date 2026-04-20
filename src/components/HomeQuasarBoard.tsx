@@ -2,10 +2,8 @@ import Link from 'next/link';
 import { Plus } from 'lucide-react';
 import { PostThumbnail } from '@/components/post/PostThumbnail';
 import { HomeQuasarAsideListsLoader } from '@/components/HomeQuasarAsideListsLoader';
-import {
-  homeHrefForCategory,
-  POST_CATEGORY_OPTIONS,
-} from '@/lib/post-categories';
+import { homeHrefForCategory } from '@/lib/post-categories';
+import { corridorLabel, getAllUiLabels } from '@/lib/ui-config';
 import type { Category } from '@prisma/client';
 import { homeFeedCreatedAtToIso, type HomeFeedPost } from '@/lib/home-feed';
 import {
@@ -33,10 +31,6 @@ async function loadQuasarPayload() {
   return { labGallery, community };
 }
 
-function categoryUiLabel(c: Category) {
-  return POST_CATEGORY_OPTIONS.find((o) => o.value === c)?.label ?? c;
-}
-
 function formatDate(iso: Date) {
   try {
     return new Date(iso).toLocaleDateString('ko-KR', {
@@ -57,7 +51,15 @@ function MoreLink({ category, label }: { category: Category; label: string }) {
   );
 }
 
-function ShowcaseCard({ post, imagePriority }: { post: HomeFeedPost; imagePriority?: boolean }) {
+function ShowcaseCard({
+  post,
+  imagePriority,
+  ui,
+}: {
+  post: HomeFeedPost;
+  imagePriority?: boolean;
+  ui: Record<string, string>;
+}) {
   return (
     <div className={styles.feedCardWrap}>
       <Link href={`/post/${post.id}`} className={styles.feedCard}>
@@ -71,7 +73,7 @@ function ShowcaseCard({ post, imagePriority }: { post: HomeFeedPost; imagePriori
             priority={imagePriority}
             sizes="(max-width: 479px) 100vw, (max-width: 959px) 50vw, 25vw"
           />
-          <span className={styles.feedCardBadge}>{categoryUiLabel(post.category)}</span>
+          <span className={styles.feedCardBadge}>{corridorLabel(ui, post.category)}</span>
         </div>
         <div className={styles.feedCardBody}>
           <h3 className={styles.feedCardTitle}>{post.title}</h3>
@@ -98,7 +100,10 @@ function ShowcaseCard({ post, imagePriority }: { post: HomeFeedPost; imagePriori
 
 /** 퀘이사존식 메인: 좌측 LAB·GALLERY 최신 8칸(4×2), 우측 LOUNGE·GOSSIP 최신 리스트 */
 export async function HomeQuasarBoard() {
-  const { labGallery, community } = await loadQuasarPayload();
+  const [ui, { labGallery, community }] = await Promise.all([getAllUiLabels(), loadQuasarPayload()]);
+
+  const loungeTitle = corridorLabel(ui, 'LOUNGE');
+  const gossipTitle = corridorLabel(ui, 'GOSSIP');
 
   return (
     <div className={styles.quasarBoardOuter}>
@@ -106,29 +111,29 @@ export async function HomeQuasarBoard() {
         <div className={styles.quasarBoardMain}>
           <header className={styles.quasarBoardHead}>
             <div>
-              <h2 className={styles.quasarBoardTitle}>AI Work</h2>
-              <p className={styles.quasarBoardSubtitle}>Lab·Gallery 최신 글</p>
+              <h2 className={styles.quasarBoardTitle}>{ui['home.quasar.ai_work.title']}</h2>
+              <p className={styles.quasarBoardSubtitle}>{ui['home.quasar.ai_work.subtitle']}</p>
             </div>
             <div className={styles.compositeMoreGroup} role="group" aria-label="AI Work 이동·등록">
               <Link
                 href="/upload"
                 className={styles.aiWorkPromptRegister}
-                aria-label="나만의 프롬프트 등록"
+                aria-label={ui['home.quasar.prompt_register_aria']}
               >
                 <Plus className={styles.aiWorkPromptRegisterIcon} size={18} strokeWidth={2.25} aria-hidden />
-                <span className={styles.aiWorkPromptRegisterText}>나만의 프롬프트 등록</span>
+                <span className={styles.aiWorkPromptRegisterText}>{ui['home.quasar.prompt_register']}</span>
               </Link>
-              <MoreLink category="RECIPE" label="LAB" />
-              <MoreLink category="GALLERY" label="GALLERY" />
+              <MoreLink category="RECIPE" label={ui['home.quasar.more_lab'] ?? ''} />
+              <MoreLink category="GALLERY" label={ui['home.quasar.more_gallery'] ?? ''} />
             </div>
           </header>
           {labGallery.length === 0 ? (
-            <p className={styles.compositeEmpty}>아직 노출할 글이 없습니다.</p>
+            <p className={styles.compositeEmpty}>{ui['home.quasar.empty']}</p>
           ) : (
             <ul className={styles.aiWorkGrid}>
               {labGallery.map((post, i) => (
                 <li key={post.id} className={styles.aiWorkGridCell}>
-                  <ShowcaseCard post={post} imagePriority={i < 4} />
+                  <ShowcaseCard post={post} imagePriority={i < 4} ui={ui} />
                 </li>
               ))}
             </ul>
@@ -138,6 +143,10 @@ export async function HomeQuasarBoard() {
         <HomeQuasarAsideListsLoader
           lounge={community.lounge.map(serializeAsidePost)}
           gossip={community.gossip.map(serializeAsidePost)}
+          loungeTitle={loungeTitle}
+          gossipTitle={gossipTitle}
+          asideAriaLabel={ui['home.quasar.aside_aria'] ?? ''}
+          emptyMessage={ui['home.composite.empty_col'] ?? ''}
         />
       </div>
     </div>

@@ -8,10 +8,13 @@ import { useAuth } from '@/components/SessionProvider';
 import { Menu, Plus } from 'lucide-react';
 import { AuthModal } from './AuthModal';
 import { MainNav, MainNavFallback, MobileMainNavPanel, MobileMainNavPanelFallback } from './MainNav';
+import { useUiLabels } from '@/components/UiLabelsProvider';
 import { HeaderSearch } from './HeaderSearch';
 import styles from './SiteHeader.module.css';
 
 export function SiteHeader() {
+  const m = useUiLabels();
+  const uploadLabel = m?.['header.upload'] ?? '';
   const router = useRouter();
   const { isAuthenticated, displayName } = useAuth();
   const [modalOpen, setModalOpen] = useState(false);
@@ -71,9 +74,9 @@ export function SiteHeader() {
             </Suspense>
             {isAuthenticated ? (
               <div className={styles.userRow}>
-                <Link href="/upload" className={styles.uploadLink} aria-label="레시피 등록">
+                <Link href="/upload" className={styles.uploadLink} aria-label={uploadLabel || '레시피 등록'}>
                   <Plus className={styles.uploadLinkIcon} strokeWidth={2.25} size={18} aria-hidden />
-                  <span className={styles.uploadLinkLabel}>레시피 등록</span>
+                  <span className={styles.uploadLinkLabel}>{uploadLabel}</span>
                 </Link>
                 <div className={styles.userMenu} ref={menuRef}>
                   <button
@@ -121,7 +124,7 @@ export function SiteHeader() {
                         role="menuitem"
                         onClick={() => setMenuOpen(false)}
                       >
-                        레시피 등록
+                        {uploadLabel}
                       </Link>
                       <button
                         type="button"

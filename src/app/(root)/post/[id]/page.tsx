@@ -1,15 +1,12 @@
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 import type { Metadata } from 'next';
-import type { Role } from '@prisma/client';
+import type { Category, Role } from '@prisma/client';
 import { MediaThumb } from '@/components/MediaThumb';
 import { prisma } from '@/lib/prisma';
 import { createClient } from '@/lib/supabase/server';
-import {
-  POST_CATEGORY_OPTIONS,
-  homeHrefForCategory,
-  labKindFromMetadataParams,
-} from '@/lib/post-categories';
+import { homeHrefForCategory, labKindFromMetadataParams } from '@/lib/post-categories';
+import { corridorLabel, getAllUiLabels } from '@/lib/ui-config';
 import { resolveRecipePrompt } from '@/lib/recipe-prompt';
 import { fingerprintPrompt } from '@/lib/prompt-analysis-fingerprint';
 import { parseStoredPromptAnalysisJson } from '@/lib/prompt-analysis';
@@ -47,10 +44,6 @@ export const dynamic = 'force-dynamic';
 type Props = {
   params: Promise<{ id: string }>;
 };
-
-function categoryLabel(value: string) {
-  return POST_CATEGORY_OPTIONS.find((o) => o.value === value)?.label ?? value;
-}
 
 function categoryTagClass(category: string): string {
   switch (category) {
@@ -116,6 +109,7 @@ function toAbsoluteMediaUrl(raw: string, siteBase: string): string {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
   const base = getCanonicalSiteUrl();
+  const ui = await getAllUiLabels();
   try {
     const post = await prisma.post.findUnique({
       where: { id },
@@ -125,7 +119,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const description = buildPostMetaDescription({
       title: post.title,
       content: post.content,
-      categoryLabel: categoryLabel(post.category),
+      categoryLabel: corridorLabel(ui, post.category),
     });
     const url = `${base}/post/${id}`;
     const thumbRaw = post.thumbnail?.trim();
@@ -142,7 +136,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     return {
       title: `${post.title} — AIsle`,
       description,
-      keywords: [post.title, categoryLabel(post.category), 'AIsle', 'AI', '프롬프트'].filter(Boolean),
+      keywords: [post.title, corridorLabel(ui, post.category), 'AIsle', 'AI', '프롬프트'].filter(Boolean),
       alternates: { canonical: url },
       robots: { index: true, follow: true },
       openGraph: {
@@ -169,6 +163,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function PostPage({ params }: Props) {
   const { id } = await params;
+  const ui = await getAllUiLabels();
   let post;
   try {
     post = await prisma.post.findUnique({
@@ -359,7 +354,7 @@ export default async function PostPage({ params }: Props) {
   }));
   const externalHref = (post.externalLink ?? '').trim();
   const extraAttachments = (post.attachmentUrls ?? []).filter((u) => u.trim().length > 0);
-  const catLabel = categoryLabel(post.category);
+  const catLabel = corridorLabel(ui, post.category);
   const heroCaption = post.metadata?.modelName
     ? `모델 · ${post.metadata.modelName}`
     : `${catLabel} · 대표 미디어`;
@@ -454,6 +449,7 @@ export default async function PostPage({ params }: Props) {
         related={relatedSidebar}
         popular={popularSidebar}
         externalLink={externalHref || null}
+        uiLabels={ui}
       />
     </div>
   );
@@ -470,7 +466,7 @@ export default async function PostPage({ params }: Props) {
                   initialLikeCount={post.likeCount}
                   initialLiked={Boolean(likedRow)}
                 >
-                  <PostTopBreadcrumb category={post.category} />
+                  <PostTopBreadcrumb category={post.category} label={catLabel} />
                   {isGallery ? (
                     <>
                       {mainMediaBlock}

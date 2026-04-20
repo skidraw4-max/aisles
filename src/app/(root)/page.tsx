@@ -11,7 +11,7 @@ import { homeViewFromSearchParams } from '@/lib/content-tab';
 import { isSupabaseAuthLinkError } from '@/lib/supabase-auth-url-errors';
 import { categoryKeyForCache, getHomePageQueries } from '@/lib/home-page-data';
 import { serializeFeedPost, type HomeFeedPost } from '@/lib/home-feed';
-import { POST_CATEGORY_OPTIONS } from '@/lib/post-categories';
+import { applyTemplate, corridorLabel, getAllUiLabels } from '@/lib/ui-config';
 import type { Category } from '@prisma/client';
 import styles from './page.module.css';
 
@@ -33,10 +33,6 @@ function pickSearchParam(v: string | string[] | undefined): string | undefined {
   return Array.isArray(v) ? v[0] : v;
 }
 
-function categoryUiLabel(c: Category) {
-  return POST_CATEGORY_OPTIONS.find((o) => o.value === c)?.label ?? c;
-}
-
 function launchBannerImageUrl(post: Pick<HomeFeedPost, 'thumbnail' | 'attachmentUrls'>): string | null {
   const t = post.thumbnail?.trim();
   if (t) return t;
@@ -45,6 +41,7 @@ function launchBannerImageUrl(post: Pick<HomeFeedPost, 'thumbnail' | 'attachment
 }
 
 export default async function HomePage({ searchParams }: PageProps) {
+  const ui = await getAllUiLabels();
   const sp = await searchParams;
   const { category: filterCategory } = homeViewFromSearchParams(sp);
 
@@ -67,13 +64,11 @@ export default async function HomePage({ searchParams }: PageProps) {
     imageUrl: launchBannerImageUrl(p),
   }));
 
-  let heroLead: string;
-  if (filterCategory) {
-    heroLead = `${categoryUiLabel(filterCategory)} 복도입니다. 콘텐츠 탭으로 전체나 다른 복도를 전환할 수 있습니다.`;
-  } else {
-    heroLead =
-      '모든 AI 결과물 속 숨겨진 프롬프트를 AI Vision으로 추출하고, 최적화된 마케팅 워크플로우를 구축하세요.';
-  }
+  const heroLead = filterCategory
+    ? applyTemplate(ui['home.hero.lead_filtered'] ?? '', {
+        category: corridorLabel(ui, filterCategory),
+      })
+    : (ui['home.hero.lead_home'] ?? '');
 
   return (
     <>
@@ -92,7 +87,7 @@ export default async function HomePage({ searchParams }: PageProps) {
       <main className={styles.mainShell}>
         <section className={styles.hero}>
           <p className={styles.eyebrow}>
-            {filterCategory ? 'Four aisles, one workspace' : '프롬프트 레시피 · 역설계 · 워크플로우'}
+            {filterCategory ? ui['home.hero.eyebrow_filtered'] : ui['home.hero.eyebrow_home']}
           </p>
           <h1
             className={
@@ -101,14 +96,14 @@ export default async function HomePage({ searchParams }: PageProps) {
           >
             {filterCategory ? (
               <>
-                {categoryUiLabel(filterCategory)} <span style={{ fontWeight: 600 }}>aisle</span>
+                {corridorLabel(ui, filterCategory)} <span style={{ fontWeight: 600 }}>aisle</span>
               </>
             ) : (
               <>
-                <span className={styles.heroTitleLine}>AI 프롬프트를 분석하고 역설계하다</span>
+                <span className={styles.heroTitleLine}>{ui['home.hero.title_home_line1']}</span>
                 <span className={styles.heroTitleLine}>
-                  <span className={styles.heroTitleAccent}>AIsle</span>
-                  <span className={styles.heroTitleRest}>: 당신만의 레시피 저장소</span>
+                  <span className={styles.heroTitleAccent}>{ui['home.hero.title_home_line2_accent']}</span>
+                  <span className={styles.heroTitleRest}>{ui['home.hero.title_home_line2_rest']}</span>
                 </span>
               </>
             )}
@@ -123,7 +118,7 @@ export default async function HomePage({ searchParams }: PageProps) {
           {!filterCategory ? (
             <div className={styles.heroCtaRow}>
               <Link href="/?category=LAB" className={styles.heroCtaPrimary}>
-                프롬프트 역분석 시작하기
+                {ui['home.hero.cta_primary']}
               </Link>
             </div>
           ) : null}
@@ -157,7 +152,7 @@ export default async function HomePage({ searchParams }: PageProps) {
         >
           {filterCategory ? (
             <div className={styles.feedBadgeRow}>
-              <span className={styles.badge}>{categoryUiLabel(filterCategory)}</span>
+              <span className={styles.badge}>{corridorLabel(ui, filterCategory)}</span>
             </div>
           ) : null}
           <HomeDeferredLower
@@ -172,11 +167,11 @@ export default async function HomePage({ searchParams }: PageProps) {
             recentAside={
               <aside className={styles.recentPostsAside} aria-labelledby="recent-posts-aside-heading">
                 <h3 id="recent-posts-aside-heading" className={styles.recentPostsAsideTitle}>
-                  최근 게시물
+                  {ui['home.recent.title']}
                 </h3>
                 {recentAll.length === 0 ? (
                   <p className={styles.recentPostsAsideEmpty}>
-                    아직 게시글이 없습니다.{' '}
+                    {ui['home.recent.empty']}{' '}
                     <Link href="/upload">업로드</Link>
                   </p>
                 ) : (
@@ -195,7 +190,7 @@ export default async function HomePage({ searchParams }: PageProps) {
                           <div style={{ minWidth: 0, flex: 1 }}>
                             <div className={styles.recentTitle}>{post.title}</div>
                             <div className={styles.recentMeta}>
-                              {categoryUiLabel(post.category)} · {post.author.username}
+                              {corridorLabel(ui, post.category)} · {post.author.username}
                             </div>
                           </div>
                         </Link>

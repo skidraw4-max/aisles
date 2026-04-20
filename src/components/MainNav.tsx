@@ -4,17 +4,18 @@ import { useEffect, type ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { X } from 'lucide-react';
+import { useUiLabels } from '@/components/UiLabelsProvider';
 import styles from './SiteHeader.module.css';
 
-/** 홈 상단 복도 — queryKey는 URL·필터와 동일, label은 한글 */
-export const HOME_NAV_ITEMS: { href: string; queryKey: string | null; label: string }[] = [
-  { href: '/', queryKey: null, label: '전체' },
-  { href: '/?category=LAB', queryKey: 'LAB', label: 'AI 연구소' },
-  { href: '/?category=GALLERY', queryKey: 'GALLERY', label: '쇼케이스' },
-  { href: '/?category=LOUNGE', queryKey: 'LOUNGE', label: 'AI 트렌드' },
-  { href: '/?category=GOSSIP', queryKey: 'GOSSIP', label: '커뮤니티' },
-  { href: '/?category=BUILD', queryKey: 'BUILD', label: '제작기' },
-  { href: '/?category=LAUNCH', queryKey: 'LAUNCH', label: '출시' },
+/** 홈 상단 복도 — `labelKey`는 UI 설정(DB) 키 */
+export const HOME_NAV_ITEMS: { href: string; queryKey: string | null; labelKey: string }[] = [
+  { href: '/', queryKey: null, labelKey: 'corridor.all' },
+  { href: '/?category=LAB', queryKey: 'LAB', labelKey: 'corridor.lab' },
+  { href: '/?category=GALLERY', queryKey: 'GALLERY', labelKey: 'corridor.gallery' },
+  { href: '/?category=LOUNGE', queryKey: 'LOUNGE', labelKey: 'corridor.lounge' },
+  { href: '/?category=GOSSIP', queryKey: 'GOSSIP', labelKey: 'corridor.gossip' },
+  { href: '/?category=BUILD', queryKey: 'BUILD', labelKey: 'corridor.build' },
+  { href: '/?category=LAUNCH', queryKey: 'LAUNCH', labelKey: 'corridor.launch' },
 ];
 
 function navClassName(active: boolean) {
@@ -23,13 +24,19 @@ function navClassName(active: boolean) {
     : `${styles.navLink} ${styles.navLinkQuasi}`;
 }
 
+function pick(m: Record<string, string> | null, key: string): string {
+  return m?.[key] ?? '';
+}
+
 /** `useSearchParams` 사용 — 상위에서 `<Suspense>`로 감쌀 것 */
 export function MainNav() {
+  const m = useUiLabels();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const raw = searchParams.get('category');
   const current = raw?.trim() ? raw.trim().toUpperCase() : null;
   const aboutActive = pathname === '/about';
+  const guideLabel = pick(m, 'corridor.guide');
 
   return (
     <nav className={`${styles.nav} ${styles.navQuasi}`} aria-label="주요 메뉴">
@@ -43,7 +50,7 @@ export function MainNav() {
             aria-current={active ? 'page' : undefined}
             scroll={false}
           >
-            {item.label}
+            {pick(m, item.labelKey)}
           </Link>
         );
       })}
@@ -52,7 +59,7 @@ export function MainNav() {
         className={navClassName(aboutActive)}
         aria-current={aboutActive ? 'page' : undefined}
       >
-        가이드
+        {guideLabel}
       </Link>
     </nav>
   );
@@ -60,15 +67,17 @@ export function MainNav() {
 
 /** Suspense fallback: 동일 링크, 활성 표시 없음 */
 export function MainNavFallback() {
+  const m = useUiLabels();
+  const guideLabel = pick(m, 'corridor.guide');
   return (
     <nav className={`${styles.nav} ${styles.navQuasi}`} aria-label="주요 메뉴">
       {HOME_NAV_ITEMS.map((item) => (
         <Link key={item.href} href={item.href} className={`${styles.navLink} ${styles.navLinkQuasi}`}>
-          {item.label}
+          {pick(m, item.labelKey)}
         </Link>
       ))}
       <Link href="/about" className={`${styles.navLink} ${styles.navLinkQuasi}`}>
-        가이드
+        {guideLabel}
       </Link>
     </nav>
   );
@@ -115,23 +124,20 @@ function MobileNavShell({
 
 /** Suspense 폴백: 활성 표시 없이 동일 링크 */
 export function MobileMainNavPanelFallback({ onClose }: { onClose: () => void }) {
+  const m = useUiLabels();
+  const guideLabel = pick(m, 'corridor.guide');
   return (
     <MobileNavShell onClose={onClose}>
       {HOME_NAV_ITEMS.map((item) => (
         <li key={item.href}>
-          <Link
-            href={item.href}
-            className={styles.mobileNavLink}
-            scroll={false}
-            onClick={onClose}
-          >
-            {item.label}
+          <Link href={item.href} className={styles.mobileNavLink} scroll={false} onClick={onClose}>
+            {pick(m, item.labelKey)}
           </Link>
         </li>
       ))}
       <li>
         <Link href="/about" className={styles.mobileNavLink} onClick={onClose}>
-          가이드
+          {guideLabel}
         </Link>
       </li>
     </MobileNavShell>
@@ -140,11 +146,13 @@ export function MobileMainNavPanelFallback({ onClose }: { onClose: () => void })
 
 /** 모바일 햄버거 드로어 — `useSearchParams` 사용, 상위에서 `<Suspense>`로 감쌀 것 */
 export function MobileMainNavPanel({ onClose }: { onClose: () => void }) {
+  const m = useUiLabels();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const raw = searchParams.get('category');
   const current = raw?.trim() ? raw.trim().toUpperCase() : null;
   const aboutActive = pathname === '/about';
+  const guideLabel = pick(m, 'corridor.guide');
 
   return (
     <MobileNavShell onClose={onClose}>
@@ -159,7 +167,7 @@ export function MobileMainNavPanel({ onClose }: { onClose: () => void }) {
               scroll={false}
               onClick={onClose}
             >
-              {item.label}
+              {pick(m, item.labelKey)}
             </Link>
           </li>
         );
@@ -171,7 +179,7 @@ export function MobileMainNavPanel({ onClose }: { onClose: () => void }) {
           aria-current={aboutActive ? 'page' : undefined}
           onClick={onClose}
         >
-          가이드
+          {guideLabel}
         </Link>
       </li>
     </MobileNavShell>

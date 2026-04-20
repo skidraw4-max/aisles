@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { PostThumbnail } from '@/components/post/PostThumbnail';
-import { POST_CATEGORY_OPTIONS } from '@/lib/post-categories';
+import { useCorridorLabel } from '@/components/UiLabelsProvider';
 import type { Category } from '@prisma/client';
 import styles from './my-aisles.module.css';
 
@@ -22,8 +22,9 @@ export type MyPostRow = {
   authorUsername: string;
 };
 
-function categoryLabel(c: Category) {
-  return POST_CATEGORY_OPTIONS.find((o) => o.value === c)?.label ?? c;
+function CategoryBadge({ category }: { category: Category }) {
+  const label = useCorridorLabel(category);
+  return <span className={styles.badge}>{label}</span>;
 }
 
 function formatDate(iso: string) {
@@ -188,7 +189,7 @@ export function MyPostsGrid({ posts }: { posts: MyPostRow[] }) {
                     layout="myAislesCard"
                     metadataParams={post.metadataParams}
                   />
-                  <span className={styles.badge}>{categoryLabel(post.category)}</span>
+                  <CategoryBadge category={post.category} />
                 </Link>
                 <div className={styles.cardBody}>
                   <h2 className={styles.cardTitle}>{post.title}</h2>

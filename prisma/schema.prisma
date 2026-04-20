@@ -147,6 +147,15 @@ enum Category {
   LAUNCH  // 서비스 복도
 }
 
+/// 관리자(BO)에서 수정 가능한 UI 카피 (메뉴·헤드라인·탭 등)
+model UiConfig {
+  key         String   @id
+  value       String   @db.Text
+  description String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
 /// 사이트 상단 롤링 공지 등
 model Notice {
   id        String   @id @default(cuid())

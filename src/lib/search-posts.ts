@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/prisma';
-import { POST_CATEGORY_OPTIONS } from '@/lib/post-categories';
 import { normalizePostTagsInput } from '@/lib/post-tags';
+import { corridorLabel, getAllUiLabels } from '@/lib/ui-config';
 import type { Category, Prisma } from '@prisma/client';
 
 const MAX_QUERY_LEN = 120;
@@ -21,10 +21,6 @@ export type SearchPostHit = {
   createdAt: Date;
   snippet: string | null;
 };
-
-function categoryLabel(c: Category): string {
-  return POST_CATEGORY_OPTIONS.find((o) => o.value === c)?.label ?? c;
-}
 
 function firstNormalizedTag(raw: string | undefined): string | undefined {
   if (!raw?.trim()) return undefined;
@@ -74,6 +70,8 @@ export async function searchPosts(params: SearchPostsParams): Promise<SearchPost
     return [];
   }
 
+  const ui = await getAllUiLabels();
+
   return posts.map((p) => {
     const snippet =
       p.content && p.content.length > 0
@@ -85,7 +83,7 @@ export async function searchPosts(params: SearchPostsParams): Promise<SearchPost
       id: p.id,
       title: p.title,
       category: p.category,
-      categoryLabel: categoryLabel(p.category),
+      categoryLabel: corridorLabel(ui, p.category),
       authorUsername: p.author.username,
       createdAt: p.createdAt,
       snippet,

@@ -5,6 +5,7 @@ import nextDynamic from 'next/dynamic';
 import type { Category } from '@prisma/client';
 import type { FeedPostJson } from '@/lib/home-feed';
 import type { LaunchFeedSlide } from '@/components/LaunchFeedSlider';
+import { useUiLabels } from '@/components/UiLabelsProvider';
 import styles from '@/app/(root)/page.module.css';
 
 const TodaysBest = nextDynamic(
@@ -62,6 +63,10 @@ export function HomeDeferredLower({
   launchSlides,
   homeAllFeed,
 }: HomeDeferredLowerProps) {
+  const m = useUiLabels();
+  const launchHeading = m?.['home.section.launch_heading'] ?? '';
+  const allHeading = m?.['home.section.all_feed_heading'] ?? '';
+
   return (
     <div
       className={[
@@ -82,11 +87,11 @@ export function HomeDeferredLower({
       <div className={styles.feedLayoutMainFeed}>
         {!filterCategory ? (
           <div className={styles.launchBlockWrap}>
-            <h2 className={styles.launchSectionHeading}>LAUNCH</h2>
+            <h2 className={styles.launchSectionHeading}>{launchHeading}</h2>
             {launchSlides.length > 0 ? <LaunchFeedSlider slides={launchSlides} /> : null}
           </div>
         ) : null}
-        {!filterCategory ? <h2 className={styles.allFeedSectionHeading}>ALL</h2> : null}
+        {!filterCategory ? <h2 className={styles.allFeedSectionHeading}>{allHeading}</h2> : null}
         <HomeAllFeed
           key={homeAllFeed.feedKey}
           category={homeAllFeed.category}

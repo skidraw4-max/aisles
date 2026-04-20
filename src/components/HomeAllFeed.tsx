@@ -5,11 +5,8 @@ import Link from 'next/link';
 import { useInView } from 'react-intersection-observer';
 import { Image } from 'lucide-react';
 import { MediaThumb } from '@/components/MediaThumb';
-import {
-  categoryToHomeQuery,
-  isFeedBoardListCategory,
-  POST_CATEGORY_OPTIONS,
-} from '@/lib/post-categories';
+import { categoryToHomeQuery, isFeedBoardListCategory } from '@/lib/post-categories';
+import { useCorridorLabel } from '@/components/UiLabelsProvider';
 import { PostThumbnail } from '@/components/post/PostThumbnail';
 import type { Category } from '@prisma/client';
 import { ALL_CARD_FEED_INITIAL_COUNT } from '@/lib/home-all-card-feed';
@@ -17,10 +14,6 @@ import type { FeedPostJson } from '@/lib/home-feed';
 import styles from '@/app/(root)/page.module.css';
 
 const PAGE_SIZE = 12;
-
-function categoryUiLabel(c: Category) {
-  return POST_CATEGORY_OPTIONS.find((o) => o.value === c)?.label ?? c;
-}
 
 function formatDate(iso: string) {
   try {
@@ -53,6 +46,7 @@ function CardFooter({ username, likeCount }: { username: string; likeCount: numb
 }
 
 function FeedPostCard({ post, imagePriority }: { post: FeedPostJson; imagePriority?: boolean }) {
+  const badge = useCorridorLabel(post.category);
   return (
     <div className={styles.feedCardWrap}>
       <Link href={`/post/${post.id}`} className={styles.feedCard}>
@@ -66,7 +60,7 @@ function FeedPostCard({ post, imagePriority }: { post: FeedPostJson; imagePriori
             priority={imagePriority}
             sizes="(max-width: 479px) 100vw, (max-width: 959px) 50vw, 25vw"
           />
-          <span className={styles.feedCardBadge}>{categoryUiLabel(post.category)}</span>
+          <span className={styles.feedCardBadge}>{badge}</span>
         </div>
         <div className={styles.feedCardBody}>
           <h3 className={styles.feedCardTitle}>{post.title}</h3>

@@ -1,9 +1,7 @@
 import Link from 'next/link';
 import { PostThumbnail } from '@/components/post/PostThumbnail';
-import {
-  homeHrefForCategory,
-  POST_CATEGORY_OPTIONS,
-} from '@/lib/post-categories';
+import { homeHrefForCategory } from '@/lib/post-categories';
+import { corridorLabel, getAllUiLabels } from '@/lib/ui-config';
 import type { Category } from '@prisma/client';
 import type { HomeFeedPost } from '@/lib/home-feed';
 import {
@@ -11,10 +9,6 @@ import {
   fetchCommunityPreviewPosts,
 } from '@/lib/home-composite';
 import styles from '@/app/(root)/page.module.css';
-
-function categoryUiLabel(c: Category) {
-  return POST_CATEGORY_OPTIONS.find((o) => o.value === c)?.label ?? c;
-}
 
 function formatDate(iso: Date) {
   try {
@@ -36,7 +30,7 @@ function MoreLink({ category, label }: { category: Category; label: string }) {
   );
 }
 
-function ShowcaseCard({ post }: { post: HomeFeedPost }) {
+function ShowcaseCard({ post, ui }: { post: HomeFeedPost; ui: Record<string, string> }) {
   return (
     <div className={styles.feedCardWrap}>
       <Link href={`/post/${post.id}`} className={styles.feedCard}>
@@ -48,7 +42,7 @@ function ShowcaseCard({ post }: { post: HomeFeedPost }) {
             layout="card"
             metadataParams={post.metadata?.params}
           />
-          <span className={styles.feedCardBadge}>{categoryUiLabel(post.category)}</span>
+          <span className={styles.feedCardBadge}>{corridorLabel(ui, post.category)}</span>
         </div>
         <div className={styles.feedCardBody}>
           <h3 className={styles.feedCardTitle}>{post.title}</h3>
@@ -89,10 +83,14 @@ function CommunityListItem({ post }: { post: HomeFeedPost }) {
 }
 
 export async function HomeCompositeSection() {
-  const [aiWorkPosts, community] = await Promise.all([
+  const [ui, aiWorkPosts, community] = await Promise.all([
+    getAllUiLabels(),
     fetchAiWorkShowcasePosts(),
     fetchCommunityPreviewPosts(),
   ]);
+
+  const loungeTitle = corridorLabel(ui, 'LOUNGE');
+  const gossipTitle = corridorLabel(ui, 'GOSSIP');
 
   return (
     <div className={styles.compositeWrap}>
@@ -100,22 +98,22 @@ export async function HomeCompositeSection() {
         <header className={styles.compositeHead}>
           <div>
             <h2 id="composite-ai-work-heading" className={styles.compositeTitle}>
-              AI Work
+              {ui['home.composite.ai_work.title']}
             </h2>
-            <p className={styles.compositeSubtitle}>Lab·Gallery 인기 글</p>
+            <p className={styles.compositeSubtitle}>{ui['home.composite.ai_work.subtitle']}</p>
           </div>
           <div className={styles.compositeMoreGroup} role="group" aria-label="복도로 이동">
-            <MoreLink category="RECIPE" label="LAB" />
-            <MoreLink category="GALLERY" label="GALLERY" />
+            <MoreLink category="RECIPE" label={ui['home.quasar.more_lab'] ?? ''} />
+            <MoreLink category="GALLERY" label={ui['home.quasar.more_gallery'] ?? ''} />
           </div>
         </header>
         {aiWorkPosts.length === 0 ? (
-          <p className={styles.compositeEmpty}>아직 노출할 글이 없습니다.</p>
+          <p className={styles.compositeEmpty}>{ui['home.composite.empty']}</p>
         ) : (
           <ul className={styles.aiWorkGrid}>
             {aiWorkPosts.map((post) => (
               <li key={post.id} className={styles.aiWorkGridCell}>
-                <ShowcaseCard post={post} />
+                <ShowcaseCard post={post} ui={ui} />
               </li>
             ))}
           </ul>
@@ -126,20 +124,20 @@ export async function HomeCompositeSection() {
         <header className={styles.compositeHead}>
           <div>
             <h2 id="composite-community-heading" className={styles.compositeTitle}>
-              Community
+              {ui['home.composite.community.title']}
             </h2>
-            <p className={styles.compositeSubtitle}>AI 트렌드·커뮤니티 최신 글</p>
+            <p className={styles.compositeSubtitle}>{ui['home.composite.community.subtitle']}</p>
           </div>
           <div className={styles.compositeMoreGroup} role="group" aria-label="복도로 이동">
-            <MoreLink category="LOUNGE" label="AI 트렌드" />
-            <MoreLink category="GOSSIP" label="커뮤니티" />
+            <MoreLink category="LOUNGE" label={loungeTitle} />
+            <MoreLink category="GOSSIP" label={gossipTitle} />
           </div>
         </header>
         <div className={styles.communitySplit}>
           <div className={styles.communityCol}>
-            <h3 className={styles.communityColLabel}>AI 트렌드</h3>
+            <h3 className={styles.communityColLabel}>{loungeTitle}</h3>
             {community.lounge.length === 0 ? (
-              <p className={styles.compositeEmpty}>글이 없습니다.</p>
+              <p className={styles.compositeEmpty}>{ui['home.composite.empty_col']}</p>
             ) : (
               <ul className={styles.communityList}>
                 {community.lounge.map((post) => (
@@ -149,9 +147,9 @@ export async function HomeCompositeSection() {
             )}
           </div>
           <div className={styles.communityCol}>
-            <h3 className={styles.communityColLabel}>커뮤니티</h3>
+            <h3 className={styles.communityColLabel}>{gossipTitle}</h3>
             {community.gossip.length === 0 ? (
-              <p className={styles.compositeEmpty}>글이 없습니다.</p>
+              <p className={styles.compositeEmpty}>{ui['home.composite.empty_col']}</p>
             ) : (
               <ul className={styles.communityList}>
                 {community.gossip.map((post) => (

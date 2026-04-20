@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import type { Category } from '@prisma/client';
 import { PostThumbnail } from '@/components/post/PostThumbnail';
-import { POST_CATEGORY_OPTIONS } from '@/lib/post-categories';
+import { corridorLabel } from '@/lib/ui-config';
 import { ExternalServiceCta } from './ExternalServiceCta';
 import { LaunchVisitProjectCta } from './LaunchVisitProjectCta';
 import styles from './post.module.css';
@@ -27,10 +27,12 @@ type Props = {
   related: SidebarRelatedItem[];
   popular: SidebarPopularItem[];
   externalLink?: string | null;
+  /** `getAllUiLabels()` 결과 — 복도명 표시 */
+  uiLabels: Record<string, string>;
 };
 
-export function PostSidebar({ category, related, popular, externalLink }: Props) {
-  const catLabel = POST_CATEGORY_OPTIONS.find((o) => o.value === category)?.label ?? category;
+export function PostSidebar({ category, related, popular, externalLink, uiLabels }: Props) {
+  const catLabel = corridorLabel(uiLabels, category);
 
   return (
     <aside className={styles.sidebar} aria-label="사이드바">

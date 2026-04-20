@@ -1,14 +1,9 @@
 import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { PostThumbnail } from '@/components/post/PostThumbnail';
-import { POST_CATEGORY_OPTIONS } from '@/lib/post-categories';
-import type { Category } from '@prisma/client';
+import { corridorLabel, getAllUiLabels } from '@/lib/ui-config';
 import type { HomeFeedPost } from '@/lib/home-feed';
 import styles from '@/app/(root)/page.module.css';
-
-function categoryUiLabel(c: Category) {
-  return POST_CATEGORY_OPTIONS.find((o) => o.value === c)?.label ?? c;
-}
 
 function excerptLine(text: string | null | undefined, max = 96) {
   const t = text?.trim() ?? '';
@@ -22,7 +17,8 @@ type Props = {
   rightPosts: HomeFeedPost[];
 };
 
-export function HomeContentShowcase({ toolbar, leftPosts, rightPosts }: Props) {
+export async function HomeContentShowcase({ toolbar, leftPosts, rightPosts }: Props) {
+  const ui = await getAllUiLabels();
   const hasAny = leftPosts.length > 0 || rightPosts.length > 0;
 
   return (
@@ -54,7 +50,7 @@ export function HomeContentShowcase({ toolbar, leftPosts, rightPosts }: Props) {
                           layout="showcaseLarge"
                           metadataParams={post.metadata?.params}
                         />
-                        <span className={styles.contentShowcaseCat}>{categoryUiLabel(post.category)}</span>
+                        <span className={styles.contentShowcaseCat}>{corridorLabel(ui, post.category)}</span>
                         {post.isFeatured ? (
                           <span className={styles.contentShowcasePick}>Pick</span>
                         ) : null}

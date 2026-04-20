@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ChevronLeft, ChevronRight, MessageCircle } from 'lucide-react';
+import { useUiLabels } from '@/components/UiLabelsProvider';
 import styles from '@/app/(root)/page.module.css';
 
 type BestCategory = 'ALL' | 'LAB' | 'GALLERY' | 'LOUNGE' | 'GOSSIP' | 'BUILD' | 'LAUNCH';
@@ -16,17 +17,18 @@ type ApiResponse = {
   items: BestItem[];
 };
 
-const CATS: { id: BestCategory; label: string }[] = [
-  { id: 'ALL', label: '전체' },
-  { id: 'LAB', label: 'AI 연구소' },
-  { id: 'GALLERY', label: '쇼케이스' },
-  { id: 'LOUNGE', label: 'AI 트렌드' },
-  { id: 'GOSSIP', label: '커뮤니티' },
-  { id: 'BUILD', label: '제작기' },
-  { id: 'LAUNCH', label: '출시' },
+const CAT_DEF: { id: BestCategory; labelKey: string }[] = [
+  { id: 'ALL', labelKey: 'corridor.all' },
+  { id: 'LAB', labelKey: 'corridor.lab' },
+  { id: 'GALLERY', labelKey: 'corridor.gallery' },
+  { id: 'LOUNGE', labelKey: 'corridor.lounge' },
+  { id: 'GOSSIP', labelKey: 'corridor.gossip' },
+  { id: 'BUILD', labelKey: 'corridor.build' },
+  { id: 'LAUNCH', labelKey: 'corridor.launch' },
 ];
 
 export function TodaysBest() {
+  const m = useUiLabels();
   const [category, setCategory] = useState<BestCategory>('ALL');
   const [page, setPage] = useState(1);
   const [data, setData] = useState<ApiResponse>({
@@ -79,7 +81,7 @@ export function TodaysBest() {
     <aside className={styles.todaysBest} aria-labelledby="todays-best-heading">
       <div className={styles.todaysBestHead}>
         <h3 id="todays-best-heading" className={styles.todaysBestTitle}>
-          오늘의 베스트
+          {m?.['home.todays_best.title'] ?? ''}
         </h3>
         <div className={styles.todaysBestPager} role="group" aria-label="페이지">
           <button
@@ -107,7 +109,7 @@ export function TodaysBest() {
       </div>
 
       <div className={styles.todaysBestFilters} role="tablist" aria-label="베스트 복도 필터">
-        {CATS.map((c) => {
+        {CAT_DEF.map((c) => {
           const active = c.id === category;
           return (
             <button
@@ -118,7 +120,7 @@ export function TodaysBest() {
               className={active ? `${styles.bestFilterPill} ${styles.bestFilterPillActive}` : styles.bestFilterPill}
               onClick={() => setCat(c.id)}
             >
-              {c.label}
+              {m?.[c.labelKey] ?? ''}
             </button>
           );
         })}

@@ -1,14 +1,15 @@
 import Link from 'next/link';
 import type { Category } from '@prisma/client';
-import { categoryToHomeQuery, POST_CATEGORY_OPTIONS } from '@/lib/post-categories';
+import { categoryToHomeQuery } from '@/lib/post-categories';
 import styles from './post.module.css';
 
 type Props = {
   category: Category;
+  /** 복도 표시명 (UI 설정/DB) */
+  label: string;
 };
 
-export function PostTopBreadcrumb({ category }: Props) {
-  const catLabel = POST_CATEGORY_OPTIONS.find((o) => o.value === category)?.label ?? category;
+export function PostTopBreadcrumb({ category, label: catLabel }: Props) {
   const q = categoryToHomeQuery(category);
 
   return (

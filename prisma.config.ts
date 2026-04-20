@@ -11,4 +11,8 @@ export default defineConfig({
      */
     url: process.env.DIRECT_URL || process.env.DATABASE_URL,
   },
+  /** Prisma 7: `prisma db seed`는 여기서만 읽음 (`package.json`의 prisma.seed 무시) */
+  migrations: {
+    seed: 'tsx prisma/seed.ts',
+  },
 });

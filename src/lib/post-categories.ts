@@ -1,4 +1,5 @@
 import type { Category } from '@prisma/client';
+import { defaultPostCategoryOptions } from '@/lib/ui-config-defaults';
 
 /** 메인 `?category=` 쿼리 (LAB ↔ Prisma RECIPE) */
 const HOME_QUERY_TO_CATEGORY: Record<string, Category> = {
@@ -43,15 +44,8 @@ export function homeHrefForCategory(category: Category): string {
   return `/?category=${categoryToHomeQuery(category)}`;
 }
 
-/** UI 라벨 ↔ Prisma `Post.category` */
-export const POST_CATEGORY_OPTIONS: { value: Category; label: string }[] = [
-  { value: 'RECIPE', label: 'AI 연구소' },
-  { value: 'GALLERY', label: '쇼케이스' },
-  { value: 'LOUNGE', label: 'AI 트렌드' },
-  { value: 'GOSSIP', label: '커뮤니티' },
-  { value: 'BUILD', label: '제작기' },
-  { value: 'LAUNCH', label: '출시' },
-];
+/** UI 라벨 ↔ Prisma `Post.category` (기본값은 시드와 동일; 런타임 동기화는 `corridorLabel` + DB) */
+export const POST_CATEGORY_OPTIONS: { value: Category; label: string }[] = defaultPostCategoryOptions();
 
 /** /upload 셀렉트용 (순서: LAB → GALLERY → LOUNGE → GOSSIP → BUILD → LAUNCH) */
 export const UPLOAD_CATEGORY_OPTIONS: { value: Category; label: string }[] = [

@@ -20,6 +20,10 @@ const HomeQuasarAsideLists = nextDynamic(
 type Props = {
   lounge: QuasarAsidePost[];
   gossip: QuasarAsidePost[];
+  loungeTitle: string;
+  gossipTitle: string;
+  asideAriaLabel: string;
+  emptyMessage: string;
 };
 
 export function HomeQuasarAsideListsLoader(props: Props) {
