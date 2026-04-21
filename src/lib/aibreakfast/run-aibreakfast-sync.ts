@@ -7,7 +7,6 @@ import {
   AI_BREAKFAST_HOME,
   extractLatestPostPathFromMain,
   extractNewsletterPlainText,
-  extractSiteLogoUrl,
   fetchHtml,
 } from '@/lib/aibreakfast/scrape-beehiiv';
 import { summarizeAiBreakfastNewsletter } from '@/lib/aibreakfast/summarize-aibreakfast';
@@ -135,8 +134,7 @@ async function runAiBreakfastSyncInner(options: { force: boolean }): Promise<AiB
   }
 
   const link = normalizeUrl(postUrlRaw).slice(0, 2048);
-  const logoUrl = extractSiteLogoUrl(mainRes.html, AI_BREAKFAST_HOME);
-  console.log('[aibreakfast] 최신 포스트 URL:', link, logoUrl ? `(로고 ${logoUrl.slice(0, 64)}…)` : '(로고 없음)');
+  console.log('[aibreakfast] 최신 포스트 URL:', link);
 
   const blocked = await loadBlockedSyndicationUrls();
   const results: AiBreakfastItemResult[] = [];
@@ -231,7 +229,7 @@ async function runAiBreakfastSyncInner(options: { force: boolean }): Promise<AiB
         category: 'LOUNGE',
         title,
         content,
-        thumbnail: logoUrl ? logoUrl.slice(0, 2048) : null,
+        thumbnail: null,
         attachmentUrls: [],
         tags: ['AI Breakfast', 'Newsletter'],
         authorId: author.id,

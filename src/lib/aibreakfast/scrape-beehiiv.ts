@@ -42,40 +42,21 @@ export function extractLatestPostPathFromMain(html: string, baseUrl: string): st
   }
 }
 
-/** 출처 로고·대표 이미지 URL (https만 — 썸네일·CTA용) */
-export function extractSiteLogoUrl(html: string, baseUrl: string): string | null {
-  const $ = cheerio.load(html);
-  const candidates = [
-    $('link[rel="apple-touch-icon"]').attr('href'),
-    $('link[rel="icon"]').first().attr('href'),
-    $('meta[property="og:image"]').attr('content'),
-  ];
-  for (const raw of candidates) {
-    if (!raw?.trim()) continue;
-    try {
-      const abs = new URL(raw.trim(), baseUrl).href;
-      if (abs.toLowerCase().startsWith('https://')) return abs.slice(0, 2048);
-    } catch {
-      /* next */
-    }
-  }
-  return null;
-}
-
-/** 상세 페이지에서 뉴스레터 본문 텍스트 추출 */
+/** 상세 페이지에서 뉴스레터 본문 텍스트 추출 (히어로·로고 등 이미지 블록은 제외) */
 export function extractNewsletterPlainText(html: string): string {
   const $ = cheerio.load(html);
-  const postContent = $('.post-content').first();
-  if (postContent.length) {
-    return htmlToPlainText(postContent.html() ?? '');
-  }
-  const main = $('main').first();
-  if (main.length) {
-    return htmlToPlainText(main.html() ?? '');
-  }
-  const article = $('article').first();
-  if (article.length) {
-    return htmlToPlainText(article.html() ?? '');
-  }
-  return htmlToPlainText($.html());
+  let container = $('.post-content').first();
+  if (!container.length) container = $('main').first();
+  if (!container.length) container = $('article').first();
+  if (!container.length) container = $('body');
+
+  container
+    .find('img, picture, source, svg, [role="img"], iframe, object, embed, video')
+    .remove();
+  container.find('figure').each((_, el) => {
+    const $fig = $(el);
+    if ($fig.text().trim().length < 40) $fig.remove();
+  });
+
+  return htmlToPlainText(container.html() ?? '');
 }

@@ -342,7 +342,7 @@ export function NoticesAdminClient({ initialNotices }: Props) {
         <h2 className={styles.formTitle}>AI Breakfast 동기화</h2>
         <p className={styles.helpText}>
           aibreakfast.beehiiv.com 메인에서 최신 /p/ 포스트 1건을 가져와 Gemini로 핵심 주제 3가지를 요약해 LOUNGE(AI 트렌드)에
-          등록합니다. 썸네일은 사이트 로고(가능 시)를 사용합니다. 다른 뉴스 소스와 원문 URL이 겹치면 건너뜁니다.
+          등록합니다. 썸네일은 넣지 않습니다. 다른 뉴스 소스와 원문 URL이 겹치면 건너뜁니다.
         </p>
         <div className={styles.actions}>
           <button
