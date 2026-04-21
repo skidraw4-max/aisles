@@ -7,7 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { runDailyNewsSyncBundled } from '@/lib/cron/daily-news-sync';
 
-export const maxDuration = 300;
+export const maxDuration = 60;
 
 function serializeThrown(e: unknown): { message?: string; name?: string; detail?: unknown } {
   if (e instanceof Error) {

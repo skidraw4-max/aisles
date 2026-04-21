@@ -8,7 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { runGeekNewsSync } from '@/lib/geeknews/run-geeknews-sync';
 
-export const maxDuration = 300;
+export const maxDuration = 60;
 
 function verifyCronAuth(req: NextRequest): boolean {
   const secret = process.env.CRON_SECRET?.trim();

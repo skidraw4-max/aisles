@@ -7,7 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { runHackerNewsSync } from '@/lib/hackernews/run-hackernews-sync';
 
-export const maxDuration = 300;
+export const maxDuration = 60;
 
 function verifyCronAuth(req: NextRequest): boolean {
   const secret = process.env.CRON_SECRET?.trim();

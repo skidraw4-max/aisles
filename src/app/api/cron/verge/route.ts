@@ -9,7 +9,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { runVergeSync } from '@/lib/verge/run-verge-sync';
 
-export const maxDuration = 300;
+export const maxDuration = 60;
 
 function verifyCronAuth(req: NextRequest): boolean {
   const secret = process.env.CRON_SECRET?.trim();
