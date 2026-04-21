@@ -1,3 +1,4 @@
+import { runAiBreakfastSync, type AiBreakfastSyncResult } from '@/lib/aibreakfast/run-aibreakfast-sync';
 import { runGeekNewsSync, type GeekNewsSyncResult } from '@/lib/geeknews/run-geeknews-sync';
 import { runHackerNewsSync, type HackerNewsSyncResult } from '@/lib/hackernews/run-hackernews-sync';
 import { runVergeSync, type VergeSyncResult } from '@/lib/verge/run-verge-sync';
@@ -6,10 +7,11 @@ export type DailyNewsSyncBundledResult = {
   verge: VergeSyncResult | { thrown: unknown };
   geeknews: GeekNewsSyncResult | { thrown: unknown };
   hackernews: HackerNewsSyncResult | { thrown: unknown };
+  aibreakfast: AiBreakfastSyncResult | { thrown: unknown };
 };
 
 /**
- * The Verge → GeekNews → Hacker News 순으로 실행.
+ * The Verge → GeekNews → Hacker News → AI Breakfast 순으로 실행.
  * 한 단계가 실패하거나 예외여도 다음 소스는 계속 시도한다.
  */
 export async function runDailyNewsSyncBundled(options: {
@@ -59,5 +61,19 @@ export async function runDailyNewsSyncBundled(options: {
     hackernews = { thrown: e };
   }
 
-  return { verge, geeknews, hackernews };
+  let aibreakfast: AiBreakfastSyncResult | { thrown: unknown };
+  try {
+    aibreakfast = await runAiBreakfastSync({ force });
+    if (!aibreakfast.ok) {
+      console.error('[daily-news] AI Breakfast 단계 실패', {
+        step: aibreakfast.step,
+        message: aibreakfast.message,
+      });
+    }
+  } catch (e) {
+    console.error('[daily-news] AI Breakfast 동기화 예외', e);
+    aibreakfast = { thrown: e };
+  }
+
+  return { verge, geeknews, hackernews, aibreakfast };
 }

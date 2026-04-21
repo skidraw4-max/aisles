@@ -6,6 +6,7 @@ import { parseGeekNewsNewListHtml } from '@/lib/geeknews/parse-list';
 import { summarizeGeekNewsArticle } from '@/lib/geeknews/summarize';
 import { titleMatchesAiKeywords } from '@/lib/hackernews/ai-title';
 import { readGeminiApiKeyFromEnv } from '@/lib/gemini-prompt-analysis-engine';
+import { loadBlockedSyndicationUrls } from '@/lib/news-sync/blocked-original-urls';
 import { NEWS_SYNC_GEMINI_GAP_MS, sleepMs } from '@/lib/news-sync/gemini-request-gap';
 
 const GEEKNEWS_NEW_URL = 'https://news.hada.io/new';
@@ -128,22 +129,7 @@ export async function runGeekNewsSync(options: { force: boolean }): Promise<Geek
 
   console.log(`[geeknews] 링크 ${parsed.length}개 추출 완료 (스캔 상한 ${MAX_LIST_SCAN}까지 사용)`);
 
-  const existingRows = await prisma.post.findMany({
-    where: {
-      OR: [
-        { geeknewsOriginalUrl: { not: null } },
-        { hackerNewsOriginalUrl: { not: null } },
-        { vergeOriginalUrl: { not: null } },
-      ],
-    },
-    select: { geeknewsOriginalUrl: true, hackerNewsOriginalUrl: true, vergeOriginalUrl: true },
-  });
-  const existingUrls = new Set<string>();
-  for (const r of existingRows) {
-    if (r.geeknewsOriginalUrl) existingUrls.add(r.geeknewsOriginalUrl);
-    if (r.hackerNewsOriginalUrl) existingUrls.add(r.hackerNewsOriginalUrl);
-    if (r.vergeOriginalUrl) existingUrls.add(r.vergeOriginalUrl);
-  }
+  const existingUrls = await loadBlockedSyndicationUrls();
 
   const scan = parsed.slice(0, MAX_LIST_SCAN);
   const results: GeekNewsItemResult[] = [];

@@ -6,6 +6,7 @@ import { formatHackerNewsPostBody } from '@/lib/hackernews/format-post-body';
 import { rankStoriesForSync } from '@/lib/hackernews/rank-stories';
 import { summarizeHackerNewsArticle } from '@/lib/hackernews/summarize';
 import { readGeminiApiKeyFromEnv } from '@/lib/gemini-prompt-analysis-engine';
+import { loadBlockedSyndicationUrls } from '@/lib/news-sync/blocked-original-urls';
 import { NEWS_SYNC_GEMINI_GAP_MS, sleepMs } from '@/lib/news-sync/gemini-request-gap';
 
 /** topstories.json 상위 N개 ID만 펼쳐서 점수·AI 우선순위 계산 */
@@ -51,34 +52,6 @@ export type HackerNewsSyncFailure = {
 };
 
 export type HackerNewsSyncResult = HackerNewsSyncSuccess | HackerNewsSyncFailure;
-
-async function loadBlockedOriginalUrls(): Promise<Set<string>> {
-  const [gn, hn, vg] = await Promise.all([
-    prisma.post.findMany({
-      where: { geeknewsOriginalUrl: { not: null } },
-      select: { geeknewsOriginalUrl: true },
-    }),
-    prisma.post.findMany({
-      where: { hackerNewsOriginalUrl: { not: null } },
-      select: { hackerNewsOriginalUrl: true },
-    }),
-    prisma.post.findMany({
-      where: { vergeOriginalUrl: { not: null } },
-      select: { vergeOriginalUrl: true },
-    }),
-  ]);
-  const set = new Set<string>();
-  for (const r of gn) {
-    if (r.geeknewsOriginalUrl) set.add(r.geeknewsOriginalUrl);
-  }
-  for (const r of hn) {
-    if (r.hackerNewsOriginalUrl) set.add(r.hackerNewsOriginalUrl);
-  }
-  for (const r of vg) {
-    if (r.vergeOriginalUrl) set.add(r.vergeOriginalUrl);
-  }
-  return set;
-}
 
 export async function runHackerNewsSync(options: { force: boolean }): Promise<HackerNewsSyncResult> {
   const { force } = options;
@@ -164,7 +137,7 @@ export async function runHackerNewsSync(options: { force: boolean }): Promise<Ha
     };
   }
 
-  const blockedUrls = await loadBlockedOriginalUrls();
+  const blockedUrls = await loadBlockedSyndicationUrls();
   const results: HackerNewsItemResult[] = [];
   let created = 0;
   let geminiOrdinal = 0;

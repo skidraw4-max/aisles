@@ -11,8 +11,10 @@ import {
 import { runGeekNewsSyncAdminAction } from '@/app/notices/geeknews-sync-actions';
 import { runHackerNewsSyncAdminAction } from '@/app/notices/hackernews-sync-actions';
 import { runVergeSyncAdminAction } from '@/app/notices/verge-sync-actions';
+import { runAiBreakfastSyncAdminAction } from '@/app/notices/aibreakfast-sync-actions';
 import type { GeekNewsItemResult } from '@/lib/geeknews/run-geeknews-sync';
 import type { HackerNewsItemResult } from '@/lib/hackernews/run-hackernews-sync';
+import type { AiBreakfastItemResult } from '@/lib/aibreakfast/run-aibreakfast-sync';
 import type { VergeItemResult } from '@/lib/verge/run-verge-sync';
 import styles from './admin.module.css';
 
@@ -65,6 +67,26 @@ function formatVergeSyncAlert(r: Awaited<ReturnType<typeof runVergeSyncAdminActi
     `강제 모드: ${r.force ? '예' : '아니오'}`,
     '',
     ...r.results.slice(0, 20).map((x: VergeItemResult) => {
+      const u = x.link.length > 56 ? `${x.link.slice(0, 56)}…` : x.link;
+      const extra = x.detail ? ` — ${x.detail}` : x.postId ? ` → ${x.postId}` : '';
+      return `${x.status}: ${u}${extra}`;
+    }),
+  ];
+  if (r.results.length > 20) {
+    lines.push(`… 외 ${r.results.length - 20}건`);
+  }
+  return lines.join('\n');
+}
+
+function formatAiBreakfastSyncAlert(r: Awaited<ReturnType<typeof runAiBreakfastSyncAdminAction>>): string {
+  if (!r.ok) {
+    return [`실패`, `단계: ${r.step}`, r.message, `코드: ${r.error}`].join('\n');
+  }
+  const lines = [
+    `완료: 신규 ${r.created}건 (최신 포스트 ${r.scanned}건 기준)`,
+    `강제 모드: ${r.force ? '예' : '아니오'}`,
+    '',
+    ...r.results.slice(0, 20).map((x: AiBreakfastItemResult) => {
       const u = x.link.length > 56 ? `${x.link.slice(0, 56)}…` : x.link;
       const extra = x.detail ? ` — ${x.detail}` : x.postId ? ` → ${x.postId}` : '';
       return `${x.status}: ${u}${extra}`;
@@ -215,6 +237,20 @@ export function NoticesAdminClient({ initialNotices }: Props) {
     });
   };
 
+  const onAiBreakfastSync = (force: boolean) => {
+    if (force && !globalThis.confirm('강제 모드: 이미 등록된 원문 URL도 다시 처리합니다. DB 중복 시 오류로 표시됩니다. 계속할까요?')) {
+      return;
+    }
+    setError(null);
+    startTransition(async () => {
+      const res = await runAiBreakfastSyncAdminAction(force);
+      globalThis.alert(formatAiBreakfastSyncAlert(res));
+      if (res.ok && res.created > 0) {
+        router.refresh();
+      }
+    });
+  };
+
   return (
     <>
       <div className={styles.headRow}>
@@ -298,6 +334,32 @@ export function NoticesAdminClient({ initialNotices }: Props) {
             onClick={() => onVergeSync(true)}
           >
             The Verge 강제 동기화
+          </button>
+        </div>
+      </div>
+
+      <div className={styles.formCard}>
+        <h2 className={styles.formTitle}>AI Breakfast 동기화</h2>
+        <p className={styles.helpText}>
+          aibreakfast.beehiiv.com 메인에서 최신 /p/ 포스트 1건을 가져와 Gemini로 핵심 주제 3가지를 요약해 LOUNGE(AI 트렌드)에
+          등록합니다. 썸네일은 사이트 로고(가능 시)를 사용합니다. 다른 뉴스 소스와 원문 URL이 겹치면 건너뜁니다.
+        </p>
+        <div className={styles.actions}>
+          <button
+            type="button"
+            className={`${styles.btn} ${styles.btnPrimary}`}
+            disabled={pending}
+            onClick={() => onAiBreakfastSync(false)}
+          >
+            AI Breakfast 수동 동기화
+          </button>
+          <button
+            type="button"
+            className={`${styles.btn} ${styles.btnGhost}`}
+            disabled={pending}
+            onClick={() => onAiBreakfastSync(true)}
+          >
+            AI Breakfast 강제 동기화
           </button>
         </div>
       </div>

@@ -6,6 +6,7 @@ import { readGeminiApiKeyFromEnv } from '@/lib/gemini-prompt-analysis-engine';
 import { titleMatchesAiKeywords } from '@/lib/hackernews/ai-title';
 import { summarizeVergeArticle } from '@/lib/verge/summarize-verge';
 import { formatVergePostBody } from '@/lib/verge/format-verge-body';
+import { loadBlockedSyndicationUrls } from '@/lib/news-sync/blocked-original-urls';
 import { NEWS_SYNC_GEMINI_GAP_MS, sleepMs } from '@/lib/news-sync/gemini-request-gap';
 
 /** The Verge RSS (AI / tech 뉴스 피드) */
@@ -141,30 +142,6 @@ async function fetchVergeRssXml(feedUrl: string): Promise<
   return { ok: true, xml: text };
 }
 
-async function loadBlockedOriginalUrls(): Promise<Set<string>> {
-  const rows = await prisma.post.findMany({
-    where: {
-      OR: [
-        { geeknewsOriginalUrl: { not: null } },
-        { hackerNewsOriginalUrl: { not: null } },
-        { vergeOriginalUrl: { not: null } },
-      ],
-    },
-    select: {
-      geeknewsOriginalUrl: true,
-      hackerNewsOriginalUrl: true,
-      vergeOriginalUrl: true,
-    },
-  });
-  const set = new Set<string>();
-  for (const r of rows) {
-    if (r.geeknewsOriginalUrl) set.add(r.geeknewsOriginalUrl);
-    if (r.hackerNewsOriginalUrl) set.add(r.hackerNewsOriginalUrl);
-    if (r.vergeOriginalUrl) set.add(r.vergeOriginalUrl);
-  }
-  return set;
-}
-
 function rssPlainBody(item: Parser.Item): string {
   const raw = item as Record<string, unknown>;
   const encoded =
@@ -283,7 +260,7 @@ async function runVergeSyncInner(options: { force: boolean }): Promise<VergeSync
     };
   }
 
-  const blocked = await loadBlockedOriginalUrls();
+  const blocked = await loadBlockedSyndicationUrls();
   const results: VergeItemResult[] = [];
   let created = 0;
   let geminiOrdinal = 0;

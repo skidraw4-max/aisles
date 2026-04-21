@@ -360,6 +360,7 @@ export default async function PostPage({ params }: Props) {
     post.geeknewsOriginalUrl ??
     post.hackerNewsOriginalUrl ??
     post.vergeOriginalUrl ??
+    post.aiBreakfastOriginalUrl ??
     ''
   ).trim();
   const extraAttachments = (post.attachmentUrls ?? []).filter((u) => u.trim().length > 0);
