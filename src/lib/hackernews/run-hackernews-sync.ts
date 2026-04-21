@@ -6,6 +6,7 @@ import { formatHackerNewsPostBody } from '@/lib/hackernews/format-post-body';
 import { rankStoriesForSync } from '@/lib/hackernews/rank-stories';
 import { summarizeHackerNewsArticle } from '@/lib/hackernews/summarize';
 import { readGeminiApiKeyFromEnv } from '@/lib/gemini-prompt-analysis-engine';
+import { NEWS_SYNC_GEMINI_GAP_MS, sleepMs } from '@/lib/news-sync/gemini-request-gap';
 
 /** topstories.json 상위 N개 ID만 펼쳐서 점수·AI 우선순위 계산 */
 export const TOP_STORIES_POOL = 200;
@@ -166,6 +167,7 @@ export async function runHackerNewsSync(options: { force: boolean }): Promise<Ha
   const blockedUrls = await loadBlockedOriginalUrls();
   const results: HackerNewsItemResult[] = [];
   let created = 0;
+  let geminiOrdinal = 0;
 
   for (const story of aiRanked) {
     if (created >= MAX_NEW_POSTS_PER_RUN) break;
@@ -202,9 +204,36 @@ export async function runHackerNewsSync(options: { force: boolean }): Promise<Ha
       continue;
     }
 
-    const sum = await summarizeHackerNewsArticle(keyRes.key, story.title, plain);
+    geminiOrdinal += 1;
+    if (geminiOrdinal > 1) {
+      console.log('[hackernews] 3초 대기 중... (Gemini rate limit 완화)');
+      await sleepMs(NEWS_SYNC_GEMINI_GAP_MS);
+    }
+    console.log(
+      `[hackernews] ${geminiOrdinal}번 기사 요약 시작 — ${story.title.slice(0, 72)}${story.title.length > 72 ? '…' : ''}`,
+    );
+
+    let sum: Awaited<ReturnType<typeof summarizeHackerNewsArticle>>;
+    try {
+      console.log(`[hackernews] ${geminiOrdinal}번 기사 요약 중... (Gemini 호출)`);
+      sum = await summarizeHackerNewsArticle(keyRes.key, story.title, plain);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.warn('[hackernews] Gemini 요약 예외 — 해당 기사만 건너뜀', {
+        externalUrl,
+        message: msg,
+      });
+      results.push({
+        externalUrl,
+        status: 'skipped_summary',
+        detail: msg,
+        step: 'gemini_summary_throw',
+      });
+      continue;
+    }
+
     if (!sum.ok) {
-      console.warn('[hackernews] Gemini 요약 실패', sum.error);
+      console.warn('[hackernews] Gemini 요약 실패 — 해당 기사만 건너뜀', sum.error);
       results.push({
         externalUrl,
         status: 'skipped_summary',

@@ -6,6 +6,7 @@ import { parseGeekNewsNewListHtml } from '@/lib/geeknews/parse-list';
 import { summarizeGeekNewsArticle } from '@/lib/geeknews/summarize';
 import { titleMatchesAiKeywords } from '@/lib/hackernews/ai-title';
 import { readGeminiApiKeyFromEnv } from '@/lib/gemini-prompt-analysis-engine';
+import { NEWS_SYNC_GEMINI_GAP_MS, sleepMs } from '@/lib/news-sync/gemini-request-gap';
 
 const GEEKNEWS_NEW_URL = 'https://news.hada.io/new';
 export const MAX_NEW_POSTS_PER_RUN = 5;
@@ -147,6 +148,7 @@ export async function runGeekNewsSync(options: { force: boolean }): Promise<Geek
   const scan = parsed.slice(0, MAX_LIST_SCAN);
   const results: GeekNewsItemResult[] = [];
   let created = 0;
+  let geminiOrdinal = 0;
 
   for (const item of scan) {
     if (created >= MAX_NEW_POSTS_PER_RUN) break;
@@ -187,9 +189,36 @@ export async function runGeekNewsSync(options: { force: boolean }): Promise<Geek
       continue;
     }
 
-    const sum = await summarizeGeekNewsArticle(keyRes.key, item.title, plain);
+    geminiOrdinal += 1;
+    if (geminiOrdinal > 1) {
+      console.log('[geeknews] 3초 대기 중... (Gemini rate limit 완화)');
+      await sleepMs(NEWS_SYNC_GEMINI_GAP_MS);
+    }
+    console.log(
+      `[geeknews] ${geminiOrdinal}번 기사 요약 시작 — ${item.title.slice(0, 72)}${item.title.length > 72 ? '…' : ''}`,
+    );
+
+    let sum: Awaited<ReturnType<typeof summarizeGeekNewsArticle>>;
+    try {
+      console.log(`[geeknews] ${geminiOrdinal}번 기사 요약 중... (Gemini 호출)`);
+      sum = await summarizeGeekNewsArticle(keyRes.key, item.title, plain);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.warn('[geeknews] Gemini 요약 예외 — 해당 기사만 건너뜀', {
+        externalUrl: item.externalUrl,
+        message: msg,
+      });
+      results.push({
+        externalUrl: item.externalUrl,
+        status: 'skipped_summary',
+        detail: msg,
+        step: 'gemini_summary_throw',
+      });
+      continue;
+    }
+
     if (!sum.ok) {
-      console.warn('[geeknews] Gemini 요약 실패', sum.error);
+      console.warn('[geeknews] Gemini 요약 실패 — 해당 기사만 건너뜀', sum.error);
       results.push({
         externalUrl: item.externalUrl,
         status: 'skipped_summary',

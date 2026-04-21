@@ -6,6 +6,7 @@ import { readGeminiApiKeyFromEnv } from '@/lib/gemini-prompt-analysis-engine';
 import { titleMatchesAiKeywords } from '@/lib/hackernews/ai-title';
 import { summarizeVergeArticle } from '@/lib/verge/summarize-verge';
 import { formatVergePostBody } from '@/lib/verge/format-verge-body';
+import { NEWS_SYNC_GEMINI_GAP_MS, sleepMs } from '@/lib/news-sync/gemini-request-gap';
 
 /** The Verge RSS (AI / tech 뉴스 피드) */
 export const VERGE_RSS_URL = 'https://www.theverge.com/rss/ai-artificial-intelligence/index.xml';
@@ -285,6 +286,7 @@ async function runVergeSyncInner(options: { force: boolean }): Promise<VergeSync
   const blocked = await loadBlockedOriginalUrls();
   const results: VergeItemResult[] = [];
   let created = 0;
+  let geminiOrdinal = 0;
 
   for (const item of items) {
     const rawLink = item.link?.trim();
@@ -314,9 +316,33 @@ async function runVergeSyncInner(options: { force: boolean }): Promise<VergeSync
       continue;
     }
 
-    const sum = await summarizeVergeArticle(keyRes.key, item.title ?? '(제목 없음)', plain);
+    geminiOrdinal += 1;
+    if (geminiOrdinal > 1) {
+      console.log('[verge] 3초 대기 중... (Gemini rate limit 완화)');
+      await sleepMs(NEWS_SYNC_GEMINI_GAP_MS);
+    }
+    console.log(
+      `[verge] ${geminiOrdinal}번 기사 요약 시작 — ${(item.title ?? '').slice(0, 72)}${(item.title ?? '').length > 72 ? '…' : ''}`,
+    );
+
+    let sum: Awaited<ReturnType<typeof summarizeVergeArticle>>;
+    try {
+      console.log(`[verge] ${geminiOrdinal}번 기사 요약 중... (Gemini 호출)`);
+      sum = await summarizeVergeArticle(keyRes.key, item.title ?? '(제목 없음)', plain);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.warn('[verge] Gemini 요약 예외 — 해당 기사만 건너뜀', { link, message: msg });
+      results.push({
+        link,
+        status: 'skipped_summary',
+        detail: msg,
+        step: 'gemini_summary_throw',
+      });
+      continue;
+    }
+
     if (!sum.ok) {
-      console.warn('[verge] Gemini 요약 실패', sum.error);
+      console.warn('[verge] Gemini 요약 실패 — 해당 기사만 건너뜀', sum.error);
       results.push({
         link,
         status: 'skipped_summary',
