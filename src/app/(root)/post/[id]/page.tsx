@@ -361,6 +361,7 @@ export default async function PostPage({ params }: Props) {
     post.hackerNewsOriginalUrl ??
     post.vergeOriginalUrl ??
     post.aiBreakfastOriginalUrl ??
+    post.mitNewsOriginalUrl ??
     ''
   ).trim();
   const extraAttachments = (post.attachmentUrls ?? []).filter((u) => u.trim().length > 0);

@@ -12,9 +12,11 @@ import { runGeekNewsSyncAdminAction } from '@/app/notices/geeknews-sync-actions'
 import { runHackerNewsSyncAdminAction } from '@/app/notices/hackernews-sync-actions';
 import { runVergeSyncAdminAction } from '@/app/notices/verge-sync-actions';
 import { runAiBreakfastSyncAdminAction } from '@/app/notices/aibreakfast-sync-actions';
+import { runMitNewsSyncAdminAction } from '@/app/notices/mit-news-sync-actions';
 import type { GeekNewsItemResult } from '@/lib/geeknews/run-geeknews-sync';
 import type { HackerNewsItemResult } from '@/lib/hackernews/run-hackernews-sync';
 import type { AiBreakfastItemResult } from '@/lib/aibreakfast/run-aibreakfast-sync';
+import type { MitNewsItemResult } from '@/lib/mit-news/run-mit-news-sync';
 import type { VergeItemResult } from '@/lib/verge/run-verge-sync';
 import styles from './admin.module.css';
 
@@ -87,6 +89,26 @@ function formatAiBreakfastSyncAlert(r: Awaited<ReturnType<typeof runAiBreakfastS
     `강제 모드: ${r.force ? '예' : '아니오'}`,
     '',
     ...r.results.slice(0, 20).map((x: AiBreakfastItemResult) => {
+      const u = x.link.length > 56 ? `${x.link.slice(0, 56)}…` : x.link;
+      const extra = x.detail ? ` — ${x.detail}` : x.postId ? ` → ${x.postId}` : '';
+      return `${x.status}: ${u}${extra}`;
+    }),
+  ];
+  if (r.results.length > 20) {
+    lines.push(`… 외 ${r.results.length - 20}건`);
+  }
+  return lines.join('\n');
+}
+
+function formatMitNewsSyncAlert(r: Awaited<ReturnType<typeof runMitNewsSyncAdminAction>>): string {
+  if (!r.ok) {
+    return [`실패`, `단계: ${r.step}`, r.message, `코드: ${r.error}`].join('\n');
+  }
+  const lines = [
+    `완료: 신규 ${r.created}건 (RSS ${r.scanned}건 중 최대 ${r.results.length}건 처리)`,
+    `강제 모드: ${r.force ? '예' : '아니오'}`,
+    '',
+    ...r.results.slice(0, 20).map((x: MitNewsItemResult) => {
       const u = x.link.length > 56 ? `${x.link.slice(0, 56)}…` : x.link;
       const extra = x.detail ? ` — ${x.detail}` : x.postId ? ` → ${x.postId}` : '';
       return `${x.status}: ${u}${extra}`;
@@ -251,6 +273,20 @@ export function NoticesAdminClient({ initialNotices }: Props) {
     });
   };
 
+  const onMitNewsSync = (force: boolean) => {
+    if (force && !globalThis.confirm('강제 모드: 이미 등록된 원문 URL도 다시 처리합니다. DB 중복 시 오류로 표시됩니다. 계속할까요?')) {
+      return;
+    }
+    setError(null);
+    startTransition(async () => {
+      const res = await runMitNewsSyncAdminAction(force);
+      globalThis.alert(formatMitNewsSyncAlert(res));
+      if (res.ok && res.created > 0) {
+        router.refresh();
+      }
+    });
+  };
+
   return (
     <>
       <div className={styles.headRow}>
@@ -360,6 +396,32 @@ export function NoticesAdminClient({ initialNotices }: Props) {
             onClick={() => onAiBreakfastSync(true)}
           >
             AI Breakfast 강제 동기화
+          </button>
+        </div>
+      </div>
+
+      <div className={styles.formCard}>
+        <h2 className={styles.formTitle}>MIT News 동기화</h2>
+        <p className={styles.helpText}>
+          news.mit.edu RSS(Artificial Intelligence 토픽)에서 최대 3건을 가져와 중학생 눈높이 요약 후 TREND 복도에 등록합니다.
+          제목은 [MIT 연구] 말머리를 붙입니다. 다른 소스와 원문 URL이 겹치면 건너뜁니다.
+        </p>
+        <div className={styles.actions}>
+          <button
+            type="button"
+            className={`${styles.btn} ${styles.btnPrimary}`}
+            disabled={pending}
+            onClick={() => onMitNewsSync(false)}
+          >
+            MIT News 수동 동기화
+          </button>
+          <button
+            type="button"
+            className={`${styles.btn} ${styles.btnGhost}`}
+            disabled={pending}
+            onClick={() => onMitNewsSync(true)}
+          >
+            MIT News 강제 동기화
           </button>
         </div>
       </div>

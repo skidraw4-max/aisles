@@ -1,6 +1,7 @@
 import { runAiBreakfastSync, type AiBreakfastSyncResult } from '@/lib/aibreakfast/run-aibreakfast-sync';
 import { runGeekNewsSync, type GeekNewsSyncResult } from '@/lib/geeknews/run-geeknews-sync';
 import { runHackerNewsSync, type HackerNewsSyncResult } from '@/lib/hackernews/run-hackernews-sync';
+import { runMitNewsSync, type MitNewsSyncResult } from '@/lib/mit-news/run-mit-news-sync';
 import { runVergeSync, type VergeSyncResult } from '@/lib/verge/run-verge-sync';
 
 export type DailyNewsSyncBundledResult = {
@@ -8,10 +9,11 @@ export type DailyNewsSyncBundledResult = {
   geeknews: GeekNewsSyncResult | { thrown: unknown };
   hackernews: HackerNewsSyncResult | { thrown: unknown };
   aibreakfast: AiBreakfastSyncResult | { thrown: unknown };
+  mitnews: MitNewsSyncResult | { thrown: unknown };
 };
 
 /**
- * The Verge → GeekNews → Hacker News → AI Breakfast 순으로 실행.
+ * The Verge → GeekNews → Hacker News → AI Breakfast → MIT News 순으로 실행.
  * 한 단계가 실패하거나 예외여도 다음 소스는 계속 시도한다.
  */
 export async function runDailyNewsSyncBundled(options: {
@@ -75,5 +77,19 @@ export async function runDailyNewsSyncBundled(options: {
     aibreakfast = { thrown: e };
   }
 
-  return { verge, geeknews, hackernews, aibreakfast };
+  let mitnews: MitNewsSyncResult | { thrown: unknown };
+  try {
+    mitnews = await runMitNewsSync({ force });
+    if (!mitnews.ok) {
+      console.error('[daily-news] MIT News 단계 실패', {
+        step: mitnews.step,
+        message: mitnews.message,
+      });
+    }
+  } catch (e) {
+    console.error('[daily-news] MIT News 동기화 예외', e);
+    mitnews = { thrown: e };
+  }
+
+  return { verge, geeknews, hackernews, aibreakfast, mitnews };
 }
