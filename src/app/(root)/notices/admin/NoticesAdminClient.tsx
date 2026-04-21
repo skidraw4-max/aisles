@@ -403,7 +403,7 @@ export function NoticesAdminClient({ initialNotices }: Props) {
       <div className={styles.formCard}>
         <h2 className={styles.formTitle}>MIT News 동기화</h2>
         <p className={styles.helpText}>
-          news.mit.edu RSS(Artificial Intelligence 토픽)에서 최대 3건을 가져와 중학생 눈높이 요약 후 TREND 복도에 등록합니다.
+          news.mit.edu RSS(Artificial Intelligence 토픽)에서 최대 3건을 가져와 중학생 눈높이 요약 후 LOUNGE(AI 트렌드)에 등록합니다.
           제목은 [MIT 연구] 말머리를 붙입니다. 다른 소스와 원문 URL이 겹치면 건너뜁니다.
         </p>
         <div className={styles.actions}>

@@ -1,5 +1,5 @@
 /**
- * MIT News (RSS AI 토픽) → Gemini 요약 → TREND 자동 등록 (Vercel Cron 또는 수동)
+ * MIT News (RSS AI 토픽) → Gemini 요약 → LOUNGE(AI 트렌드) 자동 등록 (Vercel Cron 또는 수동)
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { runMitNewsSync } from '@/lib/mit-news/run-mit-news-sync';

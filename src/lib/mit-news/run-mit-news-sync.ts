@@ -318,8 +318,8 @@ async function runMitNewsSyncInner(options: { force: boolean }): Promise<MitNews
     try {
       const post = await prisma.post.create({
         data: {
-          /** 학술·연구 성격에 맞춰 TREND(구 테크 트렌드 복도)에 배치. RECIPE(LAB)는 프롬프트 메타데이터 없이 본문이 숨겨질 수 있음. */
-          category: 'TREND',
+          /** AI 트렌드 복도 — LOUNGE(다른 자동 뉴스·AI Breakfast와 동일) */
+          category: 'LOUNGE',
           title,
           content,
           thumbnail: null,
