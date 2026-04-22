@@ -1,8 +1,8 @@
-/** MIT OpenCourseWare — LAB(RECIPE) */
-export const YOUTUBE_MIT_OCW_CHANNEL_ID = 'UCEBb1b_L6zK60zhSg9iGksw';
+/** MIT OpenCourseWare — LAB(RECIPE) (@mitocw) */
+export const YOUTUBE_MIT_OCW_CHANNEL_ID = 'UCEBb1b_L6zDS3xTUrIALZOw';
 
-/** Google DeepMind — TREND */
-export const YOUTUBE_DEEPMIND_CHANNEL_ID = 'UCP7jMX8924L9AgI47VI797w';
+/** Google DeepMind — TREND (@googledeepmind) */
+export const YOUTUBE_DEEPMIND_CHANNEL_ID = 'UCP7jMXSY2xbc3KCAE0MHQ-A';
 
 export const YOUTUBE_CHANNEL_FEED = (channelId: string) =>
   `https://www.youtube.com/feeds/videos.xml?channel_id=${encodeURIComponent(channelId)}`;

@@ -65,9 +65,18 @@ async function fetchViaDataApi(
     if (chJson.error?.message) {
       return { ok: false, message: chJson.error.message };
     }
-    const uploads = chJson.items?.[0]?.contentDetails?.relatedPlaylists?.uploads;
+    if (!chJson.items?.length) {
+      return {
+        ok: false,
+        message: `channels.list에 해당 채널이 없습니다(id=${channelId}). YouTube 채널 ID가 바뀌었는지 확인하세요.`,
+      };
+    }
+    const uploads = chJson.items[0]?.contentDetails?.relatedPlaylists?.uploads;
     if (!uploads) {
-      return { ok: false, message: 'uploads 플레이리스트 ID 없음' };
+      return {
+        ok: false,
+        message: `uploads 플레이리스트 ID 없음(id=${channelId}). API 응답에 relatedPlaylists.uploads가 없습니다.`,
+      };
     }
 
     const plUrl = new URL('https://www.googleapis.com/youtube/v3/playlistItems');
