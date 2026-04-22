@@ -1,4 +1,4 @@
-/** MIT OpenCourseWare — LAB(RECIPE) (@mitocw) */
+/** MIT OpenCourseWare — AI 트렌드 LOUNGE (@mitocw) */
 export const YOUTUBE_MIT_OCW_CHANNEL_ID = 'UCEBb1b_L6zDS3xTUrIALZOw';
 
 /** Google DeepMind — AI 트렌드 LOUNGE (@googledeepmind) */
