@@ -179,10 +179,16 @@ export async function fetchLatestFeedEntries(
       return api;
     }
     console.warn('[youtube-sync] Data API 실패, RSS 폴백 시도:', api.message);
-  } else {
-    console.warn(
-      '[youtube-sync] YOUTUBE_DATA_API_KEY 없음 — RSS만 시도합니다. 프로덕션에서는 404가 날 수 있습니다.',
-    );
+    const rss = await fetchViaRss(channelId, limit);
+    if (rss.ok) return rss;
+    return {
+      ok: false,
+      message: `[YouTube Data API 실패] ${api.message} → [RSS 폴백 실패] ${rss.message}`,
+    };
   }
+
+  console.warn(
+    '[youtube-sync] YOUTUBE_DATA_API_KEY 없음 — RSS만 시도합니다. 프로덕션에서는 404가 날 수 있습니다.',
+  );
   return fetchViaRss(channelId, limit);
 }

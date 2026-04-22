@@ -10,7 +10,7 @@ import {
 } from 'react';
 import type { User } from '@supabase/supabase-js';
 import type { Role } from '@prisma/client';
-import { createClient } from '@/lib/supabase/client';
+import { tryCreateBrowserClient } from '@/lib/supabase/client';
 
 export type InitialSession = {
   userId: string;
@@ -80,7 +80,14 @@ export function SessionProvider({ initialSession, children }: Props) {
   }, []);
 
   useEffect(() => {
-    const supabase = createClient();
+    const supabase = tryCreateBrowserClient();
+    if (!supabase) {
+      console.warn(
+        '[AIsle] NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY 가 없어 클라이언트 세션을 초기화하지 않습니다. Vercel 등에 공개 환경 변수가 설정되어 있는지 확인하세요.'
+      );
+      setHydrated(true);
+      return;
+    }
 
     const bootstrap = async () => {
       const { data: { user: u } } = await supabase.auth.getUser();

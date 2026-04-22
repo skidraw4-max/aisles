@@ -140,7 +140,7 @@ async function runYoutubeSyncInner(options: { force: boolean }): Promise<Youtube
         videoId: '',
         channel: source,
         status: 'error',
-        detail: `RSS 실패: ${feed.message}`,
+        detail: `피드 실패: ${feed.message}`,
       });
       continue;
     }
