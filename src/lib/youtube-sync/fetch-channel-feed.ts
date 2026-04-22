@@ -1,5 +1,6 @@
 import Parser from 'rss-parser';
 import { YOUTUBE_CHANNEL_FEED } from '@/lib/youtube-sync/constants';
+import { readYoutubeDataApiKey } from '@/lib/youtube-sync/youtube-data-api-env';
 
 export type YoutubeFeedEntry = {
   videoId: string;
@@ -21,15 +22,6 @@ export function extractVideoIdFromYoutubeUrl(url: string): string | null {
     /* ignore */
   }
   return null;
-}
-
-/** 서버 전용 — 클라이언트에 노출 금지 */
-function readYoutubeDataApiKey(): string | undefined {
-  return (
-    process.env.YOUTUBE_DATA_API_KEY?.trim() ||
-    process.env.GOOGLE_YOUTUBE_API_KEY?.trim() ||
-    process.env.YOUTUBE_API_KEY?.trim()
-  );
 }
 
 /**

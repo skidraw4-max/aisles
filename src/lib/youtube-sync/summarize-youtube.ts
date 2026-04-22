@@ -6,6 +6,7 @@ import {
   tryParseJsonFromModelText,
 } from '@/lib/gemini-prompt-analysis-engine';
 import type { TranscriptResult } from '@/lib/youtube-sync/fetch-transcript';
+import type { YoutubeVideoSnippet } from '@/lib/youtube-sync/fetch-video-snippet';
 
 export type YoutubeSyndicationSource = 'MIT_OCW' | 'DEEPMIND';
 
@@ -46,24 +47,49 @@ const DEEPMIND_SYSTEM = `너는 AI 산업을 다루는 한국어 테크 리포�
 
 전문 용어는 필요 시 한글 뒤 괄호에 영어를 병기한다.`;
 
+const MIT_METADATA_SYSTEM = `너는 MIT OpenCourseWare 강연 소개를 한국어로 쓰는 교육 에디터다.
+
+**자막이 없다.** 입력은 YouTube Data API가 주는 **영상 제목·채널명·영상 설명(snippet)** 뿐이다. 강의 전체를 시청한 것이 아니므로, 추측으로 세부 내용을 단정하지 않는다.
+
+규칙:
+- 설명문에 나온 사실을 중심으로 짧은 **강연 소개**를 쓴다.
+- 설명이 매우 짧거나 비어 있으면, 제목·채널 맥락만으로 간단히 안내하고 원본 영상 시청을 권한다.
+- 확실하지 않은 기술적 세부는 "영상에서 확인" 식으로 남긴다.
+- 출력은 JSON 한 개만.
+
+스키마:
+- "postTitle": 문자열. 한 줄 한국어 제목.
+- "summaryBody": 문자열. 문단 구분 "\\n\\n". 마지막 문단에 자막 없이 설명만으로 작성했음을 한 문장으로 밝혀도 된다.`;
+
+const DEEPMIND_METADATA_SYSTEM = `너는 AI 산업을 다루는 한국어 테크 리포터다.
+
+**자막이 없다.** 입력은 Google DeepMind 채널 영상의 **제목·채널명·YouTube 영상 설명**만이다.
+
+규칙:
+- 설명에 근거해 발표·연구를 **개괄적으로** 소개한다.
+- 설명이 빈약하면 제목 중심으로 짧게 쓰고, 상세는 원본 영상 시청을 권한다.
+- 확실하지 않은 내용은 단정하지 않는다.
+- 출력은 JSON 한 개만.
+
+스키마:
+- "postTitle": 문자열. 한 줄 한국어 제목.
+- "summaryBody": 문자열. 문단 구분 "\\n\\n".`;
+
 export type YoutubeSummaryJson = {
   postTitle: string;
   summaryBody: string;
 };
 
-function parseSummaryJson(value: unknown): YoutubeSummaryJson | null {
+function parseSummaryJson(value: unknown, minSummaryBody = 120): YoutubeSummaryJson | null {
   if (typeof value !== 'object' || value === null) return null;
   const o = value as Record<string, unknown>;
   const postTitle = typeof o.postTitle === 'string' ? o.postTitle.trim() : '';
   const summaryBody = typeof o.summaryBody === 'string' ? o.summaryBody.trim() : '';
-  if (postTitle.length < 4 || summaryBody.length < 120) return null;
+  if (postTitle.length < 4 || summaryBody.length < minSummaryBody) return null;
   return { postTitle, summaryBody };
 }
 
-function buildUserMessage(
-  rssTitle: string,
-  tr: TranscriptResult,
-): string {
+function buildUserMessage(rssTitle: string, tr: TranscriptResult): string {
   const clipped = tr.text.length > MAX_INPUT_CHARS ? tr.text.slice(0, MAX_INPUT_CHARS) : tr.text;
   const langNote = tr.isKoreanPrimary
     ? '자막 언어: 한국어 우선 트랙을 사용했습니다.'
@@ -71,16 +97,28 @@ function buildUserMessage(
   return `영상 제목(RSS): ${rssTitle}\n\n${langNote}\n\n자막 본문:\n\n${clipped}`;
 }
 
-export async function summarizeYoutubeWithGemini(
-  apiKey: string,
-  source: YoutubeSyndicationSource,
-  rssTitle: string,
-  transcript: TranscriptResult,
-): Promise<{ ok: true; data: YoutubeSummaryJson } | { ok: false; error: string }> {
-  const system = source === 'MIT_OCW' ? MIT_SYSTEM : DEEPMIND_SYSTEM;
-  const user = buildUserMessage(rssTitle, transcript);
-  const prompt = `${system}\n\n---\n\n${user}`;
+function buildMetadataUserMessage(rssTitle: string, snippet: YoutubeVideoSnippet): string {
+  const desc =
+    snippet.description.length > MAX_INPUT_CHARS
+      ? snippet.description.slice(0, MAX_INPUT_CHARS)
+      : snippet.description;
+  const lines = [
+    `피드·목록에서 본 제목: ${rssTitle}`,
+    `API 제목: ${snippet.title || '(없음)'}`,
+    `채널: ${snippet.channelTitle || '(없음)'}`,
+    snippet.publishedAt ? `게시: ${snippet.publishedAt}` : null,
+    '',
+    'YouTube 영상 설명:',
+    desc || '(설명 없음)',
+  ].filter((x): x is string => x !== null && x !== undefined);
+  return lines.join('\n');
+}
 
+async function runGeminiYoutubeSummaryPrompt(
+  apiKey: string,
+  prompt: string,
+  minSummaryBody: number,
+): Promise<{ ok: true; data: YoutubeSummaryJson } | { ok: false; error: string }> {
   let lastErr: unknown;
 
   for (const modelId of GEMINI_GEEKNEWS_MODEL_CHAIN) {
@@ -104,7 +142,7 @@ export async function summarizeYoutubeWithGemini(
           lastErr = new Error('JSON parse failed');
           continue;
         }
-        const data = parseSummaryJson(parsed.value);
+        const data = parseSummaryJson(parsed.value, minSummaryBody);
         if (!data) {
           lastErr = new Error('Invalid YouTube summary JSON');
           continue;
@@ -130,4 +168,29 @@ export async function summarizeYoutubeWithGemini(
     ok: false,
     error: lastErr instanceof Error ? lastErr.message : String(lastErr ?? 'unknown'),
   };
+}
+
+export async function summarizeYoutubeWithGemini(
+  apiKey: string,
+  source: YoutubeSyndicationSource,
+  rssTitle: string,
+  transcript: TranscriptResult,
+): Promise<{ ok: true; data: YoutubeSummaryJson } | { ok: false; error: string }> {
+  const system = source === 'MIT_OCW' ? MIT_SYSTEM : DEEPMIND_SYSTEM;
+  const user = buildUserMessage(rssTitle, transcript);
+  const prompt = `${system}\n\n---\n\n${user}`;
+  return runGeminiYoutubeSummaryPrompt(apiKey, prompt, 120);
+}
+
+/** 자막 없음 폴백 — 영상 설명(snippet)만으로 요약 */
+export async function summarizeYoutubeFromVideoMetadata(
+  apiKey: string,
+  source: YoutubeSyndicationSource,
+  rssTitle: string,
+  snippet: YoutubeVideoSnippet,
+): Promise<{ ok: true; data: YoutubeSummaryJson } | { ok: false; error: string }> {
+  const system = source === 'MIT_OCW' ? MIT_METADATA_SYSTEM : DEEPMIND_METADATA_SYSTEM;
+  const user = buildMetadataUserMessage(rssTitle, snippet);
+  const prompt = `${system}\n\n---\n\n${user}`;
+  return runGeminiYoutubeSummaryPrompt(apiKey, prompt, 80);
 }

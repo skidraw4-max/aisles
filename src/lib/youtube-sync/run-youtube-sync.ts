@@ -11,9 +11,15 @@ import {
   YOUTUBE_WATCH_URL,
 } from '@/lib/youtube-sync/constants';
 import { fetchLatestFeedEntries } from '@/lib/youtube-sync/fetch-channel-feed';
+import { fetchYoutubeVideoSnippet } from '@/lib/youtube-sync/fetch-video-snippet';
 import { fetchYoutubeTranscriptPreferKorean } from '@/lib/youtube-sync/fetch-transcript';
 import { formatYoutubePostBody } from '@/lib/youtube-sync/format-youtube-body';
-import { summarizeYoutubeWithGemini, type YoutubeSyndicationSource } from '@/lib/youtube-sync/summarize-youtube';
+import {
+  summarizeYoutubeFromVideoMetadata,
+  summarizeYoutubeWithGemini,
+  type YoutubeSyndicationSource,
+} from '@/lib/youtube-sync/summarize-youtube';
+import { readYoutubeDataApiKey } from '@/lib/youtube-sync/youtube-data-api-env';
 import { YOUTUBE_SYNC_GAP_MS, sleepMs } from '@/lib/youtube-sync/youtube-request-gap';
 
 export type YoutubeSyncStep =
@@ -161,29 +167,51 @@ async function runYoutubeSyncInner(options: { force: boolean }): Promise<Youtube
 
       console.log(`[youtube-sync] 자막 요청 — ${source} ${entry.videoId}`);
       const tr = await fetchYoutubeTranscriptPreferKorean(entry.videoId);
-      if (!tr) {
-        results.push({
-          videoId: entry.videoId,
-          channel: source,
-          status: 'skipped_no_transcript',
-          detail: '자막 없음 또는 추출 실패',
-        });
-        continue;
+      const usedMetadataOnly = !tr;
+
+      let sum: Awaited<ReturnType<typeof summarizeYoutubeWithGemini>>;
+
+      if (tr) {
+        console.log(`[youtube-sync] Gemini 요약(자막) — ${source} ${entry.videoId}`);
+        sum = await summarizeYoutubeWithGemini(keyRes.key, source, entry.title, tr);
+      } else {
+        const ytDataKey = readYoutubeDataApiKey();
+        if (!ytDataKey) {
+          results.push({
+            videoId: entry.videoId,
+            channel: source,
+            status: 'skipped_no_transcript',
+            detail: '자막 없음. YOUTUBE_DATA_API_KEY가 없어 YouTube 영상 설명(snippet) 폴백을 쓸 수 없습니다.',
+          });
+          continue;
+        }
+        const snippet = await fetchYoutubeVideoSnippet(entry.videoId, ytDataKey);
+        if (!snippet) {
+          results.push({
+            videoId: entry.videoId,
+            channel: source,
+            status: 'skipped_no_transcript',
+            detail: '자막 없고, YouTube Data API로 영상 설명(snippet)을 가져오지 못했습니다.',
+          });
+          continue;
+        }
+        console.log(`[youtube-sync] Gemini 요약(영상 설명) — ${source} ${entry.videoId}`);
+        sum = await summarizeYoutubeFromVideoMetadata(keyRes.key, source, entry.title, snippet);
       }
 
-      console.log(`[youtube-sync] Gemini 요약 — ${source} ${entry.videoId}`);
-      const sum = await summarizeYoutubeWithGemini(keyRes.key, source, entry.title, tr);
       if (!sum.ok) {
         results.push({
           videoId: entry.videoId,
           channel: source,
           status: 'skipped_summary',
-          detail: sum.error,
+          detail: usedMetadataOnly ? `(영상 설명 기반) ${sum.error}` : sum.error,
         });
         continue;
       }
 
-      const content = formatYoutubePostBody(source, sum.data.summaryBody);
+      const content = formatYoutubePostBody(source, sum.data.summaryBody, {
+        metadataOnly: usedMetadataOnly,
+      });
       const title = sum.data.postTitle.trim().slice(0, 200);
       const watchUrl = YOUTUBE_WATCH_URL(entry.videoId);
       const thumb = YOUTUBE_THUMBNAIL_HQ(entry.videoId);
