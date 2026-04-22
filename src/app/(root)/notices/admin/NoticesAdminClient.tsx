@@ -13,10 +13,12 @@ import { runHackerNewsSyncAdminAction } from '@/app/notices/hackernews-sync-acti
 import { runVergeSyncAdminAction } from '@/app/notices/verge-sync-actions';
 import { runAiBreakfastSyncAdminAction } from '@/app/notices/aibreakfast-sync-actions';
 import { runMitNewsSyncAdminAction } from '@/app/notices/mit-news-sync-actions';
+import { runYoutubeSyncAdminAction } from '@/app/notices/youtube-sync-actions';
 import type { GeekNewsItemResult } from '@/lib/geeknews/run-geeknews-sync';
 import type { HackerNewsItemResult } from '@/lib/hackernews/run-hackernews-sync';
 import type { AiBreakfastItemResult } from '@/lib/aibreakfast/run-aibreakfast-sync';
 import type { MitNewsItemResult } from '@/lib/mit-news/run-mit-news-sync';
+import type { YoutubeItemResult } from '@/lib/youtube-sync/run-youtube-sync';
 import type { VergeItemResult } from '@/lib/verge/run-verge-sync';
 import styles from './admin.module.css';
 
@@ -116,6 +118,26 @@ function formatMitNewsSyncAlert(r: Awaited<ReturnType<typeof runMitNewsSyncAdmin
   ];
   if (r.results.length > 20) {
     lines.push(`… 외 ${r.results.length - 20}건`);
+  }
+  return lines.join('\n');
+}
+
+function formatYoutubeSyncAlert(r: Awaited<ReturnType<typeof runYoutubeSyncAdminAction>>): string {
+  if (!r.ok) {
+    return [`실패`, `단계: ${r.step}`, r.message, `코드: ${r.error}`].join('\n');
+  }
+  const lines = [
+    `완료: 신규 ${r.created}건`,
+    `강제 모드: ${r.force ? '예' : '아니오'}`,
+    '',
+    ...r.results.slice(0, 30).map((x: YoutubeItemResult) => {
+      const id = x.videoId ? (x.videoId.length > 14 ? `${x.videoId.slice(0, 14)}…` : x.videoId) : '(알 수 없음)';
+      const extra = x.detail ? ` — ${x.detail}` : x.postId ? ` → ${x.postId}` : '';
+      return `${x.channel}: ${x.status}: ${id}${extra}`;
+    }),
+  ];
+  if (r.results.length > 30) {
+    lines.push(`… 외 ${r.results.length - 30}건`);
   }
   return lines.join('\n');
 }
@@ -287,6 +309,20 @@ export function NoticesAdminClient({ initialNotices }: Props) {
     });
   };
 
+  const onYoutubeSync = (force: boolean) => {
+    if (force && !globalThis.confirm('강제 모드: 이미 등록된 영상 ID도 다시 처리 시도합니다. 중복 시 DB 오류로 표시됩니다. 계속할까요?')) {
+      return;
+    }
+    setError(null);
+    startTransition(async () => {
+      const res = await runYoutubeSyncAdminAction(force);
+      globalThis.alert(formatYoutubeSyncAlert(res));
+      if (res.ok && res.created > 0) {
+        router.refresh();
+      }
+    });
+  };
+
   return (
     <>
       <div className={styles.headRow}>
@@ -422,6 +458,33 @@ export function NoticesAdminClient({ initialNotices }: Props) {
             onClick={() => onMitNewsSync(true)}
           >
             MIT News 강제 동기화
+          </button>
+        </div>
+      </div>
+
+      <div className={styles.formCard}>
+        <h2 className={styles.formTitle}>YouTube 동기화 (MIT OCW · DeepMind)</h2>
+        <p className={styles.helpText}>
+          MIT OpenCourseWare는 LAB(RECIPE), Google DeepMind은 TREND 복도에 등록합니다. 채널 RSS 최신 영상 중 자막이 있는
+          것만 처리하며, 채널당 최대 1건·영상 간 5초 간격입니다. 자막은 한국어 우선·없으면 영어 등(요약은 한국어). 상세
+          페이지 상단에 플레이어 임베드·요약 본문·MIT 시 CC BY-NC-SA 출처 문구가 붙습니다.
+        </p>
+        <div className={styles.actions}>
+          <button
+            type="button"
+            className={`${styles.btn} ${styles.btnPrimary}`}
+            disabled={pending}
+            onClick={() => onYoutubeSync(false)}
+          >
+            YouTube 수동 동기화
+          </button>
+          <button
+            type="button"
+            className={`${styles.btn} ${styles.btnGhost}`}
+            disabled={pending}
+            onClick={() => onYoutubeSync(true)}
+          >
+            YouTube 강제 동기화
           </button>
         </div>
       </div>

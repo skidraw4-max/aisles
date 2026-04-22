@@ -66,6 +66,10 @@ model Post {
   aiBreakfastOriginalUrl String? @unique @db.VarChar(2048)
   /// MIT News RSS 등 — 원문 URL로 중복 방지 (고유, 선택)
   mitNewsOriginalUrl String? @unique @db.VarChar(2048)
+  /// YouTube 자동 요약 게시 — 영상 ID 중복 방지 (고유, 선택)
+  youtubeVideoId String? @unique @db.VarChar(16)
+  /// MIT_OCW | DEEPMIND — UI 배지·요약 스타일 구분
+  youtubeSyndicationSource String? @db.VarChar(16)
   /// 해시태그 (#은 표시 시만 붙임)
   tags        String[]    @default([])
   /// 갤러리 이미지 역분석 — AI가 추정한 프롬프트 (캐시)

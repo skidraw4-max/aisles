@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/daily-news-bundled",
       "schedule": "0 20 * * *"
+    },
+    {
+      "path": "/api/cron/youtube-sync",
+      "schedule": "30 21 * * *"
     }
   ]
 }

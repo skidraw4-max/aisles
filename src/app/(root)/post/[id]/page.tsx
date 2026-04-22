@@ -41,6 +41,18 @@ import styles from './post.module.css';
 
 export const dynamic = 'force-dynamic';
 
+/** lucide 에 Youtube 전용 마크가 없어 브랜드에 가까운 간단 SVG 사용 */
+function YoutubeGlyph({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" width={24} height={24} aria-hidden>
+      <path
+        fill="currentColor"
+        d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"
+      />
+    </svg>
+  );
+}
+
 type Props = {
   params: Promise<{ id: string }>;
 };
@@ -327,7 +339,15 @@ export default async function PostPage({ params }: Props) {
     promptJobStatus !== 'FAILED'
       ? parseStoredPromptAnalysisJson(post.metadata.promptAnalysis)
       : null;
-  const showLabDescription = isLab && Boolean(post.content?.trim()) && Boolean(metaPrompt);
+  const ytId = post.youtubeVideoId?.trim() ?? '';
+  const ytSourceRaw = post.youtubeSyndicationSource?.trim();
+  const ytBadge =
+    ytSourceRaw === 'MIT_OCW' ? '[MIT 연구]' : ytSourceRaw === 'DEEPMIND' ? '[DeepMind 공식]' : null;
+
+  const showLabDescription =
+    isLab &&
+    Boolean(post.content?.trim()) &&
+    (Boolean(metaPrompt) || Boolean(ytId));
 
   const relatedSidebar = relatedPosts.map((p) => ({
     id: p.id,
@@ -362,7 +382,7 @@ export default async function PostPage({ params }: Props) {
     post.vergeOriginalUrl ??
     post.aiBreakfastOriginalUrl ??
     post.mitNewsOriginalUrl ??
-    ''
+    (ytId ? `https://www.youtube.com/watch?v=${ytId}` : '')
   ).trim();
   const extraAttachments = (post.attachmentUrls ?? []).filter((u) => u.trim().length > 0);
   const catLabel = corridorLabel(ui, post.category);
@@ -387,7 +407,15 @@ export default async function PostPage({ params }: Props) {
             : styles.magazineTitleWrap
         }
       >
-        <h1 className={styles.magazineTitle}>{post.title}</h1>
+        {ytId ? (
+          <div className={styles.youtubeTitleRow}>
+            <YoutubeGlyph className={styles.titleYoutubeIcon} />
+            {ytBadge ? <span className={styles.youtubeSourceBadge}>{ytBadge}</span> : null}
+            <h1 className={styles.magazineTitle}>{post.title}</h1>
+          </div>
+        ) : (
+          <h1 className={styles.magazineTitle}>{post.title}</h1>
+        )}
         {titleLaunchCta}
       </div>
       <PostSocialIndicatorBar views={displayViews} commentCount={comments.length} />
@@ -486,17 +514,29 @@ export default async function PostPage({ params }: Props) {
                   ) : (
                     <>
                       {postDetailHeader}
-                    {showLabDescription && post.content ? (
-                      <PostRichContent
-                        text={post.content}
-                        className={styles.magazineIntro}
-                        textClassName={styles.postRichInline}
-                        embedMediaClassName={styles.postBodyEmbed}
-                      />
-                    ) : null}
-                    {mainMediaBlock}
-                  </>
-                )}
+                      {ytId ? (
+                        <div className={styles.youtubeEmbedShell}>
+                          <iframe
+                            title="YouTube 영상"
+                            className={styles.youtubeEmbedFrame}
+                            src={`https://www.youtube.com/embed/${ytId}`}
+                            loading="lazy"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                            allowFullScreen
+                          />
+                        </div>
+                      ) : null}
+                      {showLabDescription && post.content ? (
+                        <PostRichContent
+                          text={post.content}
+                          className={styles.magazineIntro}
+                          textClassName={styles.postRichInline}
+                          embedMediaClassName={styles.postBodyEmbed}
+                        />
+                      ) : null}
+                      {!ytId ? mainMediaBlock : null}
+                    </>
+                  )}
 
                 {isGallery && showLabDescription && post.content ? (
                   <div className={`${styles.magazineBodyCard} ${styles.magazineCard}`}>
@@ -540,9 +580,9 @@ export default async function PostPage({ params }: Props) {
                   <ExternalServiceCta href={externalHref} variant="buildBand" />
                 ) : null}
 
-                {isLab ? <RecipePromptSection promptText={labPromptText} /> : null}
-                {isLab ? <DosDontsSection /> : null}
-                {isLab && labPromptText.trim() ? (
+                {isLab && !ytId ? <RecipePromptSection promptText={labPromptText} /> : null}
+                {isLab && !ytId ? <DosDontsSection /> : null}
+                {isLab && labPromptText.trim() && !ytId ? (
                   <PostAiAnalysis
                     postId={post.id}
                     promptText={labPromptText}
@@ -567,7 +607,10 @@ export default async function PostPage({ params }: Props) {
                   </>
                 ) : null}
 
-                {!isGallery && !isLab && !isBuildOrLaunch && post.content ? (
+                {!isGallery &&
+                !isBuildOrLaunch &&
+                post.content &&
+                !(isLab && ytId) ? (
                   <div className={`${styles.magazineBodyCard} ${styles.magazineCard}`}>
                     <h2 className={styles.bodyLabel}>설명</h2>
                     <PostRichContent
