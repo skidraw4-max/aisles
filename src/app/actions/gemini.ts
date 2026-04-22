@@ -310,12 +310,26 @@ function shouldStopImageRetries(e: unknown): boolean {
   return classifyGeminiFailure(e).category === 'AUTH';
 }
 
+/** 무료 티어 일일 모델별 한도 소진 — 다음 모델로 바로 넘김 */
+function isGeminiFreeTierDailyQuotaExceeded(e: unknown): boolean {
+  if (!(e instanceof GoogleGenerativeAIFetchError) || e.status !== 429) return false;
+  const m = e.message ?? '';
+  return (
+    /GenerateRequestsPerDayPerModel|free_tier_requests|quota exceeded/i.test(m) &&
+    /PerDay|quotaValue|free.?tier/i.test(m)
+  );
+}
+
 function isTransientImageApiError(e: unknown): boolean {
   if (e instanceof GoogleGenerativeAIResponseError) {
     return false;
   }
   if (e instanceof GoogleGenerativeAIFetchError) {
     const s = e.status ?? 0;
+    /** 일일 무료 할당량 초과 등 — 재시도만 반복해도 같은 날 소용없음 */
+    if (s === 429 && isGeminiFreeTierDailyQuotaExceeded(e)) {
+      return false;
+    }
     /** 404은 v1beta↔v1 폴백으로 처리. 여기서는 지연 재시도 대상에서 제외 */
     return s === 429 || s === 500 || s === 502 || s === 503 || s === 504;
   }
@@ -393,14 +407,27 @@ export async function analyzeImage(input: AnalyzeImageInput): Promise<AnalyzeIma
       for (let attempt = 0; attempt < IMAGE_REVERSE_ATTEMPTS_PER_MODEL; attempt++) {
         try {
           const genAI = new GoogleGenerativeAI(apiKey);
+          /** v1 generateContent REST는 SDK의 systemInstruction 직렬화와 맞지 않는 경우가 있어 본문에 합침 */
+          const useSystemInstructionField = apiVersion !== 'v1';
+          const userTextPart = useSystemInstructionField
+            ? IMAGE_REVERSE_USER_PROMPT
+            : `${IMAGE_REVERSE_SYSTEM_INSTRUCTION}\n\n---\n\n${IMAGE_REVERSE_USER_PROMPT}`;
+
           const model = genAI.getGenerativeModel(
-            {
-              model: modelId,
-              systemInstruction: IMAGE_REVERSE_SYSTEM_INSTRUCTION,
-              generationConfig: {
-                temperature: 0.2,
-              },
-            },
+            useSystemInstructionField
+              ? {
+                  model: modelId,
+                  systemInstruction: IMAGE_REVERSE_SYSTEM_INSTRUCTION,
+                  generationConfig: {
+                    temperature: 0.2,
+                  },
+                }
+              : {
+                  model: modelId,
+                  generationConfig: {
+                    temperature: 0.2,
+                  },
+                },
             { apiVersion },
           );
 
@@ -413,7 +440,7 @@ export async function analyzeImage(input: AnalyzeImageInput): Promise<AnalyzeIma
                 data: optimized.data,
               },
             },
-            { text: IMAGE_REVERSE_USER_PROMPT },
+            { text: userTextPart },
           ]);
 
           let text: string;
@@ -447,6 +474,13 @@ export async function analyzeImage(input: AnalyzeImageInput): Promise<AnalyzeIma
         } catch (e) {
           lastFailure = e;
           console.error('[analyzeImage] attempt failed', { modelId, apiVersion, attempt, e });
+          if (isGeminiFreeTierDailyQuotaExceeded(e)) {
+            console.warn('[analyzeImage] 무료 일일 할당량 소진 — 재시도 없이 다음 API 버전·모델 시도', {
+              modelId,
+              apiVersion,
+            });
+            continue versionLoop;
+          }
           if (shouldStopImageRetries(e)) {
             return imageErrorFromGeminiFailure(e);
           }
