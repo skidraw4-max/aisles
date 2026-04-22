@@ -465,9 +465,9 @@ export function NoticesAdminClient({ initialNotices }: Props) {
       <div className={styles.formCard}>
         <h2 className={styles.formTitle}>YouTube 동기화 (MIT OCW · DeepMind)</h2>
         <p className={styles.helpText}>
-          MIT OpenCourseWare는 LAB(RECIPE), Google DeepMind은 TREND 복도에 등록합니다. 채널 RSS 최신 영상 중 자막이 있는
-          것만 처리하며, 채널당 최대 1건·영상 간 5초 간격입니다. 자막은 한국어 우선·없으면 영어 등(요약은 한국어). 상세
-          페이지 상단에 플레이어 임베드·요약 본문·MIT 시 CC BY-NC-SA 출처 문구가 붙습니다.
+          MIT OpenCourseWare는 LAB(RECIPE), Google DeepMind은 TREND 복도에 등록합니다. 최신 영상 목록은 기본적으로
+          YouTube Data API v3(`YOUTUBE_DATA_API_KEY`)를 권장합니다. RSS만 쓰면 Vercel 등에서 feeds/videos.xml 이 404가 나는
+          경우가 많습니다. 채널당 최대 1건·영상 간 5초 간격. 자막 없으면 건너뜁니다.
         </p>
         <div className={styles.actions}>
           <button
