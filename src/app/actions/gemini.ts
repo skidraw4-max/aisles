@@ -101,6 +101,57 @@ function stripDataUrlBase64(raw: string): { mimeType: string; base64: string } |
   return { mimeType: m[1].trim(), base64: m[2].replace(/\s/g, '') };
 }
 
+/** R2·CDN이 image/jpeg 대신 octet-stream 으로 주는 경우 대비 — 바이너리 시그니처 */
+function bufferLooksLikeRasterImage(bytes: Uint8Array): boolean {
+  if (bytes.length < 12) return false;
+  if (bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return true;
+  if (
+    bytes[0] === 0x89 &&
+    bytes[1] === 0x50 &&
+    bytes[2] === 0x4e &&
+    bytes[3] === 0x47 &&
+    bytes[4] === 0x0d &&
+    bytes[5] === 0x0a &&
+    bytes[6] === 0x1a &&
+    bytes[7] === 0x0a
+  )
+    return true;
+  if (bytes[0] === 0x47 && bytes[1] === 0x49 && bytes[2] === 0x46) return true;
+  if (
+    bytes[0] === 0x52 &&
+    bytes[1] === 0x49 &&
+    bytes[2] === 0x46 &&
+    bytes[3] === 0x46 &&
+    bytes[8] === 0x57 &&
+    bytes[9] === 0x45 &&
+    bytes[10] === 0x42 &&
+    bytes[11] === 0x50
+  )
+    return true;
+  return false;
+}
+
+function pathnameSuggestsRasterImage(url: URL): boolean {
+  return /\.(jpe?g|png|gif|webp|avif|bmp|heic|heif)(\?|#|$)/i.test(url.pathname);
+}
+
+/** strict image/* 또는 octet-stream+확장자/시그니처 (히스토리 오인 방지용 HTML 시작 `<` 거부) */
+function responseBodyUsableAsImage(ctHeader: string, buffer: Buffer, parsedUrl: URL): boolean {
+  const bytes = new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength);
+  if (bytes.length >= 1 && bytes[0] === 0x3c) {
+    return false;
+  }
+  const ct = ctHeader.trim().toLowerCase();
+  if (ct.startsWith('image/')) return true;
+  const loose =
+    ct.includes('octet-stream') ||
+    ct === '' ||
+    ct === 'binary/octet-stream' ||
+    ct === 'application/x-download';
+  if (!loose) return false;
+  return pathnameSuggestsRasterImage(parsedUrl) || bufferLooksLikeRasterImage(bytes);
+}
+
 /**
  * URL·base64 입력을 디코드한 원시 바이너리로만 반환 (리사이즈·포맷 변환은 호출부에서 sharp 처리).
  */
@@ -168,25 +219,33 @@ async function resolveImageRawBuffer(
       const res = await fetch(urlStr, {
         signal: ac.signal,
         redirect: 'follow',
-        headers: { 'User-Agent': 'AIsle-image-reverse/1.0' },
+        headers: {
+          'User-Agent':
+            'Mozilla/5.0 (compatible; AIsle-image-reverse/1.0; +https://www.aisleshub.com)',
+          Accept: 'image/avif,image/webp,image/apng,image/png,image/jpeg,image/*;q=0.8,*/*;q=0.5',
+        },
       });
       clearTimeout(timer);
       if (!res.ok) {
         return { ok: false, error: '이미지를 불러오지 못했습니다.', code: 'API_ERROR' };
       }
-      const ct = res.headers.get('content-type') || '';
-      if (!ct.toLowerCase().startsWith('image/')) {
-        return {
-          ok: false,
-          error: 'URL이 image/* 콘텐츠를 가리키지 않습니다.',
-          code: 'VALIDATION',
-        };
-      }
       const buf = await res.arrayBuffer();
       if (buf.byteLength > MAX_IMAGE_BYTES) {
         return { ok: false, error: '이미지 크기가 너무 큽니다.', code: 'VALIDATION' };
       }
-      return { ok: true, buffer: Buffer.from(buf) };
+      const buffer = Buffer.from(buf);
+      const ct = res.headers.get('content-type') || '';
+      if (!responseBodyUsableAsImage(ct, buffer, url)) {
+        return {
+          ok: false,
+          error:
+            ct.toLowerCase().startsWith('text/html') || buffer[0] === 0x3c
+              ? '이미지 URL이 차단 페이지(HTML)를 반환했습니다. 저장소 URL·공개 범위를 확인해 주세요.'
+              : '이미지로 인식할 수 있는 응답이 아닙니다.(Content-Type 또는 형식 확인)',
+          code: 'VALIDATION',
+        };
+      }
+      return { ok: true, buffer };
     } catch (e) {
       clearTimeout(timer);
       const name = e instanceof Error ? e.name : '';
