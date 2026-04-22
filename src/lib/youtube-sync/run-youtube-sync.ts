@@ -70,8 +70,8 @@ async function loadYoutubeVideoIdSet(): Promise<Set<string>> {
 }
 
 function categoryForSource(source: YoutubeSyndicationSource): Category {
-  /** MIT OCW → LAB(RECIPE), DeepMind → TREND (요청 사양) */
-  return source === 'MIT_OCW' ? 'RECIPE' : 'TREND';
+  /** MIT OCW → LAB(RECIPE), DeepMind → AI 트렌드(LOUNGE) */
+  return source === 'MIT_OCW' ? 'RECIPE' : 'LOUNGE';
 }
 
 function tagsForSource(source: YoutubeSyndicationSource): string[] {

@@ -1,7 +1,7 @@
 /** MIT OpenCourseWare — LAB(RECIPE) (@mitocw) */
 export const YOUTUBE_MIT_OCW_CHANNEL_ID = 'UCEBb1b_L6zDS3xTUrIALZOw';
 
-/** Google DeepMind — TREND (@googledeepmind) */
+/** Google DeepMind — AI 트렌드 LOUNGE (@googledeepmind) */
 export const YOUTUBE_DEEPMIND_CHANNEL_ID = 'UCP7jMXSY2xbc3KCAE0MHQ-A';
 
 export const YOUTUBE_CHANNEL_FEED = (channelId: string) =>
