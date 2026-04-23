@@ -12,7 +12,13 @@ export function formatMitNewsPostBody(originalUrl: string, data: MitNewsSummaryJ
   const summary = stripVisualMarkdown(data.easySummary);
   const future = stripVisualMarkdown(data.futureImpact);
 
-  return `${summary}
+  return `## 배경
+
+${stripVisualMarkdown(data.backgroundContext)}
+
+## 핵심 정리
+
+${summary}
 
 ## 이 기술이 바꿀 미래
 

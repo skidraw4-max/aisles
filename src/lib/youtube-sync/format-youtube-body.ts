@@ -1,4 +1,4 @@
-import type { YoutubeSyndicationSource } from '@/lib/youtube-sync/summarize-youtube';
+import type { YoutubeSyndicationSource, YoutubeSummaryJson } from '@/lib/youtube-sync/summarize-youtube';
 
 type FormatOpts = {
   /** 자막 없이 YouTube 설명(snippet)만으로 Gemini 요약한 경우 */
@@ -8,10 +8,20 @@ type FormatOpts = {
 /** 요약 본문만 (iframe은 게시글 상세에서 별도 렌더) */
 export function formatYoutubePostBody(
   source: YoutubeSyndicationSource,
-  summaryBody: string,
+  summary: YoutubeSummaryJson,
   opts?: FormatOpts,
 ): string {
-  let body = summaryBody.trim();
+  let body = `## 배경
+
+${summary.backgroundContext.trim()}
+
+## 핵심 정리
+
+${summary.summaryBody.trim()}
+
+## 향후 전망
+
+${summary.futureOutlook.trim()}`;
   if (opts?.metadataOnly) {
     body += `
 

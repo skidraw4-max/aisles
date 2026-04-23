@@ -9,6 +9,9 @@ function stripVisualMarkdown(s: string): string {
 }
 
 export function formatAiBreakfastPostBody(originalUrl: string, data: AiBreakfastSummaryJson): string {
+  const intro = stripVisualMarkdown(data.newsletterBackground.trim());
+  const outlook = stripVisualMarkdown(data.futureOutlook.trim());
+
   const blocks = data.topics.map((t, i) => {
     const headline = stripVisualMarkdown(t.headline.trim());
     const summary = stripVisualMarkdown(t.summary.trim());
@@ -20,7 +23,15 @@ export function formatAiBreakfastPostBody(originalUrl: string, data: AiBreakfast
 **인사이트** — ${insight}`;
   });
 
-  return `${blocks.join('\n\n')}
+  return `## 배경
+
+${intro}
+
+${blocks.join('\n\n')}
+
+## 향후 전망
+
+${outlook}
 
 ---
 

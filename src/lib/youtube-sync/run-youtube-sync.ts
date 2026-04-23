@@ -209,7 +209,7 @@ async function runYoutubeSyncInner(options: { force: boolean }): Promise<Youtube
         continue;
       }
 
-      const content = formatYoutubePostBody(source, sum.data.summaryBody, {
+      const content = formatYoutubePostBody(source, sum.data, {
         metadataOnly: usedMetadataOnly,
       });
       const title = sum.data.postTitle.trim().slice(0, 200);

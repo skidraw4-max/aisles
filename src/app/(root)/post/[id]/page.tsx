@@ -130,11 +130,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       select: { title: true, content: true, thumbnail: true, createdAt: true, category: true },
     });
     if (!post) return { title: '게시글 — AIsle' };
+    const catLabel = corridorLabel(ui, post.category);
     const description = buildPostMetaDescription({
       title: post.title,
       content: post.content,
-      categoryLabel: corridorLabel(ui, post.category),
+      categoryLabel: catLabel,
     });
+    const docTitle = `${post.title} · ${catLabel} | AIsle`;
+    const socialTitle = `${post.title} · ${catLabel}`;
     const url = `${base}/post/${id}`;
     const thumbRaw = post.thumbnail?.trim();
     const thumbAbs =
@@ -148,9 +151,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       ? [{ url: thumbAbs, alt: post.title }]
       : [{ url: defaultOg, width: 1200, height: 630, alt: post.title }];
     return {
-      title: `${post.title} — AIsle`,
+      title: docTitle,
       description,
-      keywords: [post.title, corridorLabel(ui, post.category), 'AIsle', 'AI', '프롬프트'].filter(Boolean),
+      keywords: [post.title, catLabel, 'AIsle', 'AI', '프롬프트'].filter(Boolean),
       alternates: { canonical: url },
       robots: { index: true, follow: true },
       openGraph: {
@@ -158,14 +161,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         locale: 'ko_KR',
         siteName: 'AIsle',
         url,
-        title: post.title,
+        title: socialTitle,
         description,
         publishedTime: post.createdAt.toISOString(),
         images: ogImages,
       },
       twitter: {
         card: 'summary_large_image',
-        title: post.title,
+        title: socialTitle,
         description,
         images: ogImages.map((i) => i.url),
       },

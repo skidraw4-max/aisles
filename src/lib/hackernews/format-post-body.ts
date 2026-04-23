@@ -17,6 +17,9 @@ export function formatHackerNewsPostBody(
       ? `\n\n### 기술·메타\n\n${data.techStackOrMeta.trim()}`
       : '';
 
+  const bg = data.backgroundContext.trim();
+  const fo = data.futureOutlook.trim();
+
   const footer = `📝 원문 및 참고
 
 - Source: Hacker News
@@ -29,11 +32,19 @@ export function formatHackerNewsPostBody(
 
   return `${data.introduction.trim()}
 
+### 배경 설명
+
+${bg}
+
 ${sectionBlocks}
 
 ### 가치와 인사이트
 
 ${data.valueAndInsight.trim()}${techBlock}
+
+### 향후 전망
+
+${fo}
 
 ${footer}`;
 }
