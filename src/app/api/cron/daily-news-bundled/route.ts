@@ -2,7 +2,7 @@
  * The Verge → GeekNews → Hacker News → AI Breakfast → MIT News 순차 실행 (한 소스 실패 시 다음 소스 계속)
  *
  * - 환경: `CRON_SECRET`(필수)
- * - 스케줄: `vercel.json` — `0 20 * * *` (UTC) 근처 한국 새벽
+ * - 스케줄: 현재 `vercel.json`에서 직접 호출하지 않음 (개별 크론 엔드포인트로 분리 운영)
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { runDailyNewsSyncBundled } from '@/lib/cron/daily-news-sync';

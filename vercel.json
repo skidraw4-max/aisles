@@ -1,12 +1,28 @@
 {
   "crons": [
     {
-      "path": "/api/cron/daily-news-bundled",
-      "schedule": "0 20 * * *"
+      "path": "/api/cron/geeknews",
+      "schedule": "0 */3 * * *"
+    },
+    {
+      "path": "/api/cron/hackernews",
+      "schedule": "10 */3 * * *"
+    },
+    {
+      "path": "/api/cron/verge",
+      "schedule": "20 */3 * * *"
+    },
+    {
+      "path": "/api/cron/aibreakfast",
+      "schedule": "30 */3 * * *"
+    },
+    {
+      "path": "/api/cron/mit-news",
+      "schedule": "40 */3 * * *"
     },
     {
       "path": "/api/cron/youtube-sync",
-      "schedule": "30 21 * * *"
+      "schedule": "50 */3 * * *"
     }
   ]
 }

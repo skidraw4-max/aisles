@@ -2,7 +2,7 @@
  * GeekNews → 요약 → LOUNGE 자동 등록 (Vercel Cron)
  *
  * - 환경: `CRON_SECRET`(필수), `GOOGLE_GENERATIVE_AI_API_KEY` 또는 `GEMINI_API_KEY`, Prisma `User.username` 기본 `Nedai` (`GEEKNEWS_AUTHOR_USERNAME`으로 변경 가능)
- * - 스케줄: `vercel.json` — `0 20 * * *` (UTC) ≈ 한국 시간 새벽 5시
+ * - 스케줄: `vercel.json` — UTC 기준 3시간마다 00분 (한국시간 기준 03:00부터 3시간 간격 체인 시작)
  * - `GET` 또는 `POST` 동일 동작. `?force=true` 시 중복 URL 스킵 없이 시도(삽입 시 DB 유니크로 막힘).
  */
 import { NextRequest, NextResponse } from 'next/server';
