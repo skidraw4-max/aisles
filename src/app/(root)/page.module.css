@@ -1091,6 +1091,12 @@
   text-align: right;
 }
 
+.feedBoardHeadDateLabel {
+  min-width: 4.3rem !important;
+  max-width: 4.3rem !important;
+  letter-spacing: 0.08em;
+}
+
 .feedBoardList {
   list-style: none;
   margin: 0;
@@ -1224,6 +1230,16 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.feedBoardFreeDate {
+  min-width: 4.3rem;
+  max-width: 4.3rem;
+  font-size: 0.73rem;
+  letter-spacing: 0.01em;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  overflow: visible;
+  text-overflow: clip;
 }
 
 .feedBoardFreeViews {

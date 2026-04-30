@@ -126,7 +126,7 @@ function FeedBoardRow({
         </span>
         <span className={styles.feedBoardFreeMeta}>
           {showDateInMeta ? (
-            <span className={styles.feedBoardFreeAuthor} title={post.createdAt}>
+            <span className={`${styles.feedBoardFreeAuthor} ${styles.feedBoardFreeDate}`} title={post.createdAt}>
               {formatDateYYMMDD(post.createdAt)}
             </span>
           ) : (
@@ -160,7 +160,9 @@ function FeedBoardTable({
             제목
           </span>
           <span className={styles.feedBoardFreeHeadMeta} role="presentation">
-            <span role="columnheader">{showDateInMeta ? '등록일' : '글쓴이'}</span>
+            <span role="columnheader" className={showDateInMeta ? styles.feedBoardHeadDateLabel : undefined}>
+              {showDateInMeta ? '등록일' : '글쓴이'}
+            </span>
             <span role="columnheader">조회</span>
           </span>
         </div>
