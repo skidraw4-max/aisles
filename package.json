@@ -3,6 +3,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "node scripts/run-build.cjs",
+    "ads:write": "node scripts/write-ads-txt.cjs",
     "start": "next start",
     "postinstall": "prisma generate",
     "db:migrate": "prisma migrate deploy",

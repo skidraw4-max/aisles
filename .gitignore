@@ -6,3 +6,6 @@ node_modules
 .next
 
 /generated/prisma
+
+# 빌드 시 ADS_TXT 로 생성 (저장소에 pub ID 커밋 방지)
+public/ads.txt
