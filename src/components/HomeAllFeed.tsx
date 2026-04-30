@@ -27,6 +27,15 @@ function formatDate(iso: string) {
   }
 }
 
+function formatDateYYMMDD(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '--/--/--';
+  const yy = String(d.getFullYear()).slice(-2);
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yy}/${mm}/${dd}`;
+}
+
 function commentCount(post: FeedPostJson): number {
   return post.commentCount ?? 0;
 }
@@ -77,7 +86,15 @@ function FeedPostCard({ post, imagePriority }: { post: FeedPostJson; imagePriori
   );
 }
 
-function FeedBoardRow({ post, gossipReportStyle }: { post: FeedPostJson; gossipReportStyle: boolean }) {
+function FeedBoardRow({
+  post,
+  gossipReportStyle,
+  showDateInMeta,
+}: {
+  post: FeedPostJson;
+  gossipReportStyle: boolean;
+  showDateInMeta: boolean;
+}) {
   const cc = commentCount(post);
   const hasMedia = Boolean(post.thumbnail?.trim());
 
@@ -108,9 +125,15 @@ function FeedBoardRow({ post, gossipReportStyle }: { post: FeedPostJson; gossipR
           </span>
         </span>
         <span className={styles.feedBoardFreeMeta}>
-          <span className={styles.feedBoardFreeAuthor} title={post.author.username}>
-            {post.author.username}
-          </span>
+          {showDateInMeta ? (
+            <span className={styles.feedBoardFreeAuthor} title={post.createdAt}>
+              {formatDateYYMMDD(post.createdAt)}
+            </span>
+          ) : (
+            <span className={styles.feedBoardFreeAuthor} title={post.author.username}>
+              {post.author.username}
+            </span>
+          )}
           <span className={styles.feedBoardFreeViews} title="조회수">
             {post.views.toLocaleString('ko-KR')}
           </span>
@@ -120,7 +143,15 @@ function FeedBoardRow({ post, gossipReportStyle }: { post: FeedPostJson; gossipR
   );
 }
 
-function FeedBoardTable({ posts, gossipReportStyle }: { posts: FeedPostJson[]; gossipReportStyle: boolean }) {
+function FeedBoardTable({
+  posts,
+  gossipReportStyle,
+  showDateInMeta,
+}: {
+  posts: FeedPostJson[];
+  gossipReportStyle: boolean;
+  showDateInMeta: boolean;
+}) {
   return (
     <div className={`${styles.feedBoardSurface} ${gossipReportStyle ? styles.feedBoardSurfaceGossip : ''}`}>
       <div className={styles.feedBoardScroll}>
@@ -129,13 +160,18 @@ function FeedBoardTable({ posts, gossipReportStyle }: { posts: FeedPostJson[]; g
             제목
           </span>
           <span className={styles.feedBoardFreeHeadMeta} role="presentation">
-            <span role="columnheader">글쓴이</span>
+            <span role="columnheader">{showDateInMeta ? '등록일' : '글쓴이'}</span>
             <span role="columnheader">조회</span>
           </span>
         </div>
         <ul className={styles.feedBoardList} role="list">
           {posts.map((post) => (
-            <FeedBoardRow key={post.id} post={post} gossipReportStyle={gossipReportStyle} />
+            <FeedBoardRow
+              key={post.id}
+              post={post}
+              gossipReportStyle={gossipReportStyle}
+              showDateInMeta={showDateInMeta}
+            />
           ))}
         </ul>
       </div>
@@ -165,6 +201,7 @@ export function HomeAllFeed({ category, excludeIds, initialPosts, initialHasMore
 
   const boardList = isFeedBoardListCategory(category);
   const gossipReportStyle = category === 'GOSSIP';
+  const loungeDateMeta = category === 'LOUNGE';
   const allCardFeed = category === null && !boardList;
 
   const [visibleCount, setVisibleCount] = useState(() =>
@@ -261,7 +298,11 @@ export function HomeAllFeed({ category, excludeIds, initialPosts, initialHasMore
           <Link href="/upload">업로드 페이지로 이동</Link>
         </p>
       ) : boardList ? (
-        <FeedBoardTable posts={posts} gossipReportStyle={gossipReportStyle} />
+        <FeedBoardTable
+          posts={posts}
+          gossipReportStyle={gossipReportStyle}
+          showDateInMeta={loungeDateMeta}
+        />
       ) : (
         <ul className={styles.allFeed}>
           {cardGridPosts.map((post, i) => (
