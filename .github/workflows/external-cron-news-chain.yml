@@ -1,0 +1,98 @@
+# 외부 스케줄러용: 수집 API를 Vercel Cron 대신 주기 호출
+# 필요 Secrets: CRON_SITE_URL (예: https://www.aisleshub.com), CRON_SECRET
+# vercel.json 크론과 동시에 쓰면 중복 실행되므로 한쪽만 사용할 것.
+#
+# 스케줄: UTC 매 3시간 0분에 시작 → 각 소스 10분 간격(총 약 50분 + 요청 시간)
+name: External cron — news sync chain
+
+on:
+  workflow_dispatch:
+  schedule:
+    # UTC 0,3,6,9,12,15,18,21 시 정각 (vercel.json 의 geeknews 첫 슬롯과 동일 계열)
+    - cron: '0 */3 * * *'
+
+jobs:
+  sync-chain:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: GeekNews
+        env:
+          CRON_SITE_URL: ${{ secrets.CRON_SITE_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          set -euo pipefail
+          curl -sS -X POST "${CRON_SITE_URL}/api/cron/geeknews" \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            -H "Content-Type: application/json" \
+            -w "\nHTTP %{http_code}\n"
+
+      - name: Wait 10 minutes
+        run: sleep 600
+
+      - name: Hacker News
+        env:
+          CRON_SITE_URL: ${{ secrets.CRON_SITE_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          set -euo pipefail
+          curl -sS -X POST "${CRON_SITE_URL}/api/cron/hackernews" \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            -H "Content-Type: application/json" \
+            -w "\nHTTP %{http_code}\n"
+
+      - name: Wait 10 minutes
+        run: sleep 600
+
+      - name: The Verge
+        env:
+          CRON_SITE_URL: ${{ secrets.CRON_SITE_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          set -euo pipefail
+          curl -sS -X POST "${CRON_SITE_URL}/api/cron/verge" \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            -H "Content-Type: application/json" \
+            -w "\nHTTP %{http_code}\n"
+
+      - name: Wait 10 minutes
+        run: sleep 600
+
+      - name: AI Breakfast
+        env:
+          CRON_SITE_URL: ${{ secrets.CRON_SITE_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          set -euo pipefail
+          curl -sS -X POST "${CRON_SITE_URL}/api/cron/aibreakfast" \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            -H "Content-Type: application/json" \
+            -w "\nHTTP %{http_code}\n"
+
+      - name: Wait 10 minutes
+        run: sleep 600
+
+      - name: MIT News
+        env:
+          CRON_SITE_URL: ${{ secrets.CRON_SITE_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          set -euo pipefail
+          curl -sS -X POST "${CRON_SITE_URL}/api/cron/mit-news" \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            -H "Content-Type: application/json" \
+            -w "\nHTTP %{http_code}\n"
+
+      - name: Wait 10 minutes
+        run: sleep 600
+
+      - name: YouTube sync
+        env:
+          CRON_SITE_URL: ${{ secrets.CRON_SITE_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          set -euo pipefail
+          curl -sS -X POST "${CRON_SITE_URL}/api/cron/youtube-sync" \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            -H "Content-Type: application/json" \
+            -w "\nHTTP %{http_code}\n"
