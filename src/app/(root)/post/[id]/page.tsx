@@ -210,11 +210,17 @@ export default async function PostPage({ params }: Props) {
 
   const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
-  const [likedRow, comments, meProfile, relatedPosts, weekPopular, prevPost, nextPost, categoryBoardPosts] =
+  const [likedRow, bookmarkRow, comments, meProfile, relatedPosts, weekPopular, prevPost, nextPost, categoryBoardPosts] =
     await Promise.all([
     user?.id
       ? prisma.postLike.findUnique({
           where: { postId_userId: { postId: id, userId: user.id } },
+          select: { postId: true },
+        })
+      : Promise.resolve(null),
+    user?.id
+      ? prisma.bookmark.findUnique({
+          where: { userId_postId: { postId: id, userId: user.id } },
           select: { postId: true },
         })
       : Promise.resolve(null),
@@ -677,6 +683,7 @@ export default async function PostPage({ params }: Props) {
 
                   <PostEngagement
                     postId={post.id}
+                    initialBookmarked={Boolean(bookmarkRow)}
                     initialComments={initialComments}
                     currentUserId={user?.id ?? null}
                     currentUsername={meProfile?.username ?? null}

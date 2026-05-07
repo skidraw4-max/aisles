@@ -20,6 +20,7 @@ model User {
   role       Role     @default(USER)
   posts      Post[]
   postLikes  PostLike[]
+  bookmarks  Bookmark[]
   comments   Comment[]
   passwordResetTokens PasswordResetToken[]
   createdAt  DateTime @default(now())
@@ -82,8 +83,22 @@ model Post {
   launchInfo  LaunchInfo?
   /// 좋아요를 누른 유저와의 관계 (PostLike)
   likes       PostLike[]
+  bookmarks   Bookmark[]
   comments    Comment[]
   createdAt   DateTime    @default(now())
+}
+
+/// 사용자가 저장한 글 (상세의 북마크 버튼과 연동)
+model Bookmark {
+  userId    String
+  postId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@id([userId, postId])
+  @@index([userId])
+  @@index([postId])
 }
 
 // 게시글 좋아요 (누가 눌렀는지 추적, Post.likeCount와 동기화)

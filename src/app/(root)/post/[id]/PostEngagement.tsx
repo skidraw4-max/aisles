@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { usePostLike } from './PostLikeContext';
@@ -18,6 +19,7 @@ export type CommentDTO = {
 
 type Props = {
   postId: string;
+  initialBookmarked: boolean;
   initialComments: CommentDTO[];
   currentUserId: string | null;
   /** 로그인 시 Prisma 프로필 닉네임(낙관적 댓글·표시용) */
@@ -37,6 +39,7 @@ function avatarInitials(username: string) {
 
 export function PostEngagement({
   postId,
+  initialBookmarked,
   initialComments,
   currentUserId,
   currentUsername,
@@ -44,18 +47,24 @@ export function PostEngagement({
   listHref,
   adjacentNav,
 }: Props) {
+  const router = useRouter();
   const { likeCount, liked, likePending, toggleLike, likeError } = usePostLike();
   const [comments, setComments] = useState(initialComments);
   const [body, setBody] = useState('');
   const [commentLoading, setCommentLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [bookmarked, setBookmarked] = useState(false);
+  const [bookmarked, setBookmarked] = useState(initialBookmarked);
+  const [bookmarkPending, setBookmarkPending] = useState(false);
   const [shareHint, setShareHint] = useState<string | null>(null);
   const [effectiveUserId, setEffectiveUserId] = useState<string | null>(currentUserId);
 
   useEffect(() => {
     setEffectiveUserId(currentUserId);
   }, [currentUserId]);
+
+  useEffect(() => {
+    setBookmarked(initialBookmarked);
+  }, [initialBookmarked]);
 
   useEffect(() => {
     void (async () => {
@@ -81,6 +90,34 @@ export function PostEngagement({
   const scrollToComments = useCallback(() => {
     document.getElementById('post-comments')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, []);
+
+  async function toggleBookmark() {
+    setError(null);
+    const token = await getToken();
+    if (!token) {
+      router.push(`/login?next=${encodeURIComponent(`/post/${postId}`)}`);
+      return;
+    }
+    setBookmarkPending(true);
+    try {
+      const res = await fetch(`/api/posts/${postId}/bookmark`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = (await res.json().catch(() => ({}))) as { bookmarked?: boolean; error?: string };
+      if (!res.ok) {
+        setError(data.error || '북마크를 처리할 수 없습니다.');
+        return;
+      }
+      if (typeof data.bookmarked === 'boolean') {
+        setBookmarked(data.bookmarked);
+      }
+    } catch {
+      setError('북마크를 처리할 수 없습니다.');
+    } finally {
+      setBookmarkPending(false);
+    }
+  }
 
   async function handleShare() {
     setShareHint(null);
@@ -224,7 +261,9 @@ export function PostEngagement({
         <button
           type="button"
           className={bookmarked ? styles.floatingIconOnlyActive : styles.floatingIconOnly}
-          onClick={() => setBookmarked((v) => !v)}
+          onClick={() => void toggleBookmark()}
+          disabled={bookmarkPending}
+          aria-busy={bookmarkPending}
           aria-pressed={bookmarked}
           aria-label={bookmarked ? '북마크 해제' : '북마크'}
         >

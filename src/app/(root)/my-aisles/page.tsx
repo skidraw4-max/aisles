@@ -1,8 +1,11 @@
 import Link from 'next/link';
-import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { prisma } from '@/lib/prisma';
-import { MyPostsGrid, type MyPostRow } from './MyPostsGrid';
+import { getAllUiLabels } from '@/lib/ui-config';
+import type { FeedPostCardModel } from '@/components/FeedPostCard';
+import type { MyPostRow } from './MyPostsGrid';
+import { MyAislesView } from './MyAislesView';
+import { MyAislesLoginGate } from './MyAislesLoginGate';
 import styles from './my-aisles.module.css';
 
 export const metadata = {
@@ -18,23 +21,47 @@ export default async function MyAislesPage() {
   } = await supabase.auth.getUser();
 
   if (!user?.email) {
-    redirect('/login?next=/my-aisles');
+    return <MyAislesLoginGate />;
   }
-  const rows = await prisma.post.findMany({
-    where: { authorId: user.id },
-    orderBy: { createdAt: 'desc' },
-    select: {
-      id: true,
-      title: true,
-      category: true,
-      thumbnail: true,
-      metadata: { select: { params: true } },
-      createdAt: true,
-      views: true,
-      likeCount: true,
-      author: { select: { username: true } },
-    },
-  });
+
+  const ui = await getAllUiLabels();
+
+  const [rows, bookmarkRows] = await Promise.all([
+    prisma.post.findMany({
+      where: { authorId: user.id },
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        title: true,
+        category: true,
+        thumbnail: true,
+        metadata: { select: { params: true } },
+        createdAt: true,
+        views: true,
+        likeCount: true,
+        author: { select: { username: true } },
+      },
+    }),
+    prisma.bookmark.findMany({
+      where: { userId: user.id },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        post: {
+          select: {
+            id: true,
+            title: true,
+            content: true,
+            thumbnail: true,
+            category: true,
+            createdAt: true,
+            likeCount: true,
+            metadata: { select: { params: true } },
+            author: { select: { username: true } },
+          },
+        },
+      },
+    }),
+  ]);
 
   const posts: MyPostRow[] = rows.map((p) => ({
     id: p.id,
@@ -48,6 +75,18 @@ export default async function MyAislesPage() {
     authorUsername: p.author.username,
   }));
 
+  const bookmarkCards: FeedPostCardModel[] = bookmarkRows.map((b) => ({
+    id: b.post.id,
+    title: b.post.title,
+    content: b.post.content,
+    thumbnail: b.post.thumbnail,
+    category: b.post.category,
+    createdAt: b.post.createdAt.toISOString(),
+    likeCount: b.post.likeCount,
+    authorUsername: b.post.author.username,
+    metadataParams: b.post.metadata?.params,
+  }));
+
   return (
     <>
       <main className={styles.main}>
@@ -58,8 +97,11 @@ export default async function MyAislesPage() {
             <span>My Aisles</span>
           </nav>
           <h1 className={styles.title}>My Aisles</h1>
-          <p className={styles.lead}>내가 작성한 게시글만 모아서 관리할 수 있습니다. 수정·삭제 후 목록은 자동으로 갱신됩니다.</p>
-          <MyPostsGrid posts={posts} />
+          <p className={styles.lead}>
+            내가 작성한 글과 저장해 둔 소식을 한곳에서 볼 수 있습니다. 북마크는 글 상단의 별 아이콘으로 저장할 수
+            있습니다.
+          </p>
+          <MyAislesView ui={ui} myPosts={posts} bookmarkCards={bookmarkCards} />
         </div>
       </main>
     </>
