@@ -14,7 +14,14 @@ export const metadata = {
 
 export const dynamic = 'force-dynamic';
 
-export default async function MyAislesPage() {
+type PageProps = { searchParams: Promise<{ tab?: string | string[] }> };
+
+export default async function MyAislesPage({ searchParams }: PageProps) {
+  const sp = await searchParams;
+  const raw = sp.tab;
+  const tabParam = Array.isArray(raw) ? raw[0] : raw;
+  const initialTab = tabParam === 'bookmarks' ? ('bookmarks' as const) : ('posts' as const);
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -101,7 +108,12 @@ export default async function MyAislesPage() {
             내가 작성한 글과 저장해 둔 소식을 한곳에서 볼 수 있습니다. 북마크는 글 상단의 별 아이콘으로 저장할 수
             있습니다.
           </p>
-          <MyAislesView ui={ui} myPosts={posts} bookmarkCards={bookmarkCards} />
+          <MyAislesView
+            initialTab={initialTab}
+            ui={ui}
+            myPosts={posts}
+            bookmarkCards={bookmarkCards}
+          />
         </div>
       </main>
     </>

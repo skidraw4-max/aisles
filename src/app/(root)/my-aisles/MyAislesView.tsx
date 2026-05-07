@@ -1,7 +1,6 @@
 'use client';
 
-import { Suspense, useCallback } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useCallback, useEffect, useState } from 'react';
 import { corridorLabel } from '@/lib/corridor-label';
 import { FeedPostCard, type FeedPostCardModel } from '@/components/FeedPostCard';
 import { MyPostsGrid, type MyPostRow } from './MyPostsGrid';
@@ -36,29 +35,36 @@ function BookmarkedNewsList({ cards, ui }: { cards: FeedPostCardModel[]; ui: Rec
   );
 }
 
-function MyAislesViewInner({
-  ui,
-  myPosts,
-  bookmarkCards,
-}: {
+function tabFromSearch(search: string): Tab {
+  return new URLSearchParams(search).get('tab') === 'bookmarks' ? 'bookmarks' : 'posts';
+}
+
+export function MyAislesView(props: {
+  initialTab: Tab;
   ui: Record<string, string>;
   myPosts: MyPostRow[];
   bookmarkCards: FeedPostCardModel[];
 }) {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const tab: Tab = searchParams.get('tab') === 'bookmarks' ? 'bookmarks' : 'posts';
+  const { initialTab, ui, myPosts, bookmarkCards } = props;
+  const [tab, setTab] = useState<Tab>(initialTab);
 
-  const setTab = useCallback(
-    (next: Tab) => {
-      const q = new URLSearchParams(searchParams.toString());
-      if (next === 'bookmarks') q.set('tab', 'bookmarks');
-      else q.delete('tab');
-      const s = q.toString();
-      router.replace(s ? `/my-aisles?${s}` : '/my-aisles', { scroll: false });
-    },
-    [router, searchParams],
-  );
+  useEffect(() => {
+    setTab(initialTab);
+  }, [initialTab]);
+
+  useEffect(() => {
+    const onPopState = () => {
+      setTab(tabFromSearch(window.location.search));
+    };
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, []);
+
+  const setTabInstant = useCallback((next: Tab) => {
+    setTab(next);
+    const path = next === 'bookmarks' ? '/my-aisles?tab=bookmarks' : '/my-aisles';
+    window.history.replaceState(window.history.state, '', path);
+  }, []);
 
   return (
     <>
@@ -70,7 +76,7 @@ function MyAislesViewInner({
           aria-selected={tab === 'posts'}
           aria-controls="tab-panel-posts"
           className={`${styles.tabBtn} ${tab === 'posts' ? styles.tabBtnActive : ''}`}
-          onClick={() => setTab('posts')}
+          onClick={() => setTabInstant('posts')}
         >
           내 포스트
         </button>
@@ -81,7 +87,7 @@ function MyAislesViewInner({
           aria-selected={tab === 'bookmarks'}
           aria-controls="tab-panel-bookmarks"
           className={`${styles.tabBtn} ${tab === 'bookmarks' ? styles.tabBtnActive : ''}`}
-          onClick={() => setTab('bookmarks')}
+          onClick={() => setTabInstant('bookmarks')}
         >
           북마크한 소식
         </button>
@@ -94,7 +100,7 @@ function MyAislesViewInner({
         hidden={tab !== 'posts'}
         className={styles.tabPanel}
       >
-        {tab === 'posts' ? <MyPostsGrid posts={myPosts} /> : null}
+        <MyPostsGrid posts={myPosts} />
       </div>
       <div
         id="tab-panel-bookmarks"
@@ -103,20 +109,8 @@ function MyAislesViewInner({
         hidden={tab !== 'bookmarks'}
         className={styles.tabPanel}
       >
-        {tab === 'bookmarks' ? <BookmarkedNewsList cards={bookmarkCards} ui={ui} /> : null}
+        <BookmarkedNewsList cards={bookmarkCards} ui={ui} />
       </div>
     </>
-  );
-}
-
-export function MyAislesView(props: {
-  ui: Record<string, string>;
-  myPosts: MyPostRow[];
-  bookmarkCards: FeedPostCardModel[];
-}) {
-  return (
-    <Suspense fallback={<div className={styles.tabPanelMuted}>불러오는 중…</div>}>
-      <MyAislesViewInner {...props} />
-    </Suspense>
   );
 }
