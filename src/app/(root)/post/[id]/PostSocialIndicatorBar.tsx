@@ -1,7 +1,8 @@
 'use client';
 
-import { Eye, MessageCircle, Heart } from 'lucide-react';
+import { Eye, MessageCircle, Heart, Star } from 'lucide-react';
 import { usePostLike } from './PostLikeContext';
+import { usePostBookmark } from './PostBookmarkContext';
 
 type Props = {
   views: number;
@@ -10,6 +11,7 @@ type Props = {
 
 export function PostSocialIndicatorBar({ views, commentCount }: Props) {
   const { likeCount, liked, likePending, toggleLike } = usePostLike();
+  const { bookmarked, bookmarkPending, toggleBookmark } = usePostBookmark();
 
   function scrollToComments() {
     document.getElementById('post-comments')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -53,6 +55,23 @@ export function PostSocialIndicatorBar({ views, commentCount }: Props) {
         <span className={`tabular-nums ${liked ? 'text-red-500' : ''}`}>
           {likeCount.toLocaleString('ko-KR')}
         </span>
+      </button>
+
+      <button
+        type="button"
+        className="inline-flex items-center justify-center hover:text-gray-400 disabled:opacity-60"
+        onClick={() => void toggleBookmark()}
+        disabled={bookmarkPending}
+        aria-pressed={bookmarked}
+        aria-busy={bookmarkPending}
+        title={bookmarked ? '즐겨찾기 해제' : '즐겨찾기'}
+        aria-label={bookmarked ? '즐겨찾기 해제' : '즐겨찾기'}
+      >
+        <Star
+          className={`h-4 w-4 shrink-0 transition-colors ${bookmarked ? 'fill-amber-400 text-amber-400' : ''}`}
+          strokeWidth={2}
+          aria-hidden
+        />
       </button>
     </div>
   );

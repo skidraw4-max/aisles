@@ -12,6 +12,7 @@ import { fingerprintPrompt } from '@/lib/prompt-analysis-fingerprint';
 import { parseStoredPromptAnalysisJson } from '@/lib/prompt-analysis';
 import { PostEngagement } from './PostEngagement';
 import { PostLikeProvider } from './PostLikeContext';
+import { PostBookmarkProvider } from './PostBookmarkContext';
 import { PostSocialIndicatorBar } from './PostSocialIndicatorBar';
 import { RecipePromptSection } from './RecipePromptSection';
 import { GalleryPostMedia } from './GalleryPostMedia';
@@ -514,6 +515,7 @@ export default async function PostPage({ params }: Props) {
                   initialLikeCount={post.likeCount}
                   initialLiked={Boolean(likedRow)}
                 >
+                  <PostBookmarkProvider postId={post.id} initialBookmarked={Boolean(bookmarkRow)}>
                   <PostTopBreadcrumb category={post.category} label={catLabel} />
                   {isGallery ? (
                     <>
@@ -683,7 +685,6 @@ export default async function PostPage({ params }: Props) {
 
                   <PostEngagement
                     postId={post.id}
-                    initialBookmarked={Boolean(bookmarkRow)}
                     initialComments={initialComments}
                     currentUserId={user?.id ?? null}
                     currentUsername={meProfile?.username ?? null}
@@ -702,6 +703,7 @@ export default async function PostPage({ params }: Props) {
                     currentPostId={post.id}
                     posts={categoryBoardItems}
                   />
+                  </PostBookmarkProvider>
                 </PostLikeProvider>
               </article>
             </div>
