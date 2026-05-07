@@ -2,7 +2,7 @@
 
 import { Suspense, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { corridorLabel } from '@/lib/ui-config';
+import { corridorLabel } from '@/lib/corridor-label';
 import { FeedPostCard, type FeedPostCardModel } from '@/components/FeedPostCard';
 import { MyPostsGrid, type MyPostRow } from './MyPostsGrid';
 import styles from './my-aisles.module.css';

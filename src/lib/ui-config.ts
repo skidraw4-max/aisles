@@ -1,4 +1,3 @@
-import type { Category } from '@prisma/client';
 import { cache } from 'react';
 import { prisma } from '@/lib/prisma';
 import {
@@ -7,10 +6,14 @@ import {
   UI_CONFIG_SEED,
 } from '@/lib/ui-config-defaults';
 import { isPrismaUiConfigTableMissing } from '@/lib/prisma-ui-config';
+import { corridorLabel as corridorLabelFn } from '@/lib/corridor-label';
 
 const FALLBACK = defaultUiLabelMap();
 
 export { CATEGORY_TO_UI_KEY };
+
+/** 클라이언트 컴포넌트에서는 `@/lib/corridor-label`을 직접 import 하세요 (Prisma 번들 방지). */
+export const corridorLabel = corridorLabelFn;
 
 /**
  * 서버 컴포넌트/서버 액션에서 단일 라벨 조회.
@@ -39,12 +42,6 @@ export const getAllUiLabels = cache(async (): Promise<Record<string, string>> =>
   }
   return merged;
 });
-
-/** 복도(카테고리) 표시명 — `getAllUiLabels()` 맵과 함께 사용 */
-export function corridorLabel(map: Record<string, string>, category: Category): string {
-  const k = CATEGORY_TO_UI_KEY[category];
-  return (k && map[k]) || FALLBACK[k] || category;
-}
 
 /** `home.hero.lead_filtered` 등 `{{category}}` 치환 */
 export function applyTemplate(
