@@ -9,15 +9,10 @@ const STATIC_PATHS: MetadataRoute.Sitemap = [
   { url: '/', changeFrequency: 'daily', priority: 1 },
   { url: '/about', changeFrequency: 'monthly', priority: 0.6 },
   { url: '/search', changeFrequency: 'weekly', priority: 0.7 },
-  { url: '/login', changeFrequency: 'monthly', priority: 0.3 },
-  { url: '/upload', changeFrequency: 'monthly', priority: 0.5 },
-  { url: '/profile', changeFrequency: 'monthly', priority: 0.3 },
-  { url: '/my-aisles', changeFrequency: 'monthly', priority: 0.4 },
   { url: '/support', changeFrequency: 'monthly', priority: 0.4 },
   { url: '/legal/privacy', changeFrequency: 'yearly', priority: 0.3 },
   { url: '/legal/terms', changeFrequency: 'yearly', priority: 0.3 },
   { url: '/notices', changeFrequency: 'weekly', priority: 0.5 },
-  { url: '/write', changeFrequency: 'monthly', priority: 0.4 },
 ];
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
