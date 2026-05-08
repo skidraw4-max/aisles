@@ -1,12 +1,18 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { usePostLike } from './PostLikeContext';
 import { usePostBookmark } from './PostBookmarkContext';
 import { copyTextToClipboard } from '@/lib/clipboard-copy';
 import styles from './post.module.css';
+
+const SIGNUP_PROMPT_COUNT_KEY = 'aisle.signupPrompt.articleViews';
+const SIGNUP_PROMPT_HIDE_UNTIL_KEY = 'aisle.signupPrompt.hideUntil';
+const SIGNUP_PROMPT_COOLDOWN_DAYS = 7;
+const SIGNUP_PROMPT_TRIGGER_COUNT = 3;
 
 export type CommentDTO = {
   id: string;
@@ -45,6 +51,7 @@ export function PostEngagement({
   listHref,
   adjacentNav,
 }: Props) {
+  const router = useRouter();
   const { likeCount, liked, likePending, toggleLike, likeError } = usePostLike();
   const { bookmarked, bookmarkPending, bookmarkError, toggleBookmark } = usePostBookmark();
   const [comments, setComments] = useState(initialComments);
@@ -52,6 +59,7 @@ export function PostEngagement({
   const [commentLoading, setCommentLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [shareHint, setShareHint] = useState<string | null>(null);
+  const [showSignupPrompt, setShowSignupPrompt] = useState(false);
   const [effectiveUserId, setEffectiveUserId] = useState<string | null>(currentUserId);
 
   useEffect(() => {
@@ -70,6 +78,32 @@ export function PostEngagement({
       }
     })();
   }, []);
+
+  useEffect(() => {
+    if (effectiveUserId) {
+      setShowSignupPrompt(false);
+      return;
+    }
+    try {
+      const now = Date.now();
+      const hideUntilRaw = window.localStorage.getItem(SIGNUP_PROMPT_HIDE_UNTIL_KEY);
+      const hideUntil = hideUntilRaw ? Number(hideUntilRaw) : 0;
+      if (Number.isFinite(hideUntil) && hideUntil > now) {
+        return;
+      }
+
+      const prevCountRaw = window.localStorage.getItem(SIGNUP_PROMPT_COUNT_KEY);
+      const prevCount = prevCountRaw ? Number(prevCountRaw) : 0;
+      const nextCount = Number.isFinite(prevCount) ? prevCount + 1 : 1;
+      window.localStorage.setItem(SIGNUP_PROMPT_COUNT_KEY, String(nextCount));
+
+      if (nextCount >= SIGNUP_PROMPT_TRIGGER_COUNT) {
+        setShowSignupPrompt(true);
+      }
+    } catch {
+      // localStorage 접근 실패(시크릿 모드 등) 시 팝업 로직만 건너뜀
+    }
+  }, [effectiveUserId, postId]);
 
   async function getToken() {
     const supabase = createClient();
@@ -98,6 +132,22 @@ export function PostEngagement({
       setShareHint('공유를 완료할 수 없습니다.');
       window.setTimeout(() => setShareHint(null), 2200);
     }
+  }
+
+  function closeSignupPrompt() {
+    setShowSignupPrompt(false);
+    try {
+      const hideUntil = Date.now() + SIGNUP_PROMPT_COOLDOWN_DAYS * 24 * 60 * 60 * 1000;
+      window.localStorage.setItem(SIGNUP_PROMPT_HIDE_UNTIL_KEY, String(hideUntil));
+      window.localStorage.setItem(SIGNUP_PROMPT_COUNT_KEY, '0');
+    } catch {
+      // noop
+    }
+  }
+
+  function goSignup() {
+    closeSignupPrompt();
+    router.push(`/login?next=${encodeURIComponent(`/post/${postId}`)}`);
   }
 
   async function handleComment(e: React.FormEvent) {
@@ -249,6 +299,40 @@ export function PostEngagement({
         <p className={styles.engagementErr} role="alert">
           {error || likeError || bookmarkError}
         </p>
+      ) : null}
+
+      {showSignupPrompt ? (
+        <div
+          className={styles.signupPromptBackdrop}
+          role="presentation"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) closeSignupPrompt();
+          }}
+        >
+          <div
+            className={styles.signupPromptModal}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="signup-prompt-title"
+            aria-describedby="signup-prompt-desc"
+          >
+            <h3 id="signup-prompt-title" className={styles.signupPromptTitle}>
+              읽은 AI 기사, 한곳에 모아보세요
+            </h3>
+            <p id="signup-prompt-desc" className={styles.signupPromptDesc}>
+              회원가입하면 관심 기사를 북마크해 <strong>My Aisles</strong>에서 언제든 다시 볼 수 있어요.
+            </p>
+            <p className={styles.signupPromptSub}>무료로 바로 시작할 수 있습니다.</p>
+            <div className={styles.signupPromptActions}>
+              <button type="button" className={styles.signupPromptPrimary} onClick={goSignup}>
+                회원가입하고 모아보기
+              </button>
+              <button type="button" className={styles.signupPromptGhost} onClick={closeSignupPrompt}>
+                나중에
+              </button>
+            </div>
+          </div>
+        </div>
       ) : null}
 
       {adjacentNav}
