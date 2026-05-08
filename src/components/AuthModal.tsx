@@ -49,6 +49,16 @@ export function AuthModal({ open, onClose, onAuthed, initialNotice = null }: Pro
 
   const resetFeedback = () => setMessage(null);
 
+  function syncProfileInBackground(accessToken: string) {
+    // 로그인/회원가입 전환 속도를 위해 프로필 동기화는 비동기 후행 처리
+    void syncPrismaUserWithAuth(accessToken).catch((err: unknown) => {
+      console.warn(
+        '[auth] profile sync deferred failed:',
+        err instanceof Error ? err.message : String(err)
+      );
+    });
+  }
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     resetFeedback();
@@ -58,7 +68,7 @@ export function AuthModal({ open, onClose, onAuthed, initialNotice = null }: Pro
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
       if (!data.session) throw new Error('세션을 받지 못했습니다.');
-      await syncPrismaUserWithAuth(data.session.access_token);
+      syncProfileInBackground(data.session.access_token);
       onAuthed();
       onClose();
     } catch (err: unknown) {
@@ -109,7 +119,7 @@ export function AuthModal({ open, onClose, onAuthed, initialNotice = null }: Pro
         });
         if (error) throw error;
         if (data.session) {
-          await syncPrismaUserWithAuth(data.session.access_token);
+          syncProfileInBackground(data.session.access_token);
           onAuthed();
           onClose();
           return;
@@ -132,7 +142,7 @@ export function AuthModal({ open, onClose, onAuthed, initialNotice = null }: Pro
       });
       if (error) throw error;
       if (!data.session) throw new Error('세션을 받지 못했습니다. 로그인 화면에서 다시 시도해 주세요.');
-      await syncPrismaUserWithAuth(data.session.access_token);
+      syncProfileInBackground(data.session.access_token);
       onAuthed();
       onClose();
     } catch (err: unknown) {
