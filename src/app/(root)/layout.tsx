@@ -5,8 +5,7 @@ import { getRollingNoticesForBar } from '@/app/notices/actions';
 import { getAllUiLabels } from '@/lib/ui-config';
 
 export default async function RootShellLayout({ children }: { children: React.ReactNode }) {
-  const notices = await getRollingNoticesForBar();
-  const uiLabels = await getAllUiLabels();
+  const [notices, uiLabels] = await Promise.all([getRollingNoticesForBar(), getAllUiLabels()]);
 
   return (
     <UiLabelsProvider labels={uiLabels}>

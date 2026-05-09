@@ -30,6 +30,13 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(u);
   }
 
+  const pathname = request.nextUrl.pathname;
+
+  /** 공개 경로·업로드 외 페이지는 세션 검사 생략 → 홈 등 첫 로딩 시 Supabase 왕복 제거 */
+  if (isPublicPath(pathname) || !pathname.startsWith('/upload')) {
+    return nextWithRequest(request);
+  }
+
   let supabaseResponse = nextWithRequest(request);
 
   const supabase = createServerClient(
@@ -55,12 +62,7 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const pathname = request.nextUrl.pathname;
-  if (isPublicPath(pathname)) {
-    return supabaseResponse;
-  }
-
-  if (!user && pathname.startsWith('/upload')) {
+  if (!user) {
     const url = request.nextUrl.clone();
     url.pathname = '/login';
     url.searchParams.set('next', '/upload');

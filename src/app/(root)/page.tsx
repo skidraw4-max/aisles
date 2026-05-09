@@ -41,7 +41,6 @@ function launchBannerImageUrl(post: Pick<HomeFeedPost, 'thumbnail' | 'attachment
 }
 
 export default async function HomePage({ searchParams }: PageProps) {
-  const ui = await getAllUiLabels();
   const sp = await searchParams;
   const { category: filterCategory } = homeViewFromSearchParams(sp);
 
@@ -54,9 +53,11 @@ export default async function HomePage({ searchParams }: PageProps) {
   if (ed) authErrParams.set('error_description', ed);
   const showInvalidEmailLinkBanner = isSupabaseAuthLinkError(authErrParams);
 
-  const { recentAll, firstHomeFeed, launchBannerPosts } = await getHomePageQueries(
-    categoryKeyForCache(filterCategory)
-  );
+  const cacheKey = categoryKeyForCache(filterCategory);
+  const [ui, { recentAll, firstHomeFeed, launchBannerPosts }] = await Promise.all([
+    getAllUiLabels(),
+    getHomePageQueries(cacheKey),
+  ]);
 
   const launchSlides = launchBannerPosts.map((p) => ({
     id: p.id,
