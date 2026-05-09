@@ -100,7 +100,7 @@ function FeedBoardRow({
 
   return (
     <li className={styles.feedBoardRow}>
-      <Link href={`/post/${post.id}`} className={styles.feedBoardFreeLink}>
+      <Link href={`/post/${post.id}`} prefetch={showDateInMeta} className={styles.feedBoardFreeLink}>
         <span className={styles.feedBoardFreeMain}>
           {gossipReportStyle ? (
             <span className={styles.feedBoardGossipThumb} aria-hidden>

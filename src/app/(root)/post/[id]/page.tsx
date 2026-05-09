@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+import { after } from 'next/server';
 import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import type { Category, Role } from '@prisma/client';
@@ -197,45 +198,30 @@ export default async function PostPage({ params }: Props) {
   }
   if (!post) notFound();
 
-  /** 상세 페이지 요청마다 조회수 +1 (서버 액션) */
-  let displayViews = post.views;
-  const nextViews = await incrementPostViews(post.id);
-  if (nextViews != null) {
-    displayViews = nextViews;
-  }
+  /** 조회수 +1은 응답 생성을 막지 않도록 비동기 후행 처리(표시는 이번 조회를 반영해 +1) */
+  after(() => {
+    void incrementPostViews(post.id);
+  });
+  const displayViews = post.views + 1;
 
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
   const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
-  const [likedRow, bookmarkRow, comments, meProfile, relatedPosts, weekPopular, prevPost, nextPost, categoryBoardPosts] =
-    await Promise.all([
-    user?.id
-      ? prisma.postLike.findUnique({
-          where: { postId_userId: { postId: id, userId: user.id } },
-          select: { postId: true },
-        })
-      : Promise.resolve(null),
-    user?.id
-      ? prisma.bookmark.findUnique({
-          where: { userId_postId: { postId: id, userId: user.id } },
-          select: { postId: true },
-        })
-      : Promise.resolve(null),
+  const [
+    authRes,
+    comments,
+    relatedPosts,
+    weekPopular,
+    prevPost,
+    nextPost,
+    categoryBoardPosts,
+  ] = await Promise.all([
+    supabase.auth.getUser(),
     prisma.comment.findMany({
       where: { postId: id },
       orderBy: { createdAt: 'asc' },
       include: { author: { select: { id: true, username: true, avatarUrl: true } } },
     }),
-    user?.id
-      ? prisma.user.findUnique({
-          where: { id: user.id },
-          select: { username: true, avatarUrl: true },
-        })
-      : Promise.resolve(null),
     prisma.post.findMany({
       where: { category: post.category, id: { not: id } },
       orderBy: { createdAt: 'desc' },
@@ -293,6 +279,25 @@ export default async function PostPage({ params }: Props) {
       },
     }),
   ]);
+
+  const user = authRes.data.user;
+
+  const [likedRow, bookmarkRow, meProfile] = user?.id
+    ? await Promise.all([
+        prisma.postLike.findUnique({
+          where: { postId_userId: { postId: id, userId: user.id } },
+          select: { postId: true },
+        }),
+        prisma.bookmark.findUnique({
+          where: { userId_postId: { postId: id, userId: user.id } },
+          select: { postId: true },
+        }),
+        prisma.user.findUnique({
+          where: { id: user.id },
+          select: { username: true, avatarUrl: true },
+        }),
+      ])
+    : [null, null, null];
 
   let popularPosts = weekPopular;
   if (popularPosts.length < 3) {
