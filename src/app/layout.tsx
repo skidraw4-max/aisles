@@ -1,11 +1,7 @@
 import type { Metadata } from 'next';
-import type { Role } from '@prisma/client';
 import Script from 'next/script';
 import { Syne, DM_Sans, Roboto_Mono } from 'next/font/google';
 import { HomeSupabaseRedirectHandler } from '@/components/HomeSupabaseRedirectHandler';
-import { SessionProvider, type InitialSession } from '@/components/SessionProvider';
-import { createClient } from '@/lib/supabase/server';
-import { prisma } from '@/lib/prisma';
 import { getCanonicalSiteUrl } from '@/lib/canonical-site-url';
 import './globals.css';
 
@@ -24,7 +20,7 @@ const body = DM_Sans({
 const mono = Roboto_Mono({
   subsets: ['latin'],
   variable: '--font-mono',
-  weight: ['400', '500'],
+  weight: ['400', '500', '700'],
 });
 
 const GA_MEASUREMENT_ID = 'G-BH4L4PYCJT';
@@ -116,42 +112,7 @@ export const metadata: Metadata = {
   })(),
 };
 
-async function getInitialSession(): Promise<InitialSession> {
-  try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) return null;
-
-    let dbUsername: string | null = null;
-    let dbRole: Role | null = null;
-    try {
-      const row = await prisma.user.findUnique({
-        where: { id: user.id },
-        select: { username: true, role: true },
-      });
-      dbUsername = row?.username ?? null;
-      dbRole = row?.role ?? null;
-    } catch {
-      /* DB 일시 오류 시 메타/이메일로 표시 */
-    }
-
-    return {
-      userId: user.id,
-      email: user.email ?? null,
-      usernameFromMetadata: (user.user_metadata?.username as string | undefined) ?? null,
-      dbUsername,
-      dbRole,
-    };
-  } catch {
-    return null;
-  }
-}
-
-export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const initialSession = await getInitialSession();
-
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   const siteJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
@@ -176,13 +137,6 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
   return (
     <html lang="ko" className={`${display.variable} ${body.variable} ${mono.variable}`}>
-      <head>
-        <script
-          async
-          src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT_ID}`}
-          crossOrigin="anonymous"
-        />
-      </head>
       <body className={body.className}>
         <script
           type="application/ld+json"
@@ -201,8 +155,13 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             gtag('config', '${GA_MEASUREMENT_ID}');
           `}
         </Script>
+        <Script
+          src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT_ID}`}
+          strategy="lazyOnload"
+          crossOrigin="anonymous"
+        />
         <HomeSupabaseRedirectHandler />
-        <SessionProvider initialSession={initialSession}>{children}</SessionProvider>
+        {children}
       </body>
     </html>
   );

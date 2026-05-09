@@ -269,7 +269,7 @@ export default async function PostPage({ params }: Props) {
     prisma.post.findMany({
       where: { category: post.category },
       orderBy: { createdAt: 'desc' },
-      take: 150,
+      take: 50,
       select: {
         id: true,
         title: true,

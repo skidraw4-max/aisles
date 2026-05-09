@@ -9,6 +9,8 @@ import {
 
 export const dynamic = 'force-dynamic';
 
+const FEED_CACHE_CONTROL = 'public, s-maxage=60, stale-while-revalidate=120';
+
 export async function GET(req: NextRequest) {
   try {
     const url = new URL(req.url);
@@ -16,7 +18,10 @@ export async function GET(req: NextRequest) {
     if (url.searchParams.get('featured') === '1') {
       const category = parseHomeCategoryQuery(url.searchParams.get('category'));
       const posts = await fetchFeaturedForHome(category);
-      return NextResponse.json({ posts: posts.map(serializeFeedPost) });
+      return NextResponse.json(
+        { posts: posts.map(serializeFeedPost) },
+        { headers: { 'Cache-Control': FEED_CACHE_CONTROL } }
+      );
     }
 
     const skip = Math.max(0, parseInt(url.searchParams.get('skip') || '0', 10) || 0);
@@ -28,9 +33,15 @@ export async function GET(req: NextRequest) {
     const { posts, hasMore } = await fetchFeedPosts(skip, limit, category, excludeIds, {
       excludeLoungeGossipFromAll: excludeCommunity && category === null,
     });
-    return NextResponse.json({ posts: posts.map(serializeFeedPost), hasMore });
+    return NextResponse.json(
+      { posts: posts.map(serializeFeedPost), hasMore },
+      { headers: { 'Cache-Control': FEED_CACHE_CONTROL } }
+    );
   } catch (err) {
     console.error('[api/feed GET]', err);
-    return NextResponse.json({ posts: [], hasMore: false }, { status: 200 });
+    return NextResponse.json(
+      { posts: [], hasMore: false },
+      { status: 200, headers: { 'Cache-Control': 'public, s-maxage=30' } }
+    );
   }
 }
