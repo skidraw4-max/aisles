@@ -28,9 +28,9 @@ import { PostAiAnalysis } from '@/components/post/PostAiAnalysis';
 import {
   GalleryImageReverseFallback,
   GalleryImageReverseFromDb,
-  GalleryImageReverseLoginShell,
   GalleryImageReverseSection,
 } from './GalleryImageReverse';
+import { MemberAiExtrasLoginGate } from '@/components/post/MemberAiExtrasLoginGate';
 import { PostCategoryBoardList } from './PostCategoryBoardList';
 import { PostTags } from './PostTags';
 import { incrementPostViews } from './actions';
@@ -281,6 +281,8 @@ export default async function PostPage({ params }: Props) {
   ]);
 
   const user = authRes.data.user;
+  /** LAB·갤러리 등 별도 AI 패널만 회원에게 노출. LOUNGE/GOSSIP 본문은 크론 요약이 곧 글 자체이므로 비회원도 그대로 읽음 */
+  const showAiExtras = Boolean(user);
 
   const [likedRow, bookmarkRow, meProfile] = user?.id
     ? await Promise.all([
@@ -567,7 +569,15 @@ export default async function PostPage({ params }: Props) {
                 ) : null}
 
                 {isGallery && galleryAnalysisUrl ? (
-                  post.aiReversePrompt?.trim() ? (
+                  !showAiExtras ? (
+                    <MemberAiExtrasLoginGate
+                      loginNextPath={`/post/${post.id}`}
+                      headingId="gallery-reverse-heading"
+                      eyebrow="Image intelligence"
+                      title="AI 이미지 역분석"
+                      description="AI 이미지 역분석·추정 프롬프트·키워드 패널은 로그인한 회원만 볼 수 있습니다. 본문 설명은 그대로 읽을 수 있어요."
+                    />
+                  ) : post.aiReversePrompt?.trim() ? (
                     <GalleryImageReverseFromDb
                       authorOriginalPrompt={galleryAuthorPromptText}
                       aiReversePrompt={post.aiReversePrompt}
@@ -579,7 +589,7 @@ export default async function PostPage({ params }: Props) {
                           : null
                       }
                     />
-                  ) : user ? (
+                  ) : (
                     <Suspense fallback={<GalleryImageReverseFallback />}>
                       <GalleryImageReverseSection
                         postId={post.id}
@@ -587,8 +597,6 @@ export default async function PostPage({ params }: Props) {
                         authorOriginalPrompt={galleryAuthorPromptText}
                       />
                     </Suspense>
-                  ) : (
-                    <GalleryImageReverseLoginShell loginNextPath={`/post/${post.id}`} />
                   )
                 ) : null}
 
@@ -604,7 +612,7 @@ export default async function PostPage({ params }: Props) {
                     promptText={labPromptText}
                     initialCachedAnalysis={initialCachedPromptAnalysis}
                     promptAnalysisJobStatus={promptJobStatus}
-                    isLoggedIn={Boolean(user)}
+                    isLoggedIn={showAiExtras}
                     loginNextPath={`/post/${post.id}`}
                   />
                 ) : null}

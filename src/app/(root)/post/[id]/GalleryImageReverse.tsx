@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import styles from './post.module.css';
 import {
   FileText,
@@ -6,7 +5,6 @@ import {
   Hash,
   ImageIcon,
   Layers,
-  Lock,
   Palette,
   Sparkles,
   SunMedium,
@@ -467,49 +465,6 @@ export function GalleryImageReverseFallback() {
         >
           AI가 이미지를 판독하고 있습니다...
         </p>
-      </div>
-    </section>
-  );
-}
-
-/** 비로그인 시 — Suspense 없이 동기 렌더 (로딩 스피너 없음) */
-export function GalleryImageReverseLoginShell({ loginNextPath }: { loginNextPath: string }) {
-  const href = `/login?next=${encodeURIComponent(loginNextPath)}`;
-  return (
-    <section
-      className="mt-8 rounded-3xl border border-[var(--border)] bg-[var(--surface)]/75 p-5 shadow-xl shadow-black/20 backdrop-blur-sm sm:p-8"
-      aria-labelledby="gallery-reverse-heading"
-    >
-      <header className="mb-6">
-        <p className="mb-1 font-medium text-[var(--accent)]" style={{ fontSize: 'var(--type-13)' }}>
-          Image intelligence
-        </p>
-        <h2
-          id="gallery-reverse-heading"
-          className="font-semibold tracking-tight text-[var(--text)]"
-          style={{ fontSize: 'var(--type-22)' }}
-        >
-          AI 이미지 역분석
-        </h2>
-      </header>
-      <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-2)]/80 p-6 text-center">
-        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-[var(--border)] bg-[var(--surface)] text-[var(--accent)]">
-          <Lock className="h-7 w-7" strokeWidth={2} aria-hidden />
-        </div>
-        <p className="mb-4 font-medium text-[var(--text)]" style={{ fontSize: 'var(--type-15)' }}>
-          AI 이미지 역분석은 로그인한 회원만 이용할 수 있습니다.
-        </p>
-        <Link
-          href={href}
-          className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-2xl px-8 font-semibold text-white shadow-lg transition hover:opacity-95"
-          style={{
-            background:
-              'linear-gradient(120deg, #7c3aed 0%, #a855f7 35%, #ec4899 65%, #06b6d4 100%)',
-            boxShadow: '0 12px 40px -8px rgba(124, 58, 237, 0.55), 0 0 0 1px rgba(255,255,255,0.08) inset',
-          }}
-        >
-          로그인
-        </Link>
       </div>
     </section>
   );

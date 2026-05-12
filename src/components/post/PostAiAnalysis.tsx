@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { PromptAnalysisJobStatus } from '@prisma/client';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   BarChart3,
   Boxes,
@@ -17,6 +18,7 @@ import {
   Target,
 } from 'lucide-react';
 import { useAuth } from '@/components/SessionProvider';
+import { AuthModal } from '@/components/AuthModal';
 import type { AnalyzePromptErrorCode, PromptAnalysis } from '@/app/actions/gemini';
 import { isMarketingAnalysis, isVisualAnalysis, type VisualPromptAnalysis } from '@/lib/prompt-analysis';
 
@@ -89,7 +91,9 @@ export function PostAiAnalysis({
   isLoggedIn,
   loginNextPath,
 }: PostAiAnalysisProps) {
+  const router = useRouter();
   const { isAuthenticated } = useAuth();
+  const [authModalOpen, setAuthModalOpen] = useState(false);
   /** 서버(RSC)와 클라이언트 세션 둘 다 true일 때만 분석 허용 — 로그아웃 직후 RSC prop이 늦게 갱신되는 경우 방지 */
   const canUseAiAnalysis = Boolean(isLoggedIn) && isAuthenticated;
 
@@ -497,17 +501,26 @@ export function PostAiAnalysis({
               >
                 AI 분석은 로그인 후 이용 가능합니다. 지금 가입하고 프롬프트 레시피를 분석해보세요!
               </p>
-              <Link
-                href={loginHref}
-                className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-2xl px-8 font-semibold text-white shadow-lg transition hover:opacity-95"
-                style={{
-                  background:
-                    'linear-gradient(120deg, #7c3aed 0%, #a855f7 35%, #ec4899 65%, #06b6d4 100%)',
-                  boxShadow: '0 12px 40px -8px rgba(124, 58, 237, 0.55), 0 0 0 1px rgba(255,255,255,0.08) inset',
-                }}
-              >
-                로그인
-              </Link>
+              <div className="flex w-full max-w-sm flex-col items-stretch gap-3 sm:flex-row sm:justify-center">
+                <button
+                  type="button"
+                  onClick={() => setAuthModalOpen(true)}
+                  className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-2xl px-8 font-semibold text-white shadow-lg transition hover:opacity-95"
+                  style={{
+                    background:
+                      'linear-gradient(120deg, #7c3aed 0%, #a855f7 35%, #ec4899 65%, #06b6d4 100%)',
+                    boxShadow: '0 12px 40px -8px rgba(124, 58, 237, 0.55), 0 0 0 1px rgba(255,255,255,0.08) inset',
+                  }}
+                >
+                  로그인 · 가입
+                </button>
+                <Link
+                  href={loginHref}
+                  className="inline-flex min-h-[48px] items-center justify-center rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-6 font-semibold text-[var(--text)] transition hover:bg-[var(--surface-2)]"
+                >
+                  로그인 페이지
+                </Link>
+              </div>
             </div>
           </div>
         ) : null}
@@ -708,6 +721,14 @@ export function PostAiAnalysis({
           </div>
         ) : null}
       </section>
+      <AuthModal
+        open={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
+        onAuthed={() => {
+          setAuthModalOpen(false);
+          router.refresh();
+        }}
+      />
     </>
   );
 }

@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { createClient } from '@/lib/supabase/server';
 import { resolveRecipePrompt } from '@/lib/recipe-prompt';
 import { fingerprintPrompt } from '@/lib/prompt-analysis-fingerprint';
 import { parseStoredPromptAnalysisJson } from '@/lib/prompt-analysis';
@@ -35,12 +36,19 @@ export async function GET(_req: Request, ctx: Ctx) {
     });
   }
 
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   const promptText = resolveRecipePrompt(post);
   const fp = promptText.trim() ? fingerprintPrompt(promptText.trim()) : '';
   const meta = post.metadata;
   const hashMatch = Boolean(fp && meta?.promptAnalysisPromptHash === fp);
   const analysis: PromptAnalysis | null =
-    hashMatch && meta?.promptAnalysis != null
+    user &&
+    hashMatch &&
+    meta?.promptAnalysis != null
       ? parseStoredPromptAnalysisJson(meta.promptAnalysis)
       : null;
 
@@ -48,11 +56,5 @@ export async function GET(_req: Request, ctx: Ctx) {
     promptAnalysisStatus: meta?.promptAnalysisStatus ?? null,
     analysis,
   };
-  console.log('[prompt-analysis-status GET]', {
-    postId: id,
-    status: body.promptAnalysisStatus,
-    hasAnalysis: body.analysis != null,
-    hashMatch,
-  });
   return Response.json(body);
 }
