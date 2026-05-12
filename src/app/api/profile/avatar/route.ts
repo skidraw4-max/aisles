@@ -4,6 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 import { prisma } from '@/lib/prisma';
 import { MEDIA_STORAGE_NOT_CONFIGURED, uploadPublicObject } from '@/lib/r2';
 import { sanitizeUsername } from '@/lib/username';
+import { normalizeImageToWebp } from '@/lib/normalize-upload-image';
 
 const ALLOWED = new Map<string, string>([
   ['image/jpeg', 'jpg'],
@@ -54,9 +55,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'JPEG, PNG, WebP, GIF만 업로드할 수 있습니다.' }, { status: 400 });
   }
 
-  const buf = Buffer.from(await file.arrayBuffer());
-  const key = `avatars/${user.id}/${randomUUID()}.${ext}`;
-  const uploaded = await uploadPublicObject(key, buf, file.type);
+  const rawBuf = Buffer.from(await file.arrayBuffer());
+  const normalized = await normalizeImageToWebp({
+    buffer: rawBuf,
+    mimeType: file.type,
+    ext,
+  });
+  const key = `avatars/${user.id}/${randomUUID()}.${normalized.ext}`;
+  const uploaded = await uploadPublicObject(key, normalized.buffer, normalized.mimeType);
   if ('error' in uploaded) {
     return NextResponse.json(
       {

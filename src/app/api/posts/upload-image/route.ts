@@ -6,6 +6,7 @@ import { MEDIA_STORAGE_NOT_CONFIGURED, uploadPublicObject } from '@/lib/r2';
 import { UPLOAD_IMAGE_MAX_BYTES, formatUploadMaxSizeLabel } from '@/lib/upload-limits';
 import { resolveUploadMimeType } from '@/lib/upload-media-types';
 import { applyWatermarkForUpload } from '@/lib/watermark-image';
+import { normalizeImageToWebp } from '@/lib/normalize-upload-image';
 
 export const maxDuration = 120;
 
@@ -62,9 +63,14 @@ export async function POST(req: NextRequest) {
   const { mime: inputMime, ext } = resolved;
 
   const watermarked = await applyWatermarkForUpload({ buffer: buf, mimeType: inputMime, ext });
-  buf = Buffer.from(watermarked.buffer);
-  const uploadMime = watermarked.mimeType;
-  const key = `posts/${user.id}/${randomUUID()}.${ext}`;
+  const normalized = await normalizeImageToWebp({
+    buffer: Buffer.from(watermarked.buffer),
+    mimeType: watermarked.mimeType,
+    ext: watermarked.ext,
+  });
+  buf = Buffer.from(normalized.buffer);
+  const uploadMime = normalized.mimeType;
+  const key = `posts/${user.id}/${randomUUID()}.${normalized.ext}`;
   const uploaded = await uploadPublicObject(key, buf, uploadMime);
   if ('error' in uploaded) {
     return NextResponse.json(

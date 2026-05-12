@@ -20,6 +20,7 @@ import { normalizePostTagsInput } from '@/lib/post-tags';
 import { UPLOAD_IMAGE_MAX_BYTES, formatUploadMaxSizeLabel } from '@/lib/upload-limits';
 import { resolveUploadMimeType } from '@/lib/upload-media-types';
 import { applyWatermarkForUpload } from '@/lib/watermark-image';
+import { normalizeImageToWebp } from '@/lib/normalize-upload-image';
 import { validateContentMinForCategory } from '@/lib/post-description-policy';
 import { runPostPromptAnalysisJob } from '@/app/actions/gemini';
 
@@ -293,9 +294,14 @@ async function postFromMultipart(req: NextRequest) {
     const { mime: inputMime, ext } = resolved;
 
     const wm = await applyWatermarkForUpload({ buffer: buf, mimeType: inputMime, ext });
-    buf = Buffer.from(wm.buffer);
-    const uploadMime = wm.mimeType;
-    const key = `posts/${user.id}/${randomUUID()}.${ext}`;
+    const normalized = await normalizeImageToWebp({
+      buffer: Buffer.from(wm.buffer),
+      mimeType: wm.mimeType,
+      ext: wm.ext,
+    });
+    buf = Buffer.from(normalized.buffer);
+    const uploadMime = normalized.mimeType;
+    const key = `posts/${user.id}/${randomUUID()}.${normalized.ext}`;
     const uploaded = await uploadPublicObject(key, buf, uploadMime);
     if ('error' in uploaded) {
       return NextResponse.json(

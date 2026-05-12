@@ -13,6 +13,7 @@ import { useCorridorLabel } from '@/components/UiLabelsProvider';
 import { MAX_POST_MEDIA } from '@/lib/post-media-urls';
 import { MIN_POST_DESCRIPTION_LENGTH } from '@/lib/post-description-policy';
 import { UPLOAD_IMAGE_MAX_BYTES, formatUploadMaxSizeLabel } from '@/lib/upload-limits';
+import { compressImageForUpload, CompressedTooLargeError } from '@/lib/client-image-compression';
 import type { Category } from '@prisma/client';
 import styles from './upload.module.css';
 
@@ -90,7 +91,8 @@ export function UploadForm({ editInitial = null }: Props) {
 
   const uploadFileToR2 = useCallback(
     async (file: File): Promise<string> => {
-      if (file.size > UPLOAD_IMAGE_MAX_BYTES) {
+      const prepared = await compressImageForUpload(file);
+      if (prepared.size > UPLOAD_IMAGE_MAX_BYTES) {
         throw new Error(
           `파일이 너무 큽니다. ${formatUploadMaxSizeLabel()} 이하로 줄여 주세요. (호스팅 업로드 한도)`
         );
@@ -101,7 +103,7 @@ export function UploadForm({ editInitial = null }: Props) {
       } = await supabase.auth.getSession();
       if (!session?.access_token) throw new Error('로그인이 필요합니다.');
       const fd = new FormData();
-      fd.set('file', file);
+      fd.set('file', prepared, prepared.name);
       const res = await fetch('/api/posts/upload-image', {
         method: 'POST',
         headers: { Authorization: `Bearer ${session.access_token}` },
@@ -199,7 +201,9 @@ export function UploadForm({ editInitial = null }: Props) {
         setMediaSlots((s) => s.map((x) => (x.id === id ? { ...x, url } : x)));
       } catch (e) {
         setMediaSlots((s) => s.filter((x) => x.id !== id));
-        setFormError(e instanceof Error ? e.message : '업로드에 실패했습니다.');
+        if (!(e instanceof CompressedTooLargeError)) {
+          setFormError(e instanceof Error ? e.message : '업로드에 실패했습니다.');
+        }
       } finally {
         endUpload();
       }
@@ -221,7 +225,9 @@ export function UploadForm({ editInitial = null }: Props) {
       const md = `\n\n![이미지](${url})\n\n`;
       insertAtTextareaCursor(e.currentTarget, md, setDescription);
     } catch (err) {
-      setPasteMessage(err instanceof Error ? err.message : '이미지 업로드에 실패했습니다.');
+      if (!(err instanceof CompressedTooLargeError)) {
+        setPasteMessage(err instanceof Error ? err.message : '이미지 업로드에 실패했습니다.');
+      }
     } finally {
       endUpload();
     }
@@ -238,7 +244,9 @@ export function UploadForm({ editInitial = null }: Props) {
       const md = `\n\n![이미지](${url})\n\n`;
       insertAtTextareaCursor(e.currentTarget, md, setPrompt);
     } catch (err) {
-      setPasteMessage(err instanceof Error ? err.message : '이미지 업로드에 실패했습니다.');
+      if (!(err instanceof CompressedTooLargeError)) {
+        setPasteMessage(err instanceof Error ? err.message : '이미지 업로드에 실패했습니다.');
+      }
     } finally {
       endUpload();
     }

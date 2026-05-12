@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { compressImageForUpload, CompressedTooLargeError } from '@/lib/client-image-compression';
 import styles from './profile.module.css';
 
 type Props = {
@@ -70,8 +71,9 @@ export function ProfileForm({ initialUsername, initialAvatarUrl, email }: Props)
     }
     setAvatarUploading(true);
     try {
+      const prepared = await compressImageForUpload(file);
       const fd = new FormData();
-      fd.set('file', file);
+      fd.set('file', prepared, prepared.name);
       const res = await fetch('/api/profile/avatar', {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
@@ -84,6 +86,7 @@ export function ProfileForm({ initialUsername, initialAvatarUrl, email }: Props)
       if (data.avatarUrl) setAvatarUrl(data.avatarUrl);
       setMessage({ type: 'ok', text: '프로필 이미지가 업데이트되었습니다.' });
     } catch (err: unknown) {
+      if (err instanceof CompressedTooLargeError) return;
       setMessage({ type: 'err', text: err instanceof Error ? err.message : '업로드에 실패했습니다.' });
     } finally {
       setAvatarUploading(false);
