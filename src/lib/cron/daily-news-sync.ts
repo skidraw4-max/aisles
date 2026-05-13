@@ -1,6 +1,7 @@
 import { runAiBreakfastSync, type AiBreakfastSyncResult } from '@/lib/aibreakfast/run-aibreakfast-sync';
 import { runGeekNewsSync, type GeekNewsSyncResult } from '@/lib/geeknews/run-geeknews-sync';
 import { runHackerNewsSync, type HackerNewsSyncResult } from '@/lib/hackernews/run-hackernews-sync';
+import { runLobstersSync, type LobstersSyncResult } from '@/lib/lobsters/run-lobsters-sync';
 import { runMitNewsSync, type MitNewsSyncResult } from '@/lib/mit-news/run-mit-news-sync';
 import { runVergeSync, type VergeSyncResult } from '@/lib/verge/run-verge-sync';
 
@@ -8,12 +9,13 @@ export type DailyNewsSyncBundledResult = {
   verge: VergeSyncResult | { thrown: unknown };
   geeknews: GeekNewsSyncResult | { thrown: unknown };
   hackernews: HackerNewsSyncResult | { thrown: unknown };
+  lobsters: LobstersSyncResult | { thrown: unknown };
   aibreakfast: AiBreakfastSyncResult | { thrown: unknown };
   mitnews: MitNewsSyncResult | { thrown: unknown };
 };
 
 /**
- * The Verge → GeekNews → Hacker News → AI Breakfast → MIT News 순으로 실행.
+ * The Verge → GeekNews → Hacker News → Lobsters → AI Breakfast → MIT News 순으로 실행.
  * 한 단계가 실패하거나 예외여도 다음 소스는 계속 시도한다.
  */
 export async function runDailyNewsSyncBundled(options: {
@@ -63,6 +65,20 @@ export async function runDailyNewsSyncBundled(options: {
     hackernews = { thrown: e };
   }
 
+  let lobsters: LobstersSyncResult | { thrown: unknown };
+  try {
+    lobsters = await runLobstersSync({ force });
+    if (!lobsters.ok) {
+      console.error('[daily-news] Lobsters 단계 실패', {
+        step: lobsters.step,
+        message: lobsters.message,
+      });
+    }
+  } catch (e) {
+    console.error('[daily-news] Lobsters 동기화 예외', e);
+    lobsters = { thrown: e };
+  }
+
   let aibreakfast: AiBreakfastSyncResult | { thrown: unknown };
   try {
     aibreakfast = await runAiBreakfastSync({ force });
@@ -91,5 +107,5 @@ export async function runDailyNewsSyncBundled(options: {
     mitnews = { thrown: e };
   }
 
-  return { verge, geeknews, hackernews, aibreakfast, mitnews };
+  return { verge, geeknews, hackernews, lobsters, aibreakfast, mitnews };
 }

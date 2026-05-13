@@ -9,6 +9,8 @@ import { readGeminiApiKeyFromEnv } from '@/lib/gemini-prompt-analysis-engine';
 import { loadBlockedSyndicationUrls } from '@/lib/news-sync/blocked-original-urls';
 import { NEWS_SYNC_GEMINI_GAP_MS, sleepMs } from '@/lib/news-sync/gemini-request-gap';
 
+/** Lobsters 등 동일 LOUNGE 외부 링크 소스 메타: `src/lib/news-sync/external-tech-link-sources.ts` */
+
 /** topstories.json 상위 N개 ID만 펼쳐서 점수·AI 우선순위 계산 */
 export const TOP_STORIES_POOL = 200;
 export const ITEM_FETCH_BATCH = 28;

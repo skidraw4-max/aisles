@@ -1,12 +1,13 @@
 import { prisma } from '@/lib/prisma';
 
-/** GeekNews·HN·Verge·AI Breakfast·MIT News 등 자동 수집 원문 URL 전부 (중복 방지) */
+/** GeekNews·HN·Lobsters·Verge·AI Breakfast·MIT News 등 자동 수집 원문 URL 전부 (중복 방지) */
 export async function loadBlockedSyndicationUrls(): Promise<Set<string>> {
   const rows = await prisma.post.findMany({
     where: {
       OR: [
         { geeknewsOriginalUrl: { not: null } },
         { hackerNewsOriginalUrl: { not: null } },
+        { lobstersOriginalUrl: { not: null } },
         { vergeOriginalUrl: { not: null } },
         { aiBreakfastOriginalUrl: { not: null } },
         { mitNewsOriginalUrl: { not: null } },
@@ -15,6 +16,7 @@ export async function loadBlockedSyndicationUrls(): Promise<Set<string>> {
     select: {
       geeknewsOriginalUrl: true,
       hackerNewsOriginalUrl: true,
+      lobstersOriginalUrl: true,
       vergeOriginalUrl: true,
       aiBreakfastOriginalUrl: true,
       mitNewsOriginalUrl: true,
@@ -24,6 +26,7 @@ export async function loadBlockedSyndicationUrls(): Promise<Set<string>> {
   for (const r of rows) {
     if (r.geeknewsOriginalUrl) set.add(r.geeknewsOriginalUrl);
     if (r.hackerNewsOriginalUrl) set.add(r.hackerNewsOriginalUrl);
+    if (r.lobstersOriginalUrl) set.add(r.lobstersOriginalUrl);
     if (r.vergeOriginalUrl) set.add(r.vergeOriginalUrl);
     if (r.aiBreakfastOriginalUrl) set.add(r.aiBreakfastOriginalUrl);
     if (r.mitNewsOriginalUrl) set.add(r.mitNewsOriginalUrl);

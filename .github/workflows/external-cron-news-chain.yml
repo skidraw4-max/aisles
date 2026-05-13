@@ -44,6 +44,20 @@ jobs:
       - name: Wait 10 minutes
         run: sleep 600
 
+      - name: Lobsters
+        env:
+          CRON_SITE_URL: ${{ secrets.CRON_SITE_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          set -euo pipefail
+          curl -sS -X POST "${CRON_SITE_URL}/api/cron/lobsters" \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            -H "Content-Type: application/json" \
+            -w "\nHTTP %{http_code}\n"
+
+      - name: Wait 10 minutes
+        run: sleep 600
+
       - name: The Verge
         env:
           CRON_SITE_URL: ${{ secrets.CRON_SITE_URL }}

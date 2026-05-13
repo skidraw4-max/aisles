@@ -1,5 +1,5 @@
 /**
- * The Verge → GeekNews → Hacker News → AI Breakfast → MIT News 순차 실행 (한 소스 실패 시 다음 소스 계속)
+ * The Verge → GeekNews → Hacker News → Lobsters → AI Breakfast → MIT News 순차 실행 (한 소스 실패 시 다음 소스 계속)
  *
  * - 환경: `CRON_SECRET`(필수)
  * - 스케줄: 현재 `vercel.json`에서 직접 호출하지 않음 (개별 크론 엔드포인트로 분리 운영)
@@ -57,6 +57,8 @@ export async function GET(req: NextRequest) {
       'thrown' in result.hackernews
         ? { thrown: serializeThrown(result.hackernews.thrown) }
         : result.hackernews,
+    lobsters:
+      'thrown' in result.lobsters ? { thrown: serializeThrown(result.lobsters.thrown) } : result.lobsters,
     aibreakfast:
       'thrown' in result.aibreakfast
         ? { thrown: serializeThrown(result.aibreakfast.thrown) }
