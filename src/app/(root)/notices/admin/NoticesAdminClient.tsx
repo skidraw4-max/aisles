@@ -10,12 +10,14 @@ import {
 } from '@/app/notices/actions';
 import { runGeekNewsSyncAdminAction } from '@/app/notices/geeknews-sync-actions';
 import { runHackerNewsSyncAdminAction } from '@/app/notices/hackernews-sync-actions';
+import { runLobstersSyncAdminAction } from '@/app/notices/lobsters-sync-actions';
 import { runVergeSyncAdminAction } from '@/app/notices/verge-sync-actions';
 import { runAiBreakfastSyncAdminAction } from '@/app/notices/aibreakfast-sync-actions';
 import { runMitNewsSyncAdminAction } from '@/app/notices/mit-news-sync-actions';
 import { runYoutubeSyncAdminAction } from '@/app/notices/youtube-sync-actions';
 import type { GeekNewsItemResult } from '@/lib/geeknews/run-geeknews-sync';
 import type { HackerNewsItemResult } from '@/lib/hackernews/run-hackernews-sync';
+import type { LobstersItemResult } from '@/lib/lobsters/run-lobsters-sync';
 import type { AiBreakfastItemResult } from '@/lib/aibreakfast/run-aibreakfast-sync';
 import type { MitNewsItemResult } from '@/lib/mit-news/run-mit-news-sync';
 import type { YoutubeItemResult } from '@/lib/youtube-sync/run-youtube-sync';
@@ -51,6 +53,26 @@ function formatHackerNewsSyncAlert(r: Awaited<ReturnType<typeof runHackerNewsSyn
     `강제 모드: ${r.force ? '예' : '아니오'}`,
     '',
     ...r.results.slice(0, 20).map((x: HackerNewsItemResult) => {
+      const u = x.externalUrl.length > 56 ? `${x.externalUrl.slice(0, 56)}…` : x.externalUrl;
+      const extra = x.detail ? ` — ${x.detail}` : x.postId ? ` → ${x.postId}` : '';
+      return `${x.status}: ${u}${extra}`;
+    }),
+  ];
+  if (r.results.length > 20) {
+    lines.push(`… 외 ${r.results.length - 20}건`);
+  }
+  return lines.join('\n');
+}
+
+function formatLobstersSyncAlert(r: Awaited<ReturnType<typeof runLobstersSyncAdminAction>>): string {
+  if (!r.ok) {
+    return [`실패`, `단계: ${r.step}`, r.message, `코드: ${r.error}`].join('\n');
+  }
+  const lines = [
+    `완료: 신규 ${r.created}건 (후보 ${r.scanned}건 스캔)`,
+    `강제 모드: ${r.force ? '예' : '아니오'}`,
+    '',
+    ...r.results.slice(0, 20).map((x: LobstersItemResult) => {
       const u = x.externalUrl.length > 56 ? `${x.externalUrl.slice(0, 56)}…` : x.externalUrl;
       const extra = x.detail ? ` — ${x.detail}` : x.postId ? ` → ${x.postId}` : '';
       return `${x.status}: ${u}${extra}`;
@@ -267,6 +289,20 @@ export function NoticesAdminClient({ initialNotices }: Props) {
     });
   };
 
+  const onLobstersSync = (force: boolean) => {
+    if (force && !globalThis.confirm('강제 모드: 이미 등록된 원문 URL도 다시 처리합니다. DB 중복 시 오류로 표시됩니다. 계속할까요?')) {
+      return;
+    }
+    setError(null);
+    startTransition(async () => {
+      const res = await runLobstersSyncAdminAction(force);
+      globalThis.alert(formatLobstersSyncAlert(res));
+      if (res.ok && res.created > 0) {
+        router.refresh();
+      }
+    });
+  };
+
   const onVergeSync = (force: boolean) => {
     if (force && !globalThis.confirm('강제 모드: 이미 등록된 원문 URL도 다시 처리합니다. DB 중복 시 오류로 표시됩니다. 계속할까요?')) {
       return;
@@ -380,6 +416,37 @@ export function NoticesAdminClient({ initialNotices }: Props) {
             onClick={() => onHackerNewsSync(true)}
           >
             Hacker News 강제 동기화
+          </button>
+        </div>
+      </div>
+
+      <div className={styles.formCard}>
+        <h2 className={styles.formTitle}>Lobsters 동기화</h2>
+        <p className={styles.helpText}>
+          Lobsters 공식 RSS(
+          <a href="https://lobste.rs/rss" target="_blank" rel="noopener noreferrer">
+            https://lobste.rs/rss
+          </a>
+          )에서 AI 키워드 제목 우선으로 최대 5건을 요약해 Lounge에 등록합니다. GeekNews·Hacker News와 동일 원문 URL은 중복되지
+          않습니다. 스케줄러에서는 <code>/api/cron/lobsters</code>에 <code>Authorization: Bearer CRON_SECRET</code>로 호출할 수
+          있습니다.
+        </p>
+        <div className={styles.actions}>
+          <button
+            type="button"
+            className={`${styles.btn} ${styles.btnPrimary}`}
+            disabled={pending}
+            onClick={() => onLobstersSync(false)}
+          >
+            Lobsters 수동 동기화
+          </button>
+          <button
+            type="button"
+            className={`${styles.btn} ${styles.btnGhost}`}
+            disabled={pending}
+            onClick={() => onLobstersSync(true)}
+          >
+            Lobsters 강제 동기화
           </button>
         </div>
       </div>
