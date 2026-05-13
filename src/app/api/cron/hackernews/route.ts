@@ -8,7 +8,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { runHackerNewsSync } from '@/lib/hackernews/run-hackernews-sync';
 
 /** HN은 후보 풀·배치 페치·최대 5건 Gemini 요약으로 60초를 넘기기 쉬움 → 상한 확대 */
-export const maxDuration = 300;
+export const maxDuration = 120;
 
 function verifyCronAuth(req: NextRequest): boolean {
   const secret = process.env.CRON_SECRET?.trim();

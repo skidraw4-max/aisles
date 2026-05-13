@@ -11,6 +11,7 @@ import { PostThumbnail } from '@/components/post/PostThumbnail';
 import type { Category } from '@prisma/client';
 import { ALL_CARD_FEED_INITIAL_COUNT } from '@/lib/home-all-card-feed';
 import type { FeedPostJson } from '@/lib/home-feed';
+import { tryCreateBrowserClient } from '@/lib/supabase/client';
 import styles from '@/app/(root)/page.module.css';
 
 const PAGE_SIZE = 12;
@@ -143,24 +144,144 @@ function FeedBoardRow({
   );
 }
 
+function LoungeSubscribeNoticeBar() {
+  const [ready, setReady] = useState(false);
+  const [loggedIn, setLoggedIn] = useState(false);
+  const [subscribed, setSubscribed] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [banner, setBanner] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const supabase = tryCreateBrowserClient();
+      if (!supabase) {
+        if (!cancelled) {
+          setLoggedIn(false);
+          setSubscribed(false);
+          setReady(true);
+        }
+        return;
+      }
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      if (!token) {
+        if (!cancelled) {
+          setLoggedIn(false);
+          setSubscribed(false);
+          setReady(true);
+        }
+        return;
+      }
+      try {
+        const res = await fetch('/api/news-subscription', {
+          cache: 'no-store',
+          credentials: 'include',
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = (await res.json().catch(() => ({}))) as { subscribed?: boolean };
+        if (!cancelled) {
+          setLoggedIn(true);
+          setSubscribed(Boolean(data.subscribed));
+          setReady(true);
+        }
+      } catch {
+        if (!cancelled) {
+          setLoggedIn(true);
+          setSubscribed(false);
+          setReady(true);
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const runPatch = async (next: boolean) => {
+    setBanner(null);
+    const supabase = tryCreateBrowserClient();
+    if (!supabase) return;
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    const token = session?.access_token;
+    if (!token) {
+      window.alert('회원가입후 구독이 가능합니다.');
+      setLoggedIn(false);
+      return;
+    }
+    setBusy(true);
+    try {
+      const res = await fetch('/api/news-subscription', {
+        method: 'PATCH',
+        cache: 'no-store',
+        credentials: 'include',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ subscribed: next, digestFrequency: 'DAILY' }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { error?: string; subscribed?: boolean };
+      if (!res.ok) {
+        setBanner(data.error ?? '구독 설정을 바꾸지 못했습니다.');
+        return;
+      }
+      setSubscribed(Boolean(data.subscribed));
+    } catch {
+      setBanner('네트워크 오류로 저장하지 못했습니다.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const onClick = () => {
+    setBanner(null);
+    if (!loggedIn) {
+      window.alert('회원가입후 구독이 가능합니다.');
+      return;
+    }
+    void runPatch(!subscribed);
+  };
+
+  const label = subscribed ? '뉴스 구독 취소하기' : '뉴스 구독하기';
+
+  return (
+    <div className={styles.loungeSubscribeNoticeRow} role="note">
+      <p className={styles.loungeSubscribeNoticeText}>
+        회원가입 후 AI 트렌드 뉴스 구독을 켜면 새 글을 이메일 다이제스트로 받아볼 수 있어요.
+      </p>
+      <button
+        type="button"
+        className={styles.loungeSubscribeNoticeBtn}
+        onClick={onClick}
+        disabled={!ready || busy}
+      >
+        {label}
+      </button>
+      {banner ? (
+        <p className={styles.loungeSubscribeNoticeBanner} role="status">
+          {banner}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
 function FeedBoardTable({
   posts,
   gossipReportStyle,
   showDateInMeta,
-  showLoungeSubscribeNotice,
 }: {
   posts: FeedPostJson[];
   gossipReportStyle: boolean;
   showDateInMeta: boolean;
-  showLoungeSubscribeNotice: boolean;
 }) {
   return (
     <>
-      {showLoungeSubscribeNotice ? (
-        <div className={styles.loungeSubscribeNotice} role="note">
-          회원가입 후 AI 트렌드 뉴스 구독을 켜면 새 글을 이메일 다이제스트로 받아볼 수 있어요.
-        </div>
-      ) : null}
       <div className={`${styles.feedBoardSurface} ${gossipReportStyle ? styles.feedBoardSurfaceGossip : ''}`}>
         <div className={styles.feedBoardScroll}>
           <div className={styles.feedBoardFreeHead} role="row">
@@ -301,8 +422,11 @@ export function HomeAllFeed({ category, excludeIds, initialPosts, initialHasMore
     posts.length > 0 &&
     (visibleCount < posts.length || hasMore);
 
+  const showLoungeSubscribeBar = category === 'LOUNGE' && boardList;
+
   return (
     <>
+      {showLoungeSubscribeBar ? <LoungeSubscribeNoticeBar /> : null}
       {posts.length === 0 ? (
         <p className={styles.emptySection}>
           아직 게시글이 없습니다. 첫 번째 주인공이 되어보세요!{' '}
@@ -313,7 +437,6 @@ export function HomeAllFeed({ category, excludeIds, initialPosts, initialHasMore
           posts={posts}
           gossipReportStyle={gossipReportStyle}
           showDateInMeta={loungeDateMeta}
-          showLoungeSubscribeNotice={category === 'LOUNGE'}
         />
       ) : (
         <ul className={styles.allFeed}>

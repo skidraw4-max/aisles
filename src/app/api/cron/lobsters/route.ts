@@ -7,7 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { runLobstersSync } from '@/lib/lobsters/run-lobsters-sync';
 
-export const maxDuration = 300;
+export const maxDuration = 120;
 
 function verifyCronAuth(req: NextRequest): boolean {
   const secret = process.env.CRON_SECRET?.trim();
