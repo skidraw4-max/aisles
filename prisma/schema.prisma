@@ -16,6 +16,8 @@ model User {
   username   String   @unique
   email      String   @unique
   avatarUrl  String? // Cloudflare R2 등 퍼블릭 URL
+  newsletterSubscribed Boolean @default(false)
+  digestFrequency DigestFrequency @default(DAILY)
   /// USER · BUILDER · ADMIN — 공지 관리 등은 ADMIN 만 (세션·서버 액션에서 검증)
   role       Role     @default(USER)
   posts      Post[]
@@ -163,6 +165,11 @@ enum Role {
   USER
   BUILDER
   ADMIN
+}
+
+enum DigestFrequency {
+  DAILY
+  WEEKLY
 }
 
 enum Category {

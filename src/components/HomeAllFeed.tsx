@@ -147,37 +147,46 @@ function FeedBoardTable({
   posts,
   gossipReportStyle,
   showDateInMeta,
+  showLoungeSubscribeNotice,
 }: {
   posts: FeedPostJson[];
   gossipReportStyle: boolean;
   showDateInMeta: boolean;
+  showLoungeSubscribeNotice: boolean;
 }) {
   return (
-    <div className={`${styles.feedBoardSurface} ${gossipReportStyle ? styles.feedBoardSurfaceGossip : ''}`}>
-      <div className={styles.feedBoardScroll}>
-        <div className={styles.feedBoardFreeHead} role="row">
-          <span className={styles.feedBoardFreeHeadMain} role="columnheader">
-            제목
-          </span>
-          <span className={styles.feedBoardFreeHeadMeta} role="presentation">
-            <span role="columnheader" className={showDateInMeta ? styles.feedBoardHeadDateLabel : undefined}>
-              {showDateInMeta ? '등록일' : '글쓴이'}
-            </span>
-            <span role="columnheader">조회</span>
-          </span>
+    <>
+      {showLoungeSubscribeNotice ? (
+        <div className={styles.loungeSubscribeNotice} role="note">
+          회원가입 후 AI 트렌드 뉴스 구독을 켜면 새 글을 이메일 다이제스트로 받아볼 수 있어요.
         </div>
-        <ul className={styles.feedBoardList} role="list">
-          {posts.map((post) => (
-            <FeedBoardRow
-              key={post.id}
-              post={post}
-              gossipReportStyle={gossipReportStyle}
-              showDateInMeta={showDateInMeta}
-            />
-          ))}
-        </ul>
+      ) : null}
+      <div className={`${styles.feedBoardSurface} ${gossipReportStyle ? styles.feedBoardSurfaceGossip : ''}`}>
+        <div className={styles.feedBoardScroll}>
+          <div className={styles.feedBoardFreeHead} role="row">
+            <span className={styles.feedBoardFreeHeadMain} role="columnheader">
+              제목
+            </span>
+            <span className={styles.feedBoardFreeHeadMeta} role="presentation">
+              <span role="columnheader" className={showDateInMeta ? styles.feedBoardHeadDateLabel : undefined}>
+                {showDateInMeta ? '등록일' : '글쓴이'}
+              </span>
+              <span role="columnheader">조회</span>
+            </span>
+          </div>
+          <ul className={styles.feedBoardList} role="list">
+            {posts.map((post) => (
+              <FeedBoardRow
+                key={post.id}
+                post={post}
+                gossipReportStyle={gossipReportStyle}
+                showDateInMeta={showDateInMeta}
+              />
+            ))}
+          </ul>
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 
@@ -304,6 +313,7 @@ export function HomeAllFeed({ category, excludeIds, initialPosts, initialHasMore
           posts={posts}
           gossipReportStyle={gossipReportStyle}
           showDateInMeta={loungeDateMeta}
+          showLoungeSubscribeNotice={category === 'LOUNGE'}
         />
       ) : (
         <ul className={styles.allFeed}>
