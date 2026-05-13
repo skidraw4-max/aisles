@@ -37,6 +37,7 @@ import { incrementPostViews } from './actions';
 import { PostOwnerActions } from './PostOwnerActions';
 import { PostRichContent } from '@/lib/PostRichContent';
 import { getCanonicalSiteUrl } from '@/lib/canonical-site-url';
+import { categoryUsesDynamicPostOg } from '@/lib/post-dynamic-og';
 import { buildPostMetaDescription } from '@/lib/post-meta-description';
 import { PostDescriptionEmptyCallout } from './PostDescriptionEmptyCallout';
 import styles from './post.module.css';
@@ -129,7 +130,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   try {
     const post = await prisma.post.findUnique({
       where: { id },
-      select: { title: true, content: true, thumbnail: true, createdAt: true, category: true },
+      select: {
+        title: true,
+        content: true,
+        thumbnail: true,
+        createdAt: true,
+        category: true,
+      },
     });
     if (!post) return { title: '게시글 — AIsle' };
     const catLabel = corridorLabel(ui, post.category);
@@ -149,9 +156,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
           ? new URL(thumbRaw.startsWith('/') ? thumbRaw : `/${thumbRaw}`, base).href
           : undefined;
     const defaultOg = new URL('/og-image.png', base).href;
-    const ogImages = thumbAbs
-      ? [{ url: thumbAbs, alt: post.title }]
-      : [{ url: defaultOg, width: 1200, height: 630, alt: post.title }];
+    const dynamicOgUrl = new URL(`/og/post/${id}`, base).href;
+    const ogAlt = `${post.title} — AIsle 공유 카드`;
+    const ogImages = categoryUsesDynamicPostOg(post.category)
+      ? [{ url: dynamicOgUrl, width: 1200, height: 630, alt: ogAlt }]
+      : thumbAbs
+        ? [{ url: thumbAbs, alt: post.title }]
+        : [{ url: defaultOg, width: 1200, height: 630, alt: post.title }];
     return {
       title: docTitle,
       description,
@@ -172,7 +183,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         card: 'summary_large_image',
         title: socialTitle,
         description,
-        images: ogImages.map((i) => i.url),
+        images: ogImages,
       },
     };
   } catch {

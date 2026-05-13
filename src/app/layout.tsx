@@ -75,7 +75,8 @@ export const metadata: Metadata = {
         url: '/og-image.png',
         width: 1200,
         height: 630,
-        alt: 'AIsle — AI 프롬프트 레시피 & 커뮤니티',
+        alt:
+          'AIsle — AI 지식 공유 플랫폼. 프롬프트 레시피(LAB), 갤러리, AI 트렌드·커뮤니티 복도를 한곳에서 탐색할 수 있는 메인 그래픽입니다.',
       },
     ],
   },
@@ -83,7 +84,15 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: ogTitle,
     description: ogDescription,
-    images: ['/og-image.png'],
+    images: [
+      {
+        url: '/og-image.png',
+        width: 1200,
+        height: 630,
+        alt:
+          'AIsle — AI 지식 공유 플랫폼. 프롬프트 레시피(LAB), 갤러리, AI 트렌드·커뮤니티 복도를 한곳에서 탐색할 수 있는 메인 그래픽입니다.',
+      },
+    ],
   },
   alternates: {
     canonical: siteUrl,
