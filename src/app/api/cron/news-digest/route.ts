@@ -1,18 +1,36 @@
 /**
- * LOUNGE 뉴스 다이제스트 메일 발송
+ * LOUNGE 뉴스 다이제스트 메일 (KST 03·09·15·21시 슬롯, 각 6시간 구간)
  *
  * - 환경: `CRON_SECRET`(필수), `RESEND_API_KEY`, `EMAIL_FROM`
- * - `GET` 또는 `POST` 동일 동작. `?frequency=weekly` 로 주간 다이제스트 발송.
+ * - `GET` 또는 `POST` 동일. `Authorization: Bearer ${CRON_SECRET}` 필수.
+ * - 쿼리: `slot=0|1|2|3` 권장 (각 슬롯 종료 시각 KST: 03, 09, 15, 21시).
+ *   생략 시 요청 시각의 UTC 시각에 가장 가까운 슬롯(18,0,6,12 UTC)으로 추정.
+ * - 선택: `window=ISO_START,ISO_END` (반개구간 [start, end), slot보다 우선)
+ *
+ * 운영 스케줄: Vercel Cron은 사용하지 않고 `.github/workflows/news-digest-kst.yml`만 호출한다.
+ *   UTC 정각 18·0·6·12시 → 각각 slot=0…3 POST, `Authorization: Bearer ${CRON_SECRET}` 필수.
+ *   curl -sS -X POST "${CRON_SITE_URL}/api/cron/news-digest?slot=0" -H "Authorization: Bearer ${CRON_SECRET}"
+ *   curl ... ?slot=1
+ *   curl ... ?slot=2
+ *   curl ... ?slot=3
+ *
+ * 슬롯별 권장 호출 (KST 기준 종료 시각 직후):
+ *   slot=0 → 전일 21:00 ~ 당일 03:00 KST
+ *   slot=1 → 03:00 ~ 09:00 KST
+ *   slot=2 → 09:00 ~ 15:00 KST
+ *   slot=3 → 15:00 ~ 21:00 KST
  */
 import { NextRequest, NextResponse } from 'next/server';
-import type { DigestFrequency } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { getCanonicalSiteUrl } from '@/lib/canonical-site-url';
 import { sendEmail } from '@/lib/email';
+// 메일 제목: sendEmail() 내부에서 buildEmailSubject()로 [AIsle] 접두사 처리
 
 export const maxDuration = 60;
 
 const MAX_RECIPIENTS_PER_RUN = 100;
+
+const SLOT_END_HOURS_KST = [3, 9, 15, 21] as const;
 
 function verifyCronAuth(req: NextRequest): boolean {
   const secret = process.env.CRON_SECRET?.trim();
@@ -24,13 +42,63 @@ function verifyCronAuth(req: NextRequest): boolean {
   return auth === `Bearer ${secret}`;
 }
 
-function parseFrequency(req: NextRequest): DigestFrequency {
-  return req.nextUrl.searchParams.get('frequency')?.toLowerCase() === 'weekly' ? 'WEEKLY' : 'DAILY';
+function kstYmd(d: Date): { y: number; m: number; day: number } {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Seoul',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(d);
+  const g = (t: Intl.DateTimeFormatPartTypes) => Number(parts.find((p) => p.type === t)?.value ?? '0');
+  return { y: g('year'), m: g('month'), day: g('day') };
 }
 
-function sinceForFrequency(frequency: DigestFrequency): Date {
-  const days = frequency === 'WEEKLY' ? 7 : 1;
-  return new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+function kstWallInstant(y: number, m: number, day: number, hour: number, min = 0): Date {
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return new Date(`${y}-${pad(m)}-${pad(day)}T${pad(hour)}:${pad(min)}:00+09:00`);
+}
+
+/** 반개구간 [start, end) — 각 슬롯은 6시간 폭, 종료 시각은 KST SLOT_END_HOURS_KST[slot]. */
+function digestWindowForSlot(slot: 0 | 1 | 2 | 3, ref: Date): { start: Date; end: Date } {
+  const { y, m, day } = kstYmd(ref);
+  const endHour = SLOT_END_HOURS_KST[slot];
+  const end = kstWallInstant(y, m, day, endHour, 0);
+  const start = new Date(end.getTime() - 6 * 60 * 60 * 1000);
+  return { start, end };
+}
+
+function inferSlotFromUtcHour(utcH: number): 0 | 1 | 2 | 3 {
+  const direct: Record<number, 0 | 1 | 2 | 3> = { 18: 0, 0: 1, 6: 2, 12: 3 };
+  if (direct[utcH] !== undefined) return direct[utcH];
+  const anchors = [18, 0, 6, 12];
+  let bestIdx = 0;
+  let bestDist = 24;
+  for (let i = 0; i < 4; i++) {
+    let d = Math.abs(utcH - anchors[i]);
+    if (d > 12) d = 24 - d;
+    if (d < bestDist) {
+      bestDist = d;
+      bestIdx = i;
+    }
+  }
+  return bestIdx as 0 | 1 | 2 | 3;
+}
+
+function parseSlotParam(req: NextRequest, ref: Date): 0 | 1 | 2 | 3 {
+  const raw = req.nextUrl.searchParams.get('slot')?.trim();
+  if (raw === '0' || raw === '1' || raw === '2' || raw === '3') return Number(raw) as 0 | 1 | 2 | 3;
+  return inferSlotFromUtcHour(ref.getUTCHours());
+}
+
+function parseWindowOverride(req: NextRequest): { start: Date; end: Date } | null {
+  const raw = req.nextUrl.searchParams.get('window')?.trim();
+  if (!raw) return null;
+  const parts = raw.split(',').map((s) => s.trim());
+  if (parts.length !== 2) return null;
+  const start = new Date(parts[0]);
+  const end = new Date(parts[1]);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || start >= end) return null;
+  return { start, end };
 }
 
 function stripForEmail(content: string | null | undefined): string {
@@ -41,12 +109,18 @@ function stripForEmail(content: string | null | undefined): string {
     .trim();
 }
 
+function digestSubjectLine(slot: 0 | 1 | 2 | 3): string {
+  const h = SLOT_END_HOURS_KST[slot];
+  return `LOUNGE AI 트렌드 다이제스트 (${String(h).padStart(2, '0')}시 KST 구간)`;
+}
+
 function renderDigestEmail(
   posts: Array<{ id: string; title: string; content: string | null; createdAt: Date }>,
-  frequency: DigestFrequency,
+  slot: 0 | 1 | 2 | 3,
+  windowLabel: string,
 ) {
   const siteUrl = getCanonicalSiteUrl();
-  const label = frequency === 'WEEKLY' ? '주간' : '데일리';
+  const subject = digestSubjectLine(slot);
   const itemsHtml = posts
     .map((post) => {
       const url = new URL(`/post/${post.id}`, `${siteUrl}/`).href;
@@ -64,12 +138,24 @@ function renderDigestEmail(
   });
 
   return {
-    subject: `${label} AI 트렌드 다이제스트`,
-    html: `<div style="font-family:system-ui,-apple-system,Segoe UI,sans-serif;max-width:640px;margin:0 auto;padding:24px;color:#111"><h1 style="font-size:22px;margin:0 0 12px">AIsle ${label} AI 트렌드</h1><p style="margin:0 0 22px;color:#555">최근 LOUNGE에 올라온 AI 트렌드 글을 모았어요.</p><ol style="padding-left:20px;margin:0">${itemsHtml}</ol><p style="margin:24px 0 0;color:#777;font-size:13px">구독 설정은 로그인 후 AIsle에서 변경할 수 있습니다.</p></div>`,
-    text: `AIsle ${label} AI 트렌드\n\n최근 LOUNGE에 올라온 AI 트렌드 글을 모았어요.\n\n${lines.join(
+    subject,
+    html: `<div style="font-family:system-ui,-apple-system,Segoe UI,sans-serif;max-width:640px;margin:0 auto;padding:24px;color:#111"><h1 style="font-size:22px;margin:0 0 12px">AIsle LOUNGE 뉴스</h1><p style="margin:0 0 8px;color:#555">수집 구간 (KST): ${windowLabel}</p><p style="margin:0 0 22px;color:#555">이번 구간에 등록된 LOUNGE 글입니다.</p><ol style="padding-left:20px;margin:0">${itemsHtml}</ol><p style="margin:24px 0 0;color:#777;font-size:13px">구독 설정은 로그인 후 AIsle에서 변경할 수 있습니다.</p></div>`,
+    text: `AIsle LOUNGE 뉴스\n\n수집 구간 (KST): ${windowLabel}\n이번 구간에 등록된 LOUNGE 글입니다.\n\n${lines.join(
       '\n\n',
     )}\n\n구독 설정은 로그인 후 AIsle에서 변경할 수 있습니다.`,
   };
+}
+
+function formatKstRange(start: Date, end: Date): string {
+  const fmt = new Intl.DateTimeFormat('ko-KR', {
+    timeZone: 'Asia/Seoul',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  });
+  return `${fmt.format(start)} ~ ${fmt.format(end)}`;
 }
 
 async function handle(req: NextRequest) {
@@ -85,33 +171,40 @@ async function handle(req: NextRequest) {
     );
   }
 
-  const frequency = parseFrequency(req);
-  const since = sinceForFrequency(frequency);
+  const ref = new Date();
+  const windowOverride = parseWindowOverride(req);
+  const slot = parseSlotParam(req, ref);
+  const { start, end } = windowOverride ?? digestWindowForSlot(slot, ref);
+  const windowLabel = formatKstRange(start, end);
+
   const posts = await prisma.post.findMany({
     where: {
       category: 'LOUNGE',
-      createdAt: { gte: since },
+      createdAt: { gte: start, lt: end },
     },
     orderBy: { createdAt: 'desc' },
-    take: 12,
+    take: 50,
     select: { id: true, title: true, content: true, createdAt: true },
   });
 
   if (posts.length === 0) {
-    return NextResponse.json({ ok: true, frequency, sent: 0, skipped: 'no_recent_posts' });
+    return NextResponse.json({
+      ok: true,
+      slot,
+      window: { start: start.toISOString(), end: end.toISOString() },
+      sent: 0,
+      skipped: 'no_posts_in_window',
+    });
   }
 
   const subscribers = await prisma.user.findMany({
-    where: {
-      newsletterSubscribed: true,
-      digestFrequency: frequency,
-    },
+    where: { newsletterSubscribed: true },
     orderBy: { createdAt: 'asc' },
     take: MAX_RECIPIENTS_PER_RUN,
     select: { email: true },
   });
 
-  const email = renderDigestEmail(posts, frequency);
+  const email = renderDigestEmail(posts, slot, windowLabel);
   let sent = 0;
   const failures: Array<{ email: string; error: string; status?: number }> = [];
 
@@ -131,8 +224,9 @@ async function handle(req: NextRequest) {
 
   return NextResponse.json({
     ok: failures.length === 0,
-    frequency,
-    recentPosts: posts.length,
+    slot,
+    window: { start: start.toISOString(), end: end.toISOString() },
+    postsInWindow: posts.length,
     subscribers: subscribers.length,
     sent,
     failed: failures.length,
