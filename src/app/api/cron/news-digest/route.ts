@@ -116,6 +116,8 @@ function digestSubjectLine(slot: 0 | 1 | 2 | 3): string {
 
 /** 뉴스레터 상단 브랜드 배너 (이메일 클라이언트 호환용 테이블 + 인라인 SVG) */
 function digestEmailBannerHtml(siteUrl: string): string {
+  const homeHref = `${siteUrl.replace(/\/$/, '')}/`;
+  const linkT = 'target="_blank" rel="noopener noreferrer"';
   const host = (() => {
     try {
       return new URL(siteUrl).hostname.replace(/^www\./i, '') || 'aisleshub.com';
@@ -135,18 +137,20 @@ function digestEmailBannerHtml(siteUrl: string): string {
     <td colspan="2" style="padding:0 20px 0 20px;padding-top:18px;">
       <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr>
         <td style="vertical-align:middle;padding:0 12px 14px 0;width:58%;">
-          <div style="font-size:28px;font-weight:800;color:#f8fafc;letter-spacing:-0.03em;line-height:1.05;font-family:system-ui,-apple-system,Segoe UI,sans-serif;">AIsle</div>
-          <div style="margin-top:8px;font-size:12px;color:#94a3b8;line-height:1.45;font-weight:500;max-width:260px;">The Island of AI Knowledge</div>
+          <a href="${homeHref}" ${linkT} style="text-decoration:none;color:inherit;display:block;">
+            <div style="font-size:28px;font-weight:800;color:#f8fafc;letter-spacing:-0.03em;line-height:1.05;font-family:system-ui,-apple-system,Segoe UI,sans-serif;">AIsle</div>
+            <div style="margin-top:8px;font-size:12px;color:#94a3b8;line-height:1.45;font-weight:500;max-width:260px;">The Island of AI Knowledge</div>
+          </a>
         </td>
         <td style="vertical-align:middle;padding:0 0 14px 12px;text-align:right;width:42%;">
-          <a href="${siteUrl}/" style="display:inline-block;padding:10px 16px;border-radius:999px;background:rgba(255,255,255,0.1);border:1px solid rgba(148,197,255,0.45);color:#f1f5f9;font-size:10px;font-weight:700;letter-spacing:0.12em;text-decoration:none;font-family:system-ui,-apple-system,Segoe UI,sans-serif;">EXPLORE THE FULL ISLAND</a>
-          <div style="margin-top:10px;font-size:11px;color:#7dd3fc;font-weight:600;letter-spacing:0.04em;">${host}</div>
+          <a href="${homeHref}" ${linkT} style="display:inline-block;padding:10px 16px;border-radius:999px;background:rgba(255,255,255,0.1);border:1px solid rgba(148,197,255,0.45);color:#f1f5f9;font-size:10px;font-weight:700;letter-spacing:0.12em;text-decoration:none;font-family:system-ui,-apple-system,Segoe UI,sans-serif;">EXPLORE THE FULL ISLAND</a>
+          <div style="margin-top:10px;"><a href="${homeHref}" ${linkT} style="font-size:11px;color:#7dd3fc;font-weight:600;letter-spacing:0.04em;text-decoration:none;">${host}</a></div>
         </td>
       </tr></table>
     </td>
   </tr>
   <tr>
-    <td colspan="2" style="padding:0 12px 10px 12px;line-height:0;background:transparent;">${neuralSvg}</td>
+    <td colspan="2" style="padding:0 12px 10px 12px;line-height:0;background:transparent;"><a href="${homeHref}" ${linkT} style="display:block;text-decoration:none;line-height:0;">${neuralSvg}</a></td>
   </tr>
 </table>`;
 }
