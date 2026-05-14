@@ -11,6 +11,7 @@ import {
 import { runGeekNewsSyncAdminAction } from '@/app/notices/geeknews-sync-actions';
 import { runHackerNewsSyncAdminAction } from '@/app/notices/hackernews-sync-actions';
 import { runLobstersSyncAdminAction } from '@/app/notices/lobsters-sync-actions';
+import { runTechmemeSyncAdminAction } from '@/app/notices/techmeme-sync-actions';
 import { runVergeSyncAdminAction } from '@/app/notices/verge-sync-actions';
 import { runAiBreakfastSyncAdminAction } from '@/app/notices/aibreakfast-sync-actions';
 import { runMitNewsSyncAdminAction } from '@/app/notices/mit-news-sync-actions';
@@ -18,6 +19,7 @@ import { runYoutubeSyncAdminAction } from '@/app/notices/youtube-sync-actions';
 import type { GeekNewsItemResult } from '@/lib/geeknews/run-geeknews-sync';
 import type { HackerNewsItemResult } from '@/lib/hackernews/run-hackernews-sync';
 import type { LobstersItemResult } from '@/lib/lobsters/run-lobsters-sync';
+import type { TechmemeItemResult } from '@/lib/techmeme/run-techmeme-sync';
 import type { AiBreakfastItemResult } from '@/lib/aibreakfast/run-aibreakfast-sync';
 import type { MitNewsItemResult } from '@/lib/mit-news/run-mit-news-sync';
 import type { YoutubeItemResult } from '@/lib/youtube-sync/run-youtube-sync';
@@ -73,6 +75,26 @@ function formatLobstersSyncAlert(r: Awaited<ReturnType<typeof runLobstersSyncAdm
     `강제 모드: ${r.force ? '예' : '아니오'}`,
     '',
     ...r.results.slice(0, 20).map((x: LobstersItemResult) => {
+      const u = x.externalUrl.length > 56 ? `${x.externalUrl.slice(0, 56)}…` : x.externalUrl;
+      const extra = x.detail ? ` — ${x.detail}` : x.postId ? ` → ${x.postId}` : '';
+      return `${x.status}: ${u}${extra}`;
+    }),
+  ];
+  if (r.results.length > 20) {
+    lines.push(`… 외 ${r.results.length - 20}건`);
+  }
+  return lines.join('\n');
+}
+
+function formatTechmemeSyncAlert(r: Awaited<ReturnType<typeof runTechmemeSyncAdminAction>>): string {
+  if (!r.ok) {
+    return [`실패`, `단계: ${r.step}`, r.message, `코드: ${r.error}`].join('\n');
+  }
+  const lines = [
+    `완료: 신규 ${r.created}건 (후보 ${r.scanned}건 스캔)`,
+    `강제 모드: ${r.force ? '예' : '아니오'}`,
+    '',
+    ...r.results.slice(0, 20).map((x: TechmemeItemResult) => {
       const u = x.externalUrl.length > 56 ? `${x.externalUrl.slice(0, 56)}…` : x.externalUrl;
       const extra = x.detail ? ` — ${x.detail}` : x.postId ? ` → ${x.postId}` : '';
       return `${x.status}: ${u}${extra}`;
@@ -303,6 +325,20 @@ export function NoticesAdminClient({ initialNotices }: Props) {
     });
   };
 
+  const onTechmemeSync = (force: boolean) => {
+    if (force && !globalThis.confirm('강제 모드: 이미 등록된 원문 URL도 다시 처리합니다. DB 중복 시 오류로 표시됩니다. 계속할까요?')) {
+      return;
+    }
+    setError(null);
+    startTransition(async () => {
+      const res = await runTechmemeSyncAdminAction(force);
+      globalThis.alert(formatTechmemeSyncAlert(res));
+      if (res.ok && res.created > 0) {
+        router.refresh();
+      }
+    });
+  };
+
   const onVergeSync = (force: boolean) => {
     if (force && !globalThis.confirm('강제 모드: 이미 등록된 원문 URL도 다시 처리합니다. DB 중복 시 오류로 표시됩니다. 계속할까요?')) {
       return;
@@ -447,6 +483,37 @@ export function NoticesAdminClient({ initialNotices }: Props) {
             onClick={() => onLobstersSync(true)}
           >
             Lobsters 강제 동기화
+          </button>
+        </div>
+      </div>
+
+      <div className={styles.formCard}>
+        <h2 className={styles.formTitle}>Techmeme 동기화</h2>
+        <p className={styles.helpText}>
+          Techmeme 공식 RSS(
+          <a href="https://www.techmeme.com/feed.xml" target="_blank" rel="noopener noreferrer">
+            https://www.techmeme.com/feed.xml
+          </a>
+          )에서 원문 링크를 추출해 AI 키워드 제목 우선으로 최대 5건을 요약해 Lounge에 등록합니다. 다른 소스와 동일 원문 URL은 중복되지
+          않습니다. 스케줄러에서는 <code>/api/cron/techmeme</code>에 <code>Authorization: Bearer CRON_SECRET</code>로 호출할 수
+          있습니다.
+        </p>
+        <div className={styles.actions}>
+          <button
+            type="button"
+            className={`${styles.btn} ${styles.btnPrimary}`}
+            disabled={pending}
+            onClick={() => onTechmemeSync(false)}
+          >
+            Techmeme 수동 동기화
+          </button>
+          <button
+            type="button"
+            className={`${styles.btn} ${styles.btnGhost}`}
+            disabled={pending}
+            onClick={() => onTechmemeSync(true)}
+          >
+            Techmeme 강제 동기화
           </button>
         </div>
       </div>

@@ -65,6 +65,8 @@ model Post {
   hackerNewsOriginalUrl String? @unique @db.VarChar(2048)
   /// Lobsters RSS 크론 등 — 원문 URL로 중복 방지 (고유, 선택)
   lobstersOriginalUrl String? @unique @db.VarChar(2048)
+  /// Techmeme RSS 크론 등 — 원문 URL로 중복 방지 (고유, 선택)
+  techmemeOriginalUrl String? @unique @db.VarChar(2048)
   /// The Verge RSS 등 — 원문 URL로 중복 방지 (고유, 선택)
   vergeOriginalUrl String? @unique @db.VarChar(2048)
   /// AI Breakfast (Beehiiv) 등 — 원문 URL로 중복 방지 (고유, 선택)

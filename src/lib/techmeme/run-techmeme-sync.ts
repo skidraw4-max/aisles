@@ -3,10 +3,10 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { fetchExternalArticlePlainText } from '@/lib/geeknews/extract-article-text';
 import { readGeminiApiKeyFromEnv } from '@/lib/gemini-prompt-analysis-engine';
-import { formatLobstersPostBody } from '@/lib/lobsters/format-lobsters-post-body';
-import { rankLobstersFeedItemsForSync } from '@/lib/lobsters/rank-lobsters-feed';
-import { summarizeLobstersArticle } from '@/lib/lobsters/summarize-lobsters-article';
-import { LOBSTERS_RSS_URL } from '@/lib/news-sync/external-tech-link-sources';
+import { formatTechmemePostBody } from '@/lib/techmeme/format-techmeme-post-body';
+import { rankTechmemeFeedItemsForSync } from '@/lib/techmeme/rank-techmeme-feed';
+import { summarizeTechmemeArticle } from '@/lib/techmeme/summarize-techmeme-article';
+import { TECHMEME_RSS_URL } from '@/lib/news-sync/external-tech-link-sources';
 import { loadBlockedSyndicationUrls } from '@/lib/news-sync/blocked-original-urls';
 import { NEWS_SYNC_GEMINI_GAP_MS, sleepMs } from '@/lib/news-sync/gemini-request-gap';
 
@@ -16,15 +16,15 @@ const MIN_BODY_CHARS = 120;
 const FETCH_USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36';
 
-export type LobstersSyncStep =
+export type TechmemeSyncStep =
   | 'admin_auth'
   | 'env_gemini'
   | 'author_missing'
-  | 'lobsters_rss_fetch'
-  | 'lobsters_rss_parse'
-  | 'lobsters_candidates';
+  | 'techmeme_rss_fetch'
+  | 'techmeme_rss_parse'
+  | 'techmeme_candidates';
 
-export type LobstersItemResult = {
+export type TechmemeItemResult = {
   externalUrl: string;
   status:
     | 'created'
@@ -38,22 +38,22 @@ export type LobstersItemResult = {
   step?: string;
 };
 
-export type LobstersSyncSuccess = {
+export type TechmemeSyncSuccess = {
   ok: true;
   created: number;
   scanned: number;
   force: boolean;
-  results: LobstersItemResult[];
+  results: TechmemeItemResult[];
 };
 
-export type LobstersSyncFailure = {
+export type TechmemeSyncFailure = {
   ok: false;
-  step: LobstersSyncStep;
+  step: TechmemeSyncStep;
   error: string;
   message: string;
 };
 
-export type LobstersSyncResult = LobstersSyncSuccess | LobstersSyncFailure;
+export type TechmemeSyncResult = TechmemeSyncSuccess | TechmemeSyncFailure;
 
 function looksLikeRssOrAtomXml(body: string): boolean {
   const t = body.trimStart().slice(0, 4000).toLowerCase();
@@ -68,7 +68,7 @@ function looksLikeRssOrAtomXml(body: string): boolean {
   );
 }
 
-async function fetchLobstersRssXml(feedUrl: string): Promise<
+async function fetchTechmemeRssXml(feedUrl: string): Promise<
   { ok: true; xml: string } | { ok: false; reason: string; status?: number; preview?: string }
 > {
   let res: Response;
@@ -84,12 +84,12 @@ async function fetchLobstersRssXml(feedUrl: string): Promise<
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
-    console.error('[lobsters] RSS fetch 네트워크 오류', { feedUrl, message: msg, err: e });
+    console.error('[techmeme] RSS fetch 네트워크 오류', { feedUrl, message: msg, err: e });
     return { ok: false, reason: `NETWORK:${msg}` };
   }
 
   if (!res.ok) {
-    console.error('[lobsters] RSS HTTP 오류', { feedUrl, status: res.status, statusText: res.statusText });
+    console.error('[techmeme] RSS HTTP 오류', { feedUrl, status: res.status, statusText: res.statusText });
     return { ok: false, reason: `HTTP_${res.status}`, status: res.status };
   }
 
@@ -97,14 +97,14 @@ async function fetchLobstersRssXml(feedUrl: string): Promise<
   const preview = text.trimStart().slice(0, 240);
 
   if (!looksLikeRssOrAtomXml(text)) {
-    console.error('[lobsters] RSS 응답이 XML/RSS 형식이 아님', { feedUrl, preview });
+    console.error('[techmeme] RSS 응답이 XML/RSS 형식이 아님', { feedUrl, preview });
     return { ok: false, reason: 'NOT_XML_OR_RSS', preview };
   }
 
   return { ok: true, xml: text };
 }
 
-export async function runLobstersSync(options: { force: boolean }): Promise<LobstersSyncResult> {
+export async function runTechmemeSync(options: { force: boolean }): Promise<TechmemeSyncResult> {
   const { force } = options;
 
   const keyRes = readGeminiApiKeyFromEnv();
@@ -131,18 +131,18 @@ export async function runLobstersSync(options: { force: boolean }): Promise<Lobs
       ok: false,
       step: 'author_missing',
       error: `USER_NOT_FOUND:${authorUsername}`,
-      message: `Lobsters 자동 수집용 작성자("${authorUsername}")를 찾을 수 없습니다.`,
+      message: `Techmeme 자동 수집용 작성자("${authorUsername}")를 찾을 수 없습니다.`,
     };
   }
 
-  const fetched = await fetchLobstersRssXml(LOBSTERS_RSS_URL);
+  const fetched = await fetchTechmemeRssXml(TECHMEME_RSS_URL);
   if (!fetched.ok) {
     const detail = fetched.preview ? ` preview=${fetched.preview.slice(0, 80)}…` : '';
     return {
       ok: false,
-      step: 'lobsters_rss_fetch',
+      step: 'techmeme_rss_fetch',
       error: fetched.reason,
-      message: `Lobsters RSS를 가져오지 못했습니다: ${fetched.reason}${detail}`,
+      message: `Techmeme RSS를 가져오지 못했습니다: ${fetched.reason}${detail}`,
     };
   }
 
@@ -158,12 +158,12 @@ export async function runLobstersSync(options: { force: boolean }): Promise<Lobs
     feed = await parser.parseString(fetched.xml);
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
-    console.error('[lobsters] RSS 파싱 실패', e);
+    console.error('[techmeme] RSS 파싱 실패', e);
     return {
       ok: false,
-      step: 'lobsters_rss_parse',
+      step: 'techmeme_rss_parse',
       error: `PARSE:${msg}`,
-      message: `Lobsters RSS XML 파싱에 실패했습니다: ${msg}`,
+      message: `Techmeme RSS XML 파싱에 실패했습니다: ${msg}`,
     };
   }
 
@@ -171,29 +171,29 @@ export async function runLobstersSync(options: { force: boolean }): Promise<Lobs
   if (rawItems.length === 0) {
     return {
       ok: false,
-      step: 'lobsters_rss_parse',
+      step: 'techmeme_rss_parse',
       error: 'EMPTY_FEED',
-      message: 'Lobsters RSS 피드에 항목이 없습니다.',
+      message: 'Techmeme RSS 피드에 항목이 없습니다.',
     };
   }
 
-  const ranked = rankLobstersFeedItemsForSync(rawItems);
+  const ranked = rankTechmemeFeedItemsForSync(rawItems);
   if (ranked.length === 0) {
     return {
       ok: false,
-      step: 'lobsters_candidates',
+      step: 'techmeme_candidates',
       error: 'NO_STORIES',
-      message: '외부 URL·토론 링크가 있는 Lobsters 항목이 없습니다.',
+      message: '원문 URL이 추출되는 Techmeme 항목이 없습니다.',
     };
   }
 
   const aiRanked = ranked.filter((s) => s.aiPriority);
   console.log(
-    `[lobsters] 후보 ${ranked.length}건 중 AI 제목 ${aiRanked.length}건, 최대 ${MAX_NEW_POSTS_PER_RUN}건 등록`,
+    `[techmeme] 후보 ${ranked.length}건 중 AI 제목 ${aiRanked.length}건, 최대 ${MAX_NEW_POSTS_PER_RUN}건 등록`,
   );
 
   if (aiRanked.length === 0) {
-    console.warn('[lobsters] AI 키워드 제목 항목 없음 — 등록 생략', { rankedTotal: ranked.length });
+    console.warn('[techmeme] AI 키워드 제목 항목 없음 — 등록 생략', { rankedTotal: ranked.length });
     return {
       ok: true,
       created: 0,
@@ -204,7 +204,7 @@ export async function runLobstersSync(options: { force: boolean }): Promise<Lobs
   }
 
   const blockedUrls = await loadBlockedSyndicationUrls();
-  const results: LobstersItemResult[] = [];
+  const results: TechmemeItemResult[] = [];
   let created = 0;
   let geminiOrdinal = 0;
 
@@ -220,7 +220,7 @@ export async function runLobstersSync(options: { force: boolean }): Promise<Lobs
     const fetchRes = await fetchExternalArticlePlainText(story.articleUrl);
     if (!fetchRes.ok) {
       console.warn(
-        `[lobsters] 원문 접속 불가: ${story.articleUrl} → ${fetchRes.message} (${fetchRes.code})`,
+        `[techmeme] 원문 접속 불가: ${story.articleUrl} → ${fetchRes.message} (${fetchRes.code})`,
       );
       results.push({
         externalUrl,
@@ -232,7 +232,7 @@ export async function runLobstersSync(options: { force: boolean }): Promise<Lobs
     }
 
     const plain = fetchRes.text;
-    console.log(`[lobsters] 원문 본문 길이: ${plain.length}자 (${story.title.slice(0, 40)}…)`);
+    console.log(`[techmeme] 원문 본문 길이: ${plain.length}자 (${story.title.slice(0, 40)}…)`);
 
     if (plain.length < MIN_BODY_CHARS) {
       results.push({
@@ -245,20 +245,20 @@ export async function runLobstersSync(options: { force: boolean }): Promise<Lobs
 
     geminiOrdinal += 1;
     if (geminiOrdinal > 1) {
-      console.log('[lobsters] 3초 대기 중... (Gemini rate limit 완화)');
+      console.log('[techmeme] 3초 대기 중... (Gemini rate limit 완화)');
       await sleepMs(NEWS_SYNC_GEMINI_GAP_MS);
     }
     console.log(
-      `[lobsters] ${geminiOrdinal}번 기사 요약 시작 — ${story.title.slice(0, 72)}${story.title.length > 72 ? '…' : ''}`,
+      `[techmeme] ${geminiOrdinal}번 기사 요약 시작 — ${story.title.slice(0, 72)}${story.title.length > 72 ? '…' : ''}`,
     );
 
-    let sum: Awaited<ReturnType<typeof summarizeLobstersArticle>>;
+    let sum: Awaited<ReturnType<typeof summarizeTechmemeArticle>>;
     try {
-      console.log(`[lobsters] ${geminiOrdinal}번 기사 요약 중... (Gemini 호출)`);
-      sum = await summarizeLobstersArticle(keyRes.key, story.title, plain);
+      console.log(`[techmeme] ${geminiOrdinal}번 기사 요약 중... (Gemini 호출)`);
+      sum = await summarizeTechmemeArticle(keyRes.key, story.title, plain);
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
-      console.warn('[lobsters] Gemini 요약 예외 — 해당 기사만 건너뜀', {
+      console.warn('[techmeme] Gemini 요약 예외 — 해당 기사만 건너뜀', {
         externalUrl,
         message: msg,
       });
@@ -272,7 +272,7 @@ export async function runLobstersSync(options: { force: boolean }): Promise<Lobs
     }
 
     if (!sum.ok) {
-      console.warn('[lobsters] Gemini 요약 실패 — 해당 기사만 건너뜀', sum.error);
+      console.warn('[techmeme] Gemini 요약 실패 — 해당 기사만 건너뜀', sum.error);
       results.push({
         externalUrl,
         status: 'skipped_summary',
@@ -282,7 +282,7 @@ export async function runLobstersSync(options: { force: boolean }): Promise<Lobs
       continue;
     }
 
-    const content = formatLobstersPostBody(story.articleUrl, story.discussionUrl, sum.data);
+    const content = formatTechmemePostBody(story.articleUrl, story.riverPermalink, sum.data);
     const title = sum.data.postTitle.trim() || story.title;
 
     try {
@@ -293,9 +293,9 @@ export async function runLobstersSync(options: { force: boolean }): Promise<Lobs
           content,
           thumbnail: null,
           attachmentUrls: [],
-          tags: ['Lobsters'],
+          tags: ['Techmeme'],
           authorId: author.id,
-          lobstersOriginalUrl: externalUrl,
+          techmemeOriginalUrl: externalUrl,
           externalLink: externalUrl,
         },
       });
@@ -323,7 +323,7 @@ export async function runLobstersSync(options: { force: boolean }): Promise<Lobs
     }
   }
 
-  console.log(`[lobsters] 동기화 종료 — 신규 ${created}건, force=${force}`);
+  console.log(`[techmeme] 동기화 종료 — 신규 ${created}건, force=${force}`);
 
   return {
     ok: true,

@@ -6,7 +6,10 @@
 /** Lobsters 공식 RSS (RSS 2.0, channel `ttl` 120분, Content-Type: application/rss+xml) */
 export const LOBSTERS_RSS_URL = 'https://lobste.rs/rss' as const;
 
-export type ExternalTechLinkSourceId = 'hackernews' | 'lobsters';
+/** Techmeme 공식 RSS */
+export const TECHMEME_RSS_URL = 'https://www.techmeme.com/feed.xml' as const;
+
+export type ExternalTechLinkSourceId = 'hackernews' | 'lobsters' | 'techmeme';
 
 export type ExternalTechLinkSource = {
   id: ExternalTechLinkSourceId;
@@ -15,8 +18,9 @@ export type ExternalTechLinkSource = {
   officialFeedUrl?: string;
 };
 
-/** HN은 Firebase JSON API, Lobsters는 공식 RSS만 사용 */
+/** HN은 Firebase JSON API, Lobsters·Techmeme는 공식 RSS */
 export const EXTERNAL_TECH_LINK_SOURCES: readonly ExternalTechLinkSource[] = [
   { id: 'hackernews', displayName: 'Hacker News' },
   { id: 'lobsters', displayName: 'Lobsters', officialFeedUrl: LOBSTERS_RSS_URL },
+  { id: 'techmeme', displayName: 'Techmeme', officialFeedUrl: TECHMEME_RSS_URL },
 ] as const;
