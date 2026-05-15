@@ -20,7 +20,7 @@ export async function supabaseAuthCallbackGet(request: Request, options: Options
   const successPath =
     options.afterSuccess === 'fixed'
       ? options.path
-      : nextParam?.startsWith('/')
+      : nextParam?.startsWith('/') && !nextParam.startsWith('//')
         ? nextParam
         : '/';
 
@@ -28,10 +28,31 @@ export async function supabaseAuthCallbackGet(request: Request, options: Options
 
   const supabase = await createClient();
 
+  /** 이미 세션이 있으면 PKCE 코드 재사용·중복 요청 등으로 교환만 실패한 경우에도 성공 처리 */
+  async function redirectSuccessIfSessionAlreadyPresent(): Promise<NextResponse | null> {
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+    if (userError || !user) return null;
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    if (session?.access_token) {
+      await fetch(new URL('/api/auth/sync-profile', url.origin), {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      }).catch(() => {});
+    }
+    return NextResponse.redirect(new URL(successPath, url.origin));
+  }
+
   if (code) {
     const { data, error } = await supabase.auth.exchangeCodeForSession(code);
     if (error) {
       console.error('[auth/callback] exchangeCodeForSession:', error.message);
+      const recovered = await redirectSuccessIfSessionAlreadyPresent();
+      if (recovered) return recovered;
       return fail();
     }
     if (data.session?.access_token) {
@@ -51,6 +72,8 @@ export async function supabaseAuthCallbackGet(request: Request, options: Options
     });
     if (error) {
       console.error('[auth/callback] verifyOtp:', error.message);
+      const recovered = await redirectSuccessIfSessionAlreadyPresent();
+      if (recovered) return recovered;
       return fail();
     }
     if (data.session?.access_token) {
