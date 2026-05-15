@@ -2,12 +2,22 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { SiteFooter } from '@/components/SiteFooter';
 import { getLegalContactEmail, LEGAL_LAST_REVISED } from '@/lib/legal-site';
+import { getCanonicalSiteUrl } from '@/lib/canonical-site-url';
+import { SEO_ROBOTS_PUBLIC } from '@/lib/seo-robots';
 import styles from '../legal/legal.module.css';
 
-export const metadata: Metadata = {
-  title: '고객지원 — AIsle',
-  description: 'AIsle 고객지원, FAQ 및 문의 안내입니다.',
-};
+const supportPath = '/support';
+
+export const metadata: Metadata = (() => {
+  const base = getCanonicalSiteUrl().replace(/\/$/, '');
+  const url = `${base}${supportPath}`;
+  return {
+    title: '고객지원 — AIsle',
+    description: 'AIsle 고객지원, FAQ 및 문의 안내입니다.',
+    alternates: { canonical: url },
+    robots: SEO_ROBOTS_PUBLIC,
+  };
+})();
 
 export default function SupportPage() {
   const contact = getLegalContactEmail();

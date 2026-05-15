@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server';
 import { prisma } from '@/lib/prisma';
 import { labKindFromMetadataParams } from '@/lib/post-categories';
 import { getLabel } from '@/lib/ui-config';
+import { SEO_ROBOTS_PRIVATE } from '@/lib/seo-robots';
 import { UploadForm, type UploadEditInitial } from './UploadForm';
 import styles from './upload.module.css';
 
@@ -17,11 +18,12 @@ export async function generateMetadata({
   const editRaw = sp.edit;
   const editId = typeof editRaw === 'string' ? editRaw.trim() : Array.isArray(editRaw) ? editRaw[0]?.trim() ?? '' : '';
   if (editId) {
-    return { title: '게시글 수정 — AIsle' };
+    return { title: '게시글 수정 — AIsle', robots: SEO_ROBOTS_PRIVATE };
   }
   const uploadTitle = await getLabel('header.upload');
   return {
     title: `${uploadTitle || '업로드'} — AIsle`,
+    robots: SEO_ROBOTS_PRIVATE,
   };
 }
 

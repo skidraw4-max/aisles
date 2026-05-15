@@ -1,12 +1,15 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { prisma } from '@/lib/prisma';
+import { SEO_ROBOTS_PRIVATE } from '@/lib/seo-robots';
 import { ProfileForm } from './ProfileForm';
 import styles from './profile.module.css';
 
-export const metadata = {
+export const metadata: Metadata = {
   title: '프로필 — AIsle',
+  robots: SEO_ROBOTS_PRIVATE,
 };
 
 export default async function ProfilePage() {

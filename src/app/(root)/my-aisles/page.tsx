@@ -1,15 +1,18 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 import { prisma } from '@/lib/prisma';
 import { getAllUiLabels } from '@/lib/ui-config';
 import type { FeedPostCardModel } from '@/components/FeedPostCard';
+import { SEO_ROBOTS_PRIVATE } from '@/lib/seo-robots';
 import type { MyPostRow } from './MyPostsGrid';
 import { MyAislesView } from './MyAislesView';
 import { MyAislesLoginGate } from './MyAislesLoginGate';
 import styles from './my-aisles.module.css';
 
-export const metadata = {
+export const metadata: Metadata = {
   title: 'My Aisles — AIsle',
+  robots: SEO_ROBOTS_PRIVATE,
 };
 
 export const dynamic = 'force-dynamic';

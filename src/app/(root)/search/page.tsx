@@ -2,6 +2,7 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 import { SiteFooter } from '@/components/SiteFooter';
 import { searchPosts } from '@/lib/search-posts';
+import { SEO_ROBOTS_PUBLIC } from '@/lib/seo-robots';
 import styles from './search.module.css';
 
 export const dynamic = 'force-dynamic';
@@ -19,16 +20,17 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
   const sp = await searchParams;
   const q = firstParam(sp.q);
   const tag = firstParam(sp.tag);
+  const robots = SEO_ROBOTS_PUBLIC;
   if (!q && !tag) {
-    return { title: '검색 · AIsle' };
+    return { title: '검색 · AIsle', robots };
   }
   if (tag && q) {
-    return { title: `「${q}」 + #${tag} · AIsle` };
+    return { title: `「${q}」 + #${tag} · AIsle`, robots };
   }
   if (tag) {
-    return { title: `#${tag} 태그 · AIsle` };
+    return { title: `#${tag} 태그 · AIsle`, robots };
   }
-  return { title: `「${q}」 검색 · AIsle` };
+  return { title: `「${q}」 검색 · AIsle`, robots };
 }
 
 function formatDate(d: Date) {

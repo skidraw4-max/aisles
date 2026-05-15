@@ -5,6 +5,8 @@ import { SiteFooter } from '@/components/SiteFooter';
 import { NoticeAdminLink } from '@/components/NoticeAdminLink';
 import { prisma } from '@/lib/prisma';
 import { isPrismaNoticeTableMissing } from '@/lib/prisma-notice';
+import { getCanonicalSiteUrl } from '@/lib/canonical-site-url';
+import { SEO_ROBOTS_PUBLIC } from '@/lib/seo-robots';
 import styles from './notice-detail.module.css';
 
 type PageProps = {
@@ -25,7 +27,20 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     if (!n) {
       return { title: '공지 — AIsle' };
     }
-    return { title: `${n.title} — 공지 · AIsle` };
+    const base = getCanonicalSiteUrl().replace(/\/$/, '');
+    const url = `${base}/notices/${id}`;
+    return {
+      title: `${n.title} — 공지 · AIsle`,
+      alternates: { canonical: url },
+      robots: SEO_ROBOTS_PUBLIC,
+      openGraph: {
+        type: 'article',
+        locale: 'ko_KR',
+        siteName: 'AIsle',
+        url,
+        title: `${n.title} — 공지 · AIsle`,
+      },
+    };
   } catch {
     return { title: '공지 — AIsle' };
   }

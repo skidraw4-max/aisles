@@ -2,12 +2,22 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { SiteFooter } from '@/components/SiteFooter';
 import { LEGAL_LAST_REVISED } from '@/lib/legal-site';
+import { getCanonicalSiteUrl } from '@/lib/canonical-site-url';
+import { SEO_ROBOTS_PUBLIC } from '@/lib/seo-robots';
 import styles from '../legal.module.css';
 
-export const metadata: Metadata = {
-  title: '이용약관 — AIsle',
-  description: 'AIsle 서비스 이용약관입니다.',
-};
+const termsPath = '/legal/terms';
+
+export const metadata: Metadata = (() => {
+  const base = getCanonicalSiteUrl().replace(/\/$/, '');
+  const url = `${base}${termsPath}`;
+  return {
+    title: '이용약관 — AIsle',
+    description: 'AIsle 서비스 이용약관입니다.',
+    alternates: { canonical: url },
+    robots: SEO_ROBOTS_PUBLIC,
+  };
+})();
 
 export default function TermsPage() {
   return (

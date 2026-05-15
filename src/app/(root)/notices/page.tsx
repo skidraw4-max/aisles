@@ -4,12 +4,30 @@ import { SiteFooter } from '@/components/SiteFooter';
 import { NoticeAdminLink } from '@/components/NoticeAdminLink';
 import { prisma } from '@/lib/prisma';
 import { isPrismaNoticeTableMissing } from '@/lib/prisma-notice';
+import { getCanonicalSiteUrl } from '@/lib/canonical-site-url';
+import { SEO_ROBOTS_PUBLIC } from '@/lib/seo-robots';
 import styles from './notices.module.css';
 
-export const metadata: Metadata = {
-  title: '공지사항 — AIsle',
-  description: 'AIsle 서비스 공지사항 목록입니다.',
-};
+const noticesPath = '/notices';
+
+export const metadata: Metadata = (() => {
+  const base = getCanonicalSiteUrl().replace(/\/$/, '');
+  const url = `${base}${noticesPath}`;
+  return {
+    title: '공지사항 — AIsle',
+    description: 'AIsle 서비스 공지사항 목록입니다.',
+    alternates: { canonical: url },
+    robots: SEO_ROBOTS_PUBLIC,
+    openGraph: {
+      type: 'website',
+      locale: 'ko_KR',
+      siteName: 'AIsle',
+      url,
+      title: '공지사항 — AIsle',
+      description: 'AIsle 서비스 공지사항 목록입니다.',
+    },
+  };
+})();
 
 export default async function NoticesPage() {
   let rows: {

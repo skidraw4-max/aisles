@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { SiteFooter } from '@/components/SiteFooter';
 import { getLegalContactEmail, LEGAL_LAST_REVISED } from '@/lib/legal-site';
 import { getCanonicalSiteUrl } from '@/lib/canonical-site-url';
+import { SEO_ROBOTS_PUBLIC } from '@/lib/seo-robots';
 import styles from '../legal.module.css';
 
 const privacyPath = '/legal/privacy';
@@ -14,7 +15,7 @@ export const metadata: Metadata = (() => {
     title: '개인정보처리방침 — AIsle',
     description: 'AIsle 개인정보처리방침입니다.',
     alternates: { canonical: url },
-    robots: { index: true, follow: true },
+    robots: SEO_ROBOTS_PUBLIC,
     openGraph: {
       type: 'website',
       locale: 'ko_KR',

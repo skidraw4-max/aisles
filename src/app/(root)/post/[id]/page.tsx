@@ -39,6 +39,7 @@ import { PostRichContent } from '@/lib/PostRichContent';
 import { getCanonicalSiteUrl } from '@/lib/canonical-site-url';
 import { categoryUsesDynamicPostOg } from '@/lib/post-dynamic-og';
 import { buildPostMetaDescription } from '@/lib/post-meta-description';
+import { SEO_ROBOTS_PUBLIC } from '@/lib/seo-robots';
 import { PostDescriptionEmptyCallout } from './PostDescriptionEmptyCallout';
 import styles from './post.module.css';
 
@@ -168,7 +169,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       description,
       keywords: [post.title, catLabel, 'AIsle', 'AI', '프롬프트'].filter(Boolean),
       alternates: { canonical: url },
-      robots: { index: true, follow: true },
+      robots: SEO_ROBOTS_PUBLIC,
       openGraph: {
         type: 'article',
         locale: 'ko_KR',

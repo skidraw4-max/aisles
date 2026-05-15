@@ -1,15 +1,25 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
+import { shouldAllowSearchIndexing } from '@/lib/seo-robots';
 
 /**
  * NextResponse에 원본 요청 헤더를 넘겨 RSC/정적 자산 연계가 깨지지 않게 함 (Next 15 권장 패턴).
  */
+function applyIndexingPolicy(response: NextResponse): NextResponse {
+  if (!shouldAllowSearchIndexing()) {
+    response.headers.set('X-Robots-Tag', 'noindex, nofollow');
+  }
+  return response;
+}
+
 function nextWithRequest(request: NextRequest) {
-  return NextResponse.next({
-    request: {
-      headers: request.headers,
-    },
-  });
+  return applyIndexingPolicy(
+    NextResponse.next({
+      request: {
+        headers: request.headers,
+      },
+    })
+  );
 }
 
 /** 비인증 사용자도 접근 허용 — 아래 보호 리다이렉트에서 제외 */
@@ -27,7 +37,7 @@ export async function middleware(request: NextRequest) {
   if (request.nextUrl.pathname === '/' && request.nextUrl.searchParams.has('code')) {
     const u = request.nextUrl.clone();
     u.pathname = '/auth/reset-callback';
-    return NextResponse.redirect(u);
+    return applyIndexingPolicy(NextResponse.redirect(u));
   }
 
   const pathname = request.nextUrl.pathname;
@@ -66,7 +76,7 @@ export async function middleware(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = '/login';
     url.searchParams.set('next', '/upload');
-    return NextResponse.redirect(url);
+    return applyIndexingPolicy(NextResponse.redirect(url));
   }
 
   return supabaseResponse;

@@ -3,6 +3,7 @@ import Script from 'next/script';
 import { Syne, DM_Sans, Roboto_Mono } from 'next/font/google';
 import { HomeSupabaseRedirectHandler } from '@/components/HomeSupabaseRedirectHandler';
 import { getCanonicalSiteUrl } from '@/lib/canonical-site-url';
+import { rootLayoutRobots } from '@/lib/seo-robots';
 import './globals.css';
 
 const display = Syne({
@@ -97,16 +98,7 @@ export const metadata: Metadata = {
   alternates: {
     canonical: siteUrl,
   },
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: {
-      index: true,
-      follow: true,
-      'max-image-preview': 'large',
-      'max-snippet': -1,
-    },
-  },
+  robots: rootLayoutRobots(),
   ...(() => {
     const google =
       process.env.GOOGLE_SITE_VERIFICATION?.trim() ||

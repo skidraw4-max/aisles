@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { SEO_ROBOTS_PRIVATE } from '@/lib/seo-robots';
 import { redirect } from 'next/navigation';
 import { SiteFooter } from '@/components/SiteFooter';
 import { getViewerIsAdmin } from '@/lib/auth/require-admin';
@@ -8,7 +9,7 @@ import { UiSettingsClient, type UiSettingsRow } from './UiSettingsClient';
 
 export const metadata: Metadata = {
   title: 'UI 문구 설정 — AIsle',
-  robots: { index: false, follow: false },
+  robots: SEO_ROBOTS_PRIVATE,
 };
 
 export default async function AdminUiSettingsPage() {
