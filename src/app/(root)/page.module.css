@@ -1029,14 +1029,65 @@
 }
 
 /* LOUNGE / GOSSIP — 퀘이사존식 보드 리스트 */
-.loungeSubscribeNotice {
+.loungeSubscribeNoticeRow {
   margin: 1.25rem 0 -0.25rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.65rem 0.85rem;
   padding: 0.7rem 0.9rem;
   border: 1px solid rgba(167, 139, 250, 0.24);
   border-radius: 12px;
   background: rgba(124, 58, 237, 0.1);
+}
+
+.loungeSubscribeNoticeText {
+  flex: 1 1 12rem;
+  margin: 0;
   color: #ddd6fe;
   font-size: var(--type-13);
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.loungeSubscribeNoticeBtn {
+  flex: 0 0 auto;
+  align-self: flex-start;
+  margin-left: auto;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid rgba(196, 181, 253, 0.45);
+  background: rgba(124, 58, 237, 0.35);
+  color: #f5f3ff;
+  font-size: var(--type-12);
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.loungeSubscribeNoticeBtn:hover:not(:disabled) {
+  background: rgba(124, 58, 237, 0.55);
+  border-color: rgba(221, 214, 254, 0.55);
+}
+
+.loungeSubscribeNoticeBtn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.loungeSubscribeNoticeBanner {
+  flex: 1 0 100%;
+  margin: 0;
+  padding: 0.45rem 0.55rem;
+  border-radius: 8px;
+  background: rgba(248, 113, 113, 0.12);
+  border: 1px solid rgba(248, 113, 113, 0.28);
+  color: #fecaca;
+  font-size: var(--type-12);
   font-weight: 600;
 }
 

@@ -9,6 +9,14 @@ function parseCategoryKey(categoryKey: string): Category | null {
   return categoryKey as Category;
 }
 
+const FILTERED_FEED_INITIAL = 12;
+
+function initialHomeFeedTake(filterCategory: Category | null): number {
+  if (!filterCategory) return ALL_CARD_FEED_INITIAL_COUNT;
+  if (filterCategory === 'LOUNGE') return FILTERED_FEED_INITIAL * 2;
+  return FILTERED_FEED_INITIAL;
+}
+
 /**
  * 메인 페이지 DB 조회.
  * (과거 `unstable_cache`는 JSON 직렬화로 `Date`가 문자열이 되어 `serializeFeedPost` 등에서
@@ -26,7 +34,7 @@ export async function getHomePageQueries(categoryKey: string) {
         metadata: { select: { params: true } },
       },
     }),
-    fetchFeedPosts(0, filterCategory ? 12 : ALL_CARD_FEED_INITIAL_COUNT, filterCategory, [], {
+    fetchFeedPosts(0, initialHomeFeedTake(filterCategory), filterCategory, [], {
       excludeLoungeGossipFromAll: !filterCategory,
     }),
     filterCategory ? Promise.resolve([] as HomeFeedPost[]) : fetchLatestForCategory('LAUNCH', 3),

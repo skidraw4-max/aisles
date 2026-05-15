@@ -153,6 +153,45 @@ export function AuthModal({ open, onClose, onAuthed, initialNotice = null }: Pro
   };
 
   /** Supabase `resetPasswordForEmail`: 입력한 이메일로만 복구 메일 발송(존재 여부는 응답에 드러내지 않는 것이 권장). */
+  function buildOAuthCallbackUrl(): string {
+    const base = getPublicSiteUrl().replace(/\/$/, '');
+    const url = new URL('/auth/callback', `${base}/`);
+    if (typeof window !== 'undefined' && window.location.pathname === '/login') {
+      const next = new URLSearchParams(window.location.search).get('next');
+      if (next?.startsWith('/') && !next.startsWith('//')) {
+        url.searchParams.set('next', next);
+      }
+    }
+    return url.href;
+  }
+
+  const handleGoogleOAuth = async () => {
+    resetFeedback();
+    setLoading(true);
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: buildOAuthCallbackUrl(),
+          queryParams: { prompt: 'select_account' },
+        },
+      });
+      if (error) throw error;
+      if (data.url) {
+        window.location.assign(data.url);
+        return;
+      }
+      throw new Error('Google 로그인 URL을 받지 못했습니다.');
+    } catch (err: unknown) {
+      setMessage({
+        type: 'err',
+        text: err instanceof Error ? err.message : 'Google 계정으로 진행할 수 없습니다.',
+      });
+      setLoading(false);
+    }
+  };
+
   const handleForgot = async (e: React.FormEvent) => {
     e.preventDefault();
     resetFeedback();
@@ -235,6 +274,19 @@ export function AuthModal({ open, onClose, onAuthed, initialNotice = null }: Pro
 
         {mode === 'login' && (
           <form className={styles.form} onSubmit={handleLogin}>
+            <button
+              type="button"
+              className={styles.googleBtn}
+              onClick={() => void handleGoogleOAuth()}
+              disabled={loading}
+            >
+              Google로 로그인
+            </button>
+            <div className={styles.oauthDivider} role="separator" aria-label="또는">
+              <span className={styles.oauthDividerLine} />
+              <span className={styles.oauthDividerText}>또는</span>
+              <span className={styles.oauthDividerLine} />
+            </div>
             <label className={styles.label} htmlFor="auth-login-email">
               이메일
               <input
@@ -274,6 +326,19 @@ export function AuthModal({ open, onClose, onAuthed, initialNotice = null }: Pro
 
         {mode === 'signup' && (
           <form className={styles.form} onSubmit={handleSignup}>
+            <button
+              type="button"
+              className={styles.googleBtn}
+              onClick={() => void handleGoogleOAuth()}
+              disabled={loading}
+            >
+              Google 계정으로 가입하기
+            </button>
+            <div className={styles.oauthDivider} role="separator" aria-label="또는">
+              <span className={styles.oauthDividerLine} />
+              <span className={styles.oauthDividerText}>또는</span>
+              <span className={styles.oauthDividerLine} />
+            </div>
             <label className={styles.label} htmlFor="auth-signup-username">
               닉네임
               <input
