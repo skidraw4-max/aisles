@@ -347,6 +347,20 @@ export default async function PostPage({ params }: Props) {
   if (post.category === 'AI_FORTUNE') {
     const { year, month } = getKstParts(post.createdAt);
     const weekLabel = `${year}년 ${month}월 ${weekOfMonthKst(post.createdAt)}주차`;
+    const relatedSidebar = relatedPosts.map((p) => ({
+      id: p.id,
+      title: p.title,
+      likeCount: p.likeCount,
+    }));
+    const popularSidebar = popularPosts.map((p) => ({
+      id: p.id,
+      title: p.title,
+      thumbnail: p.thumbnail,
+      likeCount: p.likeCount,
+      excerpt: excerptFrom(p.content),
+      category: p.category,
+      metadataParams: p.metadata?.params,
+    }));
     return (
       <AiFortunePostView
         post={{
@@ -368,6 +382,9 @@ export default async function PostPage({ params }: Props) {
         initialBookmarked={Boolean(bookmarkRow)}
         prevPost={prevPost}
         nextPost={nextPost}
+        related={relatedSidebar}
+        popular={popularSidebar}
+        uiLabels={ui}
       />
     );
   }
