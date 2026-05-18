@@ -41,6 +41,8 @@ import { categoryUsesDynamicPostOg } from '@/lib/post-dynamic-og';
 import { buildPostMetaDescription } from '@/lib/post-meta-description';
 import { SEO_ROBOTS_PUBLIC } from '@/lib/seo-robots';
 import { PostDescriptionEmptyCallout } from './PostDescriptionEmptyCallout';
+import { AiFortunePostView } from './AiFortunePostView';
+import { getKstParts, weekOfMonthKst } from '@/lib/ai-fortune/kst-week';
 import styles from './post.module.css';
 
 export const dynamic = 'force-dynamic';
@@ -342,6 +344,34 @@ export default async function PostPage({ params }: Props) {
     authorAvatarUrl: c.author.avatarUrl,
   }));
 
+  if (post.category === 'AI_FORTUNE') {
+    const { year, month } = getKstParts(post.createdAt);
+    const weekLabel = `${year}년 ${month}월 ${weekOfMonthKst(post.createdAt)}주차`;
+    return (
+      <AiFortunePostView
+        post={{
+          id: post.id,
+          title: post.title,
+          content: post.content,
+          category: post.category,
+          createdAt: post.createdAt,
+          likeCount: post.likeCount,
+          author: { id: post.author.id, username: post.author.username },
+          aiFortunePayload: post.aiFortunePayload,
+        }}
+        weekLabel={weekLabel}
+        initialComments={initialComments}
+        currentUserId={user?.id ?? null}
+        currentUsername={meProfile?.username ?? null}
+        currentAvatarUrl={meProfile?.avatarUrl ?? null}
+        initialLiked={Boolean(likedRow)}
+        initialBookmarked={Boolean(bookmarkRow)}
+        prevPost={prevPost}
+        nextPost={nextPost}
+      />
+    );
+  }
+
   const isLab = post.category === 'RECIPE';
   const isGallery = post.category === 'GALLERY';
   const siteBase = getCanonicalSiteUrl();
@@ -350,8 +380,7 @@ export default async function PostPage({ params }: Props) {
     galleryRawUrl && !isProbablyVideoAssetUrl(galleryRawUrl)
       ? toAbsoluteMediaUrl(galleryRawUrl, siteBase)
       : null;
-  const isLoungeOrGossip =
-    post.category === 'LOUNGE' || post.category === 'GOSSIP' || post.category === 'AI_FORTUNE';
+  const isLoungeOrGossip = post.category === 'LOUNGE' || post.category === 'GOSSIP';
   const isBuildOrLaunch = post.category === 'BUILD' || post.category === 'LAUNCH';
   const hasHeroMedia = Boolean(post.thumbnail?.trim());
   const metaPrompt = post.metadata?.prompt?.trim() ?? '';

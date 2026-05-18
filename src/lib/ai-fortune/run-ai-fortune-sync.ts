@@ -10,6 +10,7 @@ import {
   isScheduledAiFortuneCronWindow,
   weekOfMonthKst,
 } from '@/lib/ai-fortune/kst-week';
+import { loadAiFortuneNewsContext } from '@/lib/ai-fortune/load-news-context';
 import { resolveAiFortuneThumbnailUrl } from '@/lib/ai-fortune/thumbnail';
 
 export type AiFortuneSyncStep =
@@ -39,9 +40,7 @@ export type AiFortuneSyncFailure = {
 export type AiFortuneSyncResult = AiFortuneSyncSuccess | AiFortuneSyncFailure;
 
 export type RunAiFortuneSyncOptions = {
-  /** true면 동일 주차 글이 있어도 재생성 시도하지 않음 — 현재는 스킵만 (재생성은 force+삭제 별도) */
   force?: boolean;
-  /** true면 월요일 05:00 KST 윈도우 검사 생략 (배포 직후·수동 부트스트랩) */
   bootstrap?: boolean;
 };
 
@@ -116,8 +115,16 @@ export async function runAiFortuneSync(
     };
   }
 
-  const aggregate = await loadAiFortuneAggregateContext();
-  const generated = await generateAiFortuneWeeklyContent(keyRes.key, aggregate, weekLabel);
+  const [news, aggregate] = await Promise.all([
+    loadAiFortuneNewsContext(),
+    loadAiFortuneAggregateContext(),
+  ]);
+  const generated = await generateAiFortuneWeeklyContent(
+    keyRes.key,
+    news,
+    aggregate,
+    weekLabel,
+  );
   if (!generated.ok) {
     return {
       ok: false,
@@ -127,8 +134,9 @@ export async function runAiFortuneSync(
     };
   }
 
-  const content = formatAiFortunePostBody(generated.data, weekLabel);
+  const content = formatAiFortunePostBody(generated.data);
   const thumbnail = resolveAiFortuneThumbnailUrl();
+  const payloadJson = generated.data as unknown as Prisma.InputJsonValue;
 
   try {
     const post = await prisma.post.create({
@@ -138,9 +146,10 @@ export async function runAiFortuneSync(
         content,
         thumbnail,
         attachmentUrls: [],
-        tags: ['AI FORTUNE', '주간 운세', '커리어'],
+        tags: ['AI FORTUNE', '주간 운세', 'MBTI', '커리어'],
         authorId: author.id,
         aiFortuneWeekKey: weekKey,
+        aiFortunePayload: payloadJson,
       },
     });
     console.log('[ai-fortune] 주간 게시 완료', { weekKey, postId: post.id, bootstrap });

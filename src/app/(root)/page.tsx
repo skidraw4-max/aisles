@@ -20,7 +20,7 @@ import styles from './page.module.css';
 
 const AI_FORTUNE_SEO_TITLE = 'AI FORTUNE — AI로 보는 주간 운세 및 커리어 가이드';
 const AI_FORTUNE_SEO_DESCRIPTION =
-  '지난주 글로벌 AI 트렌드를 바탕으로, 행운의 키워드·피해야 할 행동·추천 학습 분야를 유머러스하게 전해 드리는 AIsle 주간 운세 복도입니다. My Aisle에서 MBTI를 등록하면 맞춤 가이드를 준비할 수 있습니다.';
+  '지난주 글로벌 AI 트렌드와 MBTI 16유형별 AI 활용 전략·행운의 키워드·피할 습관을 담은 AIsle 주간 운세 리포트입니다. 별도 가입 없이 전체 유형을 한눈에 볼 수 있습니다.';
 
 type PageProps = {
   searchParams: Promise<{

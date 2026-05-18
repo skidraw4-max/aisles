@@ -16,8 +16,6 @@ model User {
   username   String   @unique
   email      String   @unique
   avatarUrl  String? // Cloudflare R2 등 퍼블릭 URL
-  /// MBTI 16유형 — 최초 1회만 설정 (변경 불가)
-  mbti       String? @db.VarChar(4)
   newsletterSubscribed Boolean @default(false)
   digestFrequency DigestFrequency @default(DAILY)
   /// USER · BUILDER · ADMIN — 공지 관리 등은 ADMIN 만 (세션·서버 액션에서 검증)
@@ -77,6 +75,8 @@ model Post {
   mitNewsOriginalUrl String? @unique @db.VarChar(2048)
   /// AI FORTUNE 주간 운세 — 동일 주차 중복 방지 (고유, 선택) 예: 2026-05-W3
   aiFortuneWeekKey String? @unique @db.VarChar(32)
+  /// AI FORTUNE 주간 리포트 구조화 JSON (트렌드·16 MBTI 운세)
+  aiFortunePayload Json?
   /// YouTube 자동 요약 게시 — 영상 ID 중복 방지 (고유, 선택)
   youtubeVideoId String? @unique @db.VarChar(16)
   /// MIT_OCW | DEEPMIND — UI 배지·요약 스타일 구분

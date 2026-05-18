@@ -1,8 +1,6 @@
 import { prisma } from '@/lib/prisma';
 
 export type AiFortuneAggregateContext = {
-  mbtiCounts: { type: string; count: number }[];
-  mbtiUserTotal: number;
   recentBookmarkCategories: { category: string; count: number }[];
   recentBookmarkTotal: number;
 };
@@ -11,23 +9,11 @@ export type AiFortuneAggregateContext = {
 export async function loadAiFortuneAggregateContext(): Promise<AiFortuneAggregateContext> {
   const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
-  const [mbtiGroups, bookmarkGroups] = await Promise.all([
-    prisma.user.groupBy({
-      by: ['mbti'],
-      where: { mbti: { not: null } },
-      _count: { mbti: true },
-    }),
-    prisma.bookmark.groupBy({
-      by: ['postId'],
-      where: { createdAt: { gte: since } },
-      _count: { postId: true },
-    }),
-  ]);
-
-  const mbtiCounts = mbtiGroups
-    .filter((g) => g.mbti)
-    .map((g) => ({ type: g.mbti!, count: g._count.mbti }))
-    .sort((a, b) => b.count - a.count);
+  const bookmarkGroups = await prisma.bookmark.groupBy({
+    by: ['postId'],
+    where: { createdAt: { gte: since } },
+    _count: { postId: true },
+  });
 
   const postIds = bookmarkGroups.map((b) => b.postId);
   let recentBookmarkCategories: { category: string; count: number }[] = [];
@@ -51,29 +37,17 @@ export async function loadAiFortuneAggregateContext(): Promise<AiFortuneAggregat
   }
 
   return {
-    mbtiCounts,
-    mbtiUserTotal: mbtiCounts.reduce((s, x) => s + x.count, 0),
     recentBookmarkCategories,
     recentBookmarkTotal,
   };
 }
 
 export function formatAggregateForPrompt(ctx: AiFortuneAggregateContext): string {
-  const mbtiLine =
-    ctx.mbtiUserTotal > 0
-      ? `등록된 MBTI 유저 ${ctx.mbtiUserTotal}명 — 상위: ${ctx.mbtiCounts
-          .slice(0, 5)
-          .map((x) => `${x.type}(${x.count})`)
-          .join(', ')}`
-      : '아직 My Aisle에 MBTI를 등록한 유저가 거의 없음';
-
-  const bookmarkLine =
-    ctx.recentBookmarkTotal > 0
-      ? `최근 7일 북마크 ${ctx.recentBookmarkTotal}건 — 복도별: ${ctx.recentBookmarkCategories
-          .slice(0, 5)
-          .map((x) => `${x.category}(${x.count})`)
-          .join(', ')}`
-      : '최근 7일 북마크 활동이 적음';
-
-  return `${mbtiLine}\n${bookmarkLine}`;
+  if (ctx.recentBookmarkTotal > 0) {
+    return `최근 7일 북마크 ${ctx.recentBookmarkTotal}건 — 복도별: ${ctx.recentBookmarkCategories
+      .slice(0, 6)
+      .map((x) => `${x.category}(${x.count})`)
+      .join(', ')}`;
+  }
+  return '최근 7일 북마크 활동이 적음 — 트렌드는 RSS·헤드라인 위주로 분석';
 }

@@ -8,65 +8,33 @@ import {
 import type { AiFortuneAggregateContext } from '@/lib/ai-fortune/aggregate-context';
 import { formatAggregateForPrompt } from '@/lib/ai-fortune/aggregate-context';
 import { aiFortunePostTitle } from '@/lib/ai-fortune/kst-week';
+import type { AiFortuneNewsContext } from '@/lib/ai-fortune/load-news-context';
+import { parseAiFortuneWeeklyPayload, type AiFortuneWeeklyPayload } from '@/lib/ai-fortune/payload';
 
-export type AiFortuneWeeklyJson = {
-  trendBullets: string[];
-  luckyKeywords: string;
-  avoidActions: string;
-  learningAreas: string;
-  mbtiHighlights: string;
-  closingNote: string;
-};
+export type { AiFortuneWeeklyPayload, AiFortuneMbtiEntry } from '@/lib/ai-fortune/payload';
 
-const TREND_SYSTEM = `너는 글로벌 AI 산업 트렌드를 추적하는 한국어 테크 애널리스트다.
-지난 7일간 전 세계 AI 산업에서 가장 주목할 만한 트렌드 5가지를 분석한다.
-각 항목은 2~3문장, 구체적 사례·제품·연구 방향을 포함한다.
-출력은 JSON 한 개만: { "trends": ["...", "...", "...", "...", "..."] }
-마크다운 코드펜스·설명 문장 밖 텍스트 금지.`;
+const FORTUNE_SYSTEM = `너는 AI 시대의 유머러스한 커리어 점술가이자 글로벌 AI 트렌드 애널리스트다.
 
-const FORTUNE_SYSTEM = `너는 AI 시대의 유머러스한 커리어 점술가다.
-입력: (1) 지난주 AI 트렌드 5가지 (2) AIsle 커뮤니티 집계(북마크·MBTI, 개인 식별 없음)
+입력: (1) 지난 7일 Techmeme·Hacker News·AIsle 게시 헤드라인 (2) AIsle 커뮤니티 북마크 집계(개인 식별 없음)
 
-한국어로 재치 있게 작성하되, 조언은 실질적이어야 한다.
-출력 JSON 한 개만:
+작업:
+1. 헤드라인·집계를 바탕으로 지난주 글로벌 AI 핵심 트렌드 3~5개를 분석한다. 각 트렌드는 2~3문장, 구체적 제품·연구·이슈를 포함한다.
+2. 그 트렌드를 바탕으로 MBTI 16유형(INTJ, INTP, ENTJ, ENTP, INFJ, INFP, ENFJ, ENFP, ISTJ, ISFJ, ESTJ, ESFJ, ISTP, ISFP, ESTP, ESFP) 각각에 대해 이번 주:
+   - strategy: AI 활용 전략 (2~4문장, 한국어, 재치 있으나 실질적)
+   - luckyKeyword: 행운의 AI 도구·키워드 (짧은 구 1~3개)
+   - avoidHabit: 피해야 할 습관·행동 (1~3문장)
+
+출력은 JSON 한 개만:
 {
-  "luckyKeywords": "이번 주 행운의 키워드 3~5개 (짧은 구, 쉼표 구분)",
-  "avoidActions": "피해야 할 행동 2~4문장 (\\n\\n 문단 가능)",
-  "learningAreas": "추천 학습 분야 2~4문장",
-  "mbtiHighlights": "다양한 MBTI 유형을 위한 한 줄씩 3~4개 (예: INTJ — …)",
-  "closingNote": "My Aisle에서 MBTI를 입력하면 맞춤 운세가 준비된다는 안내 1~2문장"
+  "weekLabel": "2026년 5월 3주차",
+  "trendBullets": ["...", "...", "..."],
+  "mbti": [
+    { "type": "INTJ", "strategy": "...", "luckyKeyword": "...", "avoidHabit": "..." },
+    ... 16개 전부, type은 위 16유형 각 1회
+  ],
+  "closingNote": "이번 주 리포트 마무리 한 줄 (선택)"
 }
-마크다운 코드펜스·설명 문장 밖 텍스트 금지.`;
-
-function parseTrendsJson(value: unknown): string[] | null {
-  if (typeof value !== 'object' || value === null) return null;
-  const trends = (value as { trends?: unknown }).trends;
-  if (!Array.isArray(trends) || trends.length < 3) return null;
-  const out = trends
-    .filter((t): t is string => typeof t === 'string' && t.trim().length > 20)
-    .map((t) => t.trim())
-    .slice(0, 5);
-  return out.length >= 3 ? out : null;
-}
-
-function parseFortuneJson(value: unknown): Omit<AiFortuneWeeklyJson, 'trendBullets'> | null {
-  if (typeof value !== 'object' || value === null) return null;
-  const o = value as Record<string, unknown>;
-  const luckyKeywords = typeof o.luckyKeywords === 'string' ? o.luckyKeywords.trim() : '';
-  const avoidActions = typeof o.avoidActions === 'string' ? o.avoidActions.trim() : '';
-  const learningAreas = typeof o.learningAreas === 'string' ? o.learningAreas.trim() : '';
-  const mbtiHighlights = typeof o.mbtiHighlights === 'string' ? o.mbtiHighlights.trim() : '';
-  const closingNote = typeof o.closingNote === 'string' ? o.closingNote.trim() : '';
-  if (
-    luckyKeywords.length < 8 ||
-    avoidActions.length < 40 ||
-    learningAreas.length < 40 ||
-    mbtiHighlights.length < 30
-  ) {
-    return null;
-  }
-  return { luckyKeywords, avoidActions, learningAreas, mbtiHighlights, closingNote };
-}
+마크다운 코드펜스·설명 문장 밖 텍스트 금지. mbti 배열은 정확히 16개.`;
 
 async function geminiJsonPrompt(
   apiKey: string,
@@ -82,7 +50,7 @@ async function geminiJsonPrompt(
           {
             model: modelId,
             generationConfig: {
-              temperature: 0.55,
+              temperature: 0.6,
               responseMimeType: 'application/json',
             },
             systemInstruction: system,
@@ -110,31 +78,37 @@ async function geminiJsonPrompt(
 
 export async function generateAiFortuneWeeklyContent(
   apiKey: string,
+  news: AiFortuneNewsContext,
   aggregate: AiFortuneAggregateContext,
   weekLabel: string,
-): Promise<{ ok: true; data: AiFortuneWeeklyJson; title: string } | { ok: false; error: string }> {
-  const trendRes = await geminiJsonPrompt(
-    apiKey,
-    TREND_SYSTEM,
-    `분석 기준: ${weekLabel} (KST). 지난주(약 7일) 글로벌 AI 산업 주요 트렌드 5가지를 JSON으로 출력하세요.`,
-  );
-  if (!trendRes.ok) return { ok: false, error: trendRes.error };
-  const trendBullets = parseTrendsJson(trendRes.parsed);
-  if (!trendBullets) return { ok: false, error: '트렌드 JSON 형식이 올바르지 않습니다.' };
-
+): Promise<
+  { ok: true; data: AiFortuneWeeklyPayload; title: string } | { ok: false; error: string }
+> {
   const aggregateText = formatAggregateForPrompt(aggregate);
-  const fortuneRes = await geminiJsonPrompt(
-    apiKey,
-    FORTUNE_SYSTEM,
-    `주차: ${weekLabel}\n\n[지난주 AI 트렌드]\n${trendBullets.map((t, i) => `${i + 1}. ${t}`).join('\n\n')}\n\n[AIsle 커뮤니티 집계]\n${aggregateText}`,
-  );
-  if (!fortuneRes.ok) return { ok: false, error: fortuneRes.error };
-  const fortune = parseFortuneJson(fortuneRes.parsed);
-  if (!fortune) return { ok: false, error: '운세 JSON 형식이 올바르지 않습니다.' };
+  const userPrompt = `분석 기준 주차: ${weekLabel} (KST, 지난 약 7일)
+
+[지난주 헤드라인·게시물]
+${news.promptBlock}
+
+[AIsle 커뮤니티 집계]
+${aggregateText}
+
+weekLabel 필드에는 "${weekLabel}" 을 그대로 넣으세요.`;
+
+  const res = await geminiJsonPrompt(apiKey, FORTUNE_SYSTEM, userPrompt);
+  if (!res.ok) return { ok: false, error: res.error };
+
+  const raw = res.parsed as Record<string, unknown>;
+  if (!raw.weekLabel) raw.weekLabel = weekLabel;
+
+  const data = parseAiFortuneWeeklyPayload(raw);
+  if (!data) {
+    return { ok: false, error: 'AI FORTUNE JSON 형식이 올바르지 않습니다 (트렌드 3~5개, MBTI 16유형).' };
+  }
 
   return {
     ok: true,
     title: aiFortunePostTitle(),
-    data: { trendBullets, ...fortune },
+    data: { ...data, weekLabel: data.weekLabel || weekLabel },
   };
 }

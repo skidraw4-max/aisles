@@ -1,42 +1,32 @@
-import type { AiFortuneWeeklyJson } from '@/lib/ai-fortune/generate-weekly-fortune';
+import type { AiFortuneWeeklyPayload } from '@/lib/ai-fortune/payload';
 
-export function formatAiFortunePostBody(data: AiFortuneWeeklyJson, weekLabel: string): string {
+/** 피드·SEO·레거시 뷰용 마크다운 요약 (상세 UI는 aiFortunePayload) */
+export function formatAiFortunePostBody(data: AiFortuneWeeklyPayload): string {
   const trends = data.trendBullets
     .map((t, i) => `### ${i + 1}. 트렌드\n\n${t}`)
     .join('\n\n');
 
-  return `## ${weekLabel} — AI FORTUNE
+  const mbtiPreview = data.mbti
+    .slice(0, 4)
+    .map((m) => `**${m.type}** — ${m.luckyKeyword}`)
+    .join('\n');
 
-지난주 전 세계 AI 산업의 흐름을 바탕으로, 이번 주 커리어·학습에 참고할 운세 가이드를 담았습니다.
+  return `## ${data.weekLabel} — AI FORTUNE
+
+지난주 글로벌 AI 흐름과 16가지 MBTI 유형별 커리어·AI 활용 운세입니다. 상세 리포트에서 전체 카드를 확인하세요.
 
 ---
 
-## 지난주 AI 트렌드 5선
+## 지난주 AI 트렌드
 
 ${trends}
 
 ---
 
-## 이번 주 운세 가이드
+## MBTI 미리보기
 
-### ✨ 행운의 키워드
+${mbtiPreview}
 
-${data.luckyKeywords}
-
-### 🚫 피해야 할 행동
-
-${data.avoidActions}
-
-### 📚 추천 학습 분야
-
-${data.learningAreas}
-
-### 🎭 MBTI별 한 줄 조언
-
-${data.mbtiHighlights}
-
----
-
-${data.closingNote}
+…외 ${data.mbti.length - 4}유형 — [전체 리포트 보기](#ai-fortune-grid)
 `;
 }
