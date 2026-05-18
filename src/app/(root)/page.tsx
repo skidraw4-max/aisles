@@ -13,7 +13,7 @@ import { isSupabaseAuthLinkError } from '@/lib/supabase-auth-url-errors';
 import { categoryKeyForCache, getHomePageQueries } from '@/lib/home-page-data';
 import { serializeFeedPost, type HomeFeedPost } from '@/lib/home-feed';
 import { applyTemplate, corridorLabel, getAllUiLabels } from '@/lib/ui-config';
-import { parseHomeCategoryQuery } from '@/lib/post-categories';
+import { parseHomeCategoryQuery, shouldHideAuthorInRecentSidebar } from '@/lib/post-categories';
 import { getCanonicalSiteUrl } from '@/lib/canonical-site-url';
 import type { Category } from '@prisma/client';
 import styles from './page.module.css';
@@ -219,7 +219,9 @@ export default async function HomePage({ searchParams }: PageProps) {
                             <div className={styles.recentTitle}>{post.title}</div>
                             <div className={styles.recentMeta}>
                               {corridorLabel(ui, post.category)}
-                              {post.category !== 'AI_FORTUNE' ? ` · ${post.author.username}` : ''}
+                              {!shouldHideAuthorInRecentSidebar(post.category)
+                                ? ` · ${post.author.username}`
+                                : ''}
                             </div>
                           </div>
                         </Link>

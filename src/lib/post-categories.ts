@@ -116,3 +116,10 @@ export function categoryAllowsOptionalMedia(
 export function isFeedBoardListCategory(category: Category | null): boolean {
   return category === 'LOUNGE' || category === 'GOSSIP' || category === 'AI_FORTUNE';
 }
+
+const RECENT_SIDEBAR_HIDE_AUTHOR = new Set<Category>(['LOUNGE', 'AI_FORTUNE']);
+
+/** 우측 "최근 게시물" 사이드바 — 작성자 표시 생략 */
+export function shouldHideAuthorInRecentSidebar(category: Category): boolean {
+  return RECENT_SIDEBAR_HIDE_AUTHOR.has(category);
+}
