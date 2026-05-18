@@ -91,10 +91,12 @@ function FeedBoardRow({
   post,
   gossipReportStyle,
   showDateInMeta,
+  hideAuthor,
 }: {
   post: FeedPostJson;
   gossipReportStyle: boolean;
   showDateInMeta: boolean;
+  hideAuthor: boolean;
 }) {
   const cc = commentCount(post);
   const hasMedia = Boolean(post.thumbnail?.trim());
@@ -126,15 +128,16 @@ function FeedBoardRow({
           </span>
         </span>
         <span className={styles.feedBoardFreeMeta}>
-          {showDateInMeta ? (
-            <span className={`${styles.feedBoardFreeAuthor} ${styles.feedBoardFreeDate}`} title={post.createdAt}>
-              {formatDateYYMMDD(post.createdAt)}
-            </span>
-          ) : (
-            <span className={styles.feedBoardFreeAuthor} title={post.author.username}>
-              {post.author.username}
-            </span>
-          )}
+          {!hideAuthor &&
+            (showDateInMeta ? (
+              <span className={`${styles.feedBoardFreeAuthor} ${styles.feedBoardFreeDate}`} title={post.createdAt}>
+                {formatDateYYMMDD(post.createdAt)}
+              </span>
+            ) : (
+              <span className={styles.feedBoardFreeAuthor} title={post.author.username}>
+                {post.author.username}
+              </span>
+            ))}
           <span className={styles.feedBoardFreeViews} title="조회수">
             {post.views.toLocaleString('ko-KR')}
           </span>
@@ -275,10 +278,12 @@ function FeedBoardTable({
   posts,
   gossipReportStyle,
   showDateInMeta,
+  hideAuthor,
 }: {
   posts: FeedPostJson[];
   gossipReportStyle: boolean;
   showDateInMeta: boolean;
+  hideAuthor: boolean;
 }) {
   return (
     <>
@@ -289,9 +294,11 @@ function FeedBoardTable({
               제목
             </span>
             <span className={styles.feedBoardFreeHeadMeta} role="presentation">
-              <span role="columnheader" className={showDateInMeta ? styles.feedBoardHeadDateLabel : undefined}>
-                {showDateInMeta ? '등록일' : '글쓴이'}
-              </span>
+              {!hideAuthor ? (
+                <span role="columnheader" className={showDateInMeta ? styles.feedBoardHeadDateLabel : undefined}>
+                  {showDateInMeta ? '등록일' : '글쓴이'}
+                </span>
+              ) : null}
               <span role="columnheader">조회</span>
             </span>
           </div>
@@ -302,6 +309,7 @@ function FeedBoardTable({
                 post={post}
                 gossipReportStyle={gossipReportStyle}
                 showDateInMeta={showDateInMeta}
+                hideAuthor={hideAuthor}
               />
             ))}
           </ul>
@@ -334,6 +342,7 @@ export function HomeAllFeed({ category, excludeIds, initialPosts, initialHasMore
   const boardList = isFeedBoardListCategory(category);
   const gossipReportStyle = category === 'GOSSIP';
   const loungeDateMeta = category === 'LOUNGE';
+  const hideAuthor = category === 'AI_FORTUNE';
   const allCardFeed = category === null && !boardList;
 
   const [visibleCount, setVisibleCount] = useState(() =>
@@ -437,6 +446,7 @@ export function HomeAllFeed({ category, excludeIds, initialPosts, initialHasMore
           posts={posts}
           gossipReportStyle={gossipReportStyle}
           showDateInMeta={loungeDateMeta}
+          hideAuthor={hideAuthor}
         />
       ) : (
         <ul className={styles.allFeed}>

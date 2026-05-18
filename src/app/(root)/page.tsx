@@ -218,7 +218,8 @@ export default async function HomePage({ searchParams }: PageProps) {
                           <div style={{ minWidth: 0, flex: 1 }}>
                             <div className={styles.recentTitle}>{post.title}</div>
                             <div className={styles.recentMeta}>
-                              {corridorLabel(ui, post.category)} · {post.author.username}
+                              {corridorLabel(ui, post.category)}
+                              {post.category !== 'AI_FORTUNE' ? ` · ${post.author.username}` : ''}
                             </div>
                           </div>
                         </Link>
