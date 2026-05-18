@@ -12,12 +12,12 @@ export const metadata: Metadata = (() => {
   return {
     title: '소개 — AIsle',
     description:
-      'AIsle은 AI 프롬프트와 설정을 레시피로 구조화해 공유하는 플랫폼입니다. Gallery, LAB, Lounge, Build 복도와 제작 동기를 소개합니다.',
+      'AIsle은 AI 프롬프트·설정을 레시피로 공유하는 플랫폼입니다. 복도 안내, 로그인·업로드·검색 등 현재 기능을 소개합니다.',
     alternates: { canonical: url },
     robots: SEO_ROBOTS_PUBLIC,
     openGraph: {
       title: '소개 — AIsle',
-      description: 'AI 프롬프트 레시피 플랫폼 AIsle의 제작 동기와 복도 안내.',
+      description: 'AIsle 제작 동기, 여섯 복도, 로그인·업로드·My Aisles 등 주요 기능 안내.',
       url,
     },
   };
