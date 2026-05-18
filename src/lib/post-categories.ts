@@ -53,7 +53,7 @@ export function homeHrefForCategory(category: Category): string {
 /** UI 라벨 ↔ Prisma `Post.category` (기본값은 시드와 동일; 런타임 동기화는 `corridorLabel` + DB) */
 export const POST_CATEGORY_OPTIONS: { value: Category; label: string }[] = defaultPostCategoryOptions();
 
-/** /upload 셀렉트 순서 (표시 라벨은 UI 설정 `corridor.*`와 동기화) */
+/** /upload 셀렉트 순서 (표시 라벨은 UI 설정 `corridor.*`와 동기화). AI_FORTUNE은 크론 전용. */
 export const UPLOAD_CATEGORY_ORDER: Category[] = [
   'RECIPE',
   'GALLERY',
@@ -61,14 +61,21 @@ export const UPLOAD_CATEGORY_ORDER: Category[] = [
   'GOSSIP',
   'BUILD',
   'LAUNCH',
-  'AI_FORTUNE',
 ];
 
 const VALUES = new Set(POST_CATEGORY_OPTIONS.map((o) => o.value));
+const USER_UPLOAD_CATEGORIES = new Set<Category>(UPLOAD_CATEGORY_ORDER);
 
 export function parsePostCategory(raw: string | null | undefined): Category | null {
   if (!raw || !VALUES.has(raw as Category)) return null;
   return raw as Category;
+}
+
+/** 사용자 글쓰기·업로드 API — AI_FORTUNE 등 자동 게시 복도 제외 */
+export function parseUserUploadCategory(raw: string | null | undefined): Category | null {
+  const cat = parsePostCategory(raw);
+  if (!cat || !USER_UPLOAD_CATEGORIES.has(cat)) return null;
+  return cat;
 }
 
 /** 썸네일 없이 글 작성 가능 (제목 + 본문) — 커뮤니티 복도 */

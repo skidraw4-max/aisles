@@ -12,7 +12,7 @@ import {
   categoryAllowsOptionalMedia,
   categoryAllowsOptionalThumbnail,
   parseLabPromptKindFromBody,
-  parsePostCategory,
+  parseUserUploadCategory,
   type LabPromptKind,
 } from '@/lib/post-categories';
 import { parseMediaUrlsField } from '@/lib/post-media-urls';
@@ -103,7 +103,7 @@ async function postFromJson(req: NextRequest) {
   }
   const b = body as Record<string, unknown>;
 
-  const category = parsePostCategory(typeof b.category === 'string' ? b.category : null);
+  const category = parseUserUploadCategory(typeof b.category === 'string' ? b.category : null);
   if (!category) {
     return NextResponse.json({ error: '유효한 카테고리를 선택해 주세요.' }, { status: 400 });
   }
@@ -239,7 +239,7 @@ async function postFromMultipart(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid form data' }, { status: 400 });
   }
 
-  const category = parsePostCategory(form.get('category') as string | null);
+  const category = parseUserUploadCategory(form.get('category') as string | null);
   if (!category) {
     return NextResponse.json({ error: '유효한 카테고리를 선택해 주세요.' }, { status: 400 });
   }
