@@ -12,7 +12,7 @@
 }
 
 .breadcrumb {
-  font-size: 0.8rem;
+  font-size: var(--type-13);
   color: #6b9a7a;
   margin-bottom: 1.25rem;
 }
@@ -85,7 +85,7 @@
 
 .meta {
   position: relative;
-  font-size: 0.85rem;
+  font-size: var(--type-13);
   color: #8fb89a;
 }
 
@@ -94,7 +94,7 @@
 }
 
 .sectionLabel {
-  font-size: 0.75rem;
+  font-size: var(--type-12);
   letter-spacing: 0.2em;
   text-transform: uppercase;
   color: #39ff14;
@@ -117,8 +117,8 @@
   border: 1px solid rgba(57, 255, 20, 0.2);
   background: rgba(0, 20, 8, 0.55);
   box-shadow: 0 0 20px rgba(57, 255, 20, 0.06);
-  line-height: 1.55;
-  font-size: 0.95rem;
+  font-size: var(--type-16);
+  line-height: 1.65;
 }
 
 .trendIndex {
@@ -200,7 +200,7 @@
 }
 
 .cardBlockLabel {
-  font-size: 0.65rem;
+  font-size: var(--type-12);
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: #5a8a68;
@@ -208,8 +208,8 @@
 }
 
 .cardBlockText {
-  font-size: 0.82rem;
-  line-height: 1.45;
+  font-size: var(--type-15);
+  line-height: 1.65;
   color: #c8e8d0;
 }
 
@@ -221,13 +221,13 @@
 
 .avoid {
   color: #ffb4a8;
-  font-size: 0.8rem;
 }
 
 .closing {
   margin-top: 2.5rem;
   text-align: center;
-  font-size: 0.9rem;
+  font-size: var(--type-15);
+  line-height: 1.65;
   color: #8fb89a;
   font-style: italic;
 }
