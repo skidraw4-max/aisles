@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Suspense } from 'react';
 import { SiteFooter } from '@/components/SiteFooter';
@@ -12,11 +13,14 @@ import { isSupabaseAuthLinkError } from '@/lib/supabase-auth-url-errors';
 import { categoryKeyForCache, getHomePageQueries } from '@/lib/home-page-data';
 import { serializeFeedPost, type HomeFeedPost } from '@/lib/home-feed';
 import { applyTemplate, corridorLabel, getAllUiLabels } from '@/lib/ui-config';
+import { parseHomeCategoryQuery } from '@/lib/post-categories';
+import { getCanonicalSiteUrl } from '@/lib/canonical-site-url';
 import type { Category } from '@prisma/client';
 import styles from './page.module.css';
 
-/** 60초 ISR — 동일 URL·복도 조합은 캐시된 RSC 페이로드 재사용 */
-export const revalidate = 60;
+const AI_FORTUNE_SEO_TITLE = 'AI FORTUNE — AI로 보는 주간 운세 및 커리어 가이드';
+const AI_FORTUNE_SEO_DESCRIPTION =
+  '지난주 글로벌 AI 트렌드를 바탕으로, 행운의 키워드·피해야 할 행동·추천 학습 분야를 유머러스하게 전해 드리는 AIsle 주간 운세 복도입니다. My Aisle에서 MBTI를 등록하면 맞춤 가이드를 준비할 수 있습니다.';
 
 type PageProps = {
   searchParams: Promise<{
@@ -27,6 +31,29 @@ type PageProps = {
     error_description?: string | string[];
   }>;
 };
+
+/** 60초 ISR — 동일 URL·복도 조합은 캐시된 RSC 페이로드 재사용 */
+export const revalidate = 60;
+
+export async function generateMetadata({ searchParams }: PageProps): Promise<Metadata> {
+  const sp = await searchParams;
+  const category = parseHomeCategoryQuery(sp.category);
+  if (category !== 'AI_FORTUNE') {
+    return {};
+  }
+  const siteUrl = getCanonicalSiteUrl();
+  const pageUrl = `${siteUrl}/?category=AI_FORTUNE`;
+  return {
+    title: AI_FORTUNE_SEO_TITLE,
+    description: AI_FORTUNE_SEO_DESCRIPTION,
+    alternates: { canonical: pageUrl },
+    openGraph: {
+      title: AI_FORTUNE_SEO_TITLE,
+      description: AI_FORTUNE_SEO_DESCRIPTION,
+      url: pageUrl,
+    },
+  };
+}
 
 function pickSearchParam(v: string | string[] | undefined): string | undefined {
   if (v === undefined) return undefined;

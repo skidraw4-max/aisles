@@ -8,6 +8,7 @@ import { SEO_ROBOTS_PRIVATE } from '@/lib/seo-robots';
 import type { MyPostRow } from './MyPostsGrid';
 import { MyAislesView } from './MyAislesView';
 import { MyAislesLoginGate } from './MyAislesLoginGate';
+import { MbtiSection } from './MbtiSection';
 import styles from './my-aisles.module.css';
 
 export const metadata: Metadata = {
@@ -36,7 +37,11 @@ export default async function MyAislesPage({ searchParams }: PageProps) {
 
   const ui = await getAllUiLabels();
 
-  const [rows, bookmarkRows] = await Promise.all([
+  const [userRow, rows, bookmarkRows] = await Promise.all([
+    prisma.user.findUnique({
+      where: { id: user.id },
+      select: { mbti: true },
+    }),
     prisma.post.findMany({
       where: { authorId: user.id },
       orderBy: { createdAt: 'desc' },
@@ -111,6 +116,7 @@ export default async function MyAislesPage({ searchParams }: PageProps) {
             내가 작성한 글과 저장해 둔 소식을 한곳에서 볼 수 있습니다. 북마크는 글 상단의 별 아이콘으로 저장할 수
             있습니다.
           </p>
+          <MbtiSection initialMbti={userRow?.mbti ?? null} />
           <MyAislesView
             initialTab={initialTab}
             ui={ui}

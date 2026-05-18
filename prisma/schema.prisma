@@ -16,6 +16,8 @@ model User {
   username   String   @unique
   email      String   @unique
   avatarUrl  String? // Cloudflare R2 등 퍼블릭 URL
+  /// MBTI 16유형 — 최초 1회만 설정 (변경 불가)
+  mbti       String? @db.VarChar(4)
   newsletterSubscribed Boolean @default(false)
   digestFrequency DigestFrequency @default(DAILY)
   /// USER · BUILDER · ADMIN — 공지 관리 등은 ADMIN 만 (세션·서버 액션에서 검증)
@@ -73,6 +75,8 @@ model Post {
   aiBreakfastOriginalUrl String? @unique @db.VarChar(2048)
   /// MIT News RSS 등 — 원문 URL로 중복 방지 (고유, 선택)
   mitNewsOriginalUrl String? @unique @db.VarChar(2048)
+  /// AI FORTUNE 주간 운세 — 동일 주차 중복 방지 (고유, 선택) 예: 2026-05-W3
+  aiFortuneWeekKey String? @unique @db.VarChar(32)
   /// YouTube 자동 요약 게시 — 영상 ID 중복 방지 (고유, 선택)
   youtubeVideoId String? @unique @db.VarChar(16)
   /// MIT_OCW | DEEPMIND — UI 배지·요약 스타일 구분
@@ -182,6 +186,7 @@ enum Category {
   BUILD   // 빌드 복도
   LAUNCH  // 서비스 복도
   TREND   // 레거시(구 테크 트렌드) — 신규 외부 뉴스는 LOUNGE
+  AI_FORTUNE // AI 주간 운세·커리어 가이드 (자동 게시)
 }
 
 /// 관리자(BO)에서 수정 가능한 UI 카피 (메뉴·헤드라인·탭 등)

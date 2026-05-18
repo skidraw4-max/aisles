@@ -350,7 +350,8 @@ export default async function PostPage({ params }: Props) {
     galleryRawUrl && !isProbablyVideoAssetUrl(galleryRawUrl)
       ? toAbsoluteMediaUrl(galleryRawUrl, siteBase)
       : null;
-  const isLoungeOrGossip = post.category === 'LOUNGE' || post.category === 'GOSSIP';
+  const isLoungeOrGossip =
+    post.category === 'LOUNGE' || post.category === 'GOSSIP' || post.category === 'AI_FORTUNE';
   const isBuildOrLaunch = post.category === 'BUILD' || post.category === 'LAUNCH';
   const hasHeroMedia = Boolean(post.thumbnail?.trim());
   const metaPrompt = post.metadata?.prompt?.trim() ?? '';

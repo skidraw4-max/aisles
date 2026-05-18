@@ -10,6 +10,7 @@ const HOME_QUERY_TO_CATEGORY: Record<string, Category> = {
   BUILD: 'BUILD',
   LAUNCH: 'LAUNCH',
   TREND: 'TREND',
+  AI_FORTUNE: 'AI_FORTUNE',
 };
 
 export function parseHomeCategoryQuery(
@@ -38,6 +39,8 @@ export function categoryToHomeQuery(category: Category): string {
       return 'LAUNCH';
     case 'TREND':
       return 'TREND';
+    case 'AI_FORTUNE':
+      return 'AI_FORTUNE';
     default:
       return 'GALLERY';
   }
@@ -58,6 +61,7 @@ export const UPLOAD_CATEGORY_ORDER: Category[] = [
   'GOSSIP',
   'BUILD',
   'LAUNCH',
+  'AI_FORTUNE',
 ];
 
 const VALUES = new Set(POST_CATEGORY_OPTIONS.map((o) => o.value));
@@ -69,7 +73,7 @@ export function parsePostCategory(raw: string | null | undefined): Category | nu
 
 /** 썸네일 없이 글 작성 가능 (제목 + 본문) — 커뮤니티 복도 */
 export function categoryAllowsOptionalThumbnail(category: Category): boolean {
-  return category === 'LOUNGE' || category === 'GOSSIP';
+  return category === 'LOUNGE' || category === 'GOSSIP' || category === 'AI_FORTUNE';
 }
 
 /** LAB(RECIPE) 프롬프트 유형 — 이미지·비주얼 vs 마케팅·카피(텍스트) */
@@ -103,5 +107,5 @@ export function categoryAllowsOptionalMedia(
 
 /** 메인 피드: 퀘이사존식 한 줄 리스트 (LAB·GALLERY는 그리드) */
 export function isFeedBoardListCategory(category: Category | null): boolean {
-  return category === 'LOUNGE' || category === 'GOSSIP';
+  return category === 'LOUNGE' || category === 'GOSSIP' || category === 'AI_FORTUNE';
 }

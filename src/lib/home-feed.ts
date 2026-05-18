@@ -74,7 +74,7 @@ export async function fetchFeedPosts(
       ...(category
         ? { category }
         : excludeLoungeGossip
-          ? { category: { notIn: ['LOUNGE', 'GOSSIP'] satisfies Category[] } }
+          ? { category: { notIn: ['LOUNGE', 'GOSSIP', 'AI_FORTUNE'] satisfies Category[] } }
           : {}),
       ...(excludeIds.length > 0 ? { id: { notIn: excludeIds } } : {}),
     };

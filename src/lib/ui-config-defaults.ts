@@ -9,6 +9,7 @@ export const CATEGORY_TO_UI_KEY: Record<Category, string> = {
   BUILD: 'corridor.build',
   LAUNCH: 'corridor.launch',
   TREND: 'corridor.trend',
+  AI_FORTUNE: 'corridor.ai_fortune',
 };
 
 const POST_CATEGORY_ORDER: Category[] = [
@@ -18,6 +19,7 @@ const POST_CATEGORY_ORDER: Category[] = [
   'GOSSIP',
   'BUILD',
   'LAUNCH',
+  'AI_FORTUNE',
 ];
 
 /**
@@ -39,6 +41,11 @@ export const UI_CONFIG_SEED: readonly UiConfigSeedRow[] = [
   { key: 'corridor.gossip', value: '커뮤니티', description: '복도 표시명 (GOSSIP)' },
   { key: 'corridor.build', value: '제작기', description: '복도 표시명 (BUILD)' },
   { key: 'corridor.launch', value: '출시', description: '복도 표시명 (LAUNCH)' },
+  {
+    key: 'corridor.ai_fortune',
+    value: 'AI FORTUNE',
+    description: '복도 표시명 (AI_FORTUNE) — 주간 운세·커리어 가이드',
+  },
   {
     key: 'corridor.trend',
     value: '이전 분류 (TREND)',

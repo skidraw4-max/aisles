@@ -1,0 +1,24 @@
+# AI FORTUNE — 매주 월요일 05:00 KST (일요일 20:00 UTC)
+# Secrets: CRON_SITE_URL, CRON_SECRET
+name: AI FORTUNE — weekly (Mon 05:00 KST)
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 20 * * 0'
+
+jobs:
+  ai-fortune:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: POST /api/cron/ai-fortune
+        env:
+          CRON_SITE_URL: ${{ secrets.CRON_SITE_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          set -euo pipefail
+          curl -sS -X POST "${CRON_SITE_URL}/api/cron/ai-fortune" \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            -H "Content-Type: application/json" \
+            -w "\nHTTP %{http_code}\n"

@@ -13,7 +13,7 @@ const FILTERED_FEED_INITIAL = 12;
 
 function initialHomeFeedTake(filterCategory: Category | null): number {
   if (!filterCategory) return ALL_CARD_FEED_INITIAL_COUNT;
-  if (filterCategory === 'LOUNGE') return FILTERED_FEED_INITIAL * 2;
+  if (filterCategory === 'LOUNGE' || filterCategory === 'AI_FORTUNE') return FILTERED_FEED_INITIAL * 2;
   return FILTERED_FEED_INITIAL;
 }
 

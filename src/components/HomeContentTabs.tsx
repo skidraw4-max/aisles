@@ -16,6 +16,7 @@ const TABS: { id: ContentTabId; labelKey: string; href: string }[] = [
   { id: 'gossip', labelKey: 'corridor.gossip', href: '/?category=GOSSIP' },
   { id: 'build', labelKey: 'corridor.build', href: '/?category=BUILD' },
   { id: 'launch', labelKey: 'corridor.launch', href: '/?category=LAUNCH' },
+  { id: 'ai_fortune', labelKey: 'corridor.ai_fortune', href: '/?category=AI_FORTUNE' },
 ];
 
 export function HomeContentTabs() {

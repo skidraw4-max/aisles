@@ -4,7 +4,7 @@ import type { Category } from '@prisma/client';
 export const MIN_POST_DESCRIPTION_LENGTH = 30;
 
 export function categoryExemptFromMinDescription(category: Category): boolean {
-  return category === 'LOUNGE';
+  return category === 'LOUNGE' || category === 'AI_FORTUNE';
 }
 
 /**
