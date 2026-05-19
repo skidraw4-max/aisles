@@ -10,7 +10,16 @@ import {
   useState,
   type ReactNode,
 } from 'react';
+import { AuthModal } from '@/components/AuthModal';
 import { createClient } from '@/lib/supabase/client';
+import {
+  addGuestBookmark,
+  clearGuestBookmarks,
+  getGuestBookmarkIds,
+  isGuestBookmarked,
+  removeGuestBookmark,
+} from '@/lib/guest-bookmarks';
+import { GuestBookmarkSnackbar } from './GuestBookmarkSnackbar';
 
 type PostBookmarkContextValue = {
   bookmarked: boolean;
@@ -42,21 +51,85 @@ export function PostBookmarkProvider({
   const [bookmarked, setBookmarked] = useState(initialBookmarked);
   const [bookmarkPending, setBookmarkPending] = useState(false);
   const [bookmarkError, setBookmarkError] = useState<string | null>(null);
+  const [guestSnackbarOpen, setGuestSnackbarOpen] = useState(false);
+  const [authOpen, setAuthOpen] = useState(false);
   const inFlightRef = useRef(false);
+  const mergeStartedRef = useRef(false);
   const stateRef = useRef({ bookmarked });
   stateRef.current = { bookmarked };
 
   useEffect(() => {
-    setBookmarked(initialBookmarked);
+    setBookmarked(initialBookmarked || isGuestBookmarked(postId));
     inFlightRef.current = false;
     setBookmarkPending(false);
     setBookmarkError(null);
   }, [postId, initialBookmarked]);
 
+  useEffect(() => {
+    if (!guestSnackbarOpen) return;
+    const t = window.setTimeout(() => setGuestSnackbarOpen(false), 3000);
+    return () => window.clearTimeout(t);
+  }, [guestSnackbarOpen]);
+
+  const mergeGuestBookmarks = useCallback(async (token: string) => {
+    if (mergeStartedRef.current) return;
+    mergeStartedRef.current = true;
+    const ids = getGuestBookmarkIds();
+    if (ids.length === 0) return;
+    await Promise.all(
+      ids.map((id) =>
+        fetch(`/api/posts/${id}/bookmark`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` },
+        }).catch(() => null)
+      )
+    );
+    clearGuestBookmarks();
+    router.refresh();
+  }, [router]);
+
+  useEffect(() => {
+    void (async () => {
+      const token = await getAccessToken();
+      if (token) await mergeGuestBookmarks(token);
+    })();
+    const supabase = createClient();
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      const token = session?.access_token;
+      if (token) void mergeGuestBookmarks(token);
+    });
+    return () => subscription.unsubscribe();
+  }, [mergeGuestBookmarks]);
+
   const toggleBookmark = useCallback(async () => {
     const token = await getAccessToken();
+
     if (!token) {
-      router.push(`/login?next=${encodeURIComponent(`/post/${postId}`)}`);
+      if (inFlightRef.current) return;
+      inFlightRef.current = true;
+      setBookmarkPending(true);
+      setBookmarkError(null);
+
+      const { bookmarked: prev } = stateRef.current;
+      const next = !prev;
+      setBookmarked(next);
+
+      try {
+        if (next) {
+          addGuestBookmark(postId);
+          setGuestSnackbarOpen(true);
+        } else {
+          removeGuestBookmark(postId);
+        }
+      } catch {
+        setBookmarked(prev);
+        setBookmarkError('북마크를 저장할 수 없습니다.');
+      } finally {
+        inFlightRef.current = false;
+        setBookmarkPending(false);
+      }
       return;
     }
 
@@ -89,7 +162,7 @@ export function PostBookmarkProvider({
       inFlightRef.current = false;
       setBookmarkPending(false);
     }
-  }, [postId, router]);
+  }, [postId]);
 
   const value: PostBookmarkContextValue = {
     bookmarked,
@@ -98,7 +171,20 @@ export function PostBookmarkProvider({
     toggleBookmark,
   };
 
-  return <PostBookmarkContext.Provider value={value}>{children}</PostBookmarkContext.Provider>;
+  return (
+    <PostBookmarkContext.Provider value={value}>
+      {children}
+      <GuestBookmarkSnackbar open={guestSnackbarOpen} onLogin={() => setAuthOpen(true)} />
+      <AuthModal
+        open={authOpen}
+        onClose={() => setAuthOpen(false)}
+        onAuthed={() => {
+          setAuthOpen(false);
+          router.refresh();
+        }}
+      />
+    </PostBookmarkContext.Provider>
+  );
 }
 
 export function usePostBookmark(): PostBookmarkContextValue {

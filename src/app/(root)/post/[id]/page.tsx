@@ -42,6 +42,8 @@ import { buildPostMetaDescription } from '@/lib/post-meta-description';
 import { SEO_ROBOTS_PUBLIC } from '@/lib/seo-robots';
 import { PostDescriptionEmptyCallout } from './PostDescriptionEmptyCallout';
 import { AiFortunePostView } from './AiFortunePostView';
+import { AiFortunePromoBanner } from './AiFortunePromoBanner';
+import { PostScrollSubscribeModal } from './PostScrollSubscribeModal';
 import { getKstParts, weekOfMonthKst } from '@/lib/ai-fortune/kst-week';
 import styles from './post.module.css';
 
@@ -388,6 +390,13 @@ export default async function PostPage({ params }: Props) {
       />
     );
   }
+
+  const latestAiFortune = await prisma.post.findFirst({
+    where: { category: 'AI_FORTUNE' },
+    orderBy: { createdAt: 'desc' },
+    select: { id: true },
+  });
+  const aiFortuneCtaHref = latestAiFortune ? `/post/${latestAiFortune.id}` : '/?category=AI_FORTUNE';
 
   const isLab = post.category === 'RECIPE';
   const isGallery = post.category === 'GALLERY';
@@ -757,6 +766,8 @@ export default async function PostPage({ params }: Props) {
 
                 <PostTags tags={post.tags} />
 
+                <AiFortunePromoBanner ctaHref={aiFortuneCtaHref} />
+
                   <PostEngagement
                     postId={post.id}
                     initialComments={initialComments}
@@ -785,6 +796,7 @@ export default async function PostPage({ params }: Props) {
           </div>
         </div>
       </main>
+      <PostScrollSubscribeModal isLoggedIn={Boolean(user)} />
     </>
   );
 }
