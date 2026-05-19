@@ -1,24 +1,20 @@
 /**
- * LOUNGE 뉴스 다이제스트 메일 (KST 03·09·15·21시 슬롯, 각 6시간 구간)
+ * LOUNGE 뉴스 다이제스트 메일 (KST 06·18시 슬롯, 각 12시간 구간)
  *
  * - 환경: `CRON_SECRET`(필수), `RESEND_API_KEY`, `EMAIL_FROM`
  * - `GET` 또는 `POST` 동일. `Authorization: Bearer ${CRON_SECRET}` 필수.
- * - 쿼리: `slot=0|1|2|3` 권장 (각 슬롯 종료 시각 KST: 03, 09, 15, 21시).
- *   생략 시 요청 시각의 UTC 시각에 가장 가까운 슬롯(18,0,6,12 UTC)으로 추정.
+ * - 쿼리: `slot=0|1` 권장 (각 슬롯 종료 시각 KST: 06, 18시).
+ *   생략 시 요청 시각의 UTC 시각에 가장 가까운 슬롯(21,9 UTC)으로 추정.
  * - 선택: `window=ISO_START,ISO_END` (반개구간 [start, end), slot보다 우선)
  *
  * 운영 스케줄: Vercel Cron은 사용하지 않고 `.github/workflows/news-digest-kst.yml`만 호출한다.
- *   UTC 정각 18·0·6·12시 → 각각 slot=0…3 POST, `Authorization: Bearer ${CRON_SECRET}` 필수.
+ *   UTC 정각 21·9시 → 각각 slot=0·1 POST, `Authorization: Bearer ${CRON_SECRET}` 필수.
  *   curl -sS -X POST "${CRON_SITE_URL}/api/cron/news-digest?slot=0" -H "Authorization: Bearer ${CRON_SECRET}"
  *   curl ... ?slot=1
- *   curl ... ?slot=2
- *   curl ... ?slot=3
  *
  * 슬롯별 권장 호출 (KST 기준 종료 시각 직후):
- *   slot=0 → 전일 21:00 ~ 당일 03:00 KST
- *   slot=1 → 03:00 ~ 09:00 KST
- *   slot=2 → 09:00 ~ 15:00 KST
- *   slot=3 → 15:00 ~ 21:00 KST
+ *   slot=0 → 전일 18:00 ~ 당일 06:00 KST
+ *   slot=1 → 06:00 ~ 18:00 KST
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
@@ -30,7 +26,10 @@ export const maxDuration = 60;
 
 const MAX_RECIPIENTS_PER_RUN = 100;
 
-const SLOT_END_HOURS_KST = [3, 9, 15, 21] as const;
+type DigestSlot = 0 | 1;
+
+const SLOT_END_HOURS_KST = [6, 18] as const;
+const SLOT_WINDOW_HOURS = 12;
 
 function verifyCronAuth(req: NextRequest): boolean {
   const secret = process.env.CRON_SECRET?.trim();
@@ -58,22 +57,22 @@ function kstWallInstant(y: number, m: number, day: number, hour: number, min = 0
   return new Date(`${y}-${pad(m)}-${pad(day)}T${pad(hour)}:${pad(min)}:00+09:00`);
 }
 
-/** 반개구간 [start, end) — 각 슬롯은 6시간 폭, 종료 시각은 KST SLOT_END_HOURS_KST[slot]. */
-function digestWindowForSlot(slot: 0 | 1 | 2 | 3, ref: Date): { start: Date; end: Date } {
+/** 반개구간 [start, end) — 각 슬롯은 12시간 폭, 종료 시각은 KST SLOT_END_HOURS_KST[slot]. */
+function digestWindowForSlot(slot: DigestSlot, ref: Date): { start: Date; end: Date } {
   const { y, m, day } = kstYmd(ref);
   const endHour = SLOT_END_HOURS_KST[slot];
   const end = kstWallInstant(y, m, day, endHour, 0);
-  const start = new Date(end.getTime() - 6 * 60 * 60 * 1000);
+  const start = new Date(end.getTime() - SLOT_WINDOW_HOURS * 60 * 60 * 1000);
   return { start, end };
 }
 
-function inferSlotFromUtcHour(utcH: number): 0 | 1 | 2 | 3 {
-  const direct: Record<number, 0 | 1 | 2 | 3> = { 18: 0, 0: 1, 6: 2, 12: 3 };
+function inferSlotFromUtcHour(utcH: number): DigestSlot {
+  const direct: Record<number, DigestSlot> = { 21: 0, 9: 1 };
   if (direct[utcH] !== undefined) return direct[utcH];
-  const anchors = [18, 0, 6, 12];
+  const anchors = [21, 9];
   let bestIdx = 0;
   let bestDist = 24;
-  for (let i = 0; i < 4; i++) {
+  for (let i = 0; i < 2; i++) {
     let d = Math.abs(utcH - anchors[i]);
     if (d > 12) d = 24 - d;
     if (d < bestDist) {
@@ -81,12 +80,12 @@ function inferSlotFromUtcHour(utcH: number): 0 | 1 | 2 | 3 {
       bestIdx = i;
     }
   }
-  return bestIdx as 0 | 1 | 2 | 3;
+  return bestIdx as DigestSlot;
 }
 
-function parseSlotParam(req: NextRequest, ref: Date): 0 | 1 | 2 | 3 {
+function parseSlotParam(req: NextRequest, ref: Date): DigestSlot {
   const raw = req.nextUrl.searchParams.get('slot')?.trim();
-  if (raw === '0' || raw === '1' || raw === '2' || raw === '3') return Number(raw) as 0 | 1 | 2 | 3;
+  if (raw === '0' || raw === '1') return Number(raw) as DigestSlot;
   return inferSlotFromUtcHour(ref.getUTCHours());
 }
 
@@ -109,7 +108,7 @@ function stripForEmail(content: string | null | undefined): string {
     .trim();
 }
 
-function digestSubjectLine(slot: 0 | 1 | 2 | 3): string {
+function digestSubjectLine(slot: DigestSlot): string {
   const h = SLOT_END_HOURS_KST[slot];
   return `AI NEWS 다이제스트 (${String(h).padStart(2, '0')}시 KST 구간)`;
 }
@@ -157,7 +156,7 @@ function digestEmailBannerHtml(siteUrl: string): string {
 
 function renderDigestEmail(
   posts: Array<{ id: string; title: string; content: string | null; createdAt: Date }>,
-  slot: 0 | 1 | 2 | 3,
+  slot: DigestSlot,
   windowLabel: string,
 ) {
   const siteUrl = getCanonicalSiteUrl();
