@@ -9,8 +9,13 @@ export function NoticeAdminLink() {
   const { isAdmin } = useAuth();
   if (!isAdmin) return null;
   return (
-    <Link href="/notices/admin" className={styles.link}>
-      공지 관리
-    </Link>
+    <>
+      <Link href="/notices/admin" className={styles.link}>
+        공지 관리
+      </Link>
+      <Link href="/admin/launch-banners" className={styles.link}>
+        LAUNCH 배너
+      </Link>
+    </>
   );
 }

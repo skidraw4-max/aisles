@@ -118,8 +118,14 @@ export function isFeedBoardListCategory(category: Category | null): boolean {
 }
 
 const RECENT_SIDEBAR_HIDE_AUTHOR = new Set<Category>(['LOUNGE', 'AI_FORTUNE']);
+const FEED_HIDE_AUTHOR = new Set<Category>(['LOUNGE', 'AI_FORTUNE']);
 
 /** 우측 "최근 게시물" 사이드바 — 작성자 표시 생략 */
 export function shouldHideAuthorInRecentSidebar(category: Category): boolean {
   return RECENT_SIDEBAR_HIDE_AUTHOR.has(category);
+}
+
+/** 메인 피드·보드 리스트 — BUILD/LAUNCH/GALLERY는 작성자 표시 */
+export function shouldHideAuthorInFeedList(category: Category): boolean {
+  return FEED_HIDE_AUTHOR.has(category);
 }

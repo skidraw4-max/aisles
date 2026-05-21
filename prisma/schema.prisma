@@ -57,6 +57,10 @@ model Post {
   likeCount   Int         @default(0)
   /// 메인 상단 등 에디터 픽 노출용
   isFeatured  Boolean     @default(false)
+  /// 메인 LAUNCH 배너 슬라이더 노출 (관리자 승인)
+  featuredOnHome Boolean    @default(false)
+  /// LAUNCH 배너 노출 만료 (null = 무기한)
+  launchBannerUntil DateTime?
   /// 출시·외부 서비스 페이지 등 연결 URL (선택)
   externalLink String?
   /// GeekNews 크론 등 — 원문 URL로 중복 방지 (고유, 선택)

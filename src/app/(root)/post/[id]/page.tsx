@@ -599,8 +599,37 @@ export default async function PostPage({ params }: Props) {
     </div>
   );
 
+  const postUrl = `${siteBase}/post/${post.id}`;
+  const articleJsonLd =
+    isBuildOrLaunch
+      ? {
+          '@context': 'https://schema.org',
+          '@type': 'Article',
+          headline: post.title,
+          description: buildPostMetaDescription({
+            title: post.title,
+            content: post.content,
+            categoryLabel: catLabel,
+          }),
+          datePublished: post.createdAt.toISOString(),
+          dateModified: post.createdAt.toISOString(),
+          author: { '@type': 'Person', name: post.author.username },
+          publisher: { '@type': 'Organization', name: 'AIsle', url: siteBase },
+          mainEntityOfPage: postUrl,
+          ...(post.thumbnail?.trim()
+            ? { image: [toAbsoluteMediaUrl(post.thumbnail.trim(), siteBase)] }
+            : {}),
+        }
+      : null;
+
   return (
     <>
+      {articleJsonLd ? (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }}
+        />
+      ) : null}
       <main className={styles.magazineShell}>
         <div className={styles.magazineInner}>
           <div className={styles.magazineGrid}>

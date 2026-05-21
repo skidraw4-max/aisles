@@ -20,6 +20,8 @@ export type MyPostRow = {
   views: number;
   likeCount: number;
   authorUsername: string;
+  /** LAUNCH 메인 배너 상태 */
+  launchBannerStatus?: 'live' | 'expired' | null;
 };
 
 function CategoryBadge({ category }: { category: Category }) {
@@ -102,6 +104,72 @@ function MyAislesLoungeGossipList({
   );
 }
 
+function launchBannerLabel(status: MyPostRow['launchBannerStatus']): string | null {
+  if (status === 'live') return '메인 배너 노출 중';
+  if (status === 'expired') return '배너 만료';
+  return null;
+}
+
+function MyAislesUgcSection({
+  posts,
+  onDeleteClick,
+}: {
+  posts: MyPostRow[];
+  onDeleteClick: (id: string) => void;
+}) {
+  if (posts.length === 0) return null;
+  return (
+    <section className={styles.textListSection} aria-labelledby="my-aisles-ugc-heading">
+      <h2 id="my-aisles-ugc-heading" className={styles.textListHeading}>
+        BUILD · LAUNCH
+      </h2>
+      <ul className={styles.grid} style={{ listStyle: 'none', padding: 0 }}>
+        {posts.map((post) => {
+          const banner = launchBannerLabel(post.launchBannerStatus);
+          return (
+            <li key={post.id}>
+              <article className={styles.card}>
+                <Link href={`/post/${post.id}`} className={styles.cardMedia} aria-label={`${post.title} 상세`}>
+                  <PostThumbnail
+                    thumbnail={post.thumbnail}
+                    category={post.category}
+                    alt=""
+                    layout="myAislesCard"
+                    metadataParams={post.metadataParams}
+                  />
+                  <CategoryBadge category={post.category} />
+                </Link>
+                <div className={styles.cardBody}>
+                  <h2 className={styles.cardTitle}>{post.title}</h2>
+                  <p className={styles.cardMeta}>
+                    {formatDate(post.createdAt)} · 조회 {post.views} · ♥ {post.likeCount}
+                    {banner ? ` · ${banner}` : ''}
+                  </p>
+                  <div className={styles.actions}>
+                    <Link href={`/post/${post.id}`} className={`${styles.btnBase} ${styles.linkView}`}>
+                      보기
+                    </Link>
+                    <Link href={`/upload?edit=${post.id}`} className={`${styles.btnBase} ${styles.btnEdit}`}>
+                      수정
+                    </Link>
+                    <button
+                      type="button"
+                      className={`${styles.btnBase} ${styles.btnDelete}`}
+                      onClick={() => onDeleteClick(post.id)}
+                    >
+                      삭제
+                    </button>
+                  </div>
+                </div>
+              </article>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  );
+}
+
 export function MyPostsGrid({ posts }: { posts: MyPostRow[] }) {
   const router = useRouter();
   const [confirmId, setConfirmId] = useState<string | null>(null);
@@ -109,7 +177,10 @@ export function MyPostsGrid({ posts }: { posts: MyPostRow[] }) {
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const loungeGossipPosts = posts.filter((p) => p.category === 'LOUNGE' || p.category === 'GOSSIP');
-  const cardPosts = posts.filter((p) => p.category !== 'LOUNGE' && p.category !== 'GOSSIP');
+  const ugcPosts = posts.filter((p) => p.category === 'BUILD' || p.category === 'LAUNCH');
+  const cardPosts = posts.filter(
+    (p) => p.category !== 'LOUNGE' && p.category !== 'GOSSIP' && p.category !== 'BUILD' && p.category !== 'LAUNCH'
+  );
 
   const confirmPost = confirmId ? posts.find((p) => p.id === confirmId) : undefined;
 
@@ -176,6 +247,7 @@ export function MyPostsGrid({ posts }: { posts: MyPostRow[] }) {
   return (
     <>
       <MyAislesLoungeGossipList posts={loungeGossipPosts} onDeleteClick={openDelete} />
+      <MyAislesUgcSection posts={ugcPosts} onDeleteClick={openDelete} />
       {cardPosts.length > 0 ? (
         <ul className={styles.grid}>
           {cardPosts.map((post) => (

@@ -49,6 +49,8 @@ export default async function MyAislesPage({ searchParams }: PageProps) {
         createdAt: true,
         views: true,
         likeCount: true,
+        featuredOnHome: true,
+        launchBannerUntil: true,
         author: { select: { username: true } },
       },
     }),
@@ -73,17 +75,26 @@ export default async function MyAislesPage({ searchParams }: PageProps) {
     }),
   ]);
 
-  const posts: MyPostRow[] = rows.map((p) => ({
-    id: p.id,
-    title: p.title,
-    category: p.category,
-    thumbnail: p.thumbnail,
-    metadataParams: p.metadata?.params,
-    createdAt: p.createdAt.toISOString(),
-    views: p.views,
-    likeCount: p.likeCount,
-    authorUsername: p.author.username,
-  }));
+  const now = Date.now();
+  const posts: MyPostRow[] = rows.map((p) => {
+    let launchBannerStatus: 'live' | 'expired' | null = null;
+    if (p.category === 'LAUNCH' && p.featuredOnHome) {
+      const until = p.launchBannerUntil?.getTime();
+      launchBannerStatus = until == null || until > now ? 'live' : 'expired';
+    }
+    return {
+      id: p.id,
+      title: p.title,
+      category: p.category,
+      thumbnail: p.thumbnail,
+      metadataParams: p.metadata?.params,
+      createdAt: p.createdAt.toISOString(),
+      views: p.views,
+      likeCount: p.likeCount,
+      authorUsername: p.author.username,
+      launchBannerStatus,
+    };
+  });
 
   const bookmarkCards: FeedPostCardModel[] = bookmarkRows.map((b) => ({
     id: b.post.id,

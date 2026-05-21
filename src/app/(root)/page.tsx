@@ -17,6 +17,9 @@ import { parseHomeCategoryQuery, shouldHideAuthorInRecentSidebar } from '@/lib/p
 import { getCanonicalSiteUrl } from '@/lib/canonical-site-url';
 import { fetchLatestAiFortunePost } from '@/lib/ai-fortune/latest-fortune';
 import { HomeFortuneCard } from '@/components/HomeFortuneCard';
+import { BuildHubSection } from '@/components/BuildHubSection';
+import { UgcWeeklyBest } from '@/components/UgcWeeklyBest';
+import { fetchBuildPopularWeekly, fetchUgcWeeklyTop } from '@/lib/ugc-hub';
 import type { Category } from '@prisma/client';
 import styles from './page.module.css';
 
@@ -31,6 +34,7 @@ type PageProps = {
     error?: string | string[];
     error_code?: string | string[];
     error_description?: string | string[];
+    posted?: string | string[];
   }>;
 };
 
@@ -81,14 +85,28 @@ export default async function HomePage({ searchParams }: PageProps) {
   if (er) authErrParams.set('error', er);
   if (ed) authErrParams.set('error_description', ed);
   const showInvalidEmailLinkBanner = isSupabaseAuthLinkError(authErrParams);
+  const postedFlag = pickSearchParam(sp.posted);
+  const ugcPostedMessage =
+    postedFlag === 'launch'
+      ? 'LAUNCH 글이 등록되었습니다. 메인 배너는 운영팀 검토 후 노출됩니다.'
+      : postedFlag === 'build'
+        ? 'BUILD 레시피가 등록되었습니다. 이번 주 인기 레시피 후보로 집계됩니다.'
+        : null;
 
   const cacheKey = categoryKeyForCache(filterCategory);
   const showFortuneCard = !filterCategory || filterCategory === 'LOUNGE';
-  const [ui, { recentAll, firstHomeFeed, launchBannerPosts }, latestFortune] = await Promise.all([
-    getAllUiLabels(),
-    getHomePageQueries(cacheKey),
-    showFortuneCard ? fetchLatestAiFortunePost() : Promise.resolve(null),
-  ]);
+  const buildHub = filterCategory === 'BUILD';
+  const ugcWeekly =
+    filterCategory === 'BUILD' || filterCategory === 'LAUNCH' ? filterCategory : null;
+
+  const [ui, { recentAll, firstHomeFeed, launchBannerPosts }, latestFortune, buildPopular, weeklyTop] =
+    await Promise.all([
+      getAllUiLabels(),
+      getHomePageQueries(cacheKey),
+      showFortuneCard ? fetchLatestAiFortunePost() : Promise.resolve(null),
+      buildHub ? fetchBuildPopularWeekly(5) : Promise.resolve([]),
+      ugcWeekly ? fetchUgcWeeklyTop(ugcWeekly, 5) : Promise.resolve([]),
+    ]);
 
   const launchSlides = launchBannerPosts.map((p) => ({
     id: p.id,
@@ -104,6 +122,11 @@ export default async function HomePage({ searchParams }: PageProps) {
 
   return (
     <>
+      {ugcPostedMessage ? (
+        <div className={styles.supabaseLinkError} role="status" style={{ borderColor: 'rgba(34,197,94,0.35)' }}>
+          <p className={styles.supabaseLinkErrorTitle}>{ugcPostedMessage}</p>
+        </div>
+      ) : null}
       {showInvalidEmailLinkBanner ? (
         <div className={styles.supabaseLinkError} role="alert">
           <p className={styles.supabaseLinkErrorTitle}>이메일 링크가 만료되었거나 유효하지 않습니다.</p>
@@ -188,6 +211,18 @@ export default async function HomePage({ searchParams }: PageProps) {
             </div>
           ) : null}
           {latestFortune ? <HomeFortuneCard fortune={latestFortune} /> : null}
+          {filterCategory === 'BUILD' && buildPopular.length > 0 ? (
+            <BuildHubSection
+              posts={buildPopular.map(serializeFeedPost)}
+              uploadHref="/upload?category=BUILD"
+            />
+          ) : null}
+          {ugcWeekly && weeklyTop.length > 0 ? (
+            <UgcWeeklyBest
+              categoryLabel={corridorLabel(ui, ugcWeekly)}
+              posts={weeklyTop}
+            />
+          ) : null}
           <HomeDeferredLower
             heroColumn={
               filterCategory && SHOW_HOME_MAIN_HERO ? (

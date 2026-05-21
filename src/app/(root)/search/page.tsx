@@ -8,8 +8,18 @@ import styles from './search.module.css';
 export const dynamic = 'force-dynamic';
 
 type PageProps = {
-  searchParams: Promise<{ q?: string | string[]; tag?: string | string[] }>;
+  searchParams: Promise<{
+    q?: string | string[];
+    tag?: string | string[];
+    corridor?: string | string[];
+  }>;
 };
+
+function parseCorridor(raw: string): 'BUILD' | 'LAUNCH' | undefined {
+  const k = raw.trim().toUpperCase();
+  if (k === 'BUILD' || k === 'LAUNCH') return k;
+  return undefined;
+}
 
 function firstParam(v: string | string[] | undefined): string {
   if (Array.isArray(v)) return (v[0] ?? '').trim();
@@ -49,9 +59,12 @@ export default async function SearchPage({ searchParams }: PageProps) {
   const sp = await searchParams;
   const q = firstParam(sp.q);
   const tag = firstParam(sp.tag);
+  const corridor = parseCorridor(firstParam(sp.corridor));
 
-  const hasQuery = q.length > 0 || tag.length > 0;
-  const results = hasQuery ? await searchPosts({ q, tag: tag || undefined }) : [];
+  const hasQuery = q.length > 0 || tag.length > 0 || Boolean(corridor);
+  const results = hasQuery
+    ? await searchPosts({ q, tag: tag || undefined, corridor })
+    : [];
 
   return (
     <>
@@ -71,6 +84,12 @@ export default async function SearchPage({ searchParams }: PageProps) {
                   <>
                     {' '}
                     + 키워드 &ldquo;{q}&rdquo;
+                  </>
+                ) : null}
+                {corridor ? (
+                  <>
+                    {' '}
+                    · 복도 <strong>{corridor}</strong>
                   </>
                 ) : null}{' '}
                 — {results.length}건

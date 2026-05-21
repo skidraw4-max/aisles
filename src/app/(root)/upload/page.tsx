@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { prisma } from '@/lib/prisma';
-import { labKindFromMetadataParams } from '@/lib/post-categories';
+import { labKindFromMetadataParams, parseUserUploadCategory } from '@/lib/post-categories';
 import { getLabel } from '@/lib/ui-config';
 import { SEO_ROBOTS_PRIVATE } from '@/lib/seo-robots';
 import { UploadForm, type UploadEditInitial } from './UploadForm';
@@ -27,7 +27,7 @@ export async function generateMetadata({
   };
 }
 
-type PageProps = { searchParams: Promise<{ edit?: string }> };
+type PageProps = { searchParams: Promise<{ edit?: string; category?: string }> };
 
 export default async function UploadPage({ searchParams }: PageProps) {
   const supabase = await createClient();
@@ -69,6 +69,7 @@ export default async function UploadPage({ searchParams }: PageProps) {
 
   const isEdit = Boolean(editInitial);
   const uploadPageTitle = await getLabel('header.upload');
+  const initialCategory = !editInitial ? parseUserUploadCategory(sp.category) ?? undefined : undefined;
 
   return (
     <>
@@ -93,7 +94,7 @@ export default async function UploadPage({ searchParams }: PageProps) {
               ? '내용을 바꾼 뒤 수정 저장하면 My Aisles로 돌아갑니다. 미디어를 바꾸려면 새 파일을 선택해 R2에 다시 올리면 됩니다.'
               : '나만의 작품과 아이디어를 자유롭게 공유해 보세요. 선택한 카테고리에 맞춰 글 작성이 시작됩니다.'}
           </p>
-          <UploadForm editInitial={editInitial} />
+          <UploadForm editInitial={editInitial} initialCategory={initialCategory} />
         </div>
       </main>
     </>

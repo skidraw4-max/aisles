@@ -5,7 +5,11 @@ import Link from 'next/link';
 import { useInView } from 'react-intersection-observer';
 import { Image } from 'lucide-react';
 import { MediaThumb } from '@/components/MediaThumb';
-import { categoryToHomeQuery, isFeedBoardListCategory } from '@/lib/post-categories';
+import {
+  categoryToHomeQuery,
+  isFeedBoardListCategory,
+  shouldHideAuthorInFeedList,
+} from '@/lib/post-categories';
 import { formatAiFortuneWeekKeyLabel } from '@/lib/ai-fortune/kst-week';
 import { fortuneSubtitleFromPost } from '@/lib/ai-fortune/latest-fortune';
 import { useCorridorLabel } from '@/components/UiLabelsProvider';
@@ -366,7 +370,7 @@ export function HomeAllFeed({ category, excludeIds, initialPosts, initialHasMore
   const boardList = isFeedBoardListCategory(category);
   const gossipReportStyle = category === 'GOSSIP';
   const loungeDateMeta = category === 'LOUNGE';
-  const hideAuthor = category === 'AI_FORTUNE';
+  const hideAuthor = category !== null && shouldHideAuthorInFeedList(category);
   const fortuneArchive = category === 'AI_FORTUNE' && boardList;
   const allCardFeed = category === null && !boardList;
 

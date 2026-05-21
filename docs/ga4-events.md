@@ -16,6 +16,10 @@
 | `fortune_digest_cta_view` | AI FORTUNE 상세 구독 CTA 노출 (1회) | `post_id` |
 | `retention_welcome_shown` | 로그인 후 환영 토스트 표시 | `reason` (`bookmarks` \| `subscribe`) |
 | `home_fortune_card_click` | 메인·LOUNGE 「이번 주 AI FORTUNE」 카드 클릭 | `post_id`, `week_key` |
+| `launch_banner_impression` | 메인 LAUNCH 배너 슬라이더 최초 노출 | `slot_count` |
+| `launch_banner_click` | LAUNCH 배너 슬라이드 클릭 | `post_id`, `slide_index` |
+| `build_hub_cta_upload` | BUILD 허브 「레시피 등록하기」 CTA | — |
+| `build_popular_click` | BUILD 허브 인기 레시피 행 클릭 | `post_id`, `rank` |
 
 ## 뉴스레터(다이제스트 메일) UTM
 
@@ -39,6 +43,8 @@ LOUNGE 다이제스트(Resend) 본문 링크는 URL 쿼리로 GA4에 유입을 �
 - `FortuneDigestSubscribeCta.tsx` — `fortune_subscribe_cta_click`, `fortune_digest_cta_view`
 - `RetentionWelcomeToast.tsx` — `retention_welcome_shown`
 - `HomeFortuneCard.tsx` — `home_fortune_card_click`
+- `LaunchFeedSlider.tsx` — `launch_banner_impression`, `launch_banner_click`
+- `BuildHubSection.tsx` — `build_hub_cta_upload`, `build_popular_click`
 - `PostBookmarkContext.tsx` / `GuestBookmarkSnackbar.tsx` — `guest_bookmark_*`
 - `PostRelatedPosts.tsx` — `related_post_click`
 - `src/app/api/cron/news-digest/route.ts` — 메일 UTM (`fortune_week` 포함)

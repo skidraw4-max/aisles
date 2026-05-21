@@ -1,8 +1,9 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { MediaThumb } from '@/components/MediaThumb';
+import { sendGAEvent } from '@/lib/ga4';
 import { useUiLabels } from '@/components/UiLabelsProvider';
 import pageStyles from '@/app/(root)/page.module.css';
 import styles from './LaunchFeedSlider.module.css';
@@ -25,6 +26,13 @@ export function LaunchFeedSlider({ slides }: Props) {
   const ariaSection = m?.['home.launch_slider.aria_section'] ?? '';
   const ariaSlideTpl = m?.['home.launch_slider.aria_slide'] ?? '';
   const [index, setIndex] = useState(0);
+  const impressionSent = useRef(false);
+
+  useEffect(() => {
+    if (slides.length === 0 || impressionSent.current) return;
+    impressionSent.current = true;
+    sendGAEvent('launch_banner_impression', { slot_count: slides.length });
+  }, [slides.length]);
 
   const go = useCallback(
     (i: number) => {
@@ -60,6 +68,9 @@ export function LaunchFeedSlider({ slides }: Props) {
               href={`/post/${slide.id}`}
               className={styles.slide}
               prefetch
+              onClick={() =>
+                sendGAEvent('launch_banner_click', { post_id: slide.id, slide_index: slideIndex })
+              }
             >
               <div className={styles.titleCol}>
                 <h2 className={styles.title}>{slide.title}</h2>

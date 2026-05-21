@@ -10,6 +10,8 @@ export type SearchPostsParams = {
   q?: string;
   /** 쿼리 `tag` — `normalizePostTagsInput` 후 첫 태그만 사용 */
   tag?: string;
+  /** 쿼리 `corridor` — BUILD | LAUNCH (홈 category 쿼리와 동일) */
+  corridor?: 'BUILD' | 'LAUNCH';
 };
 
 export type SearchPostHit = {
@@ -37,6 +39,7 @@ export async function searchPosts(params: SearchPostsParams): Promise<SearchPost
   if (q.length > MAX_QUERY_LEN) return [];
 
   const parts: Prisma.PostWhereInput[] = [];
+  if (params.corridor) parts.push({ category: params.corridor });
   if (tag) parts.push({ tags: { has: tag } });
   if (q.length > 0) {
     parts.push({

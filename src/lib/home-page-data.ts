@@ -1,6 +1,6 @@
 import type { Category } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
-import { fetchLatestForCategory } from '@/lib/home-composite';
+import { fetchLaunchBannerPosts } from '@/lib/ugc-hub';
 import { ALL_CARD_FEED_INITIAL_COUNT } from '@/lib/home-all-card-feed';
 import { fetchFeedPosts, type HomeFeedPost } from '@/lib/home-feed';
 
@@ -37,7 +37,7 @@ export async function getHomePageQueries(categoryKey: string) {
     fetchFeedPosts(0, initialHomeFeedTake(filterCategory), filterCategory, [], {
       excludeLoungeGossipFromAll: !filterCategory,
     }),
-    filterCategory ? Promise.resolve([] as HomeFeedPost[]) : fetchLatestForCategory('LAUNCH', 3),
+    filterCategory ? Promise.resolve([] as HomeFeedPost[]) : fetchLaunchBannerPosts(3),
   ]);
 
   return { recentAll, firstHomeFeed, launchBannerPosts };

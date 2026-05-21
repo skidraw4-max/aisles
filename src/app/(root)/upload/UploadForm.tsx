@@ -30,7 +30,11 @@ export type UploadEditInitial = {
   tags: string[];
 };
 
-type Props = { editInitial?: UploadEditInitial | null };
+type Props = {
+  editInitial?: UploadEditInitial | null;
+  /** `/upload?category=BUILD` 등 */
+  initialCategory?: Category;
+};
 
 function UploadCategoryOption({ value }: { value: Category }) {
   const label = useCorridorLabel(value);
@@ -67,7 +71,7 @@ function clipboardImageFile(e: React.ClipboardEvent): File | null {
   return null;
 }
 
-export function UploadForm({ editInitial = null }: Props) {
+export function UploadForm({ editInitial = null, initialCategory }: Props) {
   const router = useRouter();
   const [category, setCategory] = useState<Category>('GALLERY');
   const [title, setTitle] = useState('');
@@ -79,6 +83,7 @@ export function UploadForm({ editInitial = null }: Props) {
   const [pasteMessage, setPasteMessage] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [submitSuccess, setSubmitSuccess] = useState<string | null>(null);
   const [tags, setTags] = useState('');
   const [labPromptKind, setLabPromptKind] = useState<LabPromptKind>('visual');
 
@@ -139,7 +144,7 @@ export function UploadForm({ editInitial = null }: Props) {
 
   useEffect(() => {
     if (editInitial != null) return;
-    setCategory('GALLERY');
+    setCategory(initialCategory ?? 'GALLERY');
     setTitle('');
     setDescription('');
     setPrompt('');
@@ -148,7 +153,7 @@ export function UploadForm({ editInitial = null }: Props) {
     setLabPromptKind('visual');
     setMediaSlots([]);
     setPasteMessage(null);
-  }, [editInitial]);
+  }, [editInitial, initialCategory]);
 
   useEffect(() => {
     if (editInitial) return;
@@ -265,6 +270,8 @@ export function UploadForm({ editInitial = null }: Props) {
   const thumbnailOptional =
     categoryAllowsOptionalThumbnail(category) || (isLab && labPromptKind === 'marketing');
   const showServiceLink = category === 'BUILD' || category === 'LAUNCH';
+  const isLaunch = category === 'LAUNCH';
+  const isBuild = category === 'BUILD';
   const filledSlots = mediaSlots.filter((s) => s.url);
   const hasMedia = filledSlots.length > 0;
   const uploading = uploadCount > 0;
@@ -374,9 +381,21 @@ export function UploadForm({ editInitial = null }: Props) {
         },
         body: JSON.stringify(body),
       });
-      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      const data = (await res.json().catch(() => ({}))) as { error?: string; id?: string };
       if (!res.ok) throw new Error(data.error || '저장에 실패했습니다.');
-      router.push('/');
+      if (isLaunch) {
+        setSubmitSuccess(
+          '등록되었습니다. 메인 LAUNCH 배너는 운영팀 검토 후 노출됩니다. 썸네일·서비스 URL·피치가 있으면 후보 목록에 올라갑니다.'
+        );
+        router.push('/?category=LAUNCH&posted=launch');
+      } else if (isBuild) {
+        setSubmitSuccess(
+          '등록되었습니다. 이번 주 인기 레시피 후보로 집계됩니다. 좋아요가 많을수록 BUILD 허브 상단에 노출됩니다.'
+        );
+        router.push('/?category=BUILD&posted=build');
+      } else {
+        router.push('/');
+      }
       router.refresh();
     } catch (err: unknown) {
       setFormError(err instanceof Error ? err.message : '저장에 실패했습니다.');
@@ -395,6 +414,11 @@ export function UploadForm({ editInitial = null }: Props) {
       >
         ×
       </button>
+      {submitSuccess ? (
+        <p className={styles.msgOk} role="status">
+          {submitSuccess}
+        </p>
+      ) : null}
       {formError && (
         <p className={styles.msgErr} role="alert">
           {formError}
@@ -407,6 +431,24 @@ export function UploadForm({ editInitial = null }: Props) {
       )}
 
       <form className={styles.form} onSubmit={handleSubmit}>
+        {(isLaunch || isBuild) && !editInitial ? (
+          <div className={styles.hint} style={{ marginBottom: '0.75rem' }} role="note">
+            {isLaunch ? (
+              <ul style={{ margin: 0, paddingLeft: '1.1rem' }}>
+                <li>서비스 스크린샷(대표 미디어)을 올려 주세요.</li>
+                <li>데모·배포 URL을 서비스 연결 링크 또는 본문에 넣어 주세요.</li>
+                <li>한 줄 피치는 제목·설명에 담아 주세요.</li>
+              </ul>
+            ) : (
+              <ul style={{ margin: 0, paddingLeft: '1.1rem' }}>
+                <li>사용한 AI 도구·모델을 설명에 적어 주세요.</li>
+                <li>워크플로·단계를 요약해 주세요.</li>
+                <li>결과 스크린샷을 첨부하면 인기 레시피에 유리합니다.</li>
+              </ul>
+            )}
+          </div>
+        ) : null}
+
         <label className={styles.label}>
           카테고리{editInitial ? ' (수정 시 변경 불가)' : ''}
           <select
