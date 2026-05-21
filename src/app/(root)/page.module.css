@@ -433,6 +433,19 @@
   min-width: 0;
 }
 
+/* AI WORK·피드 좌측 열 — FORTUNE 카드가 우측 사이드바로 침범하지 않도록 */
+.homeFortuneSlot {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  margin-bottom: 1.25rem;
+  box-sizing: border-box;
+}
+
+.homeFortuneSlotAfterAiWork {
+  margin-top: 1.25rem;
+}
+
 .quasarBoardAside {
   min-width: 0;
   display: flex;

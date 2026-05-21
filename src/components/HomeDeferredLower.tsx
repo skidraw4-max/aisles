@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 import nextDynamic from 'next/dynamic';
 import type { Category } from '@prisma/client';
 import type { FeedPostJson } from '@/lib/home-feed';
-import type { LaunchFeedSlide } from '@/components/LaunchFeedSlider';
+import { LaunchFeedSlider, type LaunchFeedSlide } from '@/components/LaunchFeedSlider';
 import { useUiLabels } from '@/components/UiLabelsProvider';
 import styles from '@/app/(root)/page.module.css';
 
@@ -13,14 +13,6 @@ const TodaysBest = nextDynamic(
   {
     ssr: false,
     loading: () => <div className={styles.dynamicClientTodaysBestFallback} aria-hidden />,
-  }
-);
-
-const LaunchFeedSlider = nextDynamic(
-  () => import('@/components/LaunchFeedSlider').then((m) => ({ default: m.LaunchFeedSlider })),
-  {
-    ssr: false,
-    loading: () => <div className={styles.dynamicClientLaunchFallback} aria-hidden />,
   }
 );
 
@@ -41,6 +33,7 @@ const HomeAllFeed = nextDynamic(
 
 export type HomeDeferredLowerProps = {
   heroColumn?: ReactNode;
+  fortuneCard?: ReactNode;
   layoutRowNoHero: boolean;
   recentAside: ReactNode;
   filterCategory: Category | null;
@@ -57,6 +50,7 @@ export type HomeDeferredLowerProps = {
 /** 메인 하단: TodaysBest·LAUNCH·ALL 피드 등 무거운 클라 번들을 ssr:false로 분리 */
 export function HomeDeferredLower({
   heroColumn,
+  fortuneCard,
   layoutRowNoHero,
   recentAside,
   filterCategory,
@@ -85,6 +79,7 @@ export function HomeDeferredLower({
         </div>
       </div>
       <div className={styles.feedLayoutMainFeed}>
+        {fortuneCard}
         {!filterCategory ? (
           <div className={styles.launchBlockWrap}>
             <h2 className={styles.launchSectionHeading}>{launchHeading}</h2>

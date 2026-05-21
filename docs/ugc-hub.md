@@ -20,6 +20,8 @@ AIsle의 사용자 생성 콘텐츠(UGC) 허브 정책과 운영 가이드입니
 - 카테고리 `LAUNCH`
 - 메인 홈(`/?category` 없음) 슬라이더 **최대 3슬롯**
 
+후보가 없으면 LAUNCH 제목만 보이고 슬라이더는 렌더되지 않습니다. `/admin/launch-banners`에서 `featuredOnHome`을 켜 주세요.
+
 ### 관리
 
 - 경로: `/admin/launch-banners` (ADMIN)

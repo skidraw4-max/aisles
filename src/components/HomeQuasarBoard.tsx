@@ -11,7 +11,13 @@ import {
   fetchLatestLabGalleryEight,
 } from '@/lib/home-composite';
 import type { QuasarAsidePost } from '@/components/HomeQuasarAsideLists';
+import { HomeFortuneCard } from '@/components/HomeFortuneCard';
+import type { LatestAiFortuneSummary } from '@/lib/ai-fortune/latest-fortune.shared';
 import styles from '@/app/(root)/page.module.css';
+
+type HomeQuasarBoardProps = {
+  fortune?: LatestAiFortuneSummary | null;
+};
 
 function serializeAsidePost(post: HomeFeedPost): QuasarAsidePost {
   return {
@@ -99,7 +105,7 @@ function ShowcaseCard({
 }
 
 /** 퀘이사존식 메인: 좌측 LAB·GALLERY 최신 8칸(4×2), 우측 LOUNGE·GOSSIP 최신 리스트 */
-export async function HomeQuasarBoard() {
+export async function HomeQuasarBoard({ fortune }: HomeQuasarBoardProps = {}) {
   const [ui, { labGallery, community }] = await Promise.all([getAllUiLabels(), loadQuasarPayload()]);
 
   const loungeTitle = corridorLabel(ui, 'LOUNGE');
@@ -138,6 +144,11 @@ export async function HomeQuasarBoard() {
               ))}
             </ul>
           )}
+          {fortune ? (
+            <div className={`${styles.homeFortuneSlot} ${styles.homeFortuneSlotAfterAiWork}`}>
+              <HomeFortuneCard fortune={fortune} />
+            </div>
+          ) : null}
         </div>
 
         <HomeQuasarAsideListsLoader

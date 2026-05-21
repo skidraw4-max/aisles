@@ -210,7 +210,7 @@ export default async function HomePage({ searchParams }: PageProps) {
             className={`${styles.section} ${styles.sectionQuasarBeforeFeed}`}
             style={{ paddingTop: 8 }}
           >
-            <HomeQuasarBoard />
+            <HomeQuasarBoard fortune={!filterCategory && latestFortune ? latestFortune : null} />
           </section>
         ) : null}
 
@@ -222,7 +222,6 @@ export default async function HomePage({ searchParams }: PageProps) {
               <span className={styles.badge}>{corridorLabel(ui, filterCategory)}</span>
             </div>
           ) : null}
-          {latestFortune ? <HomeFortuneCard fortune={latestFortune} /> : null}
           {filterCategory === 'BUILD' && buildPopular.length > 0 ? (
             <BuildHubSection
               posts={buildPopular.map(serializeFeedPost)}
@@ -236,6 +235,13 @@ export default async function HomePage({ searchParams }: PageProps) {
             />
           ) : null}
           <HomeDeferredLower
+            fortuneCard={
+              filterCategory === 'LOUNGE' && latestFortune ? (
+                <div className={styles.homeFortuneSlot}>
+                  <HomeFortuneCard fortune={latestFortune} />
+                </div>
+              ) : null
+            }
             heroColumn={
               filterCategory && SHOW_HOME_MAIN_HERO ? (
                 <div className={styles.feedLayoutHeroFull}>

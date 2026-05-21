@@ -1,6 +1,10 @@
 .card {
   display: block;
-  margin: 0 0 1.25rem;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  margin: 0;
   padding: 1.15rem 1.25rem;
   border-radius: 12px;
   text-decoration: none;
