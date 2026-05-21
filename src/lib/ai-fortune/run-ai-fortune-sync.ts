@@ -119,12 +119,21 @@ export async function runAiFortuneSync(
     loadAiFortuneNewsContext(),
     loadAiFortuneAggregateContext(),
   ]);
-  const generated = await generateAiFortuneWeeklyContent(
+  let generated = await generateAiFortuneWeeklyContent(
     keyRes.key,
     news,
     aggregate,
     weekLabel,
   );
+  if (!generated.ok) {
+    console.warn('[ai-fortune] Gemini 1차 실패 — 1회 재시도', { error: generated.error });
+    generated = await generateAiFortuneWeeklyContent(
+      keyRes.key,
+      news,
+      aggregate,
+      weekLabel,
+    );
+  }
   if (!generated.ok) {
     return {
       ok: false,

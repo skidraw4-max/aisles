@@ -100,6 +100,9 @@ model Post {
   bookmarks   Bookmark[]
   comments    Comment[]
   createdAt   DateTime    @default(now())
+
+  @@index([category, createdAt(sort: Desc)])
+  @@index([featuredOnHome, launchBannerUntil])
 }
 
 /// 사용자가 저장한 글 (상세의 북마크 버튼과 연동)

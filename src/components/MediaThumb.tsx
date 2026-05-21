@@ -61,8 +61,7 @@ export function MediaThumb({
     );
   }
 
-  const useNextImage = priority && !intrinsic;
-  if (useNextImage) {
+  if (!intrinsic) {
     return (
       <Image
         src={url}
@@ -71,11 +70,11 @@ export function MediaThumb({
         className={cn}
         style={fit}
         sizes={sizes ?? DEFAULT_CARD_SIZES}
-        priority
+        priority={priority}
       />
     );
   }
 
-  // eslint-disable-next-line @next/next/no-img-element -- 비우선 로드·임의 호스트 폴백
+  // eslint-disable-next-line @next/next/no-img-element -- intrinsic 레이아웃(상세 전체 너비)
   return <img className={cn} style={fit} src={url} alt={alt} loading="lazy" decoding="async" />;
 }

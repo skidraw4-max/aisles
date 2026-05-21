@@ -13,7 +13,11 @@ import { isSupabaseAuthLinkError } from '@/lib/supabase-auth-url-errors';
 import { categoryKeyForCache, getHomePageQueries } from '@/lib/home-page-data';
 import { serializeFeedPost, type HomeFeedPost } from '@/lib/home-feed';
 import { applyTemplate, corridorLabel, getAllUiLabels } from '@/lib/ui-config';
-import { parseHomeCategoryQuery, shouldHideAuthorInRecentSidebar } from '@/lib/post-categories';
+import {
+  categoryToHomeQuery,
+  parseHomeCategoryQuery,
+  shouldHideAuthorInRecentSidebar,
+} from '@/lib/post-categories';
 import { getCanonicalSiteUrl } from '@/lib/canonical-site-url';
 import { fetchLatestAiFortunePost } from '@/lib/ai-fortune/latest-fortune.server';
 import { HomeFortuneCard } from '@/components/HomeFortuneCard';
@@ -44,20 +48,28 @@ export const revalidate = 60;
 export async function generateMetadata({ searchParams }: PageProps): Promise<Metadata> {
   const sp = await searchParams;
   const category = parseHomeCategoryQuery(sp.category);
-  if (category !== 'AI_FORTUNE') {
-    return {};
-  }
   const siteUrl = getCanonicalSiteUrl();
-  const pageUrl = `${siteUrl}/?category=AI_FORTUNE`;
-  return {
-    title: AI_FORTUNE_SEO_TITLE,
-    description: AI_FORTUNE_SEO_DESCRIPTION,
-    alternates: { canonical: pageUrl },
-    openGraph: {
+  if (!category) {
+    return { alternates: { canonical: siteUrl } };
+  }
+  const pageUrl = `${siteUrl}/?category=${categoryToHomeQuery(category)}`;
+  if (category === 'AI_FORTUNE') {
+    return {
       title: AI_FORTUNE_SEO_TITLE,
       description: AI_FORTUNE_SEO_DESCRIPTION,
-      url: pageUrl,
-    },
+      alternates: { canonical: pageUrl },
+      openGraph: {
+        title: AI_FORTUNE_SEO_TITLE,
+        description: AI_FORTUNE_SEO_DESCRIPTION,
+        url: pageUrl,
+      },
+    };
+  }
+  const ui = await getAllUiLabels();
+  const label = corridorLabel(ui, category);
+  return {
+    alternates: { canonical: pageUrl },
+    openGraph: { url: pageUrl, title: `${label} — AIsle` },
   };
 }
 

@@ -1,5 +1,6 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
+import { isCronRateLimited } from '@/lib/cron-rate-limit';
 import { shouldAllowSearchIndexing } from '@/lib/seo-robots';
 
 /**
@@ -32,6 +33,15 @@ function isPublicPath(pathname: string): boolean {
 }
 
 export async function middleware(request: NextRequest) {
+  const pathname = request.nextUrl.pathname;
+  if (pathname.startsWith('/api/cron/') && pathname !== '/api/cron/health') {
+    if (isCronRateLimited(request)) {
+      return applyIndexingPolicy(
+        NextResponse.json({ ok: false, error: 'RATE_LIMITED' }, { status: 429 }),
+      );
+    }
+  }
+
   // Supabase가 redirectTo 미허용 시 Site URL의 루트로만 ?code= 붙여 보내는 경우:
   // 홈은 코드 교환을 하지 않으므로 콜백으로 넘겨 세션 만든 뒤 비밀번호 변경 페이지로 보냄.
   if (request.nextUrl.pathname === '/' && request.nextUrl.searchParams.has('code')) {
@@ -39,8 +49,6 @@ export async function middleware(request: NextRequest) {
     u.pathname = '/auth/reset-callback';
     return applyIndexingPolicy(NextResponse.redirect(u));
   }
-
-  const pathname = request.nextUrl.pathname;
 
   /** 공개 경로·업로드 외 페이지는 세션 검사 생략 → 홈 등 첫 로딩 시 Supabase 왕복 제거 */
   if (isPublicPath(pathname) || !pathname.startsWith('/upload')) {

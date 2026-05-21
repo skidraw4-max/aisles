@@ -601,7 +601,7 @@ export default async function PostPage({ params }: Props) {
 
   const postUrl = `${siteBase}/post/${post.id}`;
   const articleJsonLd =
-    isBuildOrLaunch
+    isBuildOrLaunch || isLoungeOrGossip
       ? {
           '@context': 'https://schema.org',
           '@type': 'Article',

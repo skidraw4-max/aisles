@@ -156,6 +156,7 @@ function PostThumbnailCompactRemote({
       alt={alt}
       width={40}
       height={40}
+      sizes="40px"
       className={pageStyles.recentThumbImg}
       onError={onError}
     />
@@ -179,7 +180,11 @@ export function PostThumbnail({
   const letterVariant = categoryToLetterVariant(category);
   const labKind = resolveLabKind(category, labPromptKind, metadataParams);
 
-  const defaultSizes = sizes ?? '(max-width: 479px) 100vw, (max-width: 959px) 50vw, 25vw';
+  const defaultSizes =
+    sizes ??
+    (layout === 'sidebarPopular'
+      ? '96px'
+      : '(max-width: 479px) 100vw, (max-width: 959px) 50vw, 25vw');
 
   const nonLabEmpty = (() => {
     switch (layout) {

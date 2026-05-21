@@ -23,6 +23,10 @@ if (direct) {
   );
 }
 
+if (!run('node', ['scripts/check-no-prisma-in-client.cjs'])) {
+  process.exit(1);
+}
+
 if (!run('node', ['scripts/write-ads-txt.cjs'])) {
   process.exit(1);
 }

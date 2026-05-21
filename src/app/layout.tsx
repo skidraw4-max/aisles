@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Script from 'next/script';
+import { SpeedInsights } from '@vercel/speed-insights/next';
 import { Syne, DM_Sans, Roboto_Mono } from 'next/font/google';
 import { HomeSupabaseRedirectHandler } from '@/components/HomeSupabaseRedirectHandler';
 import { getCanonicalSiteUrl } from '@/lib/canonical-site-url';
@@ -166,6 +167,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
         <HomeSupabaseRedirectHandler />
         {children}
+        <SpeedInsights />
       </body>
     </html>
   );

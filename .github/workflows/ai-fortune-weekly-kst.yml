@@ -18,7 +18,21 @@ jobs:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
           set -euo pipefail
-          curl -sS -X POST "${CRON_SITE_URL}/api/cron/ai-fortune" \
+          curl -fsS -X POST "${CRON_SITE_URL}/api/cron/ai-fortune" \
             -H "Authorization: Bearer ${CRON_SECRET}" \
             -H "Content-Type: application/json" \
             -w "\nHTTP %{http_code}\n"
+
+      - name: Notify cron failure
+        if: failure()
+        env:
+          CRON_ALERT_WEBHOOK_URL: ${{ secrets.CRON_ALERT_WEBHOOK_URL }}
+        run: |
+          MSG="[AIsle cron] AI FORTUNE workflow failed: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          if [ -z "${CRON_ALERT_WEBHOOK_URL:-}" ]; then
+            echo "[cron-alert] CRON_ALERT_WEBHOOK_URL unset — $MSG"
+            exit 0
+          fi
+          curl -fsS -X POST "$CRON_ALERT_WEBHOOK_URL" \
+            -H "Content-Type: application/json" \
+            -d "{\"text\":$(printf '%s' "$MSG" | jq -Rs .)}" || echo "[cron-alert] webhook POST failed"
