@@ -1,6 +1,6 @@
 import type { Category } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
-import { fetchLaunchBannerPosts } from '@/lib/ugc-hub';
+import { fetchLaunchBannerPosts } from '@/lib/ugc-hub.server';
 import { ALL_CARD_FEED_INITIAL_COUNT } from '@/lib/home-all-card-feed';
 import { fetchFeedPosts, type HomeFeedPost } from '@/lib/home-feed';
 

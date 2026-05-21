@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { sendGAEvent } from '@/lib/ga4';
-import { extractBuildFilterKeys } from '@/lib/ugc-hub';
+import { extractBuildFilterKeys } from '@/lib/ugc-hub.shared';
 import type { FeedPostJson } from '@/lib/home-feed';
 import styles from './build-hub-section.module.css';
 

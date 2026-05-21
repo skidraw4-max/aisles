@@ -15,11 +15,11 @@ import { serializeFeedPost, type HomeFeedPost } from '@/lib/home-feed';
 import { applyTemplate, corridorLabel, getAllUiLabels } from '@/lib/ui-config';
 import { parseHomeCategoryQuery, shouldHideAuthorInRecentSidebar } from '@/lib/post-categories';
 import { getCanonicalSiteUrl } from '@/lib/canonical-site-url';
-import { fetchLatestAiFortunePost } from '@/lib/ai-fortune/latest-fortune';
+import { fetchLatestAiFortunePost } from '@/lib/ai-fortune/latest-fortune.server';
 import { HomeFortuneCard } from '@/components/HomeFortuneCard';
 import { BuildHubSection } from '@/components/BuildHubSection';
 import { UgcWeeklyBest } from '@/components/UgcWeeklyBest';
-import { fetchBuildPopularWeekly, fetchUgcWeeklyTop } from '@/lib/ugc-hub';
+import { fetchBuildPopularWeekly, fetchUgcWeeklyTop } from '@/lib/ugc-hub.server';
 import type { Category } from '@prisma/client';
 import styles from './page.module.css';
 

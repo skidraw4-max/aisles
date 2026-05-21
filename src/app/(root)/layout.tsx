@@ -5,7 +5,7 @@ import { UiLabelsProvider } from '@/components/UiLabelsProvider';
 import { getRollingNoticesForBar } from '@/app/notices/actions';
 import { getAllUiLabels } from '@/lib/ui-config';
 import { getInitialSession } from '@/lib/auth-initial-session';
-import { fetchLatestAiFortunePost } from '@/lib/ai-fortune/latest-fortune';
+import { fetchLatestAiFortunePost } from '@/lib/ai-fortune/latest-fortune.server';
 import { RetentionWelcomeToast } from '@/components/RetentionWelcomeToast';
 
 export default async function RootShellLayout({ children }: { children: React.ReactNode }) {

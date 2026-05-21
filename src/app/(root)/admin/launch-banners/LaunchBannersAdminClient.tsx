@@ -7,7 +7,7 @@ import {
   setLaunchBannerAdminAction,
   unfeatureLaunchBannerAdminAction,
 } from './actions';
-import type { LaunchBannerAdminRow } from '@/lib/ugc-hub';
+import type { LaunchBannerAdminRow } from '@/lib/ugc-hub.shared';
 import styles from './launch-banners-admin.module.css';
 
 type Props = {

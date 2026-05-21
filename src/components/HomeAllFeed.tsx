@@ -11,7 +11,7 @@ import {
   shouldHideAuthorInFeedList,
 } from '@/lib/post-categories';
 import { formatAiFortuneWeekKeyLabel } from '@/lib/ai-fortune/kst-week';
-import { fortuneSubtitleFromPost } from '@/lib/ai-fortune/latest-fortune';
+import { fortuneSubtitleFromPost } from '@/lib/ai-fortune/latest-fortune.shared';
 import { useCorridorLabel } from '@/components/UiLabelsProvider';
 import { PostThumbnail } from '@/components/post/PostThumbnail';
 import type { Category } from '@prisma/client';

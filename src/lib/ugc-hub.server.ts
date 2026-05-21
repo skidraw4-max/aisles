@@ -1,7 +1,7 @@
-import type { Category } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { HOME_FEED_INCLUDE, type HomeFeedPost } from '@/lib/home-feed';
 import { MIN_POST_DESCRIPTION_LENGTH } from '@/lib/post-description-policy';
+import type { LaunchBannerAdminRow } from '@/lib/ugc-hub.shared';
 
 const MS_7_DAYS = 7 * 24 * 60 * 60 * 1000;
 
@@ -83,17 +83,6 @@ export async function fetchLaunchBannerCandidates(take = 30): Promise<HomeFeedPo
   }
 }
 
-export type LaunchBannerAdminRow = {
-  id: string;
-  title: string;
-  featuredOnHome: boolean;
-  launchBannerUntil: string | null;
-  createdAt: string;
-  views: number;
-  likeCount: number;
-  hasThumbnail: boolean;
-};
-
 export async function fetchLaunchPostsForAdmin(): Promise<{
   active: LaunchBannerAdminRow[];
   candidates: LaunchBannerAdminRow[];
@@ -119,23 +108,4 @@ export async function fetchLaunchPostsForAdmin(): Promise<{
     active: activePosts.map(toRow),
     candidates: candidatePosts.filter((p) => !activeIds.has(p.id)).map(toRow),
   };
-}
-
-/** metadata.params 내 도구·태그 필터 키 추출 */
-export function extractBuildFilterKeys(params: unknown): string[] {
-  if (!params || typeof params !== 'object' || params === null) return [];
-  const o = params as Record<string, unknown>;
-  const keys: string[] = [];
-  if (typeof o.tool === 'string' && o.tool.trim()) keys.push(o.tool.trim());
-  if (typeof o.buildTool === 'string' && o.buildTool.trim()) keys.push(o.buildTool.trim());
-  if (Array.isArray(o.tools)) {
-    for (const t of o.tools) {
-      if (typeof t === 'string' && t.trim()) keys.push(t.trim());
-    }
-  }
-  return [...new Set(keys)];
-}
-
-export function isUgcHubCategory(category: Category | null): category is 'BUILD' | 'LAUNCH' {
-  return category === 'BUILD' || category === 'LAUNCH';
 }

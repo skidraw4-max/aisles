@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { sendGAEvent } from '@/lib/ga4';
-import type { LatestAiFortuneSummary } from '@/lib/ai-fortune/latest-fortune';
+import type { LatestAiFortuneSummary } from '@/lib/ai-fortune/latest-fortune.shared';
 import styles from './home-fortune-card.module.css';
 
 type Props = {
