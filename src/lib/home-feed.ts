@@ -79,9 +79,14 @@ export async function fetchFeedPosts(
       ...(excludeIds.length > 0 ? { id: { notIn: excludeIds } } : {}),
     };
 
+    const orderBy: Prisma.PostOrderByWithRelationInput | Prisma.PostOrderByWithRelationInput[] =
+      category === 'AI_FORTUNE'
+        ? [{ aiFortuneWeekKey: 'desc' }, { createdAt: 'desc' }]
+        : { createdAt: 'desc' };
+
     const posts = await prisma.post.findMany({
       where,
-      orderBy: { createdAt: 'desc' },
+      orderBy,
       skip,
       take: take + 1,
       include: HOME_FEED_INCLUDE,

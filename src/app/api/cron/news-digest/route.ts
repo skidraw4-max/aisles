@@ -26,6 +26,22 @@ export const maxDuration = 60;
 
 const MAX_RECIPIENTS_PER_RUN = 100;
 
+/** LOUNGE 다이제스트 본문 최대 건수(에디터 픽 1건 포함). */
+const DIGEST_LOUNGE_SLOT_MAX = 8;
+
+type DigestPostRow = {
+  id: string;
+  title: string;
+  content: string | null;
+  createdAt: Date;
+};
+
+type DigestFortuneRow = {
+  id: string;
+  title: string;
+  aiFortuneWeekKey: string | null;
+};
+
 type DigestSlot = 0 | 1;
 
 const SLOT_END_HOURS_KST = [6, 18] as const;
@@ -204,10 +220,28 @@ function digestEmailBannerHtml(siteUrl: string, slot: DigestSlot): string {
 </table>`;
 }
 
+function fortuneSectionHtml(
+  fortune: DigestFortuneRow,
+  siteUrl: string,
+  slot: DigestSlot,
+): string {
+  const href = buildDigestUrl(siteUrl, slot, `/post/${fortune.id}`, {
+    utm_content: 'fortune_week',
+  });
+  return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:600px;margin:24px auto 0;border-collapse:collapse;border-radius:12px;border:1px solid rgba(57,255,20,0.35);background:linear-gradient(145deg,#071a0f 0%,#020804 100%);">
+  <tr><td style="padding:18px 20px">
+    <p style="margin:0 0 8px;font-size:13px;font-weight:700;color:#39ff14;letter-spacing:0.06em">🔮 이번 주 AI FORTUNE</p>
+    <p style="margin:0 0 12px;font-size:15px;line-height:1.45;color:#e8fff0"><a href="${href}" style="color:#7fff9a;font-weight:700;text-decoration:none">${fortune.title}</a></p>
+    <a href="${href}" style="display:inline-block;padding:10px 16px;border-radius:8px;background:rgba(57,255,20,0.15);border:1px solid rgba(57,255,20,0.45);color:#39ff14;font-size:13px;font-weight:700;text-decoration:none">주간 운세 · MBTI 리포트 보기</a>
+  </td></tr>
+</table>`;
+}
+
 function renderDigestEmail(
-  posts: Array<{ id: string; title: string; content: string | null; createdAt: Date }>,
+  posts: DigestPostRow[],
   slot: DigestSlot,
   windowLabel: string,
+  fortune: DigestFortuneRow | null,
 ) {
   const siteUrl = getCanonicalSiteUrl();
   const topPost = posts[0];
@@ -256,15 +290,77 @@ function renderDigestEmail(
   <td style="padding-right:10px"><a href="${topStoryHref}" style="display:inline-block;padding:12px 20px;border-radius:10px;background:#6d5dfc;color:#fff;font-weight:700;font-size:14px;text-decoration:none">오늘의 핵심 글 읽기</a></td>
   <td><a href="${loungeHref}" style="display:inline-block;padding:12px 18px;border-radius:10px;border:1px solid #cbd5e1;color:#334155;font-weight:600;font-size:14px;text-decoration:none">AI 트렌드 전체</a></td>
 </tr></table>`;
+  const fortuneHtml = fortune ? fortuneSectionHtml(fortune, siteUrl, slot) : '';
+  const fortuneText = fortune
+    ? `\n\n🔮 이번 주 AI FORTUNE\n${fortune.title}\n${buildDigestUrl(siteUrl, slot, `/post/${fortune.id}`, { utm_content: 'fortune_week' })}\n`
+    : '';
   const preheaderHtml = `<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:#f8fafc">${preheader}${'&#847; '.repeat(12)}</div>`;
 
   return {
     subject,
-    html: `${preheaderHtml}<div style="font-family:system-ui,-apple-system,Segoe UI,sans-serif;max-width:640px;margin:0 auto;padding:24px;color:#111">${bannerHtml}${digestIntro}<h1 style="font-size:22px;margin:0 0 12px">AIsle AI NEWS</h1><p style="margin:0 0 8px;color:#555">수집 구간 (KST): ${windowLabel}</p><p style="margin:0 0 22px;color:#555">이번 구간에 등록된 LOUNGE AI 트렌드입니다.</p><ol style="padding-left:20px;margin:0">${itemsHtml}</ol>${ctaHtml}<p style="margin:20px 0 0;color:#777;font-size:13px;line-height:1.5"><a href="${manageHref}" style="color:#6d5dfc;text-decoration:none">구독 설정 변경</a> · 로그인 후 AI 트렌드(LOUNGE)에서 뉴스 구독을 켜거나 끌 수 있습니다.</p></div>`,
+    html: `${preheaderHtml}<div style="font-family:system-ui,-apple-system,Segoe UI,sans-serif;max-width:640px;margin:0 auto;padding:24px;color:#111">${bannerHtml}${digestIntro}<h1 style="font-size:22px;margin:0 0 12px">AIsle AI NEWS</h1><p style="margin:0 0 8px;color:#555">수집 구간 (KST): ${windowLabel}</p><p style="margin:0 0 22px;color:#555">이번 구간에 등록된 LOUNGE AI 트렌드입니다.</p><ol style="padding-left:20px;margin:0">${itemsHtml}</ol>${ctaHtml}${fortuneHtml}<p style="margin:20px 0 0;color:#777;font-size:13px;line-height:1.5"><a href="${manageHref}" style="color:#6d5dfc;text-decoration:none">구독 설정 변경</a> · 로그인 후 AI 트렌드(LOUNGE)에서 뉴스 구독을 켜거나 끌 수 있습니다.</p></div>`,
     text: `AIsle — The Island of AI Knowledge\n${preheader}\n\nEXPLORE: ${homeWithUtm} (${digestHost})\n\n${slotEmoji} LOUNGE AI 트렌드 — 지난 12시간 핵심 ${posts.length}건\n\nAIsle AI NEWS\n\n수집 구간 (KST): ${windowLabel}\n이번 구간에 등록된 LOUNGE AI 트렌드입니다.\n\n${lines.join(
       '\n\n',
-    )}\n\n오늘의 핵심: ${topStoryHref}\nAI 트렌드 전체: ${loungeHref}\n구독 설정: ${manageHref}`,
+    )}\n\n오늘의 핵심: ${topStoryHref}\nAI 트렌드 전체: ${loungeHref}\n구독 설정: ${manageHref}${fortuneText}`,
   };
+}
+
+/**
+ * 글로벌 다이제스트(구독자 전원 동일 본문) LOUNGE 선정 규칙:
+ * 1) 구간 내 likeCount 최상위 1건(스포트라이트)
+ * 2) 나머지 슬롯은 LOUNGE 등록일 최신순(1번 제외)
+ * 3) 여유 슬롯 1건은 BUILD/LAUNCH 최신 에디터 픽(구간 내)
+ */
+async function pickDigestLoungePosts(start: Date, end: Date): Promise<DigestPostRow[]> {
+  const select = { id: true, title: true, content: true, createdAt: true } as const;
+
+  const topLiked = await prisma.post.findFirst({
+    where: { category: 'LOUNGE', createdAt: { gte: start, lt: end } },
+    orderBy: [{ likeCount: 'desc' }, { createdAt: 'desc' }],
+    select,
+  });
+
+  const chronological = await prisma.post.findMany({
+    where: {
+      category: 'LOUNGE',
+      createdAt: { gte: start, lt: end },
+      ...(topLiked ? { id: { not: topLiked.id } } : {}),
+    },
+    orderBy: { createdAt: 'desc' },
+    take: DIGEST_LOUNGE_SLOT_MAX,
+    select,
+  });
+
+  const editorPick = await prisma.post.findFirst({
+    where: {
+      category: { in: ['BUILD', 'LAUNCH'] },
+      createdAt: { gte: start, lt: end },
+    },
+    orderBy: { createdAt: 'desc' },
+    select,
+  });
+
+  const seen = new Set<string>();
+  const merged: DigestPostRow[] = [];
+  const push = (row: DigestPostRow | null | undefined) => {
+    if (!row || seen.has(row.id)) return;
+    seen.add(row.id);
+    merged.push(row);
+  };
+
+  push(topLiked);
+  for (const row of chronological) push(row);
+  push(editorPick);
+
+  return merged.slice(0, DIGEST_LOUNGE_SLOT_MAX);
+}
+
+async function fetchLatestFortuneForDigest(): Promise<DigestFortuneRow | null> {
+  return prisma.post.findFirst({
+    where: { category: 'AI_FORTUNE' },
+    orderBy: { createdAt: 'desc' },
+    select: { id: true, title: true, aiFortuneWeekKey: true },
+  });
 }
 
 function formatKstRange(start: Date, end: Date): string {
@@ -298,15 +394,10 @@ async function handle(req: NextRequest) {
   const { start, end } = windowOverride ?? digestWindowForSlot(slot, ref);
   const windowLabel = formatKstRange(start, end);
 
-  const posts = await prisma.post.findMany({
-    where: {
-      category: 'LOUNGE',
-      createdAt: { gte: start, lt: end },
-    },
-    orderBy: { createdAt: 'desc' },
-    take: 50,
-    select: { id: true, title: true, content: true, createdAt: true },
-  });
+  const [posts, fortunePost] = await Promise.all([
+    pickDigestLoungePosts(start, end),
+    fetchLatestFortuneForDigest(),
+  ]);
 
   if (posts.length === 0) {
     return NextResponse.json({
@@ -315,6 +406,7 @@ async function handle(req: NextRequest) {
       window: { start: start.toISOString(), end: end.toISOString() },
       sent: 0,
       skipped: 'no_posts_in_window',
+      fortuneIncluded: Boolean(fortunePost),
     });
   }
 
@@ -325,7 +417,7 @@ async function handle(req: NextRequest) {
     select: { email: true },
   });
 
-  const email = renderDigestEmail(posts, slot, windowLabel);
+  const email = renderDigestEmail(posts, slot, windowLabel, fortunePost);
   let sent = 0;
   const failures: Array<{ email: string; error: string; status?: number }> = [];
 
@@ -348,6 +440,7 @@ async function handle(req: NextRequest) {
     slot,
     window: { start: start.toISOString(), end: end.toISOString() },
     postsInWindow: posts.length,
+    fortuneIncluded: Boolean(fortunePost),
     subscribers: subscribers.length,
     sent,
     failed: failures.length,

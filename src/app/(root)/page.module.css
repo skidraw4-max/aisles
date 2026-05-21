@@ -1159,6 +1159,31 @@
   letter-spacing: 0.08em;
 }
 
+.fortuneArchiveHeading {
+  margin: 0 0 0.5rem;
+  font-size: var(--type-14);
+  font-weight: 700;
+  color: #39ff14;
+  letter-spacing: 0.06em;
+}
+
+.fortuneArchiveHeadingPast {
+  margin: 1.25rem 0 0.5rem;
+  font-size: var(--type-13);
+  font-weight: 600;
+  color: #8fb89a;
+  letter-spacing: 0.04em;
+}
+
+.feedBoardFortuneWeek {
+  display: block;
+  font-size: var(--type-12);
+  font-weight: 600;
+  color: #39ff14;
+  margin-bottom: 0.15rem;
+  letter-spacing: 0.03em;
+}
+
 .feedBoardList {
   list-style: none;
   margin: 0;

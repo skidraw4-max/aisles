@@ -321,7 +321,7 @@ export default async function PostPage({ params }: Props) {
         }),
         prisma.user.findUnique({
           where: { id: user.id },
-          select: { username: true, avatarUrl: true },
+          select: { username: true, avatarUrl: true, newsletterSubscribed: true },
         }),
       ])
     : [null, null, null];
@@ -391,6 +391,7 @@ export default async function PostPage({ params }: Props) {
         currentAvatarUrl={meProfile?.avatarUrl ?? null}
         initialLiked={Boolean(likedRow)}
         initialBookmarked={Boolean(bookmarkRow)}
+        newsletterSubscribed={meProfile?.newsletterSubscribed ?? false}
         prevPost={prevPost}
         nextPost={nextPost}
         related={relatedSidebar}

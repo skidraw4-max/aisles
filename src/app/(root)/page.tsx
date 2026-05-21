@@ -15,6 +15,8 @@ import { serializeFeedPost, type HomeFeedPost } from '@/lib/home-feed';
 import { applyTemplate, corridorLabel, getAllUiLabels } from '@/lib/ui-config';
 import { parseHomeCategoryQuery, shouldHideAuthorInRecentSidebar } from '@/lib/post-categories';
 import { getCanonicalSiteUrl } from '@/lib/canonical-site-url';
+import { fetchLatestAiFortunePost } from '@/lib/ai-fortune/latest-fortune';
+import { HomeFortuneCard } from '@/components/HomeFortuneCard';
 import type { Category } from '@prisma/client';
 import styles from './page.module.css';
 
@@ -81,9 +83,11 @@ export default async function HomePage({ searchParams }: PageProps) {
   const showInvalidEmailLinkBanner = isSupabaseAuthLinkError(authErrParams);
 
   const cacheKey = categoryKeyForCache(filterCategory);
-  const [ui, { recentAll, firstHomeFeed, launchBannerPosts }] = await Promise.all([
+  const showFortuneCard = !filterCategory || filterCategory === 'LOUNGE';
+  const [ui, { recentAll, firstHomeFeed, launchBannerPosts }, latestFortune] = await Promise.all([
     getAllUiLabels(),
     getHomePageQueries(cacheKey),
+    showFortuneCard ? fetchLatestAiFortunePost() : Promise.resolve(null),
   ]);
 
   const launchSlides = launchBannerPosts.map((p) => ({
@@ -183,6 +187,7 @@ export default async function HomePage({ searchParams }: PageProps) {
               <span className={styles.badge}>{corridorLabel(ui, filterCategory)}</span>
             </div>
           ) : null}
+          {latestFortune ? <HomeFortuneCard fortune={latestFortune} /> : null}
           <HomeDeferredLower
             heroColumn={
               filterCategory && SHOW_HOME_MAIN_HERO ? (

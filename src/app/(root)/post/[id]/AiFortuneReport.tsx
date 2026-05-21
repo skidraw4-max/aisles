@@ -2,6 +2,7 @@ import Link from 'next/link';
 import type { ReactNode } from 'react';
 import type { AiFortuneWeeklyPayload } from '@/lib/ai-fortune/payload';
 import { MbtiTypeIcon } from '@/lib/ai-fortune/mbti-icons';
+import { AiFortuneMbtiHashScroll } from './AiFortuneMbtiHashScroll';
 import styles from './ai-fortune-report.module.css';
 
 type Props = {
@@ -32,6 +33,7 @@ export function AiFortuneReport({
 
   return (
     <article className={styles.report}>
+      <AiFortuneMbtiHashScroll />
       <nav className={styles.breadcrumb} aria-label="경로">
         <Link href="/?category=AI_FORTUNE">AI FORTUNE</Link>
         <span aria-hidden> / </span>
@@ -71,7 +73,7 @@ export function AiFortuneReport({
         </h2>
         <div className={styles.grid}>
           {payload.mbti.map((entry) => (
-            <article key={entry.type} className={styles.card}>
+            <article key={entry.type} id={`mbti-${entry.type}`} className={styles.card}>
               <header className={styles.cardHeader}>
                 <MbtiTypeIcon type={entry.type} className={styles.cardIcon} />
                 <span className={styles.cardType}>{entry.type}</span>

@@ -6,6 +6,8 @@ import { useInView } from 'react-intersection-observer';
 import { Image } from 'lucide-react';
 import { MediaThumb } from '@/components/MediaThumb';
 import { categoryToHomeQuery, isFeedBoardListCategory } from '@/lib/post-categories';
+import { formatAiFortuneWeekKeyLabel } from '@/lib/ai-fortune/kst-week';
+import { fortuneSubtitleFromPost } from '@/lib/ai-fortune/latest-fortune';
 import { useCorridorLabel } from '@/components/UiLabelsProvider';
 import { PostThumbnail } from '@/components/post/PostThumbnail';
 import type { Category } from '@prisma/client';
@@ -87,19 +89,33 @@ function FeedPostCard({ post, imagePriority }: { post: FeedPostJson; imagePriori
   );
 }
 
+function fortuneBoardMeta(post: FeedPostJson): string | null {
+  if (post.category !== 'AI_FORTUNE') return null;
+  if (post.aiFortuneWeekKey) return formatAiFortuneWeekKeyLabel(post.aiFortuneWeekKey);
+  return fortuneSubtitleFromPost({
+    title: post.title,
+    createdAt: new Date(post.createdAt),
+    aiFortuneWeekKey: post.aiFortuneWeekKey ?? null,
+    aiFortunePayload: null,
+  });
+}
+
 function FeedBoardRow({
   post,
   gossipReportStyle,
   showDateInMeta,
   hideAuthor,
+  showFortuneWeek,
 }: {
   post: FeedPostJson;
   gossipReportStyle: boolean;
   showDateInMeta: boolean;
   hideAuthor: boolean;
+  showFortuneWeek?: boolean;
 }) {
   const cc = commentCount(post);
   const hasMedia = Boolean(post.thumbnail?.trim());
+  const weekMeta = showFortuneWeek ? fortuneBoardMeta(post) : null;
 
   return (
     <li className={styles.feedBoardRow}>
@@ -121,6 +137,11 @@ function FeedBoardRow({
             <span className={styles.feedBoardMediaIconSpacer} aria-hidden />
           )}
           <span className={styles.feedBoardFreeTitleLine}>
+            {weekMeta ? (
+              <span className={styles.feedBoardFortuneWeek} title={weekMeta}>
+                {weekMeta}
+              </span>
+            ) : null}
             <span className={styles.feedBoardTitleStr}>{post.title}</span>
             <span className={styles.feedBoardCommentBadge} title={`댓글 ${cc}개`}>
               [{cc}]
@@ -279,11 +300,13 @@ function FeedBoardTable({
   gossipReportStyle,
   showDateInMeta,
   hideAuthor,
+  showFortuneWeek,
 }: {
   posts: FeedPostJson[];
   gossipReportStyle: boolean;
   showDateInMeta: boolean;
   hideAuthor: boolean;
+  showFortuneWeek?: boolean;
 }) {
   return (
     <>
@@ -310,6 +333,7 @@ function FeedBoardTable({
                 gossipReportStyle={gossipReportStyle}
                 showDateInMeta={showDateInMeta}
                 hideAuthor={hideAuthor}
+                showFortuneWeek={showFortuneWeek}
               />
             ))}
           </ul>
@@ -343,6 +367,7 @@ export function HomeAllFeed({ category, excludeIds, initialPosts, initialHasMore
   const gossipReportStyle = category === 'GOSSIP';
   const loungeDateMeta = category === 'LOUNGE';
   const hideAuthor = category === 'AI_FORTUNE';
+  const fortuneArchive = category === 'AI_FORTUNE' && boardList;
   const allCardFeed = category === null && !boardList;
 
   const [visibleCount, setVisibleCount] = useState(() =>
@@ -441,6 +466,29 @@ export function HomeAllFeed({ category, excludeIds, initialPosts, initialHasMore
           아직 게시글이 없습니다. 첫 번째 주인공이 되어보세요!{' '}
           <Link href="/upload">업로드 페이지로 이동</Link>
         </p>
+      ) : fortuneArchive ? (
+        <>
+          <h3 className={styles.fortuneArchiveHeading}>이번 주</h3>
+          <FeedBoardTable
+            posts={posts.slice(0, 1)}
+            gossipReportStyle={gossipReportStyle}
+            showDateInMeta={loungeDateMeta}
+            hideAuthor={hideAuthor}
+            showFortuneWeek
+          />
+          {posts.length > 1 ? (
+            <>
+              <h3 className={styles.fortuneArchiveHeadingPast}>지난 주차</h3>
+              <FeedBoardTable
+                posts={posts.slice(1)}
+                gossipReportStyle={gossipReportStyle}
+                showDateInMeta={loungeDateMeta}
+                hideAuthor={hideAuthor}
+                showFortuneWeek
+              />
+            </>
+          ) : null}
+        </>
       ) : boardList ? (
         <FeedBoardTable
           posts={posts}

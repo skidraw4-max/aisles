@@ -34,6 +34,17 @@ export function aiFortuneWeekKey(date: Date = new Date()): string {
   return `${year}-${String(month).padStart(2, '0')}-W${week}`;
 }
 
+/** DB 키 `2026-05-W3` → 표시용 `2026년 5월 3주차` */
+export function formatAiFortuneWeekKeyLabel(weekKey: string): string {
+  const m = /^(\d{4})-(\d{2})-W(\d+)$/.exec(weekKey.trim());
+  if (!m) return weekKey;
+  const year = Number(m[1]);
+  const month = Number(m[2]);
+  const week = Number(m[3]);
+  if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(week)) return weekKey;
+  return `${year}년 ${month}월 ${week}주차`;
+}
+
 export function aiFortunePostTitle(date: Date = new Date()): string {
   const { month } = getKstParts(date);
   const week = weekOfMonthKst(date);

@@ -3,6 +3,7 @@ import type { Category } from '@prisma/client';
 import { aiFortunePayloadFromDb } from '@/lib/ai-fortune/payload';
 import { homeHrefForCategory } from '@/lib/post-categories';
 import { AiFortuneReport } from './AiFortuneReport';
+import { FortuneDigestSubscribeCta } from './FortuneDigestSubscribeCta';
 import { PostEngagement } from './PostEngagement';
 import { PostLikeProvider } from './PostLikeContext';
 import { PostBookmarkProvider } from './PostBookmarkContext';
@@ -38,6 +39,7 @@ type Props = {
   currentAvatarUrl: string | null;
   initialLiked: boolean;
   initialBookmarked: boolean;
+  newsletterSubscribed: boolean;
   prevPost: { id: string; title: string } | null;
   nextPost: { id: string; title: string } | null;
   related: SidebarRelatedItem[];
@@ -54,6 +56,7 @@ export function AiFortunePostView({
   currentAvatarUrl,
   initialLiked,
   initialBookmarked,
+  newsletterSubscribed,
   prevPost,
   nextPost,
   related,
@@ -96,6 +99,11 @@ export function AiFortunePostView({
               createdAt={post.createdAt}
               payload={payload}
               engagement={engagement}
+            />
+            <FortuneDigestSubscribeCta
+              postId={post.id}
+              isLoggedIn={Boolean(currentUserId)}
+              newsletterSubscribed={newsletterSubscribed}
             />
           </div>
           <div className={postStyles.magazineSidebar}>

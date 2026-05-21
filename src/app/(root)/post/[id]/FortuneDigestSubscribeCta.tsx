@@ -3,17 +3,16 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { sendGAEvent } from '@/lib/ga4';
-import { setRetentionWelcomePending } from '@/lib/retention-session';
 import { getPublicSiteUrl } from '@/lib/site-url';
-import styles from './post-scroll-subscribe-modal.module.css';
+import { setRetentionWelcomePending } from '@/lib/retention-session';
+import styles from './fortune-digest-subscribe-cta.module.css';
 
-const SESSION_SHOWN_KEY = 'aisle:post-scroll-subscribe-shown';
 const PENDING_SUBSCRIBE_KEY = 'aisle:pending-news-subscribe';
-const SCROLL_THRESHOLD = 0.6;
 
 type Props = {
-  isLoggedIn: boolean;
   postId: string;
+  isLoggedIn: boolean;
+  newsletterSubscribed: boolean;
 };
 
 function buildOAuthCallbackUrl(): string {
@@ -42,58 +41,19 @@ async function subscribeNewsletter(token: string): Promise<boolean> {
   return res.ok;
 }
 
-export function PostScrollSubscribeModal({ isLoggedIn, postId }: Props) {
-  const [visible, setVisible] = useState(false);
+export function FortuneDigestSubscribeCta({ postId, isLoggedIn, newsletterSubscribed }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const shownRef = useRef(false);
-
-  const dismiss = useCallback(() => {
-    sendGAEvent('digest_modal_dismiss', { post_id: postId });
-    setVisible(false);
-    try {
-      sessionStorage.setItem(SESSION_SHOWN_KEY, '1');
-    } catch {
-      /* ignore */
-    }
-  }, [postId]);
+  const viewSentRef = useRef(false);
 
   useEffect(() => {
-    if (isLoggedIn) return;
-
-    try {
-      if (sessionStorage.getItem(SESSION_SHOWN_KEY) === '1') return;
-    } catch {
-      return;
-    }
-
-    const onScroll = () => {
-      if (shownRef.current) return;
-      const doc = document.documentElement;
-      const scrollTop = window.scrollY || doc.scrollTop;
-      const viewport = window.innerHeight;
-      const total = Math.max(doc.scrollHeight - viewport, 1);
-      const depth = scrollTop / total;
-      if (depth >= SCROLL_THRESHOLD) {
-        shownRef.current = true;
-        setVisible(true);
-        sendGAEvent('digest_modal_view', { post_id: postId });
-        try {
-          sessionStorage.setItem(SESSION_SHOWN_KEY, '1');
-        } catch {
-          /* ignore */
-        }
-        window.removeEventListener('scroll', onScroll);
-      }
-    };
-
-    window.addEventListener('scroll', onScroll, { passive: true });
-    onScroll();
-    return () => window.removeEventListener('scroll', onScroll);
-  }, [isLoggedIn, postId]);
+    if (newsletterSubscribed || viewSentRef.current) return;
+    viewSentRef.current = true;
+    sendGAEvent('fortune_digest_cta_view', { post_id: postId });
+  }, [newsletterSubscribed, postId]);
 
   useEffect(() => {
-    if (!isLoggedIn) return;
+    if (!isLoggedIn || newsletterSubscribed) return;
     let cancelled = false;
     void (async () => {
       try {
@@ -118,10 +78,10 @@ export function PostScrollSubscribeModal({ isLoggedIn, postId }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [isLoggedIn]);
+  }, [isLoggedIn, newsletterSubscribed]);
 
-  const handleGoogleSubscribe = async () => {
-    sendGAEvent('digest_modal_subscribe', { post_id: postId });
+  const handleGoogleSubscribe = useCallback(async () => {
+    sendGAEvent('fortune_subscribe_cta_click', { post_id: postId });
     setError(null);
     setLoading(true);
     try {
@@ -148,28 +108,18 @@ export function PostScrollSubscribeModal({ isLoggedIn, postId }: Props) {
       setError(err instanceof Error ? err.message : 'Google 계정으로 진행할 수 없습니다.');
       setLoading(false);
     }
-  };
+  }, [postId]);
 
-  if (isLoggedIn || !visible) return null;
+  if (newsletterSubscribed) return null;
 
   return (
-    <div
-      className={`${styles.panel} ${styles.panelOpen}`}
-      role="dialog"
-      aria-modal="false"
-      aria-labelledby="post-scroll-subscribe-title"
-    >
-      <div className={styles.head}>
-        <h2 id="post-scroll-subscribe-title" className={styles.title}>
-          AI 트렌드 다이제스트
-        </h2>
-        <button type="button" className={styles.close} onClick={dismiss} aria-label="닫기">
-          ×
-        </button>
-      </div>
+    <section className={styles.wrap} aria-labelledby="fortune-digest-cta-title">
+      <h2 id="fortune-digest-cta-title" className={styles.title}>
+        📬 AI 트렌드 다이제스트 구독
+      </h2>
       <p className={styles.body}>
-        바쁜 일상 속 최신 AI 핵심 요약, 놓치지 마세요! 📬 매주 전달되는 AI 트렌드 다이제스트를
-        메일로 받아보세요.
+        LOUNGE 핵심 요약과 함께, 매주 AI FORTUNE 주간 리포트 소식도 메일로 받아보세요. Google 계정으로
+        3초 만에 구독할 수 있습니다.
       </p>
       <button
         type="button"
@@ -184,6 +134,6 @@ export function PostScrollSubscribeModal({ isLoggedIn, postId }: Props) {
           {error}
         </p>
       ) : null}
-    </div>
+    </section>
   );
 }

@@ -20,6 +20,7 @@ import {
   removeGuestBookmark,
 } from '@/lib/guest-bookmarks';
 import { sendGAEvent } from '@/lib/ga4';
+import { setRetentionWelcomePending } from '@/lib/retention-session';
 import { GuestBookmarkSnackbar } from './GuestBookmarkSnackbar';
 
 type PostBookmarkContextValue = {
@@ -86,6 +87,7 @@ export function PostBookmarkProvider({
       )
     );
     clearGuestBookmarks();
+    setRetentionWelcomePending('bookmarks');
     router.refresh();
   }, [router]);
 
