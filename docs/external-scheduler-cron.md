@@ -27,8 +27,17 @@
 | 4 | `/api/cron/aibreakfast` | 동일 |
 | 5 | `/api/cron/mit-news` | 동일 |
 | 6 | `/api/cron/youtube-sync` | 동일 |
+| 7 | `/api/cron/news-digest` | LOUNGE 뉴스 다이제스트 메일 (`?slot=0\|1`, `RESEND_API_KEY`, `EMAIL_FROM`) |
 
 강제 재수집 시 URL 예: `https://www.aisleshub.com/api/cron/geeknews?force=true`
+
+### LOUNGE 뉴스 다이제스트 메일 (`/api/cron/news-digest`)
+
+- **스케줄:** KST 06·18시 직후 — GitHub Actions `.github/workflows/news-digest-kst.yml` (UTC 21·9시, `slot=0`·`1`).
+- **슬롯:** `slot=0` 전일 18:00~당일 06:00 KST · `slot=1` 06:00~18:00 KST.
+- **수신:** `newsletterSubscribed=true` 사용자 (Resend, 제목·본문은 `src/app/api/cron/news-digest/route.ts`).
+- **딥링크:** 글 → `https://www.aisleshub.com/post/{id}` (`getCanonicalSiteUrl`). GA4 UTM: `utm_source=newsletter`, `utm_medium=email`, `utm_campaign=digest_am` (아침) / `digest_pm` (저녁). CTA·구독 설정 링크는 `utm_content` (`cta_top`, `cta_lounge`, `manage_subscription` 등).
+- **제목 예:** `☀️ 오늘 아침 AI 3분 요약 · {헤드라인}` / `🌙 저녁 AI 핵심 브리핑 · {헤드라인}` (발송 시 `[AIsle]` 접두사 추가).
 
 ---
 

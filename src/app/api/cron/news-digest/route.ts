@@ -108,14 +108,64 @@ function stripForEmail(content: string | null | undefined): string {
     .trim();
 }
 
-function digestSubjectLine(slot: DigestSlot): string {
-  const h = SLOT_END_HOURS_KST[slot];
-  return `AI NEWS 다이제스트 (${String(h).padStart(2, '0')}시 KST 구간)`;
+function digestUtmCampaign(slot: DigestSlot): 'digest_am' | 'digest_pm' {
+  return slot === 0 ? 'digest_am' : 'digest_pm';
+}
+
+function buildDigestUrl(
+  siteUrl: string,
+  slot: DigestSlot,
+  path: string,
+  extra?: Record<string, string>,
+): string {
+  const base = siteUrl.replace(/\/$/, '');
+  const url = new URL(path.startsWith('/') ? path : `/${path}`, `${base}/`);
+  url.searchParams.set('utm_source', 'newsletter');
+  url.searchParams.set('utm_medium', 'email');
+  url.searchParams.set('utm_campaign', digestUtmCampaign(slot));
+  if (extra) {
+    for (const [k, v] of Object.entries(extra)) {
+      url.searchParams.set(k, v);
+    }
+  }
+  return url.href;
+}
+
+function postDigestUrl(siteUrl: string, slot: DigestSlot, postId: string): string {
+  return buildDigestUrl(siteUrl, slot, `/post/${postId}`);
+}
+
+function truncateForSubject(text: string, maxLen: number): string {
+  const t = text.trim();
+  if (t.length <= maxLen) return t;
+  const slice = t.slice(0, maxLen - 1);
+  const breakAt = Math.max(slice.lastIndexOf(' '), slice.lastIndexOf('·'));
+  if (breakAt >= Math.floor(maxLen * 0.45)) return `${slice.slice(0, breakAt)}…`;
+  return `${slice}…`;
+}
+
+/** sendEmail() → buildEmailSubject() 로 [AIsle] 접두사가 붙음. 모바일 제목은 ~40자 권장. */
+function digestSubjectLine(slot: DigestSlot, topTitle?: string | null): string {
+  const base = slot === 0 ? '☀️ 오늘 아침 AI 3분 요약' : '🌙 저녁 AI 핵심 브리핑';
+  const headline = topTitle?.trim();
+  if (!headline) return base;
+  const maxHeadline = base.length + 3 >= 28 ? 18 : 22;
+  return `${base} · ${truncateForSubject(headline, maxHeadline)}`;
+}
+
+function digestPreheader(slot: DigestSlot, posts: Array<{ title: string }>): string {
+  const count = posts.length;
+  const top = posts[0]?.title?.trim();
+  const slotLabel = slot === 0 ? '아침' : '저녁';
+  if (top) {
+    return `${truncateForSubject(top, 48)} · LOUNGE AI 트렌드 ${count}건 (${slotLabel})`;
+  }
+  return `LOUNGE AI 트렌드 ${count}건 — ${slotLabel} 다이제스트`;
 }
 
 /** 뉴스레터 상단 브랜드 배너 (이메일 클라이언트 호환용 테이블 + 인라인 SVG) */
-function digestEmailBannerHtml(siteUrl: string): string {
-  const homeHref = `${siteUrl.replace(/\/$/, '')}/`;
+function digestEmailBannerHtml(siteUrl: string, slot: DigestSlot): string {
+  const homeHref = buildDigestUrl(siteUrl, slot, '/', { utm_content: 'banner_home' });
   const linkT = 'target="_blank" rel="noopener noreferrer"';
   const host = (() => {
     try {
@@ -160,10 +210,24 @@ function renderDigestEmail(
   windowLabel: string,
 ) {
   const siteUrl = getCanonicalSiteUrl();
-  const subject = digestSubjectLine(slot);
+  const topPost = posts[0];
+  const subject = digestSubjectLine(slot, topPost?.title);
+  const preheader = digestPreheader(slot, posts);
+  const loungeHref = buildDigestUrl(siteUrl, slot, '/', {
+    category: 'LOUNGE',
+    utm_content: 'cta_lounge',
+  });
+  const topStoryHref = topPost
+    ? buildDigestUrl(siteUrl, slot, `/post/${topPost.id}`, { utm_content: 'cta_top' })
+    : loungeHref;
+  const manageHref = buildDigestUrl(siteUrl, slot, '/', {
+    category: 'LOUNGE',
+    utm_content: 'manage_subscription',
+  });
+
   const itemsHtml = posts
     .map((post) => {
-      const url = new URL(`/post/${post.id}`, `${siteUrl}/`).href;
+      const url = postDigestUrl(siteUrl, slot, post.id);
       const summary = stripForEmail(post.content).slice(0, 160);
       return `<li style="margin:0 0 18px"><a href="${url}" style="font-weight:700;color:#6d5dfc;text-decoration:none">${post.title}</a>${
         summary ? `<p style="margin:6px 0 0;color:#444;line-height:1.5">${summary}</p>` : ''
@@ -172,12 +236,12 @@ function renderDigestEmail(
     .join('');
 
   const lines = posts.map((post, index) => {
-    const url = new URL(`/post/${post.id}`, `${siteUrl}/`).href;
+    const url = postDigestUrl(siteUrl, slot, post.id);
     const summary = stripForEmail(post.content).slice(0, 160);
     return `${index + 1}. ${post.title}\n${url}${summary ? `\n${summary}` : ''}`;
   });
 
-  const bannerHtml = digestEmailBannerHtml(siteUrl);
+  const bannerHtml = digestEmailBannerHtml(siteUrl, slot);
   const digestHost = (() => {
     try {
       return new URL(siteUrl).hostname.replace(/^www\./i, '') || 'aisleshub.com';
@@ -185,15 +249,21 @@ function renderDigestEmail(
       return 'aisleshub.com';
     }
   })();
-  const digestIntro =
-    '<p style="margin:0 0 16px;color:#475569;font-size:14px;font-weight:500;letter-spacing:0.01em;">Your digest of the latest AI trends</p>';
+  const homeWithUtm = buildDigestUrl(siteUrl, slot, '/', { utm_content: 'text_home' });
+  const slotEmoji = slot === 0 ? '☀️' : '🌙';
+  const digestIntro = `<p style="margin:0 0 16px;color:#475569;font-size:14px;font-weight:500;letter-spacing:0.01em;">${slotEmoji} LOUNGE AI 트렌드 — 지난 12시간 핵심 ${posts.length}건</p>`;
+  const ctaHtml = `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:28px 0 8px"><tr>
+  <td style="padding-right:10px"><a href="${topStoryHref}" style="display:inline-block;padding:12px 20px;border-radius:10px;background:#6d5dfc;color:#fff;font-weight:700;font-size:14px;text-decoration:none">오늘의 핵심 글 읽기</a></td>
+  <td><a href="${loungeHref}" style="display:inline-block;padding:12px 18px;border-radius:10px;border:1px solid #cbd5e1;color:#334155;font-weight:600;font-size:14px;text-decoration:none">AI 트렌드 전체</a></td>
+</tr></table>`;
+  const preheaderHtml = `<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:#f8fafc">${preheader}${'&#847; '.repeat(12)}</div>`;
 
   return {
     subject,
-    html: `<div style="font-family:system-ui,-apple-system,Segoe UI,sans-serif;max-width:640px;margin:0 auto;padding:24px;color:#111">${bannerHtml}${digestIntro}<h1 style="font-size:22px;margin:0 0 12px">AIsle AI NEWS</h1><p style="margin:0 0 8px;color:#555">수집 구간 (KST): ${windowLabel}</p><p style="margin:0 0 22px;color:#555">이번 구간에 등록된 AI NEWS 입니다.</p><ol style="padding-left:20px;margin:0">${itemsHtml}</ol><p style="margin:24px 0 0;color:#777;font-size:13px">구독 설정은 로그인 후 AIsle에서 변경할 수 있습니다.</p></div>`,
-    text: `AIsle — The Island of AI Knowledge\nEXPLORE THE FULL ISLAND: ${siteUrl}/ (${digestHost})\n\nYour digest of the latest AI trends\n\nAIsle AI NEWS\n\n수집 구간 (KST): ${windowLabel}\n이번 구간에 등록된 AI NEWS 입니다.\n\n${lines.join(
+    html: `${preheaderHtml}<div style="font-family:system-ui,-apple-system,Segoe UI,sans-serif;max-width:640px;margin:0 auto;padding:24px;color:#111">${bannerHtml}${digestIntro}<h1 style="font-size:22px;margin:0 0 12px">AIsle AI NEWS</h1><p style="margin:0 0 8px;color:#555">수집 구간 (KST): ${windowLabel}</p><p style="margin:0 0 22px;color:#555">이번 구간에 등록된 LOUNGE AI 트렌드입니다.</p><ol style="padding-left:20px;margin:0">${itemsHtml}</ol>${ctaHtml}<p style="margin:20px 0 0;color:#777;font-size:13px;line-height:1.5"><a href="${manageHref}" style="color:#6d5dfc;text-decoration:none">구독 설정 변경</a> · 로그인 후 AI 트렌드(LOUNGE)에서 뉴스 구독을 켜거나 끌 수 있습니다.</p></div>`,
+    text: `AIsle — The Island of AI Knowledge\n${preheader}\n\nEXPLORE: ${homeWithUtm} (${digestHost})\n\n${slotEmoji} LOUNGE AI 트렌드 — 지난 12시간 핵심 ${posts.length}건\n\nAIsle AI NEWS\n\n수집 구간 (KST): ${windowLabel}\n이번 구간에 등록된 LOUNGE AI 트렌드입니다.\n\n${lines.join(
       '\n\n',
-    )}\n\n구독 설정은 로그인 후 AIsle에서 변경할 수 있습니다.`,
+    )}\n\n오늘의 핵심: ${topStoryHref}\nAI 트렌드 전체: ${loungeHref}\n구독 설정: ${manageHref}`,
   };
 }
 

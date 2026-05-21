@@ -13,6 +13,17 @@
 | `guest_bookmark_login_click` | 북마크 스낵바 로그인 클릭 | `post_id` |
 | `related_post_click` | 상세 하단 관련 글 카드 클릭 | `from_post_id`, `to_post_id` |
 
+## 뉴스레터(다이제스트 메일) UTM
+
+LOUNGE 다이제스트(Resend) 본문 링크는 URL 쿼리로 GA4에 유입을 구분한다. 클라이언트 `sendGAEvent`는 사용하지 않는다.
+
+| 파라미터 | 값 |
+|----------|-----|
+| `utm_source` | `newsletter` |
+| `utm_medium` | `email` |
+| `utm_campaign` | `digest_am` (KST 06시 슬롯) · `digest_pm` (18시 슬롯) |
+| `utm_content` | (선택) `cta_top`, `cta_lounge`, `banner_home`, `manage_subscription` 등 |
+
 ## 구현 위치
 
 - `AiFortunePromoBanner.tsx` — `fortune_banner_click`
