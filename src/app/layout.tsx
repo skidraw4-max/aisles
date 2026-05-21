@@ -3,6 +3,7 @@ import Script from 'next/script';
 import { Syne, DM_Sans, Roboto_Mono } from 'next/font/google';
 import { HomeSupabaseRedirectHandler } from '@/components/HomeSupabaseRedirectHandler';
 import { getCanonicalSiteUrl } from '@/lib/canonical-site-url';
+import { GA_MEASUREMENT_ID } from '@/lib/ga4';
 import { rootLayoutRobots } from '@/lib/seo-robots';
 import './globals.css';
 
@@ -23,8 +24,6 @@ const mono = Roboto_Mono({
   variable: '--font-mono',
   weight: ['400', '500', '700'],
 });
-
-const GA_MEASUREMENT_ID = 'G-BH4L4PYCJT';
 
 const ADSENSE_CLIENT_ID = 'ca-pub-2237287742271246';
 
@@ -144,18 +143,22 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           // eslint-disable-next-line react/no-danger
           dangerouslySetInnerHTML={{ __html: JSON.stringify(siteJsonLd) }}
         />
-        <Script
-          src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
-          strategy="afterInteractive"
-        />
-        <Script id="google-analytics-gtag" strategy="afterInteractive">
-          {`
+        {GA_MEASUREMENT_ID ? (
+          <>
+            <Script
+              src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
+              strategy="afterInteractive"
+            />
+            <Script id="google-analytics-gtag" strategy="afterInteractive">
+              {`
             window.dataLayer = window.dataLayer || [];
             function gtag(){dataLayer.push(arguments);}
             gtag('js', new Date());
             gtag('config', '${GA_MEASUREMENT_ID}');
           `}
-        </Script>
+            </Script>
+          </>
+        ) : null}
         <Script
           src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT_ID}`}
           strategy="lazyOnload"

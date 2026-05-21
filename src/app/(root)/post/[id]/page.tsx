@@ -43,6 +43,7 @@ import { SEO_ROBOTS_PUBLIC } from '@/lib/seo-robots';
 import { PostDescriptionEmptyCallout } from './PostDescriptionEmptyCallout';
 import { AiFortunePostView } from './AiFortunePostView';
 import { AiFortunePromoBanner } from './AiFortunePromoBanner';
+import { PostRelatedPosts } from './PostRelatedPosts';
 import { PostScrollSubscribeModal } from './PostScrollSubscribeModal';
 import { getKstParts, weekOfMonthKst } from '@/lib/ai-fortune/kst-week';
 import styles from './post.module.css';
@@ -241,8 +242,16 @@ export default async function PostPage({ params }: Props) {
     prisma.post.findMany({
       where: { category: post.category, id: { not: id } },
       orderBy: { createdAt: 'desc' },
-      take: 4,
-      select: { id: true, title: true, likeCount: true },
+      take: 5,
+      select: {
+        id: true,
+        title: true,
+        thumbnail: true,
+        likeCount: true,
+        category: true,
+        author: { select: { username: true } },
+        metadata: { select: { params: true } },
+      },
     }),
     prisma.post.findMany({
       where: { id: { not: id }, createdAt: { gte: weekAgo } },
@@ -438,6 +447,15 @@ export default async function PostPage({ params }: Props) {
     id: p.id,
     title: p.title,
     likeCount: p.likeCount,
+  }));
+
+  const relatedPostsInline = relatedPosts.map((p) => ({
+    id: p.id,
+    title: p.title,
+    thumbnail: p.thumbnail,
+    category: p.category,
+    authorUsername: p.author.username,
+    metadataParams: p.metadata?.params,
   }));
 
   const popularSidebar = popularPosts.map((p) => ({
@@ -766,7 +784,13 @@ export default async function PostPage({ params }: Props) {
 
                 <PostTags tags={post.tags} />
 
-                <AiFortunePromoBanner ctaHref={aiFortuneCtaHref} />
+                <AiFortunePromoBanner
+                  ctaHref={aiFortuneCtaHref}
+                  postId={post.id}
+                  category={post.category}
+                />
+
+                <PostRelatedPosts fromPostId={post.id} posts={relatedPostsInline} />
 
                   <PostEngagement
                     postId={post.id}
@@ -796,7 +820,7 @@ export default async function PostPage({ params }: Props) {
           </div>
         </div>
       </main>
-      <PostScrollSubscribeModal isLoggedIn={Boolean(user)} />
+      <PostScrollSubscribeModal isLoggedIn={Boolean(user)} postId={post.id} />
     </>
   );
 }

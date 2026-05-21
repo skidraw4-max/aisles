@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { sendGAEvent } from '@/lib/ga4';
 import { getPublicSiteUrl } from '@/lib/site-url';
 import styles from './post-scroll-subscribe-modal.module.css';
 
@@ -11,6 +12,7 @@ const SCROLL_THRESHOLD = 0.6;
 
 type Props = {
   isLoggedIn: boolean;
+  postId: string;
 };
 
 function buildOAuthCallbackUrl(): string {
@@ -39,20 +41,21 @@ async function subscribeNewsletter(token: string): Promise<boolean> {
   return res.ok;
 }
 
-export function PostScrollSubscribeModal({ isLoggedIn }: Props) {
+export function PostScrollSubscribeModal({ isLoggedIn, postId }: Props) {
   const [visible, setVisible] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const shownRef = useRef(false);
 
   const dismiss = useCallback(() => {
+    sendGAEvent('digest_modal_dismiss', { post_id: postId });
     setVisible(false);
     try {
       sessionStorage.setItem(SESSION_SHOWN_KEY, '1');
     } catch {
       /* ignore */
     }
-  }, []);
+  }, [postId]);
 
   useEffect(() => {
     if (isLoggedIn) return;
@@ -73,6 +76,7 @@ export function PostScrollSubscribeModal({ isLoggedIn }: Props) {
       if (depth >= SCROLL_THRESHOLD) {
         shownRef.current = true;
         setVisible(true);
+        sendGAEvent('digest_modal_view', { post_id: postId });
         try {
           sessionStorage.setItem(SESSION_SHOWN_KEY, '1');
         } catch {
@@ -85,7 +89,7 @@ export function PostScrollSubscribeModal({ isLoggedIn }: Props) {
     window.addEventListener('scroll', onScroll, { passive: true });
     onScroll();
     return () => window.removeEventListener('scroll', onScroll);
-  }, [isLoggedIn]);
+  }, [isLoggedIn, postId]);
 
   useEffect(() => {
     if (!isLoggedIn) return;
@@ -115,6 +119,7 @@ export function PostScrollSubscribeModal({ isLoggedIn }: Props) {
   }, [isLoggedIn]);
 
   const handleGoogleSubscribe = async () => {
+    sendGAEvent('digest_modal_subscribe', { post_id: postId });
     setError(null);
     setLoading(true);
     try {

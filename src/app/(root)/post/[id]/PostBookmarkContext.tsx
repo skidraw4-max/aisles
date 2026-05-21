@@ -19,6 +19,7 @@ import {
   isGuestBookmarked,
   removeGuestBookmark,
 } from '@/lib/guest-bookmarks';
+import { sendGAEvent } from '@/lib/ga4';
 import { GuestBookmarkSnackbar } from './GuestBookmarkSnackbar';
 
 type PostBookmarkContextValue = {
@@ -119,6 +120,7 @@ export function PostBookmarkProvider({
       try {
         if (next) {
           addGuestBookmark(postId);
+          sendGAEvent('guest_bookmark_save', { post_id: postId });
           setGuestSnackbarOpen(true);
         } else {
           removeGuestBookmark(postId);
@@ -174,7 +176,11 @@ export function PostBookmarkProvider({
   return (
     <PostBookmarkContext.Provider value={value}>
       {children}
-      <GuestBookmarkSnackbar open={guestSnackbarOpen} onLogin={() => setAuthOpen(true)} />
+      <GuestBookmarkSnackbar
+        open={guestSnackbarOpen}
+        postId={postId}
+        onLogin={() => setAuthOpen(true)}
+      />
       <AuthModal
         open={authOpen}
         onClose={() => setAuthOpen(false)}
