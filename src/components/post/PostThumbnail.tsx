@@ -111,6 +111,10 @@ function LabPromptArchivePlaceholder({
   );
 }
 
+export function hasValidPostThumbnail(thumbnail: string | null | undefined): boolean {
+  return typeof thumbnail === 'string' && thumbnail.trim().length > 0;
+}
+
 export type PostThumbnailProps = {
   thumbnail: string | null | undefined;
   category: Category;
@@ -121,6 +125,67 @@ export type PostThumbnailProps = {
   priority?: boolean;
   sizes?: string;
 };
+
+function PostThumbnailSidebarPopular({
+  raw,
+  alt,
+  onFailed,
+}: {
+  raw: string;
+  alt: string;
+  onFailed: () => void;
+}) {
+  const onError = useCallback(() => {
+    onFailed();
+  }, [onFailed]);
+
+  if (isVideoUrl(raw)) {
+    return (
+      <MediaThumb
+        url={raw}
+        alt={alt}
+        objectFit="cover"
+        sizes="96px"
+        className={postStyles.sidebarPopularThumbImg}
+      />
+    );
+  }
+
+  return (
+    <Image
+      src={raw}
+      alt={alt}
+      fill
+      sizes="96px"
+      className={postStyles.sidebarPopularThumbImg}
+      style={{ objectFit: 'cover' }}
+      onError={onError}
+    />
+  );
+}
+
+/** 포스트 상세 사이드바 "이번 주 인기 추천" — 썸네일 없거나 로드 실패 시 영역 숨김 */
+export function SidebarPopularThumb({
+  thumbnail,
+  alt = '',
+}: Pick<PostThumbnailProps, 'thumbnail' | 'alt'>) {
+  const raw = typeof thumbnail === 'string' ? thumbnail.trim() : '';
+  const [hidden, setHidden] = useState(!hasValidPostThumbnail(thumbnail));
+
+  useEffect(() => {
+    setHidden(!hasValidPostThumbnail(thumbnail));
+  }, [thumbnail]);
+
+  if (!raw || hidden) {
+    return null;
+  }
+
+  return (
+    <div className={postStyles.sidebarPopularThumb}>
+      <PostThumbnailSidebarPopular raw={raw} alt={alt} onFailed={() => setHidden(true)} />
+    </div>
+  );
+}
 
 function PostThumbnailCompactRemote({
   src,
@@ -199,17 +264,26 @@ export function PostThumbnail({
       case 'myAislesCard':
         return <div className={myAislesStyles.placeholder} aria-hidden />;
       case 'sidebarPopular':
-        return <div className={postStyles.sidebarPopularThumbPh} aria-hidden />;
+        return null;
       default:
         return null;
     }
   })();
 
   if (!raw) {
+    if (layout === 'sidebarPopular') {
+      return null;
+    }
     if (category === 'RECIPE' && labKind) {
       return <LabPromptArchivePlaceholder kind={labKind} layout={layout} />;
     }
     return nonLabEmpty;
+  }
+
+  if (layout === 'sidebarPopular') {
+    return (
+      <PostThumbnailSidebarPopular raw={raw} alt={alt} onFailed={() => undefined} />
+    );
   }
 
   if (layout === 'compact') {

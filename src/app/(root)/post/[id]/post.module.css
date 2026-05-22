@@ -1982,6 +1982,10 @@
   background: rgba(99, 102, 241, 0.06);
 }
 
+.sidebarPopularCardTextOnly {
+  gap: 0;
+}
+
 .sidebarPopularThumb {
   position: relative;
   width: 100%;

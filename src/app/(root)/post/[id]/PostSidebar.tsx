@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import type { Category } from '@prisma/client';
-import { PostThumbnail } from '@/components/post/PostThumbnail';
+import { hasValidPostThumbnail, SidebarPopularThumb } from '@/components/post/PostThumbnail';
 import { corridorLabel } from '@/lib/ui-config';
 import { ExternalServiceCta } from './ExternalServiceCta';
 import { LaunchVisitProjectCta } from './LaunchVisitProjectCta';
@@ -77,16 +77,13 @@ export function PostSidebar({ category, related, popular, externalLink, uiLabels
           <ul className={styles.sidebarPopularList}>
             {popular.map((p) => (
               <li key={p.id}>
-                <Link href={`/post/${p.id}`} className={styles.sidebarPopularCard}>
-                  <div className={styles.sidebarPopularThumb}>
-                    <PostThumbnail
-                      thumbnail={p.thumbnail}
-                      category={p.category}
-                      alt=""
-                      layout="sidebarPopular"
-                      metadataParams={p.metadataParams}
-                    />
-                  </div>
+                <Link
+                  href={`/post/${p.id}`}
+                  className={`${styles.sidebarPopularCard}${
+                    hasValidPostThumbnail(p.thumbnail) ? '' : ` ${styles.sidebarPopularCardTextOnly}`
+                  }`}
+                >
+                  <SidebarPopularThumb thumbnail={p.thumbnail} alt="" />
                   <div className={styles.sidebarPopularBody}>
                     <p className={styles.sidebarPopularTitle}>{p.title}</p>
                     <p className={styles.sidebarPopularExcerpt}>{p.excerpt}</p>
