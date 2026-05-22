@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from 'react';
 import type { Category } from '@prisma/client';
 import { MediaThumb } from '@/components/MediaThumb';
 import { labKindFromMetadataParams, type LabPromptKind } from '@/lib/post-categories';
+import { hasValidPostThumbnail } from '@/lib/post-thumbnail';
 import pageStyles from '@/app/(root)/page.module.css';
 import myAislesStyles from '@/app/(root)/my-aisles/my-aisles.module.css';
 import postStyles from '@/app/(root)/post/[id]/post.module.css';
@@ -109,10 +110,6 @@ function LabPromptArchivePlaceholder({
       {label}
     </div>
   );
-}
-
-export function hasValidPostThumbnail(thumbnail: string | null | undefined): boolean {
-  return typeof thumbnail === 'string' && thumbnail.trim().length > 0;
 }
 
 export type PostThumbnailProps = {

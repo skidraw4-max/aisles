@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import type { Category } from '@prisma/client';
-import { hasValidPostThumbnail, SidebarPopularThumb } from '@/components/post/PostThumbnail';
+import { SidebarPopularThumb } from '@/components/post/PostThumbnail';
+import { hasValidPostThumbnail } from '@/lib/post-thumbnail';
 import { corridorLabel } from '@/lib/ui-config';
 import { ExternalServiceCta } from './ExternalServiceCta';
 import { LaunchVisitProjectCta } from './LaunchVisitProjectCta';
