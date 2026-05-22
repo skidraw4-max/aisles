@@ -1172,20 +1172,17 @@
   letter-spacing: 0.08em;
 }
 
+/* AI FORTUNE 소개 — feedLayoutMainFeed(7fr) 열 너비에만 맞춤 */
 .aiFortuneCategoryIntro {
-  max-width: var(--aisle-max);
-  margin: 0 auto 1.25rem;
-  padding: 0 var(--aisle-gutter-sm);
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  margin: 0 0 1.25rem;
+  padding: 0;
+  box-sizing: border-box;
   font-size: var(--type-14);
   line-height: 1.65;
   color: #d4d4d8;
-}
-
-@media (min-width: 640px) {
-  .aiFortuneCategoryIntro {
-    padding-left: var(--aisle-gutter);
-    padding-right: var(--aisle-gutter);
-  }
 }
 
 .aiFortuneCategoryIntroTitle {

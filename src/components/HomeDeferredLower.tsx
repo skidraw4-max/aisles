@@ -34,6 +34,7 @@ const HomeAllFeed = nextDynamic(
 export type HomeDeferredLowerProps = {
   heroColumn?: ReactNode;
   fortuneCard?: ReactNode;
+  mainFeedPrefix?: ReactNode;
   layoutRowNoHero: boolean;
   recentAside: ReactNode;
   filterCategory: Category | null;
@@ -51,6 +52,7 @@ export type HomeDeferredLowerProps = {
 export function HomeDeferredLower({
   heroColumn,
   fortuneCard,
+  mainFeedPrefix,
   layoutRowNoHero,
   recentAside,
   filterCategory,
@@ -79,6 +81,7 @@ export function HomeDeferredLower({
         </div>
       </div>
       <div className={styles.feedLayoutMainFeed}>
+        {mainFeedPrefix}
         {fortuneCard}
         {!filterCategory ? (
           <div className={styles.launchBlockWrap}>

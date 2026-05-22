@@ -218,25 +218,29 @@ export default async function HomePage({ searchParams }: PageProps) {
         <section
           className={`${styles.section} ${!filterCategory ? styles.sectionFeedAfterQuasar : ''}`}
         >
-          {filterCategory ? (
-            <div className={styles.feedBadgeRow}>
-              <span className={styles.badge}>{corridorLabel(ui, filterCategory)}</span>
-            </div>
-          ) : null}
-          {filterCategory === 'BUILD' && buildPopular.length > 0 ? (
-            <BuildHubSection
-              posts={buildPopular.map(serializeFeedPost)}
-              uploadHref="/upload?category=BUILD"
-            />
-          ) : null}
-          {ugcWeekly && weeklyTop.length > 0 ? (
-            <UgcWeeklyBest
-              categoryLabel={corridorLabel(ui, ugcWeekly)}
-              posts={weeklyTop}
-            />
-          ) : null}
-          {filterCategory === 'AI_FORTUNE' ? <AiFortuneCategoryIntro /> : null}
           <HomeDeferredLower
+            mainFeedPrefix={
+              filterCategory ? (
+                <>
+                  <div className={styles.feedBadgeRow}>
+                    <span className={styles.badge}>{corridorLabel(ui, filterCategory)}</span>
+                  </div>
+                  {filterCategory === 'BUILD' && buildPopular.length > 0 ? (
+                    <BuildHubSection
+                      posts={buildPopular.map(serializeFeedPost)}
+                      uploadHref="/upload?category=BUILD"
+                    />
+                  ) : null}
+                  {ugcWeekly && weeklyTop.length > 0 ? (
+                    <UgcWeeklyBest
+                      categoryLabel={corridorLabel(ui, ugcWeekly)}
+                      posts={weeklyTop}
+                    />
+                  ) : null}
+                  {filterCategory === 'AI_FORTUNE' ? <AiFortuneCategoryIntro /> : null}
+                </>
+              ) : null
+            }
             fortuneCard={
               filterCategory === 'LOUNGE' && latestFortune ? (
                 <div className={styles.homeFortuneSlot}>
