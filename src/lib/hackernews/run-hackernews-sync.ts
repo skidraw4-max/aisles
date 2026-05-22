@@ -1,5 +1,6 @@
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
+import { shouldSkipThinLoungePost } from '@/lib/lounge-ingestion-policy';
 import { fetchExternalArticlePlainText } from '@/lib/geeknews/extract-article-text';
 import { fetchItemsBatched, fetchTopStoryIds } from '@/lib/hackernews/fetch-top-stories';
 import { formatHackerNewsPostBody } from '@/lib/hackernews/format-post-body';
@@ -30,6 +31,7 @@ export type HackerNewsItemResult = {
     | 'created'
     | 'skipped_duplicate'
     | 'skipped_short_body'
+    | 'skipped_thin_body'
     | 'skipped_summary'
     | 'error'
     | 'skipped_fetch';
@@ -221,6 +223,15 @@ export async function runHackerNewsSync(options: { force: boolean }): Promise<Ha
     const hnDiscussionUrl = `https://news.ycombinator.com/item?id=${story.id}`;
     const content = formatHackerNewsPostBody(story.url, hnDiscussionUrl, sum.data);
     const title = sum.data.postTitle.trim() || story.title;
+
+    if (shouldSkipThinLoungePost(content, { source: 'hackernews', title, externalUrl })) {
+      results.push({
+        externalUrl,
+        status: 'skipped_thin_body',
+        detail: '본문이 최소 길이 미만입니다.',
+      });
+      continue;
+    }
 
     try {
       const post = await prisma.post.create({

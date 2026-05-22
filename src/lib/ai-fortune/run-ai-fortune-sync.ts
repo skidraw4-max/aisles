@@ -42,6 +42,12 @@ export type AiFortuneSyncResult = AiFortuneSyncSuccess | AiFortuneSyncFailure;
 export type RunAiFortuneSyncOptions = {
   force?: boolean;
   bootstrap?: boolean;
+  /** 백필·특정 주차 — KST 기준 기준일 (미지정 시 현재 시각) */
+  referenceDate?: Date;
+  /** 백필 시 월요일 05:00 KST 윈도우 검사 생략 */
+  skipScheduleWindow?: boolean;
+  /** 백필 정렬용 `createdAt` (최근 주차가 더 큰 값) */
+  createdAt?: Date;
 };
 
 function weekLabelFromDate(date: Date): string {
@@ -54,11 +60,12 @@ export async function runAiFortuneSync(
 ): Promise<AiFortuneSyncResult> {
   const force = Boolean(options.force);
   const bootstrap = Boolean(options.bootstrap);
-  const now = new Date();
+  const skipScheduleWindow = Boolean(options.skipScheduleWindow);
+  const now = options.referenceDate ?? new Date();
   const weekKey = aiFortuneWeekKey(now);
   const weekLabel = weekLabelFromDate(now);
 
-  if (!bootstrap && !force && !isScheduledAiFortuneCronWindow(now)) {
+  if (!bootstrap && !force && !skipScheduleWindow && !isScheduledAiFortuneCronWindow(now)) {
     console.log('[ai-fortune] 스케줄 윈도우 밖 — 월요일 05:00 KST만 자동 실행');
     return {
       ok: true,
@@ -159,6 +166,7 @@ export async function runAiFortuneSync(
         authorId: author.id,
         aiFortuneWeekKey: weekKey,
         aiFortunePayload: payloadJson,
+        ...(options.createdAt ? { createdAt: options.createdAt } : {}),
       },
     });
     console.log('[ai-fortune] 주간 게시 완료', { weekKey, postId: post.id, bootstrap });

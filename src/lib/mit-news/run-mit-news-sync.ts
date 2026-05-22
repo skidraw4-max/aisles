@@ -7,6 +7,7 @@ import { loadBlockedSyndicationUrls } from '@/lib/news-sync/blocked-original-url
 import { NEWS_SYNC_GEMINI_GAP_MS, sleepMs } from '@/lib/news-sync/gemini-request-gap';
 import { summarizeMitNewsArticle } from '@/lib/mit-news/summarize-mit-article';
 import { formatMitNewsPostBody } from '@/lib/mit-news/format-mit-post-body';
+import { shouldSkipThinLoungePost } from '@/lib/lounge-ingestion-policy';
 
 /** MIT News — Artificial Intelligence 토픽 RSS */
 export const MIT_NEWS_AI_RSS_URL = 'https://news.mit.edu/rss/topic/artificial-intelligence2';
@@ -30,6 +31,7 @@ export type MitNewsItemResult = {
     | 'created'
     | 'skipped_duplicate'
     | 'skipped_short_body'
+    | 'skipped_thin_body'
     | 'skipped_summary'
     | 'error'
     | 'skipped_invalid_link';
@@ -314,6 +316,15 @@ async function runMitNewsSyncInner(options: { force: boolean }): Promise<MitNews
 
     const content = formatMitNewsPostBody(link, sum.data);
     const title = ensureMitTitlePrefix(sum.data.postTitle.trim() || item.title?.trim() || 'MIT News');
+
+    if (shouldSkipThinLoungePost(content, { source: 'mit-news', title, link })) {
+      results.push({
+        link,
+        status: 'skipped_thin_body',
+        detail: '본문이 최소 길이 미만입니다.',
+      });
+      continue;
+    }
 
     try {
       const post = await prisma.post.create({

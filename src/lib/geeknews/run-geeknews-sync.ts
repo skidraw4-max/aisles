@@ -7,6 +7,7 @@ import { summarizeGeekNewsArticle } from '@/lib/geeknews/summarize';
 import { titleMatchesAiKeywords } from '@/lib/hackernews/ai-title';
 import { readGeminiApiKeyFromEnv } from '@/lib/gemini-prompt-analysis-engine';
 import { loadBlockedSyndicationUrls } from '@/lib/news-sync/blocked-original-urls';
+import { shouldSkipThinLoungePost } from '@/lib/lounge-ingestion-policy';
 import { NEWS_SYNC_GEMINI_GAP_MS, sleepMs } from '@/lib/news-sync/gemini-request-gap';
 
 const GEEKNEWS_NEW_URL = 'https://news.hada.io/new';
@@ -27,6 +28,7 @@ export type GeekNewsItemResult = {
     | 'created'
     | 'skipped_duplicate'
     | 'skipped_short_body'
+    | 'skipped_thin_body'
     | 'skipped_summary'
     | 'error'
     | 'skipped_fetch'
@@ -217,6 +219,21 @@ export async function runGeekNewsSync(options: { force: boolean }): Promise<Geek
     const topicUrl = `https://news.hada.io/topic?id=${encodeURIComponent(item.topicId)}`;
     const content = formatGeekNewsPostBody(item.externalUrl, topicUrl, sum.data);
     const title = sum.data.postTitle.trim() || item.title;
+
+    if (
+      shouldSkipThinLoungePost(content, {
+        source: 'geeknews',
+        title,
+        externalUrl: item.externalUrl,
+      })
+    ) {
+      results.push({
+        externalUrl: item.externalUrl,
+        status: 'skipped_thin_body',
+        detail: '본문이 최소 길이 미만입니다.',
+      });
+      continue;
+    }
 
     try {
       const post = await prisma.post.create({

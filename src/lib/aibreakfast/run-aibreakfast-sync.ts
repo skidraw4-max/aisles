@@ -11,6 +11,7 @@ import {
 } from '@/lib/aibreakfast/scrape-beehiiv';
 import { summarizeAiBreakfastNewsletter } from '@/lib/aibreakfast/summarize-aibreakfast';
 import { formatAiBreakfastPostBody } from '@/lib/aibreakfast/format-aibreakfast-body';
+import { shouldSkipThinLoungePost } from '@/lib/lounge-ingestion-policy';
 
 /** 메인에서 가져오는 최신 포스트는 1개 */
 export const MAX_AIBREAKFAST_POSTS_PER_RUN = 1;
@@ -30,6 +31,7 @@ export type AiBreakfastItemResult = {
     | 'created'
     | 'skipped_duplicate'
     | 'skipped_short_body'
+    | 'skipped_thin_body'
     | 'skipped_summary'
     | 'error'
     | 'skipped_invalid_link'
@@ -222,6 +224,21 @@ async function runAiBreakfastSyncInner(options: { force: boolean }): Promise<AiB
 
   const content = formatAiBreakfastPostBody(link, sum.data);
   const title = sum.data.postTitle.trim().slice(0, 200) || 'AI Breakfast';
+
+  if (shouldSkipThinLoungePost(content, { source: 'aibreakfast', title, link })) {
+    results.push({
+      link,
+      status: 'skipped_thin_body',
+      detail: '본문이 최소 길이 미만입니다.',
+    });
+    return {
+      ok: true,
+      created: 0,
+      scanned: 1,
+      force,
+      results,
+    };
+  }
 
   try {
     const post = await prisma.post.create({

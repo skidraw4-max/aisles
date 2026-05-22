@@ -8,6 +8,7 @@ import { rankLobstersFeedItemsForSync } from '@/lib/lobsters/rank-lobsters-feed'
 import { summarizeLobstersArticle } from '@/lib/lobsters/summarize-lobsters-article';
 import { LOBSTERS_RSS_URL } from '@/lib/news-sync/external-tech-link-sources';
 import { loadBlockedSyndicationUrls } from '@/lib/news-sync/blocked-original-urls';
+import { shouldSkipThinLoungePost } from '@/lib/lounge-ingestion-policy';
 import { NEWS_SYNC_GEMINI_GAP_MS, sleepMs } from '@/lib/news-sync/gemini-request-gap';
 
 export const MAX_NEW_POSTS_PER_RUN = 5;
@@ -30,6 +31,7 @@ export type LobstersItemResult = {
     | 'created'
     | 'skipped_duplicate'
     | 'skipped_short_body'
+    | 'skipped_thin_body'
     | 'skipped_summary'
     | 'error'
     | 'skipped_fetch';
@@ -284,6 +286,15 @@ export async function runLobstersSync(options: { force: boolean }): Promise<Lobs
 
     const content = formatLobstersPostBody(story.articleUrl, story.discussionUrl, sum.data);
     const title = sum.data.postTitle.trim() || story.title;
+
+    if (shouldSkipThinLoungePost(content, { source: 'lobsters', title, externalUrl })) {
+      results.push({
+        externalUrl,
+        status: 'skipped_thin_body',
+        detail: '본문이 최소 길이 미만입니다.',
+      });
+      continue;
+    }
 
     try {
       const post = await prisma.post.create({

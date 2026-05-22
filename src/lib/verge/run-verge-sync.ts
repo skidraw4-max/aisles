@@ -7,6 +7,7 @@ import { titleMatchesAiKeywords } from '@/lib/hackernews/ai-title';
 import { summarizeVergeArticle } from '@/lib/verge/summarize-verge';
 import { formatVergePostBody } from '@/lib/verge/format-verge-body';
 import { loadBlockedSyndicationUrls } from '@/lib/news-sync/blocked-original-urls';
+import { shouldSkipThinLoungePost } from '@/lib/lounge-ingestion-policy';
 import { NEWS_SYNC_GEMINI_GAP_MS, sleepMs } from '@/lib/news-sync/gemini-request-gap';
 
 /** The Verge RSS (AI / tech 뉴스 피드) */
@@ -35,6 +36,7 @@ export type VergeItemResult = {
     | 'created'
     | 'skipped_duplicate'
     | 'skipped_short_body'
+    | 'skipped_thin_body'
     | 'skipped_summary'
     | 'error'
     | 'skipped_invalid_link';
@@ -331,6 +333,15 @@ async function runVergeSyncInner(options: { force: boolean }): Promise<VergeSync
 
     const content = formatVergePostBody(link, sum.data);
     const title = sum.data.postTitle.trim() || item.title?.trim() || 'The Verge';
+
+    if (shouldSkipThinLoungePost(content, { source: 'verge', title, link })) {
+      results.push({
+        link,
+        status: 'skipped_thin_body',
+        detail: '본문이 최소 길이 미만입니다.',
+      });
+      continue;
+    }
 
     try {
       const post = await prisma.post.create({

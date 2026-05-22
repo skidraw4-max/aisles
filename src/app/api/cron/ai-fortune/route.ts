@@ -4,8 +4,10 @@
  * - 인증: `Authorization: Bearer ${CRON_SECRET}`
  * - 스케줄: 매주 월요일 05:00 KST (GitHub Actions `ai-fortune-weekly-kst.yml`)
  * - 배포 직후: `?bootstrap=true` 로 이번 주 글 즉시 1회 발행 (이후 동일 주차는 스킵)
+ * - 백필: `POST ?backfill=true` — 2026-04-W1~2026-05-W2 (Gemini 다회·타임아웃 주의, 로컬 스크립트 권장)
  */
 import { NextRequest, NextResponse } from 'next/server';
+import { runAiFortuneBackfill } from '@/lib/ai-fortune/run-ai-fortune-backfill';
 import { runAiFortuneSync } from '@/lib/ai-fortune/run-ai-fortune-sync';
 
 export const maxDuration = 120;
@@ -35,6 +37,19 @@ async function handle(req: NextRequest) {
 
   const force = req.nextUrl.searchParams.get('force') === 'true';
   const bootstrap = req.nextUrl.searchParams.get('bootstrap') === 'true';
+  const backfill = req.nextUrl.searchParams.get('backfill') === 'true';
+
+  if (backfill) {
+    const backfillResult = await runAiFortuneBackfill();
+    return NextResponse.json({
+      ok: backfillResult.ok,
+      mode: 'backfill',
+      startKey: backfillResult.startKey,
+      endKey: backfillResult.endKey,
+      weekKeys: backfillResult.weekKeys,
+      results: backfillResult.results,
+    });
+  }
 
   const result = await runAiFortuneSync({ force, bootstrap });
 

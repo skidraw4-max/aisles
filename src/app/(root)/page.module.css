@@ -1172,6 +1172,38 @@
   letter-spacing: 0.08em;
 }
 
+.aiFortuneCategoryIntro {
+  max-width: var(--aisle-max);
+  margin: 0 auto 1.25rem;
+  padding: 0 var(--aisle-gutter-sm);
+  font-size: var(--type-14);
+  line-height: 1.65;
+  color: #d4d4d8;
+}
+
+@media (min-width: 640px) {
+  .aiFortuneCategoryIntro {
+    padding-left: var(--aisle-gutter);
+    padding-right: var(--aisle-gutter);
+  }
+}
+
+.aiFortuneCategoryIntroTitle {
+  margin: 0 0 0.75rem;
+  font-size: var(--type-16);
+  font-weight: 700;
+  color: #fafafa;
+  letter-spacing: -0.02em;
+}
+
+.aiFortuneCategoryIntro p {
+  margin: 0 0 0.85rem;
+}
+
+.aiFortuneCategoryIntro p:last-child {
+  margin-bottom: 0;
+}
+
 .fortuneArchiveHeading {
   margin: 0 0 0.5rem;
   font-size: var(--type-14);

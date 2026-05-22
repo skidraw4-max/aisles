@@ -20,6 +20,7 @@ import {
 } from '@/lib/post-categories';
 import { getCanonicalSiteUrl } from '@/lib/canonical-site-url';
 import { fetchLatestAiFortunePost } from '@/lib/ai-fortune/latest-fortune.server';
+import { AiFortuneCategoryIntro } from '@/components/AiFortuneCategoryIntro';
 import { HomeFortuneCard } from '@/components/HomeFortuneCard';
 import { BuildHubSection } from '@/components/BuildHubSection';
 import { UgcWeeklyBest } from '@/components/UgcWeeklyBest';
@@ -234,6 +235,7 @@ export default async function HomePage({ searchParams }: PageProps) {
               posts={weeklyTop}
             />
           ) : null}
+          {filterCategory === 'AI_FORTUNE' ? <AiFortuneCategoryIntro /> : null}
           <HomeDeferredLower
             fortuneCard={
               filterCategory === 'LOUNGE' && latestFortune ? (

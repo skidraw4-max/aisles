@@ -14,6 +14,7 @@ import { fetchLatestFeedEntries } from '@/lib/youtube-sync/fetch-channel-feed';
 import { fetchYoutubeVideoSnippet } from '@/lib/youtube-sync/fetch-video-snippet';
 import { fetchYoutubeTranscriptPreferKorean } from '@/lib/youtube-sync/fetch-transcript';
 import { formatYoutubePostBody } from '@/lib/youtube-sync/format-youtube-body';
+import { shouldSkipThinLoungePost } from '@/lib/lounge-ingestion-policy';
 import {
   summarizeYoutubeFromVideoMetadata,
   summarizeYoutubeWithGemini,
@@ -36,6 +37,7 @@ export type YoutubeItemResult = {
     | 'skipped_duplicate'
     | 'skipped_no_transcript'
     | 'skipped_summary'
+    | 'skipped_thin_body'
     | 'error';
   detail?: string;
   postId?: string;
@@ -215,6 +217,20 @@ async function runYoutubeSyncInner(options: { force: boolean }): Promise<Youtube
       const title = sum.data.postTitle.trim().slice(0, 200);
       const watchUrl = YOUTUBE_WATCH_URL(entry.videoId);
       const thumb = YOUTUBE_THUMBNAIL_HQ(entry.videoId);
+      const postCategory = categoryForSource(source);
+
+      if (
+        postCategory === 'LOUNGE' &&
+        shouldSkipThinLoungePost(content, { source: `youtube-${source}`, title, videoId: entry.videoId })
+      ) {
+        results.push({
+          videoId: entry.videoId,
+          channel: source,
+          status: 'skipped_thin_body',
+          detail: '본문이 최소 길이 미만입니다.',
+        });
+        continue;
+      }
 
       try {
         const post = await prisma.post.create({
