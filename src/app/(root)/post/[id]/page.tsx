@@ -46,6 +46,7 @@ import { AiFortunePromoBanner } from './AiFortunePromoBanner';
 import { PostRelatedPosts } from './PostRelatedPosts';
 import { PostScrollSubscribeModal } from './PostScrollSubscribeModal';
 import { getKstParts, weekOfMonthKst } from '@/lib/ai-fortune/kst-week';
+import { parseMbtiType } from '@/lib/ai-fortune/mbti';
 import styles from './post.module.css';
 
 export const dynamic = 'force-dynamic';
@@ -321,7 +322,7 @@ export default async function PostPage({ params }: Props) {
         }),
         prisma.user.findUnique({
           where: { id: user.id },
-          select: { username: true, avatarUrl: true, newsletterSubscribed: true },
+          select: { username: true, avatarUrl: true, newsletterSubscribed: true, mbti: true },
         }),
       ])
     : [null, null, null];
@@ -389,6 +390,7 @@ export default async function PostPage({ params }: Props) {
         currentUserId={user?.id ?? null}
         currentUsername={meProfile?.username ?? null}
         currentAvatarUrl={meProfile?.avatarUrl ?? null}
+        userMbti={parseMbtiType(meProfile?.mbti)}
         initialLiked={Boolean(likedRow)}
         initialBookmarked={Boolean(bookmarkRow)}
         newsletterSubscribed={meProfile?.newsletterSubscribed ?? false}

@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import type { AiFortuneWeeklyPayload } from '@/lib/ai-fortune/payload';
+import type { MbtiType } from '@/lib/ai-fortune/mbti';
 import { MbtiTypeIcon } from '@/lib/ai-fortune/mbti-icons';
 import { AiFortuneMbtiHashScroll } from './AiFortuneMbtiHashScroll';
 import styles from './ai-fortune-report.module.css';
@@ -11,6 +12,7 @@ type Props = {
   authorUsername: string;
   createdAt: Date;
   payload: AiFortuneWeeklyPayload;
+  userMbti?: MbtiType | null;
   engagement: ReactNode;
 };
 
@@ -27,6 +29,7 @@ export function AiFortuneReport({
   authorUsername,
   createdAt,
   payload,
+  userMbti = null,
   engagement,
 }: Props) {
   const label = payload.weekLabel || weekLabel;
@@ -72,8 +75,15 @@ export function AiFortuneReport({
           MBTI 16 — 주간 AI 운세
         </h2>
         <div className={styles.grid}>
-          {payload.mbti.map((entry) => (
-            <article key={entry.type} id={`mbti-${entry.type}`} className={styles.card}>
+          {payload.mbti.map((entry) => {
+            const isUserMbti = userMbti === entry.type;
+            return (
+            <article
+              key={entry.type}
+              id={`mbti-${entry.type}`}
+              className={`${styles.card}${isUserMbti ? ` ${styles.cardUserMbti}` : ''}`}
+              data-user-mbti={isUserMbti ? 'true' : undefined}
+            >
               <header className={styles.cardHeader}>
                 <MbtiTypeIcon type={entry.type} className={styles.cardIcon} />
                 <span className={styles.cardType}>{entry.type}</span>
@@ -91,7 +101,8 @@ export function AiFortuneReport({
                 <p className={`${styles.cardBlockText} ${styles.avoid}`}>{entry.avoidHabit}</p>
               </div>
             </article>
-          ))}
+            );
+          })}
         </div>
       </section>
 

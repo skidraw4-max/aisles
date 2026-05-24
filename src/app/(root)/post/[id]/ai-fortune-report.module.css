@@ -167,6 +167,39 @@
   transform: translateY(-2px);
 }
 
+.cardUserMbti {
+  border-color: rgba(255, 215, 0, 0.75) !important;
+  border-width: 2px;
+  box-shadow:
+    0 0 36px rgba(57, 255, 20, 0.42),
+    0 0 12px rgba(255, 215, 0, 0.35),
+    inset 0 0 28px rgba(57, 255, 20, 0.1) !important;
+}
+
+.cardUserMbti::after {
+  content: '내 유형';
+  position: absolute;
+  top: 0.55rem;
+  right: 0.55rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #050508;
+  background: linear-gradient(135deg, #ffd700 0%, #39ff14 100%);
+  box-shadow: 0 0 12px rgba(57, 255, 20, 0.55);
+}
+
+.cardUserMbti:hover {
+  border-color: rgba(255, 215, 0, 0.9) !important;
+  box-shadow:
+    0 0 44px rgba(57, 255, 20, 0.5),
+    0 0 16px rgba(255, 215, 0, 0.45),
+    inset 0 0 32px rgba(57, 255, 20, 0.14) !important;
+}
+
 .card:global(.mbti-hash-highlight) {
   border-color: rgba(57, 255, 20, 0.85) !important;
   box-shadow:

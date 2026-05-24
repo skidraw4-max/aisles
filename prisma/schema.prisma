@@ -20,6 +20,8 @@ model User {
   digestFrequency DigestFrequency @default(DAILY)
   /// USER · BUILDER · ADMIN — 공지 관리 등은 ADMIN 만 (세션·서버 액션에서 검증)
   role       Role     @default(USER)
+  /// MBTI 16유형 (영문 4글자, 예: INTJ) — AI FORTUNE 카드 하이라이트용
+  mbti       String?  @db.VarChar(4)
   posts      Post[]
   postLikes  PostLike[]
   bookmarks  Bookmark[]

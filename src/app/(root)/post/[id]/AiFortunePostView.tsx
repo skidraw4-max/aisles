@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import type { Category } from '@prisma/client';
 import { aiFortunePayloadFromDb } from '@/lib/ai-fortune/payload';
+import type { MbtiType } from '@/lib/ai-fortune/mbti';
 import { homeHrefForCategory } from '@/lib/post-categories';
 import { AiFortuneReport } from './AiFortuneReport';
 import { FortuneDigestSubscribeCta } from './FortuneDigestSubscribeCta';
@@ -37,6 +38,7 @@ type Props = {
   currentUserId: string | null;
   currentUsername: string | null;
   currentAvatarUrl: string | null;
+  userMbti: MbtiType | null;
   initialLiked: boolean;
   initialBookmarked: boolean;
   newsletterSubscribed: boolean;
@@ -54,6 +56,7 @@ export function AiFortunePostView({
   currentUserId,
   currentUsername,
   currentAvatarUrl,
+  userMbti,
   initialLiked,
   initialBookmarked,
   newsletterSubscribed,
@@ -98,6 +101,7 @@ export function AiFortunePostView({
               authorUsername={post.author.username}
               createdAt={post.createdAt}
               payload={payload}
+              userMbti={userMbti}
               engagement={engagement}
             />
             <FortuneDigestSubscribeCta
