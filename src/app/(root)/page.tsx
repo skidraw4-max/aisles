@@ -4,6 +4,7 @@ import { Suspense } from 'react';
 import { SiteFooter } from '@/components/SiteFooter';
 import { RecentPostListThumb } from '@/components/RecentPostListThumb';
 import { HomeMainHero } from '@/components/HomeMainHero';
+import { HomeHeroCarousel } from '@/components/HomeHeroCarousel';
 import { HomeContentTabs } from '@/components/HomeContentTabs';
 import { HomeQuasarBoard } from '@/components/HomeQuasarBoard';
 import { HomeDeferredLower } from '@/components/HomeDeferredLower';
@@ -153,44 +154,40 @@ export default async function HomePage({ searchParams }: PageProps) {
         </div>
       ) : null}
       <main className={styles.mainShell}>
-        <section className={styles.hero}>
-          <p className={styles.eyebrow}>
-            {filterCategory ? ui['home.hero.eyebrow_filtered'] : ui['home.hero.eyebrow_home']}
-          </p>
-          <h1
-            className={
-              filterCategory ? styles.heroTitle : `${styles.heroTitle} ${styles.heroTitleHome}`
-            }
-          >
-            {filterCategory ? (
-              <>
-                {corridorLabel(ui, filterCategory)} <span style={{ fontWeight: 600 }}>aisle</span>
-              </>
-            ) : (
-              <>
-                <span className={styles.heroTitleLine}>{ui['home.hero.title_home_line1']}</span>
-                <span className={styles.heroTitleLine}>
-                  <span className={styles.heroTitleAccent}>{ui['home.hero.title_home_line2_accent']}</span>
-                  <span className={styles.heroTitleRest}>{ui['home.hero.title_home_line2_rest']}</span>
-                </span>
-              </>
-            )}
-          </h1>
-          <p
-            className={
-              filterCategory ? styles.heroLead : `${styles.heroLead} ${styles.heroLeadHome}`
-            }
-          >
-            {heroLead}
-          </p>
-          {!filterCategory ? (
-            <div className={styles.heroCtaRow}>
-              <Link href="/?category=LAB" className={styles.heroCtaPrimary}>
-                {ui['home.hero.cta_primary']}
-              </Link>
-            </div>
-          ) : null}
-        </section>
+        {!filterCategory ? (
+          <HomeHeroCarousel
+            fortune={{
+              eyebrow: 'AI FORTUNE · 주간 운세',
+              titleLine1: '프로필에 MBTI를 등록하면',
+              titleLine2: '내 유형 맞춤 AI FORTUNE을 매주 받아요',
+              lead:
+                '글로벌 AI 트렌드와 16유형별 활용 전략·행운 키워드·피할 습관을 담은 주간 리포트입니다. 프로필에서 MBTI를 저장하면 리포트에서 내 카드가 강조됩니다.',
+              profileHref: '/profile#profile-mbti-heading',
+              profileCtaLabel: '프로필 등록하러가기',
+              fortuneHref: latestFortune
+                ? `/post/${latestFortune.id}`
+                : '/?category=AI_FORTUNE',
+              fortuneLinkLabel: latestFortune ? '이번 주 AI FORTUNE 보기' : 'AI FORTUNE 복도 보기',
+            }}
+            prompt={{
+              eyebrow: ui['home.hero.eyebrow_home'] ?? '',
+              titleLine1: ui['home.hero.title_home_line1'] ?? '',
+              titleLine2Accent: ui['home.hero.title_home_line2_accent'] ?? '',
+              titleLine2Rest: ui['home.hero.title_home_line2_rest'] ?? '',
+              lead: ui['home.hero.lead_home'] ?? '',
+              ctaHref: '/?category=LAB',
+              ctaLabel: ui['home.hero.cta_primary'] ?? '',
+            }}
+          />
+        ) : (
+          <section className={styles.hero}>
+            <p className={styles.eyebrow}>{ui['home.hero.eyebrow_filtered']}</p>
+            <h1 className={styles.heroTitle}>
+              {corridorLabel(ui, filterCategory)} <span style={{ fontWeight: 600 }}>aisle</span>
+            </h1>
+            <p className={styles.heroLead}>{heroLead}</p>
+          </section>
+        )}
 
         <section className={styles.section} style={{ paddingTop: 12, paddingBottom: 8 }}>
           <Suspense fallback={<div className={styles.contentTabBarFallback} aria-hidden />}>

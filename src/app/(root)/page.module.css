@@ -11,7 +11,8 @@
 }
 
 /* 메인 상단 텍스트 히어로 — 썸네일·배너 이미지 미사용 */
-.mainShell > section.hero :where(img, video, picture) {
+.mainShell > section.hero :where(img, video, picture),
+.mainShell > section.heroCarousel :where(img, video, picture) {
   display: none !important;
 }
 
@@ -134,6 +135,218 @@
 .heroCtaPrimary:focus-visible {
   outline: 2px solid rgba(196, 181, 253, 0.9);
   outline-offset: 3px;
+}
+
+/* 홈 상단 히어로 캐러셀 (AI Fortune → 프롬프트 역설계) */
+.heroCarousel {
+  position: relative;
+  max-width: var(--aisle-max);
+  margin: 0 auto;
+  padding: 40px var(--aisle-gutter-sm) 24px;
+}
+
+@media (min-width: 640px) {
+  .heroCarousel {
+    padding-left: var(--aisle-gutter);
+    padding-right: var(--aisle-gutter);
+  }
+}
+
+.heroCarouselTrack {
+  position: relative;
+  min-height: 14.5rem;
+}
+
+.heroCarouselSlide {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(6px);
+  transition:
+    opacity 0.45s ease,
+    transform 0.45s ease,
+    visibility 0.45s;
+}
+
+.heroCarouselSlide[data-active='true'] {
+  position: relative;
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .heroCarouselSlide {
+    transition: none;
+  }
+}
+
+.heroCarouselSlideFortune {
+  padding: 1rem 1.1rem 1.15rem;
+  border-radius: 14px;
+  border: 1px solid rgba(57, 255, 20, 0.28);
+  background: linear-gradient(145deg, rgba(7, 26, 15, 0.55) 0%, rgba(2, 8, 4, 0.35) 55%, transparent 100%);
+  box-shadow: 0 0 32px rgba(57, 255, 20, 0.06);
+}
+
+.heroCarouselEyebrowFortune {
+  margin: 0 0 0.5rem;
+  font-size: var(--type-12);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #39ff14;
+}
+
+.heroTitleFortune .heroTitleLine:first-of-type {
+  color: #e8fff0;
+}
+
+.heroTitleAccentFortune {
+  font-weight: 600;
+  background: linear-gradient(135deg, #b8ffc4 0%, #39ff14 45%, #16a34a 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.heroLeadFortune {
+  color: #9ec9a8;
+}
+
+.heroCtaFortune {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.85rem 1.35rem;
+  border-radius: 999px;
+  font-size: var(--type-15);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  text-decoration: none;
+  color: #041208;
+  background: linear-gradient(135deg, #b8ffc4 0%, #39ff14 42%, #16a34a 100%);
+  box-shadow:
+    0 0 0 1px rgba(57, 255, 20, 0.45),
+    0 4px 24px rgba(57, 255, 20, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    filter 0.15s ease;
+}
+
+.heroCtaFortune:hover {
+  filter: brightness(1.06);
+  transform: translateY(-1px);
+}
+
+.heroCtaFortune:focus-visible {
+  outline: 2px solid rgba(57, 255, 20, 0.85);
+  outline-offset: 3px;
+}
+
+.heroCtaFortuneSecondary {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.65rem 1rem;
+  border-radius: 999px;
+  font-size: var(--type-14);
+  font-weight: 600;
+  text-decoration: none;
+  color: #b8ffc4;
+  border: 1px solid rgba(57, 255, 20, 0.35);
+  background: rgba(4, 18, 8, 0.5);
+  transition:
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.heroCtaFortuneSecondary:hover {
+  border-color: rgba(57, 255, 20, 0.55);
+  color: #d8ffe0;
+}
+
+.heroCtaFortuneSecondary:focus-visible {
+  outline: 2px solid rgba(57, 255, 20, 0.7);
+  outline-offset: 3px;
+}
+
+.heroCarouselControls {
+  margin-top: 1rem;
+}
+
+.heroCarouselNav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+}
+
+.heroCarouselArrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  color: #e4e4e7;
+  font-size: 1.35rem;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
+}
+
+.heroCarouselArrow:hover {
+  border-color: rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.heroCarouselArrow:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.heroCarouselDots {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.heroCarouselDot {
+  width: 0.55rem;
+  height: 0.55rem;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.22);
+  cursor: pointer;
+  transition:
+    width 0.2s ease,
+    background 0.2s ease;
+}
+
+.heroCarouselDot[data-variant='fortune'].heroCarouselDotActive {
+  width: 1.35rem;
+  background: #39ff14;
+}
+
+.heroCarouselDot[data-variant='prompt'].heroCarouselDotActive {
+  width: 1.35rem;
+  background: linear-gradient(135deg, #c4b5fd, #7c3aed);
+}
+
+.heroCarouselDot:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .section {
