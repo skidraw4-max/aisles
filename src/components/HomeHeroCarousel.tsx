@@ -87,21 +87,27 @@ export function HomeHeroCarousel({ fortune, prompt }: HomeHeroCarouselProps) {
           data-active={index === 0}
           aria-hidden={index !== 0}
         >
-          <p className={styles.heroCarouselEyebrowFortune}>{fortune.eyebrow}</p>
-          <h1 className={`${styles.heroTitle} ${styles.heroTitleHome} ${styles.heroTitleFortune}`}>
-            <span className={styles.heroTitleLine}>{fortune.titleLine1}</span>
-            <span className={styles.heroTitleLine}>
-              <span className={styles.heroTitleAccentFortune}>{fortune.titleLine2}</span>
-            </span>
-          </h1>
-          <p className={`${styles.heroLead} ${styles.heroLeadHome} ${styles.heroLeadFortune}`}>{fortune.lead}</p>
-          <div className={styles.heroCtaRow}>
-            <Link href={fortune.profileHref} className={styles.heroCtaFortune}>
-              {fortune.profileCtaLabel}
-            </Link>
-            <Link href={fortune.fortuneHref} className={styles.heroCtaFortuneSecondary}>
-              {fortune.fortuneLinkLabel}
-            </Link>
+          <div className={styles.heroCarouselSlideInner}>
+            <p className={`${styles.heroCarouselEyebrow} ${styles.heroCarouselEyebrowFortune}`}>
+              {fortune.eyebrow}
+            </p>
+            <h1 className={`${styles.heroTitle} ${styles.heroTitleHome} ${styles.heroTitleFortune}`}>
+              <span className={styles.heroTitleLine}>{fortune.titleLine1}</span>
+              <span className={styles.heroTitleLine}>
+                <span className={styles.heroTitleAccentFortune}>{fortune.titleLine2}</span>
+              </span>
+            </h1>
+            <p className={`${styles.heroLead} ${styles.heroLeadHome} ${styles.heroLeadFortune}`}>
+              {fortune.lead}
+            </p>
+            <div className={`${styles.heroCtaRow} ${styles.heroCarouselCtaRow}`}>
+              <Link href={fortune.profileHref} className={styles.heroCtaFortune}>
+                {fortune.profileCtaLabel}
+              </Link>
+              <Link href={fortune.fortuneHref} className={styles.heroCtaFortuneSecondary}>
+                {fortune.fortuneLinkLabel}
+              </Link>
+            </div>
           </div>
         </article>
 
@@ -111,19 +117,24 @@ export function HomeHeroCarousel({ fortune, prompt }: HomeHeroCarouselProps) {
           data-active={index === 1}
           aria-hidden={index !== 1}
         >
-          <p className={styles.eyebrow}>{prompt.eyebrow}</p>
-          <h1 className={`${styles.heroTitle} ${styles.heroTitleHome}`}>
-            <span className={styles.heroTitleLine}>{prompt.titleLine1}</span>
-            <span className={styles.heroTitleLine}>
-              <span className={styles.heroTitleAccent}>{prompt.titleLine2Accent}</span>
-              <span className={styles.heroTitleRest}>{prompt.titleLine2Rest}</span>
-            </span>
-          </h1>
-          <p className={`${styles.heroLead} ${styles.heroLeadHome}`}>{prompt.lead}</p>
-          <div className={styles.heroCtaRow}>
-            <Link href={prompt.ctaHref} className={styles.heroCtaPrimary}>
-              {prompt.ctaLabel}
-            </Link>
+          <div className={styles.heroCarouselSlideInner}>
+            <p className={`${styles.heroCarouselEyebrow} ${styles.heroCarouselEyebrowPrompt}`}>
+              {prompt.eyebrow}
+            </p>
+            <h1 className={`${styles.heroTitle} ${styles.heroTitleHome}`}>
+              <span className={styles.heroTitleLine}>{prompt.titleLine1}</span>
+              <span className={styles.heroTitleLine}>
+                <span className={styles.heroTitleAccent}>{prompt.titleLine2Accent}</span>
+                <span className={styles.heroTitleRest}>{prompt.titleLine2Rest}</span>
+              </span>
+            </h1>
+            <p className={`${styles.heroLead} ${styles.heroLeadHome}`}>{prompt.lead}</p>
+            <div className={`${styles.heroCtaRow} ${styles.heroCarouselCtaRow}`}>
+              <Link href={prompt.ctaHref} className={styles.heroCtaPrimary}>
+                {prompt.ctaLabel}
+              </Link>
+              <span className={styles.heroCarouselCtaSpacer} aria-hidden="true" />
+            </div>
           </div>
         </article>
       </div>
