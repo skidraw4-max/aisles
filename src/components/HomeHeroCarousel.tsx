@@ -100,7 +100,10 @@ export function HomeHeroCarousel({ fortune, prompt }: HomeHeroCarouselProps) {
             <p className={`${styles.heroLead} ${styles.heroLeadHome} ${styles.heroLeadFortune}`}>
               {fortune.lead}
             </p>
-            <div className={`${styles.heroCtaRow} ${styles.heroCarouselCtaRow}`}>
+            <div
+              className={`${styles.heroCtaRow} ${styles.heroCarouselCtaRow} ${styles.heroCarouselCtaRowStack}`}
+              data-cta-count="2"
+            >
               <Link href={fortune.profileHref} className={styles.heroCtaFortune}>
                 {fortune.profileCtaLabel}
               </Link>
@@ -129,7 +132,10 @@ export function HomeHeroCarousel({ fortune, prompt }: HomeHeroCarouselProps) {
               </span>
             </h1>
             <p className={`${styles.heroLead} ${styles.heroLeadHome}`}>{prompt.lead}</p>
-            <div className={`${styles.heroCtaRow} ${styles.heroCarouselCtaRow}`}>
+            <div
+              className={`${styles.heroCtaRow} ${styles.heroCarouselCtaRow} ${styles.heroCarouselCtaRowStack}`}
+              data-cta-count="1"
+            >
               <Link href={prompt.ctaHref} className={styles.heroCtaPrimary}>
                 {prompt.ctaLabel}
               </Link>

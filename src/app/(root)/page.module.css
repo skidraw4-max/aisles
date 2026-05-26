@@ -246,6 +246,39 @@
   flex-shrink: 0;
 }
 
+@media (max-width: 639px) {
+  .heroCarouselTrack {
+    min-height: 22.5rem;
+    height: 22.5rem;
+  }
+
+  .heroCarouselCtaRowStack {
+    flex-direction: column;
+    align-items: stretch;
+    flex-wrap: nowrap;
+    gap: 0.5rem;
+    min-height: auto;
+    width: 100%;
+  }
+
+  .heroCarouselCtaRowStack :where(.heroCtaPrimary, .heroCtaFortune, .heroCtaFortuneSecondary) {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    justify-content: center;
+    padding: 0.65rem 1rem;
+    font-size: var(--type-14);
+  }
+
+  .heroCarouselCtaRowStack .heroCtaFortuneSecondary {
+    padding: 0.6rem 1rem;
+  }
+
+  .heroCarouselCtaSpacer {
+    display: none;
+  }
+}
+
 .heroCarouselCtaSpacer {
   display: inline-flex;
   align-items: center;
