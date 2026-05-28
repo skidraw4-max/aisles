@@ -22,6 +22,7 @@ export async function GET(
   const { id } = await ctx.params;
   const base = getCanonicalSiteUrl();
   const defaultOg = new URL('/og-image.png', base).href;
+  const fallback = () => NextResponse.redirect(new URL('/og-image.png', base));
 
   let post: {
     title: string;
@@ -44,8 +45,13 @@ export async function GET(
     post = null;
   }
 
+  if (!id?.trim()) {
+    console.warn('[og/post] invalid_post_id', { step: 'validate_params' });
+    return fallback();
+  }
+
   if (!post || !categoryUsesDynamicPostOg(post.category)) {
-    return NextResponse.redirect(new URL('/og-image.png', base));
+    return fallback();
   }
 
   let fontData: ArrayBuffer | undefined;
@@ -58,54 +64,65 @@ export async function GET(
     fontData = undefined;
   }
 
-  const thumbUrl = resolvePostOgThumbnailUrl(post, base);
-  const thumbForImg = thumbUrl ?? null;
-  const subtitle = dynamicOgBoardSubtitle(post.category);
-  const displayTitle = truncateForOgTitle(post.title, 96);
+  try {
+    const safeAttachmentUrls = Array.isArray(post.attachmentUrls)
+      ? post.attachmentUrls.filter((url): url is string => typeof url === 'string')
+      : [];
+    const safePost = {
+      ...post,
+      title: typeof post.title === 'string' ? post.title : '',
+      thumbnail: typeof post.thumbnail === 'string' ? post.thumbnail : null,
+      attachmentUrls: safeAttachmentUrls,
+    };
 
-  return new ImageResponse(
-    (
-      <div
-        style={{
-          width: '100%',
-          height: '100%',
-          display: 'flex',
-          position: 'relative',
-          background: '#0f172a',
-        }}
-      >
-        {/* eslint-disable-next-line @next/next/no-img-element -- @vercel/og Satori */}
-        <img
-          src={defaultOg}
-          width={OG_W}
-          height={OG_H}
-          alt=""
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            objectFit: 'cover',
-            width: OG_W,
-            height: OG_H,
-          }}
-        />
+    const thumbUrl = resolvePostOgThumbnailUrl(safePost, base);
+    const thumbForImg = thumbUrl ?? null;
+    const subtitle = dynamicOgBoardSubtitle(post.category);
+    const displayTitle = truncateForOgTitle(safePost.title || 'AIsle', 96);
+
+    return new ImageResponse(
+      (
         <div
           style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            width: OG_W,
-            height: OG_H,
-            background:
-              'linear-gradient(90deg, rgba(15,23,42,0.84) 0%, rgba(15,23,42,0.5) 52%, rgba(15,23,42,0.28) 100%)',
             display: 'flex',
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '44px 52px',
-            boxSizing: 'border-box',
+            position: 'relative',
+            width: '100%',
+            height: '100%',
+            background: '#0f172a',
           }}
         >
+          {/* eslint-disable-next-line @next/next/no-img-element -- @vercel/og Satori */}
+          <img
+            src={defaultOg}
+            width={OG_W}
+            height={OG_H}
+            alt=""
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              objectFit: 'cover',
+              width: OG_W,
+              height: OG_H,
+            }}
+          />
+          <div
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: OG_W,
+              height: OG_H,
+              background:
+                'linear-gradient(90deg, rgba(15,23,42,0.84) 0%, rgba(15,23,42,0.5) 52%, rgba(15,23,42,0.28) 100%)',
+              display: 'flex',
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '44px 52px',
+              boxSizing: 'border-box',
+            }}
+          >
           <div
             style={{
               display: 'flex',
@@ -183,17 +200,25 @@ export async function GET(
               AIsle
             </div>
           )}
+          </div>
         </div>
-      </div>
-    ),
-    {
-      width: OG_W,
-      height: OG_H,
-      ...(fontData
-        ? {
-            fonts: [{ name: 'Pretendard', data: fontData, style: 'normal' as const, weight: 700 as const }],
-          }
-        : {}),
-    }
-  );
+      ),
+      {
+        width: OG_W,
+        height: OG_H,
+        ...(fontData
+          ? {
+              fonts: [{ name: 'Pretendard', data: fontData, style: 'normal' as const, weight: 700 as const }],
+            }
+          : {}),
+      }
+    );
+  } catch (error) {
+    console.error('[og/post] render_failed', {
+      step: 'render_image',
+      id,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return fallback();
+  }
 }
