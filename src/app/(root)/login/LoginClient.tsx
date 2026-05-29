@@ -30,6 +30,9 @@ export function LoginClient() {
   const searchParams = useSearchParams();
   const next = safeNextPath(searchParams.get('next'));
   const errorParam = searchParams.get('error');
+  const signupParam = searchParams.get('signup');
+  const initialMode =
+    signupParam === '1' || signupParam === 'true' ? ('signup' as const) : ('login' as const);
 
   const [resolvedAuthCallbackNotice, setResolvedAuthCallbackNotice] = useState<{
     type: 'ok' | 'err';
@@ -80,6 +83,7 @@ export function LoginClient() {
         router.push(next);
         router.refresh();
       }}
+      initialMode={initialMode}
       initialNotice={effectiveNotice}
     />
   );

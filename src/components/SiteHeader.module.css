@@ -333,6 +333,34 @@
   }
 }
 
+.guestAuth {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-shrink: 0;
+}
+
+.join {
+  padding: 0.5rem 1rem;
+  border: 1px solid rgba(167, 139, 250, 0.45);
+  border-radius: 10px;
+  background: transparent;
+  color: #e4e4e7;
+  font-size: var(--type-14);
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.12s ease,
+    border-color 0.12s ease,
+    color 0.12s ease;
+}
+
+.join:hover {
+  background: rgba(167, 139, 250, 0.12);
+  border-color: rgba(167, 139, 250, 0.65);
+  color: #fafafa;
+}
+
 .login {
   padding: 0.5rem 1.15rem;
   border: none;

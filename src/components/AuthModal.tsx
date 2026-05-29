@@ -16,12 +16,20 @@ type Props = {
   open: boolean;
   onClose: () => void;
   onAuthed: () => void;
+  /** 모달이 열릴 때 선택할 탭 (기본: 로그인) */
+  initialMode?: 'login' | 'signup';
   /** 로그인 페이지 URL 쿼리 등에서 넘기는 초기 안내 */
   initialNotice?: { type: 'ok' | 'err'; text: string } | null;
 };
 
-export function AuthModal({ open, onClose, onAuthed, initialNotice = null }: Props) {
-  const [mode, setMode] = useState<Mode>('login');
+export function AuthModal({
+  open,
+  onClose,
+  onAuthed,
+  initialMode = 'login',
+  initialNotice = null,
+}: Props) {
+  const [mode, setMode] = useState<Mode>(initialMode);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');
@@ -29,8 +37,14 @@ export function AuthModal({ open, onClose, onAuthed, initialNotice = null }: Pro
   const [message, setMessage] = useState<{ type: 'ok' | 'err'; text: string } | null>(null);
 
   useEffect(() => {
-    if (open && initialNotice) setMessage(initialNotice);
-  }, [open, initialNotice]);
+    if (!open) return;
+    setMode(initialMode);
+    if (initialNotice) {
+      setMessage(initialNotice);
+    } else {
+      setMessage(null);
+    }
+  }, [open, initialMode, initialNotice]);
 
   useEffect(() => {
     if (!open) return;

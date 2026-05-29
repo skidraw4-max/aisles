@@ -18,6 +18,7 @@ export function SiteHeader() {
   const router = useRouter();
   const { isAuthenticated, displayName } = useAuth();
   const [modalOpen, setModalOpen] = useState(false);
+  const [authModalMode, setAuthModalMode] = useState<'login' | 'signup'>('login');
   const [menuOpen, setMenuOpen] = useState(false);
   const [mainNavOpen, setMainNavOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -139,9 +140,28 @@ export function SiteHeader() {
                 </div>
               </div>
             ) : (
-              <button type="button" className={styles.login} onClick={() => setModalOpen(true)}>
-                Login
-              </button>
+              <div className={styles.guestAuth}>
+                <button
+                  type="button"
+                  className={styles.join}
+                  onClick={() => {
+                    setAuthModalMode('signup');
+                    setModalOpen(true);
+                  }}
+                >
+                  Join
+                </button>
+                <button
+                  type="button"
+                  className={styles.login}
+                  onClick={() => {
+                    setAuthModalMode('login');
+                    setModalOpen(true);
+                  }}
+                >
+                  Login
+                </button>
+              </div>
             )}
           </div>
         </div>
@@ -156,6 +176,7 @@ export function SiteHeader() {
       <AuthModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
+        initialMode={authModalMode}
         onAuthed={() => {
           setModalOpen(false);
           router.refresh();
