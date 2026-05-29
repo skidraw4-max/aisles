@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { getPublicSiteUrl } from '@/lib/site-url';
 import { syncPrismaUserWithAuth } from '@/lib/sync-prisma-user';
+import { GoogleIcon } from '@/components/GoogleIcon';
 import styles from './AuthModal.module.css';
 
 const EMAIL_FIELD_HINT =
@@ -280,6 +281,7 @@ export function AuthModal({ open, onClose, onAuthed, initialNotice = null }: Pro
               onClick={() => void handleGoogleOAuth()}
               disabled={loading}
             >
+              <GoogleIcon />
               Google로 로그인
             </button>
             <div className={styles.oauthDivider} role="separator" aria-label="또는">
@@ -332,6 +334,7 @@ export function AuthModal({ open, onClose, onAuthed, initialNotice = null }: Pro
               onClick={() => void handleGoogleOAuth()}
               disabled={loading}
             >
+              <GoogleIcon />
               Google 계정으로 가입하기
             </button>
             <div className={styles.oauthDivider} role="separator" aria-label="또는">

@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client';
 import { sendGAEvent } from '@/lib/ga4';
 import { getPublicSiteUrl } from '@/lib/site-url';
 import { setRetentionWelcomePending } from '@/lib/retention-session';
+import { GoogleIcon } from '@/components/GoogleIcon';
 import styles from './fortune-digest-subscribe-cta.module.css';
 
 const PENDING_SUBSCRIBE_KEY = 'aisle:pending-news-subscribe';
@@ -127,6 +128,7 @@ export function FortuneDigestSubscribeCta({ postId, isLoggedIn, newsletterSubscr
         onClick={() => void handleGoogleSubscribe()}
         disabled={loading}
       >
+        <GoogleIcon />
         {loading ? '이동 중…' : '구글 아이디로 3초 만에 구독하기'}
       </button>
       {error ? (

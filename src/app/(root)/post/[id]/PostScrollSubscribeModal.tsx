@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client';
 import { sendGAEvent } from '@/lib/ga4';
 import { setRetentionWelcomePending } from '@/lib/retention-session';
 import { getPublicSiteUrl } from '@/lib/site-url';
+import { GoogleIcon } from '@/components/GoogleIcon';
 import styles from './post-scroll-subscribe-modal.module.css';
 
 const SESSION_SHOWN_KEY = 'aisle:post-scroll-subscribe-shown';
@@ -177,6 +178,7 @@ export function PostScrollSubscribeModal({ isLoggedIn, postId }: Props) {
         onClick={() => void handleGoogleSubscribe()}
         disabled={loading}
       >
+        <GoogleIcon />
         {loading ? '이동 중…' : '구글 아이디로 3초 만에 구독하기'}
       </button>
       {error ? (
