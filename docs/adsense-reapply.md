@@ -53,6 +53,37 @@ curl -X POST "https://<your-host>/api/cron/ai-fortune?backfill=true" \
 - 적용: Hacker News, GeekNews, MIT News, The Verge, Techmeme, Lobsters, AI Breakfast, YouTube(LOUNGE 채널) 등 **크론 자동 수집만**
 - 사용자 수동 업로드(`/api/posts`, 업로드 폼)에는 적용하지 않음
 
+## 4. BUILD·LAUNCH 메뉴 숨김 (AdSense 심사용)
+
+심사 기간 동안 **메인 네비·홈 복도 탭·Today's Best 필터**에서 BUILD·LAUNCH만 숨깁니다. URL·업로드·관리자·게시글 본문은 그대로입니다.
+
+### 환경 변수
+
+| 값 | 동작 |
+|---|---|
+| unset / `false` | BUILD·LAUNCH 메뉴 **표시** (기본) |
+| `true` | BUILD·LAUNCH 메뉴 **숨김** |
+
+```bash
+NEXT_PUBLIC_HIDE_BUILD_LAUNCH_MENU=true
+```
+
+- **Vercel**: Project → Settings → Environment Variables → Production(및 Preview)에 추가 후 **재배포**
+- **로컬**: `.env.local`에 동일 키 설정 후 `npm run dev` 재시작
+- 구현: `src/lib/hide-build-launch-menu.ts` — `MainNav`, `HomeContentTabs`, `TodaysBest`에서만 필터
+
+### 심사 후 다시 표시
+
+1. Vercel에서 `NEXT_PUBLIC_HIDE_BUILD_LAUNCH_MENU` 삭제 또는 `false`로 변경
+2. 재배포
+
+### 숨겨도 접근 가능한 것
+
+- 직접 URL: `/?category=BUILD`, `/?category=LAUNCH`, `/post/{id}`
+- 업로드 폼 카테고리 선택 (BUILD·LAUNCH 포함)
+- 관리자: `/admin/launch-banners` (LAUNCH 배너)
+- 검색·피드·사이트맵·게시글 내 복도 배지
+
 ## 검증
 
 ```bash
