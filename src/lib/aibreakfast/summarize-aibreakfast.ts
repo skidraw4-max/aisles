@@ -9,6 +9,10 @@ import {
   MIN_SYNDICATED_BODY_CHARS,
   totalCharCount,
 } from '@/lib/syndication-content-standards';
+import {
+  GEO_FACTUAL_WRITING_CONSTRAINTS,
+  GEO_NEWS_INTRO_THREE_LINE_CONSTRAINT,
+} from '@/lib/geo-prompt-constraints';
 
 const SYSTEM = `너는 AI·테크 뉴스레터를 한국어 독자에게 전달하는 에디터다.
 
@@ -30,7 +34,10 @@ const SYSTEM = `너는 AI·테크 뉴스레터를 한국어 독자에게 전달�
   - "summary": 해당 주제 요약 (**4~8문장**, 구체적으로, 실명·제품명을 살리되 과장 금지)
   - "insight": 독자가 챙길 **한 줄 인사이트** (한국어)
 
-JSON만 출력한다.`;
+JSON만 출력한다.
+
+${GEO_FACTUAL_WRITING_CONSTRAINTS}
+${GEO_NEWS_INTRO_THREE_LINE_CONSTRAINT}`;
 
 export type AiBreakfastTopic = {
   headline: string;

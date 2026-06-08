@@ -100,7 +100,7 @@ AIsle의 사용자 생성 콘텐츠(UGC) 허브 정책과 운영 가이드입니
 
 ## JSON-LD
 
-BUILD/LAUNCH 상세 페이지에 `Article` 스키마(제목·설명·날짜·이미지) 삽입.
+BUILD/LAUNCH 상세 페이지에 `TechArticle` 스키마, LOUNGE·GOSSIP에 `NewsArticle` — [`geo-optimization.md`](./geo-optimization.md) 참고.
 
 ## 지표 대시보드 (권장)
 

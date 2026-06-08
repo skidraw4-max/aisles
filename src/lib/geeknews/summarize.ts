@@ -12,6 +12,10 @@ import {
   MIN_SYNDICATED_BODY_CHARS,
   totalCharCount,
 } from '@/lib/syndication-content-standards';
+import {
+  GEO_FACTUAL_WRITING_CONSTRAINTS,
+  GEO_NEWS_INTRO_THREE_LINE_CONSTRAINT,
+} from '@/lib/geo-prompt-constraints';
 
 /**
  * 참고 톤: `post/c5f8ed2f-902b-45e7-bb86-19fbe6bad46a` — [오픈소스 소개] 스타일 제목,
@@ -33,7 +37,10 @@ const SYSTEM = `너는 개발자·IT 독자를 위한 한국어 에디터다. �
 - "futureOutlook": 문자열. **향후 전망** — 규제·경쟁 구도, 로드맵 추정, 리스크와 기회 등 앞으로의 변수. 여러 문단 허용("\\n\\n").
 - "techStackOrMeta": 문자열. 기술 스택·라이선스·저장소 등 메타가 있으면 bullet 형식으로, 없으면 빈 문자열 "".
 
-JSON만 출력한다.`;
+JSON만 출력한다.
+
+${GEO_FACTUAL_WRITING_CONSTRAINTS}
+${GEO_NEWS_INTRO_THREE_LINE_CONSTRAINT}`;
 
 export type GeekNewsSection = { title: string; content: string };
 

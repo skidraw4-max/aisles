@@ -6,6 +6,10 @@ import {
   tryParseJsonFromModelText,
 } from '@/lib/gemini-prompt-analysis-engine';
 import { MIN_SYNDICATED_BODY_CHARS, totalCharCount } from '@/lib/syndication-content-standards';
+import {
+  GEO_FACTUAL_WRITING_CONSTRAINTS,
+  GEO_NEWS_INTRO_THREE_LINE_CONSTRAINT,
+} from '@/lib/geo-prompt-constraints';
 
 const SYSTEM = `너는 The Verge 스타일의 테크 저널리즘을 한국어로 옮기는 에디터다. 톤은 날카롭고 트렌디하며, 과장 없이 "왜 지금 이 소식이 중요한지"가 드러나게 쓴다.
 
@@ -23,7 +27,10 @@ const SYSTEM = `너는 The Verge 스타일의 테크 저널리즘을 한국어�
 - "futureOutlook": 문자열. **향후 전망** — 규제, 경쟁 반응, 가능한 로드맵, 불확실성까지 서술.
 - "takeaway": 문자열. 마지막 한 줄 시사점.
 
-JSON만 출력한다.`;
+JSON만 출력한다.
+
+${GEO_FACTUAL_WRITING_CONSTRAINTS}
+${GEO_NEWS_INTRO_THREE_LINE_CONSTRAINT}`;
 
 export type VergeSummaryJson = {
   postTitle: string;

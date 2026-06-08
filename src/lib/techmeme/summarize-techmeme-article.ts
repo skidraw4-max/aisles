@@ -11,6 +11,10 @@ import {
   tryParseJsonFromModelText,
 } from '@/lib/gemini-prompt-analysis-engine';
 import { MIN_SYNDICATED_BODY_CHARS } from '@/lib/syndication-content-standards';
+import {
+  GEO_FACTUAL_WRITING_CONSTRAINTS,
+  GEO_NEWS_INTRO_THREE_LINE_CONSTRAINT,
+} from '@/lib/geo-prompt-constraints';
 
 const SYSTEM = `너는 IT·테크 뉴스를 **일반인도 이해하기 쉬운 한국어**로 풀어 쓰는 에디터다. 입력은 Techmeme 헤드라인(영문)과 웹에서 추출한 기사 평문이다.
 
@@ -32,7 +36,10 @@ const SYSTEM = `너는 IT·테크 뉴스를 **일반인도 이해하기 쉬운 �
 - "futureOutlook": 문자열. **미래에 미칠 변화**를 구체적으로. "\\n\\n" 허용.
 - "techStackOrMeta": 문자열. 기술 메타가 있으면 bullet, 없으면 "".
 
-JSON만 출력한다.`;
+JSON만 출력한다.
+
+${GEO_FACTUAL_WRITING_CONSTRAINTS}
+${GEO_NEWS_INTRO_THREE_LINE_CONSTRAINT}`;
 
 export async function summarizeTechmemeArticle(
   apiKey: string,

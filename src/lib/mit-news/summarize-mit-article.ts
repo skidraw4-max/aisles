@@ -9,6 +9,10 @@ import {
   MIN_SYNDICATED_BODY_CHARS,
   totalCharCount,
 } from '@/lib/syndication-content-standards';
+import {
+  GEO_FACTUAL_WRITING_CONSTRAINTS,
+  GEO_NEWS_INTRO_THREE_LINE_CONSTRAINT,
+} from '@/lib/geo-prompt-constraints';
 
 const SYSTEM = `너는 MIT News 수준의 학술·연구 뉴스를 한국어 **중학생도 이해할 수 있는 난이도**로 풀어 쓰는 과학 저널리스트다.
 
@@ -28,7 +32,10 @@ const SYSTEM = `너는 MIT News 수준의 학술·연구 뉴스를 한국어 **�
 - "easySummary": 문자열. 핵심을 중학생 눈높이로 설명한다. "\\n\\n" 문단 구분.
 - "futureImpact": 문자열. **이 기술·연구가 바꿀 미래**·한계·다음 단계 연구.
 
-JSON만 출력한다.`;
+JSON만 출력한다.
+
+${GEO_FACTUAL_WRITING_CONSTRAINTS}
+${GEO_NEWS_INTRO_THREE_LINE_CONSTRAINT}`;
 
 export type MitNewsSummaryJson = {
   postTitle: string;

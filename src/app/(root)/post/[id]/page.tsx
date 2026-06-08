@@ -47,6 +47,8 @@ import { PostRelatedPosts } from './PostRelatedPosts';
 import { PostScrollSubscribeModal } from './PostScrollSubscribeModal';
 import { getKstParts, weekOfMonthKst } from '@/lib/ai-fortune/kst-week';
 import { parseMbtiType } from '@/lib/ai-fortune/mbti';
+import { aiFortunePayloadFromDb } from '@/lib/ai-fortune/payload';
+import { buildPostArticleJsonLd } from '@/lib/post-json-ld';
 import styles from './post.module.css';
 
 export const dynamic = 'force-dynamic';
@@ -373,8 +375,29 @@ export default async function PostPage({ params }: Props) {
       category: p.category,
       metadataParams: p.metadata?.params,
     }));
+    const fortunePayload = aiFortunePayloadFromDb(post.aiFortunePayload);
+    const siteBaseFortune = getCanonicalSiteUrl();
+    const fortuneJsonLd = buildPostArticleJsonLd({
+      id: post.id,
+      title: post.title,
+      content: post.content,
+      category: post.category,
+      createdAt: post.createdAt,
+      thumbnail: post.thumbnail,
+      authorUsername: post.author.username,
+      categoryLabel: corridorLabel(ui, post.category),
+      siteBase: siteBaseFortune,
+      aiFortuneTrendBullets: fortunePayload?.trendBullets,
+    });
     return (
-      <AiFortunePostView
+      <>
+        {fortuneJsonLd ? (
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(fortuneJsonLd) }}
+          />
+        ) : null}
+        <AiFortunePostView
         post={{
           id: post.id,
           title: post.title,
@@ -400,6 +423,7 @@ export default async function PostPage({ params }: Props) {
         popular={popularSidebar}
         uiLabels={ui}
       />
+      </>
     );
   }
 
@@ -601,28 +625,26 @@ export default async function PostPage({ params }: Props) {
     </div>
   );
 
-  const postUrl = `${siteBase}/post/${post.id}`;
-  const articleJsonLd =
-    isBuildOrLaunch || isLoungeOrGossip
-      ? {
-          '@context': 'https://schema.org',
-          '@type': 'Article',
-          headline: post.title,
-          description: buildPostMetaDescription({
-            title: post.title,
-            content: post.content,
-            categoryLabel: catLabel,
-          }),
-          datePublished: post.createdAt.toISOString(),
-          dateModified: post.createdAt.toISOString(),
-          author: { '@type': 'Person', name: post.author.username },
-          publisher: { '@type': 'Organization', name: 'AIsle', url: siteBase },
-          mainEntityOfPage: postUrl,
-          ...(post.thumbnail?.trim()
-            ? { image: [toAbsoluteMediaUrl(post.thumbnail.trim(), siteBase)] }
-            : {}),
-        }
-      : null;
+  const articleJsonLd = buildPostArticleJsonLd({
+    id: post.id,
+    title: post.title,
+    content: post.content,
+    category: post.category,
+    createdAt: post.createdAt,
+    thumbnail: post.thumbnail,
+    authorUsername: post.author.username,
+    categoryLabel: catLabel,
+    siteBase,
+    externalLink: post.externalLink,
+    geeknewsOriginalUrl: post.geeknewsOriginalUrl,
+    hackerNewsOriginalUrl: post.hackerNewsOriginalUrl,
+    lobstersOriginalUrl: post.lobstersOriginalUrl,
+    techmemeOriginalUrl: post.techmemeOriginalUrl,
+    vergeOriginalUrl: post.vergeOriginalUrl,
+    aiBreakfastOriginalUrl: post.aiBreakfastOriginalUrl,
+    mitNewsOriginalUrl: post.mitNewsOriginalUrl,
+    youtubeVideoId: post.youtubeVideoId,
+  });
 
   return (
     <>

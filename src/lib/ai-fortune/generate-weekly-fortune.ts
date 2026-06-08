@@ -15,6 +15,7 @@ import {
   parseAiFortuneWeeklyPayload,
   type AiFortuneWeeklyPayload,
 } from '@/lib/ai-fortune/payload';
+import { GEO_FACTUAL_WRITING_CONSTRAINTS, GEO_FORTUNE_FACT_CONSTRAINTS } from '@/lib/geo-prompt-constraints';
 
 export type { AiFortuneWeeklyPayload, AiFortuneMbtiEntry } from '@/lib/ai-fortune/payload';
 
@@ -41,7 +42,10 @@ type 필드는 반드시 영문 4글자 대문자 MBTI 코드만 사용 (예: IN
 mbti 배열은 ${MBTI_LIST} 각 유형이 정확히 1회씩 포함되어야 한다.
 
 예시 형태:
-{"weekLabel":"2026년 5월 3주차","trendBullets":["...","...","..."],"mbti":[{"type":"INTJ","strategy":"...","luckyKeyword":"...","avoidHabit":"..."}],"closingNote":"..."}`;
+{"weekLabel":"2026년 5월 3주차","trendBullets":["...","...","..."],"mbti":[{"type":"INTJ","strategy":"...","luckyKeyword":"...","avoidHabit":"..."}],"closingNote":"..."}
+
+${GEO_FACTUAL_WRITING_CONSTRAINTS}
+${GEO_FORTUNE_FACT_CONSTRAINTS}`;
 
 const VALIDATION_ERROR_MESSAGE =
   'AI FORTUNE JSON 형식이 올바르지 않습니다 (트렌드 3~5개, MBTI 16유형).';

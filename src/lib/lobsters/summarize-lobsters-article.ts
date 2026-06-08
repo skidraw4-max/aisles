@@ -10,6 +10,10 @@ import {
   isGeminiModelNotFoundForFallback,
   tryParseJsonFromModelText,
 } from '@/lib/gemini-prompt-analysis-engine';
+import {
+  GEO_FACTUAL_WRITING_CONSTRAINTS,
+  GEO_NEWS_INTRO_THREE_LINE_CONSTRAINT,
+} from '@/lib/geo-prompt-constraints';
 
 const SYSTEM = `너는 개발자·IT 독자를 위한 한국어 에디터다. 입력은 Lobsters 스토리 제목과 웹에서 추출한 기사 평문이다.
 
@@ -26,7 +30,10 @@ const SYSTEM = `너는 개발자·IT 독자를 위한 한국어 에디터다. �
 - "futureOutlook": 문자열. **향후 전망** — 경쟁·제품·커뮤니티 등 앞으로의 변수.
 - "techStackOrMeta": 문자열. 기술 메타가 있으면 bullet 형식, 없으면 "".
 
-JSON만 출력한다.`;
+JSON만 출력한다.
+
+${GEO_FACTUAL_WRITING_CONSTRAINTS}
+${GEO_NEWS_INTRO_THREE_LINE_CONSTRAINT}`;
 
 export async function summarizeLobstersArticle(
   apiKey: string,

@@ -29,9 +29,9 @@
 - [ ] **색인** → 페이지: 신규 `/post/*`·`/?category=` 주요 URL이 “색인 생성됨”인지
 - [ ] **Sitemap:** `https://<도메인>/sitemap.xml` 제출 상태·마지막 읽기 날짜
 - [ ] **AI_FORTUNE / BUILD / LAUNCH:** 최근 글·`featuredOnHome` LAUNCH가 사이트맵·검색에 노출되는지 샘플 URL 3건 검사
-- [ ] **robots.txt:** `/api/`, `/admin/` 등 disallow 유지 확인
+- [ ] **robots.txt:** `/api/`, `/admin/` 등 disallow 유지 + AI 크롤러 Allow ([`geo-optimization.md`](./geo-optimization.md))
 - [ ] **Canonical:** 카테고리 홈 `/?category=LAB` 등 `alternates.canonical` 일치
-- [ ] **구조화 데이터:** Rich Results 테스트로 Article(JSON-LD) — BUILD·LAUNCH·LOUNGE
+- [ ] **구조화 데이터:** Rich Results 테스트 — LOUNGE `NewsArticle`, BUILD `TechArticle`, AI FORTUNE `TechArticle` ([`geo-optimization.md`](./geo-optimization.md))
 - [ ] **Core Web Vitals:** 모바일 URL 그룹 “좋음” 비율
 
 크론·비밀 운영은 [`cron-operations.md`](./cron-operations.md) 를 함께 봅니다.
