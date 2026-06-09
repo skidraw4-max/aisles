@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import Script from 'next/script';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import { Syne, DM_Sans, Roboto_Mono } from 'next/font/google';
+import { CapacitorSafeArea } from '@/components/CapacitorSafeArea';
 import { HomeSupabaseRedirectHandler } from '@/components/HomeSupabaseRedirectHandler';
 import { getCanonicalSiteUrl } from '@/lib/canonical-site-url';
 import { GA_MEASUREMENT_ID } from '@/lib/ga4';
@@ -43,6 +44,7 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover',
+  interactiveWidget: 'resizes-content',
 };
 
 export const metadata: Metadata = {
@@ -145,6 +147,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="ko" className={`${display.variable} ${body.variable} ${mono.variable}`}>
       <body className={body.className}>
+        <CapacitorSafeArea />
         <script
           type="application/ld+json"
           // eslint-disable-next-line react/no-danger
