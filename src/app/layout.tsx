@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import Script from 'next/script';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import { Syne, DM_Sans, Roboto_Mono } from 'next/font/google';
+import { AdMobCapacitorInit } from '@/components/AdMobCapacitorInit';
 import { CapacitorSafeArea } from '@/components/CapacitorSafeArea';
 import { HomeSupabaseRedirectHandler } from '@/components/HomeSupabaseRedirectHandler';
 import { getCanonicalSiteUrl } from '@/lib/canonical-site-url';
@@ -148,6 +149,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="ko" className={`${display.variable} ${body.variable} ${mono.variable}`}>
       <body className={body.className}>
         <CapacitorSafeArea />
+        <AdMobCapacitorInit />
         <script
           type="application/ld+json"
           // eslint-disable-next-line react/no-danger

@@ -16,6 +16,7 @@ Production 웹앱(`https://www.aisleshub.com`)을 Android 네이티브 셸로 �
 - `@capacitor/core`, `@capacitor/cli`, `@capacitor/android` — Android 셸
 - `@capacitor/app` — 앱 라이프사이클, 딥링크 (OAuth 준비)
 - `@capacitor/browser` — 인앱/시스템 브라우저 OAuth (준비)
+- `@capacitor-community/admob` — AdMob 배너 (Android)
 
 ### 원격 URL 모드
 
@@ -131,10 +132,14 @@ npm run sync
 
 버전: `versionName` `1.0.0`, `versionCode` `1` (`mobile/android/app/build.gradle`).
 
+### AdMob
+
+Android 네이티브 배너 연동 완료. 상세: **[mobile-admob.md](./mobile-admob.md)**
+
 ### 이후 단계 (미구현)
 
-- AdMob
-- 푸시 알림, 상태바/네비게이션 바 스타일
+- 네이티브(in-feed) 광고 커스텀 브리지
+- 푸시 알림
 - 오프라인 fallback UI
 
 ## 문제 해결

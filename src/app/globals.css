@@ -2,6 +2,7 @@
 
 :root {
   --app-safe-area-top: 0px;
+  --app-ad-banner-height: 0px;
   --header-safe-area-top: env(safe-area-inset-top, 0px);
   --bg: #0b0d17;
   --surface: #161b22;
@@ -66,6 +67,7 @@ html.capacitor-native {
 
 html.capacitor-native body {
   padding-top: 0;
+  padding-bottom: var(--app-ad-banner-height, 0px);
 }
 
 h1,

@@ -5,6 +5,7 @@ import nextDynamic from 'next/dynamic';
 import type { Category } from '@prisma/client';
 import type { FeedPostJson } from '@/lib/home-feed';
 import { LaunchFeedSlider, type LaunchFeedSlide } from '@/components/LaunchFeedSlider';
+import { NativeAdSlot } from '@/components/NativeAdSlot';
 import { useUiLabels } from '@/components/UiLabelsProvider';
 import styles from '@/app/(root)/page.module.css';
 
@@ -89,6 +90,7 @@ export function HomeDeferredLower({
             {launchSlides.length > 0 ? <LaunchFeedSlider slides={launchSlides} /> : null}
           </div>
         ) : null}
+        {!filterCategory ? <NativeAdSlot /> : null}
         {!filterCategory ? <h2 className={styles.allFeedSectionHeading}>{allHeading}</h2> : null}
         <HomeAllFeed
           key={homeAllFeed.feedKey}
