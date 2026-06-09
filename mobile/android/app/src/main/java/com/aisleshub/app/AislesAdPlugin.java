@@ -9,9 +9,13 @@ import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
+import com.google.android.gms.ads.AdError;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdSize;
 import com.google.android.gms.ads.AdView;
+import com.google.android.gms.ads.FullScreenContentCallback;
+import com.google.android.gms.ads.LoadAdError;
+import com.google.android.gms.ads.appopen.AppOpenAd;
 
 /**
  * In-feed MREC at exact WebView coordinates (dp). The community AdMob plugin only supports
@@ -22,8 +26,11 @@ public class AislesAdPlugin extends Plugin {
 
     private static final String TAG = "AislesAd";
     private static final String TEST_BANNER_ID = "ca-app-pub-3940256099942544/6300978111";
+    private static final String TEST_APP_OPEN_ID = "ca-app-pub-3940256099942544/3419835294";
 
     private AdView adView;
+    private AppOpenAd appOpenAd;
+    private boolean isLoadingAppOpen;
     private ViewGroup rootViewGroup;
     private String loadedUnitId;
 
@@ -99,6 +106,81 @@ public class AislesAdPlugin extends Plugin {
                 Log.e(TAG, "showMrecAtRect failed", ex);
                 call.reject(ex.getLocalizedMessage(), ex);
             }
+        });
+    }
+
+    @PluginMethod
+    public void prepareAppOpen(PluginCall call) {
+        if (getActivity() == null) {
+            call.reject("Activity not available");
+            return;
+        }
+
+        if (appOpenAd != null || isLoadingAppOpen) {
+            call.resolve();
+            return;
+        }
+
+        final String adId = call.getString("adId", TEST_APP_OPEN_ID);
+        final boolean isTesting = call.getBoolean("isTesting", false);
+        final String unitId = isTesting ? TEST_APP_OPEN_ID : adId;
+
+        isLoadingAppOpen = true;
+        getActivity().runOnUiThread(() -> {
+            AppOpenAd.load(
+                getContext(),
+                unitId,
+                new AdRequest.Builder().build(),
+                new AppOpenAd.AppOpenAdLoadCallback() {
+                    @Override
+                    public void onAdLoaded(AppOpenAd ad) {
+                        isLoadingAppOpen = false;
+                        appOpenAd = ad;
+                        call.resolve();
+                    }
+
+                    @Override
+                    public void onAdFailedToLoad(LoadAdError loadAdError) {
+                        isLoadingAppOpen = false;
+                        Log.w(TAG, "prepareAppOpen failed: " + loadAdError.getMessage());
+                        call.reject(loadAdError.getMessage());
+                    }
+                }
+            );
+        });
+    }
+
+    @PluginMethod
+    public void showAppOpen(PluginCall call) {
+        if (getActivity() == null) {
+            call.reject("Activity not available");
+            return;
+        }
+
+        if (appOpenAd == null) {
+            call.reject("App open ad not ready");
+            return;
+        }
+
+        getActivity().runOnUiThread(() -> {
+            final AppOpenAd ad = appOpenAd;
+            appOpenAd = null;
+            ad.setFullScreenContentCallback(
+                new FullScreenContentCallback() {
+                    @Override
+                    public void onAdDismissedFullScreenContent() {
+                        ad.setFullScreenContentCallback(null);
+                    }
+
+                    @Override
+                    public void onAdFailedToShowFullScreenContent(AdError adError) {
+                        Log.w(TAG, "showAppOpen failed: " + adError.getMessage());
+                        ad.setFullScreenContentCallback(null);
+                    }
+                }
+            );
+            ad.show(getActivity());
+            call.resolve();
         });
     }
 

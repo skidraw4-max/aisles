@@ -9,6 +9,8 @@ Capacitor Android 셸에서 **네이티브 AdMob**을 표시합니다. WebView�
 | App ID | `ca-app-pub-2237287742271246~5141113207` |
 | 배너 (하단 Adaptive) | `ca-app-pub-2237287742271246/6354915116` |
 | MREC 인피드 | **동일 배너 유닛** + `BannerAdSize.MEDIUM_RECTANGLE` (별도 MREC 유닛 생성 가능) |
+| App Open | `ca-app-pub-2237287742271246/9608640126` |
+| 전면 (Interstitial) | `ca-app-pub-2237287742271246/9220751606` |
 | 네이티브 (미사용) | `ca-app-pub-2237287742271246/3366328699` |
 
 `public/app-ads.txt` 에 `pub-2237287742271246` 이 이미 등록되어 있습니다.
@@ -26,9 +28,9 @@ Capacitor Android 셸에서 **네이티브 AdMob**을 표시합니다. WebView�
 | `mobile/package.json` | `@capacitor-community/admob@^7.2.0` |
 | `mobile/android/.../AndroidManifest.xml` | `com.google.android.gms.ads.APPLICATION_ID` |
 | `mobile/android/.../strings.xml` | `admob_app_id` |
-| `src/lib/admob-capacitor.ts` | 초기화·하단 배너·인피드 MREC·테스트 모드 |
-| `src/lib/aisles-ad-plugin.ts` | 인피드 MREC 절대 좌표 플러그인 (Android) |
-| `mobile/android/.../AislesAdPlugin.java` | `AdView` 를 WebView 좌표에 직접 배치 |
+| `src/lib/admob-capacitor.ts` | 초기화·하단 배너·인피드 MREC·App Open·전면·테스트 모드 |
+| `src/lib/aisles-ad-plugin.ts` | 인피드 MREC·App Open 네이티브 플러그인 (Android) |
+| `mobile/android/.../AislesAdPlugin.java` | MREC `AdView` 좌표 배치 + `AppOpenAd` (v7 admob 미지원) |
 | `src/lib/feed-ad-slots.ts` | 5개 게시글마다 광고 슬롯 삽입 |
 | `src/components/AdMobCapacitorInit.tsx` | 앱 로드 시 하단 배너 |
 | `src/components/NativeAdSlot.tsx` | 인피드 MREC 슬롯 (DOM + 네이티브 오버레이) |
@@ -54,14 +56,52 @@ Capacitor Android 셸에서 **네이티브 AdMob**을 표시합니다. WebView�
 - **웹 브라우저**: 네이티브 광고 없음 — 점선 **「광고」** 플레이스홀더만 표시
 - **동시 노출**: 플러그인이 배너 1개만 지원하므로 MREC 표시 중에는 하단 배너가 자동으로 숨겨집니다
 
+### App Open·전면 (기본 비노출)
+
+프로덕션에서는 **표시하지 않습니다**. 코드만 포함되어 있으며, 폐쇄 테스트 시에만 env 로 켭니다.
+
+| 플래그 | 기본값 | 설명 |
+|--------|--------|------|
+| `NEXT_PUBLIC_ADMOB_APP_OPEN_ENABLED` | (미설정 / `false`) | 정확히 `true` 일 때만 App Open 로드·표시 |
+| `NEXT_PUBLIC_ADMOB_INTERSTITIAL_ENABLED` | (미설정 / `false`) | 정확히 `true` 일 때만 전면 로드·표시 |
+
+플래그가 `true` 가 **아니면** `prepare`·`show` 호출 없음 — 배너·MREC 와 충돌 없음.
+
+#### App Open (플래그 ON 시)
+
+- `@capacitor-community/admob` v7 에 App Open API 없음 → `AislesAd.prepareAppOpen` / `showAppOpen` (네이티브 `AppOpenAd`)
+- **콜드 스타트**: WebView 로드 후 ~800ms 뒤 표시
+- **백그라운드 복귀**: Capacitor `App` `appStateChange` → `isActive` 시 표시
+- `/login`, `/auth/*` 에서는 표시 안 함
+
+#### 전면 Interstitial (플래그 ON 시)
+
+- `@capacitor-community/admob` `prepareInterstitial` + `showInterstitial`
+- **트리거**: 라우트 이동 **8회** 이후 세션당 **최대 1회** (보수적)
+- `/login`, `/auth/*` 에서는 표시 안 함
+
+### 폐쇄 테스트에서 켜기
+
+Vercel(또는 빌드 env)에 예시:
+
+```bash
+NEXT_PUBLIC_ADMOB_TEST_MODE=true
+NEXT_PUBLIC_ADMOB_APP_OPEN_ENABLED=true
+NEXT_PUBLIC_ADMOB_INTERSTITIAL_ENABLED=true
+```
+
+배포 후 `npm run mobile:sync` → Android 앱 재설치.
+
 ## 테스트 광고
 
 ```bash
 NEXT_PUBLIC_ADMOB_TEST_MODE=true
 ```
 
-- `true`: Google 공식 Android 테스트 ID `ca-app-pub-3940256099942544/6300978111` + `initializeForTesting` / `isTesting`
-- 배너·MREC 모두 동일 테스트 유닛에 **adSize** 로 크기만 구분
+- `true`: Google 공식 Android 테스트 ID + `initializeForTesting` / `isTesting`
+- 배너·MREC: `ca-app-pub-3940256099942544/6300978111` (adSize 로 크기 구분)
+- App Open: `ca-app-pub-3940256099942544/3419835294`
+- 전면: `ca-app-pub-3940256099942544/1033173712`
 
 ### 기기에서 확인
 
