@@ -24,9 +24,14 @@ function singleAdInsertIndex(postCount: number): number {
 export function interleaveFeedAdSlots<T>(
   posts: T[],
   adMode: FeedAdMode = 'everyN',
-  interval: number = FEED_AD_INTERVAL
+  interval: number = FEED_AD_INTERVAL,
+  includeAds = true
 ): FeedListItem<T>[] {
   if (posts.length === 0) return [];
+
+  if (!includeAds) {
+    return posts.map((post) => ({ type: 'post', post }));
+  }
 
   if (adMode === 'singlePerScreen') {
     const insertAfter = singleAdInsertIndex(posts.length);

@@ -16,9 +16,10 @@ import { useCorridorLabel } from '@/components/UiLabelsProvider';
 import { PostThumbnail } from '@/components/post/PostThumbnail';
 import type { Category } from '@prisma/client';
 import { ALL_CARD_FEED_INITIAL_COUNT } from '@/lib/home-all-card-feed';
-import { interleaveFeedAdSlots, type FeedListItem } from '@/lib/feed-ad-slots';
+import { interleaveFeedAdSlots, FEED_AD_INTERVAL, type FeedListItem } from '@/lib/feed-ad-slots';
 import type { FeedPostJson } from '@/lib/home-feed';
 import { tryCreateBrowserClient } from '@/lib/supabase/client';
+import { isCapacitorNative } from '@/lib/capacitor-oauth';
 import { NativeAdSlot } from '@/components/NativeAdSlot';
 import styles from '@/app/(root)/page.module.css';
 
@@ -463,10 +464,15 @@ export function HomeAllFeed({ category, excludeIds, initialPosts, initialHasMore
   }, [allCardFeed, visibleCount, posts.length, hasMore, loading, loadPage]);
 
   const cardGridPosts = allCardFeed ? posts.slice(0, visibleCount) : posts;
+  const includeFeedAds = isCapacitorNative();
   const cardGridWithAds =
-    !boardList && !fortuneArchive ? interleaveFeedAdSlots(cardGridPosts, 'everyN') : null;
+    !boardList && !fortuneArchive
+      ? interleaveFeedAdSlots(cardGridPosts, 'everyN', FEED_AD_INTERVAL, includeFeedAds)
+      : null;
   const boardListWithAds =
-    boardList && !fortuneArchive ? interleaveFeedAdSlots(posts, 'singlePerScreen') : null;
+    boardList && !fortuneArchive
+      ? interleaveFeedAdSlots(posts, 'singlePerScreen', FEED_AD_INTERVAL, includeFeedAds)
+      : null;
   const showAllCardMoreBtn =
     allCardFeed &&
     posts.length > 0 &&
@@ -496,7 +502,7 @@ export function HomeAllFeed({ category, excludeIds, initialPosts, initialHasMore
             <>
               <h3 className={styles.fortuneArchiveHeadingPast}>지난 주차</h3>
               <FeedBoardTable
-                items={interleaveFeedAdSlots(posts.slice(1), 'singlePerScreen')}
+                items={interleaveFeedAdSlots(posts.slice(1), 'singlePerScreen', FEED_AD_INTERVAL, includeFeedAds)}
                 gossipReportStyle={gossipReportStyle}
                 showDateInMeta={loungeDateMeta}
                 hideAuthor={hideAuthor}
