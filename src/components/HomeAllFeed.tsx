@@ -16,8 +16,10 @@ import { useCorridorLabel } from '@/components/UiLabelsProvider';
 import { PostThumbnail } from '@/components/post/PostThumbnail';
 import type { Category } from '@prisma/client';
 import { ALL_CARD_FEED_INITIAL_COUNT } from '@/lib/home-all-card-feed';
+import { interleaveFeedAdSlots, type FeedListItem } from '@/lib/feed-ad-slots';
 import type { FeedPostJson } from '@/lib/home-feed';
 import { tryCreateBrowserClient } from '@/lib/supabase/client';
+import { NativeAdSlot } from '@/components/NativeAdSlot';
 import styles from '@/app/(root)/page.module.css';
 
 const PAGE_SIZE = 12;
@@ -300,13 +302,13 @@ function LoungeSubscribeNoticeBar() {
 }
 
 function FeedBoardTable({
-  posts,
+  items,
   gossipReportStyle,
   showDateInMeta,
   hideAuthor,
   showFortuneWeek,
 }: {
-  posts: FeedPostJson[];
+  items: FeedListItem<FeedPostJson>[];
   gossipReportStyle: boolean;
   showDateInMeta: boolean;
   hideAuthor: boolean;
@@ -330,16 +332,22 @@ function FeedBoardTable({
             </span>
           </div>
           <ul className={styles.feedBoardList} role="list">
-            {posts.map((post) => (
-              <FeedBoardRow
-                key={post.id}
-                post={post}
-                gossipReportStyle={gossipReportStyle}
-                showDateInMeta={showDateInMeta}
-                hideAuthor={hideAuthor}
-                showFortuneWeek={showFortuneWeek}
-              />
-            ))}
+            {items.map((item) =>
+              item.type === 'post' ? (
+                <FeedBoardRow
+                  key={item.post.id}
+                  post={item.post}
+                  gossipReportStyle={gossipReportStyle}
+                  showDateInMeta={showDateInMeta}
+                  hideAuthor={hideAuthor}
+                  showFortuneWeek={showFortuneWeek}
+                />
+              ) : (
+                <li key={`board-ad-${item.slotIndex}`} className={styles.feedBoardAdRow}>
+                  <NativeAdSlot variant="boardRow" slotIndex={item.slotIndex} />
+                </li>
+              )
+            )}
           </ul>
         </div>
       </div>
@@ -455,6 +463,9 @@ export function HomeAllFeed({ category, excludeIds, initialPosts, initialHasMore
   }, [allCardFeed, visibleCount, posts.length, hasMore, loading, loadPage]);
 
   const cardGridPosts = allCardFeed ? posts.slice(0, visibleCount) : posts;
+  const cardGridWithAds = !boardList && !fortuneArchive ? interleaveFeedAdSlots(cardGridPosts) : null;
+  const boardListWithAds =
+    boardList && !fortuneArchive ? interleaveFeedAdSlots(posts) : null;
   const showAllCardMoreBtn =
     allCardFeed &&
     posts.length > 0 &&
@@ -474,7 +485,7 @@ export function HomeAllFeed({ category, excludeIds, initialPosts, initialHasMore
         <>
           <h3 className={styles.fortuneArchiveHeading}>이번 주</h3>
           <FeedBoardTable
-            posts={posts.slice(0, 1)}
+            items={[{ type: 'post', post: posts[0] }]}
             gossipReportStyle={gossipReportStyle}
             showDateInMeta={loungeDateMeta}
             hideAuthor={hideAuthor}
@@ -484,7 +495,7 @@ export function HomeAllFeed({ category, excludeIds, initialPosts, initialHasMore
             <>
               <h3 className={styles.fortuneArchiveHeadingPast}>지난 주차</h3>
               <FeedBoardTable
-                posts={posts.slice(1)}
+                items={interleaveFeedAdSlots(posts.slice(1))}
                 gossipReportStyle={gossipReportStyle}
                 showDateInMeta={loungeDateMeta}
                 hideAuthor={hideAuthor}
@@ -495,18 +506,24 @@ export function HomeAllFeed({ category, excludeIds, initialPosts, initialHasMore
         </>
       ) : boardList ? (
         <FeedBoardTable
-          posts={posts}
+          items={boardListWithAds!}
           gossipReportStyle={gossipReportStyle}
           showDateInMeta={loungeDateMeta}
           hideAuthor={hideAuthor}
         />
       ) : (
         <ul className={styles.allFeed}>
-          {cardGridPosts.map((post, i) => (
-            <li key={post.id}>
-              <FeedPostCard post={post} imagePriority={i < 4} />
-            </li>
-          ))}
+          {cardGridWithAds!.map((item, i) =>
+            item.type === 'post' ? (
+              <li key={item.post.id}>
+                <FeedPostCard post={item.post} imagePriority={i < 4} />
+              </li>
+            ) : (
+              <li key={`feed-ad-${item.slotIndex}`} className={styles.feedAdRow}>
+                <NativeAdSlot variant="fullWidthRow" slotIndex={item.slotIndex} />
+              </li>
+            )
+          )}
         </ul>
       )}
 

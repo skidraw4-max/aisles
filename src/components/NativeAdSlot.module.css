@@ -1,6 +1,62 @@
-.slot {
-  width: 100%;
-  min-height: 0;
-  margin: 0.75rem 0 1rem;
-  pointer-events: none;
-}
+.fullWidthRowSlot {
+  width: 100%;
+  min-height: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 16px;
+  background: var(--surface);
+  border: 1px dashed rgba(167, 139, 250, 0.35);
+}
+
+.boardRowSlot {
+  width: 100%;
+  min-height: 280px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-2, var(--surface));
+  border-top: 1px dashed rgba(167, 139, 250, 0.25);
+  border-bottom: 1px dashed rgba(167, 139, 250, 0.25);
+}
+
+.mrecAnchor {
+  position: relative;
+  width: min(100%, 320px);
+  min-height: 250px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.webPlaceholder,
+.boardRowPlaceholder {
+  width: 100%;
+  min-height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: var(--surface-2, rgba(255, 255, 255, 0.04));
+  border: 1px dashed rgba(167, 139, 250, 0.25);
+}
+
+.boardRowPlaceholder {
+  min-height: 80px;
+  border-radius: 0;
+  border-left: none;
+  border-right: none;
+}
+
+.placeholderBadge {
+  padding: 0.2rem 0.55rem;
+  border-radius: 6px;
+  font-size: var(--type-11, 0.6875rem);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  background: rgba(11, 13, 23, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #a1a1aa;
+}
+

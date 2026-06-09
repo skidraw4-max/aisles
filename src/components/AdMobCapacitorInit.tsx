@@ -5,7 +5,9 @@ import { usePathname } from 'next/navigation';
 import { isCapacitorNative } from '@/lib/capacitor-oauth';
 import {
   hideBannerAd,
+  hideInFeedMrec,
   initializeAdMob,
+  isInFeedMrecActive,
   resumeBannerAd,
   shouldHideAdsForPath,
   showBannerAd,
@@ -24,10 +26,13 @@ export function AdMobCapacitorInit() {
     const syncBanner = async () => {
       await initializeAdMob();
       if (shouldHideAdsForPath(pathname)) {
+        await hideInFeedMrec();
         await hideBannerAd();
         return;
       }
-      await showBannerAd();
+      if (!isInFeedMrecActive()) {
+        await showBannerAd();
+      }
     };
 
     void syncBanner();
