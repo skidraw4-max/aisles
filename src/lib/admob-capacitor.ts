@@ -1,4 +1,5 @@
 import { isCapacitorNative } from '@/lib/capacitor-oauth';
+import { AislesAd } from '@/lib/aisles-ad-plugin';
 
 /** AdMob App ID (AndroidManifest strings.xml 과 동일) */
 export const ADMOB_APP_ID = 'ca-app-pub-2237287742271246~5141113207';
@@ -19,9 +20,9 @@ const AUTH_PATH_PREFIXES = ['/login', '/auth'];
 /** 헤더·상태바 아래 최소 여백 (측정 실패 시 폴백, CSS px ≈ dp) */
 const MIN_TOP_FALLBACK_PX = 80;
 
-const MARGIN_EPSILON_PX = 6;
+const RECT_EPSILON_PX = 6;
 const SCROLL_DEBOUNCE_MS = 120;
-const MIN_SLOT_VISIBILITY_RATIO = 0.35;
+const MIN_SLOT_VISIBILITY_RATIO = 0.5;
 
 type BannerDisplayMode = 'none' | 'bottom' | 'infeed';
 
@@ -34,7 +35,7 @@ type InFeedSlotState = {
 let initPromise: Promise<void> | null = null;
 let bannerDisplayMode: BannerDisplayMode = 'none';
 let bottomBannerDesired = false;
-let inFeedMarginPx: number | null = null;
+let inFeedRectKey: string | null = null;
 let inFeedSyncPromise: Promise<void> | null = null;
 let sizeListenerRegistered = false;
 
@@ -50,7 +51,7 @@ export function getBannerAdUnitId(): string {
   return shouldUseAdMobTestMode() ? ANDROID_TEST_AD_UNIT_ID : ADMOB_BANNER_UNIT_ID;
 }
 
-/** MREC도 동일 배너 유닛 ID + BannerAdSize.MEDIUM_RECTANGLE 로 요청 (AdMob 콘솔 별도 MREC 유닛은 선택) */
+/** MREC도 동일 배너 유닛 ID + MEDIUM_RECTANGLE 로 요청 (AdMob 콘솔 별도 MREC 유닛은 선택) */
 export function getMrecAdUnitId(): string {
   return getBannerAdUnitId();
 }
@@ -65,14 +66,31 @@ export function isInFeedMrecActive(): boolean {
   return bannerDisplayMode === 'infeed';
 }
 
-/**
- * Capacitor AdMob margin 은 dp 단위 — Android 네이티브에서 density 를 곱해 px 로 적용.
- * WebView getBoundingClientRect() 도 동일한 CSS/dp 좌표계를 쓰므로 그대로 전달합니다.
- */
-function cssPxToAdMobMargin(cssPx: number): number {
-  return Math.max(0, Math.round(cssPx));
+function cssPxToDp(value: number): number {
+  return Math.max(0, Math.round(value));
 }
 
+function rectToKey(rect: DOMRect): string {
+  return [
+    cssPxToDp(rect.top),
+    cssPxToDp(rect.left),
+    cssPxToDp(rect.width),
+    cssPxToDp(rect.height),
+  ].join(',');
+}
+
+function rectsNearEqual(a: DOMRect, bKey: string): boolean {
+  const parts = bKey.split(',').map(Number);
+  if (parts.length !== 4) return false;
+  return (
+    Math.abs(cssPxToDp(a.top) - parts[0]) < RECT_EPSILON_PX &&
+    Math.abs(cssPxToDp(a.left) - parts[1]) < RECT_EPSILON_PX &&
+    Math.abs(cssPxToDp(a.width) - parts[2]) < RECT_EPSILON_PX &&
+    Math.abs(cssPxToDp(a.height) - parts[3]) < RECT_EPSILON_PX
+  );
+}
+
+/** SiteHeader `<header>` 하단 — 인피드 MREC가 메뉴·헤더를 가리지 않도록 */
 function measureMinSafeMarginTop(): number {
   if (typeof document === 'undefined') return MIN_TOP_FALLBACK_PX;
 
@@ -136,15 +154,31 @@ export async function initializeAdMob(): Promise<void> {
   return initPromise;
 }
 
-async function removeCurrentBanner(): Promise<void> {
-  if (bannerDisplayMode === 'none') return;
+async function hideInFeedMrecNative(): Promise<void> {
+  if (!isCapacitorNative()) return;
+  await AislesAd.hideMrec();
+  inFeedRectKey = null;
+}
+
+async function removeBottomBanner(): Promise<void> {
   const { AdMob } = await import('@capacitor-community/admob');
   await AdMob.removeBanner();
-  bannerDisplayMode = 'none';
-  inFeedMarginPx = null;
   if (typeof document !== 'undefined') {
     document.documentElement.style.removeProperty('--app-ad-banner-height');
   }
+}
+
+async function removeCurrentBanner(): Promise<void> {
+  if (bannerDisplayMode === 'none') return;
+
+  if (bannerDisplayMode === 'infeed') {
+    await hideInFeedMrecNative();
+  } else {
+    await removeBottomBanner();
+  }
+
+  bannerDisplayMode = 'none';
+  inFeedRectKey = null;
 }
 
 /** 하단 고정 배너 표시 (BOTTOM_CENTER, Adaptive) */
@@ -252,35 +286,31 @@ function pickBestInFeedSlot(): InFeedSlotState | null {
   return best;
 }
 
-async function showInFeedMrecAtMargin(marginTopCssPx: number): Promise<void> {
+async function showInFeedMrecAtRect(rect: DOMRect): Promise<void> {
   if (!isCapacitorNative()) return;
 
-  const marginDp = cssPxToAdMobMargin(marginTopCssPx);
-
-  if (
-    bannerDisplayMode === 'infeed' &&
-    inFeedMarginPx !== null &&
-    Math.abs(inFeedMarginPx - marginDp) < MARGIN_EPSILON_PX
-  ) {
+  if (bannerDisplayMode === 'infeed' && inFeedRectKey && rectsNearEqual(rect, inFeedRectKey)) {
     return;
   }
 
   await initializeAdMob();
 
-  const { AdMob, BannerAdSize, BannerAdPosition } = await import('@capacitor-community/admob');
+  if (bannerDisplayMode === 'bottom') {
+    await removeBottomBanner();
+    bannerDisplayMode = 'none';
+  }
 
-  await removeCurrentBanner();
-
-  await AdMob.showBanner({
+  await AislesAd.showMrecAtRect({
     adId: getMrecAdUnitId(),
-    adSize: BannerAdSize.MEDIUM_RECTANGLE,
-    position: BannerAdPosition.TOP_CENTER,
-    margin: marginDp,
+    top: cssPxToDp(rect.top),
+    left: cssPxToDp(rect.left),
+    width: cssPxToDp(rect.width),
+    height: cssPxToDp(rect.height),
     isTesting: shouldUseAdMobTestMode(),
   });
 
   bannerDisplayMode = 'infeed';
-  inFeedMarginPx = marginDp;
+  inFeedRectKey = rectToKey(rect);
 }
 
 export async function hideInFeedMrec(): Promise<void> {
@@ -317,8 +347,7 @@ async function syncInFeedMrecDisplay(): Promise<void> {
       return;
     }
 
-    const marginTopCssPx = rect.top;
-    await showInFeedMrecAtMargin(marginTopCssPx);
+    await showInFeedMrecAtRect(rect);
   })().finally(() => {
     inFeedSyncPromise = null;
   });

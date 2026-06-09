@@ -27,6 +27,8 @@ Capacitor Android 셸에서 **네이티브 AdMob**을 표시합니다. WebView�
 | `mobile/android/.../AndroidManifest.xml` | `com.google.android.gms.ads.APPLICATION_ID` |
 | `mobile/android/.../strings.xml` | `admob_app_id` |
 | `src/lib/admob-capacitor.ts` | 초기화·하단 배너·인피드 MREC·테스트 모드 |
+| `src/lib/aisles-ad-plugin.ts` | 인피드 MREC 절대 좌표 플러그인 (Android) |
+| `mobile/android/.../AislesAdPlugin.java` | `AdView` 를 WebView 좌표에 직접 배치 |
 | `src/lib/feed-ad-slots.ts` | 5개 게시글마다 광고 슬롯 삽입 |
 | `src/components/AdMobCapacitorInit.tsx` | 앱 로드 시 하단 배너 |
 | `src/components/NativeAdSlot.tsx` | 인피드 MREC 슬롯 (DOM + 네이티브 오버레이) |
@@ -40,13 +42,13 @@ Capacitor Android 셸에서 **네이티브 AdMob**을 표시합니다. WebView�
 
 ### 인피드 MREC (Medium Rectangle)
 
-`@capacitor-community/admob` 는 **커스텀 (x, y) 좌표**를 지원하지 않습니다 (`TOP_CENTER` / `CENTER` / `BOTTOM_CENTER` + `margin` 만 가능).
+`@capacitor-community/admob` 는 **커스텀 (x, y) 좌표**를 지원하지 않으며, `TOP_CENTER` + `margin` 으로는 피드 슬롯에 MREC를 안정적으로 맞출 수 없습니다 (`removeBanner` 레이스·`updateExistingAdView` 위치 미갱신 등).
 
-**선택한 방식 (Option C):** 피드에 전체 너비 슬롯(`grid-column: 1 / -1`, min-height ~300px)을 두고, 슬롯이 뷰포트에 들어오면:
+**선택한 방식:** 앱 내 커스텀 Capacitor 플러그인 `AislesAd` (`mobile/android/.../AislesAdPlugin.java`)가 `showMrecAtRect({ top, left, width, height })` 로 WebView 좌표(dp)에 `AdView` 를 직접 배치합니다.
 
-1. 하단 Adaptive 배너를 **일시 제거**
-2. `BannerAdSize.MEDIUM_RECTANGLE` + `TOP_CENTER` + `margin`(슬롯 `getBoundingClientRect` 기준)으로 네이티브 오버레이 배치
-3. 슬롯이 벗어나면 MREC 제거 후 **하단 배너 복원**
+1. 하단 Adaptive 배너를 **일시 제거** (`@capacitor-community/admob`)
+2. `AislesAd.showMrecAtRect` — 슬롯 `getBoundingClientRect()` 기준
+3. 슬롯이 벗어나거나 가시성 &lt; 50% 이면 MREC 제거 후 **하단 배너 복원**
 
 - **간격**: 카드 그리드·게시판 목록 모두 **5개 게시글마다** 1슬롯 (`FEED_AD_INTERVAL = 5`)
 - **웹 브라우저**: 네이티브 광고 없음 — 점선 **「광고」** 플레이스홀더만 표시

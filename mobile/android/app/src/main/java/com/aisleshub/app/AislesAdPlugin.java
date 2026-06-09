@@ -1,0 +1,133 @@
+package com.aisleshub.app;
+
+import android.util.Log;
+import android.view.Gravity;
+import android.view.View;
+import android.view.ViewGroup;
+import androidx.coordinatorlayout.widget.CoordinatorLayout;
+import com.getcapacitor.Plugin;
+import com.getcapacitor.PluginCall;
+import com.getcapacitor.PluginMethod;
+import com.getcapacitor.annotation.CapacitorPlugin;
+import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.AdSize;
+import com.google.android.gms.ads.AdView;
+
+/**
+ * In-feed MREC at exact WebView coordinates (dp). The community AdMob plugin only supports
+ * TOP_CENTER / BOTTOM_CENTER + margin and does not reliably position MEDIUM_RECTANGLE in feed slots.
+ */
+@CapacitorPlugin(name = "AislesAd")
+public class AislesAdPlugin extends Plugin {
+
+    private static final String TAG = "AislesAd";
+    private static final String TEST_BANNER_ID = "ca-app-pub-3940256099942544/6300978111";
+
+    private AdView adView;
+    private ViewGroup rootViewGroup;
+    private String loadedUnitId;
+
+    private ViewGroup getRootViewGroup() {
+        if (rootViewGroup == null && getActivity() != null) {
+            View content = getActivity().findViewById(android.R.id.content);
+            if (content instanceof ViewGroup contentGroup && contentGroup.getChildCount() > 0) {
+                rootViewGroup = (ViewGroup) contentGroup.getChildAt(0);
+            }
+        }
+        return rootViewGroup;
+    }
+
+    @PluginMethod
+    public void showMrecAtRect(PluginCall call) {
+        if (getActivity() == null) {
+            call.reject("Activity not available");
+            return;
+        }
+
+        final int topDp = call.getInt("top", 0);
+        final int leftDp = call.getInt("left", 0);
+        final int widthDp = call.getInt("width", 300);
+        final int heightDp = call.getInt("height", 250);
+        final String adId = call.getString("adId", TEST_BANNER_ID);
+        final boolean isTesting = call.getBoolean("isTesting", false);
+        final String unitId = isTesting ? TEST_BANNER_ID : adId;
+
+        getActivity().runOnUiThread(() -> {
+            try {
+                ViewGroup root = getRootViewGroup();
+                if (root == null) {
+                    call.reject("Root view not available");
+                    return;
+                }
+
+                float density = getContext().getResources().getDisplayMetrics().density;
+                int topPx = Math.round(topDp * density);
+                int leftPx = Math.round(leftDp * density);
+                int widthPx = Math.max(Math.round(widthDp * density), 1);
+                int heightPx = Math.max(Math.round(heightDp * density), 1);
+
+                if (adView == null) {
+                    adView = new AdView(getContext());
+                    adView.setAdSize(AdSize.MEDIUM_RECTANGLE);
+                    adView.setAdUnitId(unitId);
+                    loadedUnitId = unitId;
+
+                    CoordinatorLayout.LayoutParams params = new CoordinatorLayout.LayoutParams(widthPx, heightPx);
+                    params.gravity = Gravity.TOP | Gravity.START;
+                    params.setMargins(leftPx, topPx, 0, 0);
+                    root.addView(adView, params);
+                    adView.loadAd(new AdRequest.Builder().build());
+                } else {
+                    CoordinatorLayout.LayoutParams params = (CoordinatorLayout.LayoutParams) adView.getLayoutParams();
+                    params.width = widthPx;
+                    params.height = heightPx;
+                    params.gravity = Gravity.TOP | Gravity.START;
+                    params.setMargins(leftPx, topPx, 0, 0);
+                    adView.setLayoutParams(params);
+                    adView.setVisibility(View.VISIBLE);
+
+                    if (!unitId.equals(loadedUnitId)) {
+                        adView.setAdUnitId(unitId);
+                        loadedUnitId = unitId;
+                        adView.loadAd(new AdRequest.Builder().build());
+                    }
+                }
+
+                adView.resume();
+                call.resolve();
+            } catch (Exception ex) {
+                Log.e(TAG, "showMrecAtRect failed", ex);
+                call.reject(ex.getLocalizedMessage(), ex);
+            }
+        });
+    }
+
+    @PluginMethod
+    public void hideMrec(PluginCall call) {
+        if (getActivity() == null) {
+            call.resolve();
+            return;
+        }
+
+        getActivity().runOnUiThread(() -> {
+            destroyAdView();
+            call.resolve();
+        });
+    }
+
+    private void destroyAdView() {
+        if (adView == null) {
+            return;
+        }
+
+        ViewGroup root = getRootViewGroup();
+        adView.pause();
+        adView.setVisibility(View.GONE);
+        if (root != null) {
+            root.removeView(adView);
+        }
+        adView.destroy();
+        adView = null;
+        loadedUnitId = null;
+    }
+}
