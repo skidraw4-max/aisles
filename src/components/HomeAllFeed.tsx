@@ -463,9 +463,10 @@ export function HomeAllFeed({ category, excludeIds, initialPosts, initialHasMore
   }, [allCardFeed, visibleCount, posts.length, hasMore, loading, loadPage]);
 
   const cardGridPosts = allCardFeed ? posts.slice(0, visibleCount) : posts;
-  const cardGridWithAds = !boardList && !fortuneArchive ? interleaveFeedAdSlots(cardGridPosts) : null;
+  const cardGridWithAds =
+    !boardList && !fortuneArchive ? interleaveFeedAdSlots(cardGridPosts, 'everyN') : null;
   const boardListWithAds =
-    boardList && !fortuneArchive ? interleaveFeedAdSlots(posts) : null;
+    boardList && !fortuneArchive ? interleaveFeedAdSlots(posts, 'singlePerScreen') : null;
   const showAllCardMoreBtn =
     allCardFeed &&
     posts.length > 0 &&
@@ -495,7 +496,7 @@ export function HomeAllFeed({ category, excludeIds, initialPosts, initialHasMore
             <>
               <h3 className={styles.fortuneArchiveHeadingPast}>지난 주차</h3>
               <FeedBoardTable
-                items={interleaveFeedAdSlots(posts.slice(1))}
+                items={interleaveFeedAdSlots(posts.slice(1), 'singlePerScreen')}
                 gossipReportStyle={gossipReportStyle}
                 showDateInMeta={loungeDateMeta}
                 hideAuthor={hideAuthor}
