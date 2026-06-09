@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import Script from 'next/script';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import { Syne, DM_Sans, Roboto_Mono } from 'next/font/google';
@@ -38,6 +38,12 @@ const siteDescription =
 const ogTitle = 'AIsle';
 
 const ogDescription = 'AI 프롬프트 공유 및 커뮤니티 플랫폼';
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),

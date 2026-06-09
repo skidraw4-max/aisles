@@ -105,21 +105,37 @@ Google Cloud Console의 OAuth 클라이언트 **Authorized redirect URIs**에는
 | 앱 복귀 후 로그인 실패 | Vercel 로그 `/auth/callback`, PKCE `code` 쿼리 전달 여부 |
 | WebView에서 Google 차단 | 시스템 브라우저가 열리는지 (`Browser.open`) |
 
-## 다음 단계
+## 앱 아이콘·스플래시
 
-### Play Store 릴리스
+브랜드 소스: `public/watermark.png` (스타일화된 **A** 마크), 배경색 `#0b0d17`.
 
-Play Console 경험이 있으므로 기존 게임과 동일한 흐름으로 진행:
+```bash
+cd mobile
+npm run assets:generate   # icon/splash PNG 생성 + Android mipmap/drawable 반영
+npm run sync
+```
 
-1. **Release signing** — 업로드 키/앱 서명 키 생성 (`key.properties`는 로컬만 보관)
-2. `mobile/android`에서 release 빌드 (Android Studio → Build → Generate Signed Bundle/APK → **AAB** 권장)
-3. Play Console에 `com.aisleshub.app` 앱 생성 후 내부 테스트 → 프로덕션
+- 생성 스크립트: `mobile/scripts/generate-brand-assets.mjs`
+- 중간 산출물: `mobile/assets/icon.png`, `splash.png` (1024 / 2732)
+- 더 나은 1024×1024 아이콘이 있으면 `mobile/assets/icon.png`를 교체 후 `assets:generate`만 다시 실행
 
-### 선택적 개선
+## Play Store 릴리스
 
-- 스플래시/아이콘 (`@capacitor/assets` 또는 Android 리소스 직접 수정)
+상세 절차: **[mobile-play-release.md](./mobile-play-release.md)**
+
+요약:
+
+1. `mobile/android/keystore.properties.example` → 로컬 `keystore.properties` + 업로드 키
+2. `cd mobile/android && gradlew.bat bundleRelease` → `app-release.aab`
+3. Play Console 내부 테스트 트랙 업로드
+
+버전: `versionName` `1.0.0`, `versionCode` `1` (`mobile/android/app/build.gradle`).
+
+### 이후 단계 (미구현)
+
+- AdMob
 - 푸시 알림, 상태바/네비게이션 바 스타일
-- 오프라인 시 fallback UI 개선
+- 오프라인 fallback UI
 
 ## 문제 해결
 

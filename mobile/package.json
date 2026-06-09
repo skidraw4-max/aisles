@@ -5,16 +5,20 @@
   "description": "AIsle Capacitor Android shell (remote WebView)",
   "scripts": {
     "sync": "npx cap sync",
-    "open:android": "npx cap open android"
+    "open:android": "npx cap open android",
+    "assets:generate": "node scripts/generate-brand-assets.mjs && npx capacitor-assets generate --android"
   },
   "dependencies": {
     "@capacitor/android": "^7.2.0",
     "@capacitor/app": "^7.0.1",
     "@capacitor/browser": "^7.0.1",
-    "@capacitor/core": "^7.2.0"
+    "@capacitor/core": "^7.2.0",
+    "@capacitor/status-bar": "^7.0.6"
   },
   "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
     "@capacitor/cli": "^7.2.0",
+    "sharp": "^0.34.5",
     "typescript": "^5.7.0"
   },
   "capacitor": {
