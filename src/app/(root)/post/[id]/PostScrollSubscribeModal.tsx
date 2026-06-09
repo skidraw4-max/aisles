@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { signInWithOAuth } from '@/lib/capacitor-oauth';
 import { sendGAEvent } from '@/lib/ga4';
 import { setRetentionWelcomePending } from '@/lib/retention-session';
 import { getPublicSiteUrl } from '@/lib/site-url';
@@ -132,19 +133,10 @@ export function PostScrollSubscribeModal({ isLoggedIn, postId }: Props) {
         /* ignore */
       }
       const supabase = createClient();
-      const { data, error: oauthError } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: buildOAuthCallbackUrl(),
-          queryParams: { prompt: 'select_account' },
-        },
+      await signInWithOAuth(supabase, 'google', {
+        redirectTo: buildOAuthCallbackUrl(),
+        queryParams: { prompt: 'select_account' },
       });
-      if (oauthError) throw oauthError;
-      if (data.url) {
-        window.location.assign(data.url);
-        return;
-      }
-      throw new Error('Google 로그인 URL을 받지 못했습니다.');
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Google 계정으로 진행할 수 없습니다.');
       setLoading(false);

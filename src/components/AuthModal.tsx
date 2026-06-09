@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { signInWithOAuth } from '@/lib/capacitor-oauth';
 import { getPublicSiteUrl } from '@/lib/site-url';
 import { syncPrismaUserWithAuth } from '@/lib/sync-prisma-user';
 import { GoogleIcon } from '@/components/GoogleIcon';
@@ -185,19 +186,10 @@ export function AuthModal({
     setLoading(true);
     try {
       const supabase = createClient();
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: buildOAuthCallbackUrl(),
-          queryParams: { prompt: 'select_account' },
-        },
+      await signInWithOAuth(supabase, 'google', {
+        redirectTo: buildOAuthCallbackUrl(),
+        queryParams: { prompt: 'select_account' },
       });
-      if (error) throw error;
-      if (data.url) {
-        window.location.assign(data.url);
-        return;
-      }
-      throw new Error('Google 로그인 URL을 받지 못했습니다.');
     } catch (err: unknown) {
       setMessage({
         type: 'err',

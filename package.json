@@ -9,10 +9,15 @@
     "postinstall": "prisma generate",
     "db:migrate": "prisma migrate deploy",
     "db:push": "prisma db push",
-    "db:seed": "prisma db seed"
+    "db:seed": "prisma db seed",
+    "mobile:sync": "cd mobile && npx cap sync",
+    "mobile:open:android": "cd mobile && npx cap open android"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1025.0",
+    "@capacitor/app": "^7.1.2",
+    "@capacitor/browser": "^7.0.5",
+    "@capacitor/core": "^7.6.6",
     "@google/generative-ai": "^0.24.1",
     "@prisma/adapter-pg": "^7.6.0",
     "@prisma/client": "^7.6.0",
