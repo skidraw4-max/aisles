@@ -31,11 +31,11 @@ const APP_OPEN_WEBVIEW_READY_DELAY_MS = 800;
 /** MEDIUM_RECTANGLE CSS 높이 (300×250 dp) */
 const MREC_HEIGHT_CSS = 250;
 
-/** Adaptive 배너 로드 전 폴백 높이 (dp ≈ CSS px) */
-const DEFAULT_BOTTOM_BANNER_HEIGHT_PX = 50;
-
 /** 배너와 본문 사이 최소 간격 */
 const BANNER_CONTENT_GAP_PX = 8;
+
+/** AdMob 라벨·테두리 등으로 실제 시각 높이가 adSize.height 보다 클 수 있음 */
+const BANNER_VISUAL_BUFFER_PX = 12;
 
 const INSETS_CHANGED_EVENT = 'aisle:insets-changed';
 
@@ -65,6 +65,7 @@ let bottomBannerDesired = false;
 let inFeedRectKey: string | null = null;
 let inFeedSyncPromise: Promise<void> | null = null;
 let sizeListenerRegistered = false;
+let layoutListenerRegistered = false;
 
 const inFeedSlots = new Map<number, InFeedSlotState>();
 let inFeedObserver: IntersectionObserver | null = null;
@@ -111,6 +112,26 @@ export function shouldHideAdsForPath(pathname: string): boolean {
 
 export function isInFeedMrecActive(): boolean {
   return bannerDisplayMode === 'infeed';
+}
+
+/**
+ * Anchored adaptive 배너 높이 추정 (dp ≈ WebView CSS px).
+ * @see https://developers.google.com/admob/android/banner/anchored-adaptive
+ */
+export function estimateAdaptiveBannerHeightPx(viewportWidthPx: number): number {
+  const width = Math.max(320, Math.round(viewportWidthPx));
+  if (width >= 728) return 90;
+  if (width >= 468) return 60;
+  return 50;
+}
+
+/** 배너 시각 높이 + 시스템 하단 inset + 본문 간격 */
+export function computeBottomBannerReservePx(
+  bannerVisualHeightPx: number,
+  safeBottomPx = 0
+): number {
+  if (bannerVisualHeightPx <= 0) return 0;
+  return Math.ceil(bannerVisualHeightPx + safeBottomPx + BANNER_CONTENT_GAP_PX);
 }
 
 function cssPxToDp(value: number): number {
@@ -162,13 +183,33 @@ function getBottomSafeInsetPx(): number {
   );
 }
 
+function effectiveBannerVisualHeightPx(reportedAdHeightPx: number): number {
+  if (reportedAdHeightPx <= 0) return 0;
+
+  const safeBottom = getBottomSafeInsetPx();
+  const viewportWidth = typeof window !== 'undefined' ? window.innerWidth : 360;
+  const estimated = estimateAdaptiveBannerHeightPx(viewportWidth);
+
+  // 하단 배너 SizeChanged 가 safe-area 를 포함해 보고하는 경우 (#304)
+  let adHeight = reportedAdHeightPx;
+  if (safeBottom > 0 && reportedAdHeightPx > estimated + safeBottom - 4) {
+    adHeight = reportedAdHeightPx - safeBottom;
+  }
+
+  return Math.ceil(Math.max(adHeight, estimated) + BANNER_VISUAL_BUFFER_PX);
+}
+
+function getInitialBottomBannerHeightPx(): number {
+  const viewportWidth = typeof window !== 'undefined' ? window.innerWidth : 360;
+  return effectiveBannerVisualHeightPx(estimateAdaptiveBannerHeightPx(viewportWidth));
+}
+
 function updateBottomBannerReserve(bannerHeightPx: number): void {
   if (typeof document === 'undefined') return;
 
   const root = document.documentElement;
   const safeBottom = bannerHeightPx > 0 ? getBottomSafeInsetPx() : 0;
-  const gap = bannerHeightPx > 0 ? BANNER_CONTENT_GAP_PX : 0;
-  const totalReserve = Math.ceil(bannerHeightPx + safeBottom + gap);
+  const totalReserve = computeBottomBannerReservePx(bannerHeightPx, safeBottom);
 
   if (bannerHeightPx > 0) {
     root.style.setProperty('--app-ad-banner-height', `${bannerHeightPx}px`);
@@ -178,6 +219,20 @@ function updateBottomBannerReserve(bannerHeightPx: number): void {
 
   root.style.removeProperty('--app-ad-banner-height');
   root.style.setProperty('--app-ad-bottom-reserve', '0px');
+}
+
+function applyPluginBannerSize(reportedHeightPx: number): void {
+  if (!bottomBannerDesired && bannerDisplayMode !== 'bottom') {
+    if (reportedHeightPx <= 0) updateBottomBannerReserve(0);
+    return;
+  }
+  if (reportedHeightPx > 0) {
+    updateBottomBannerReserve(effectiveBannerVisualHeightPx(reportedHeightPx));
+    return;
+  }
+  if (!bottomBannerDesired) {
+    updateBottomBannerReserve(0);
+  }
 }
 
 function measureBottomReservePx(): number {
@@ -194,8 +249,17 @@ function refreshBottomBannerReserveFromCss(): void {
   const bannerH =
     parseFloat(
       getComputedStyle(document.documentElement).getPropertyValue('--app-ad-banner-height')
-    ) || DEFAULT_BOTTOM_BANNER_HEIGHT_PX;
+    ) || getInitialBottomBannerHeightPx();
   updateBottomBannerReserve(bannerH);
+}
+
+function registerLayoutChangeListener(): void {
+  if (layoutListenerRegistered || typeof window === 'undefined') return;
+  const onLayoutChange = () => refreshBottomBannerReserveFromCss();
+  window.addEventListener('resize', onLayoutChange);
+  window.addEventListener('orientationchange', onLayoutChange);
+  window.visualViewport?.addEventListener('resize', onLayoutChange);
+  layoutListenerRegistered = true;
 }
 
 function registerInsetsChangedListener(): void {
@@ -220,19 +284,15 @@ async function registerBannerSizeListener(): Promise<void> {
   if (sizeListenerRegistered || typeof document === 'undefined') return;
   const { AdMob, BannerAdPluginEvents } = await import('@capacitor-community/admob');
   await AdMob.addListener(BannerAdPluginEvents.SizeChanged, (size) => {
-    if (!bottomBannerDesired && bannerDisplayMode !== 'bottom') {
-      if (size.height <= 0) updateBottomBannerReserve(0);
-      return;
-    }
-    if (size.height > 0) {
-      updateBottomBannerReserve(size.height);
-      return;
-    }
-    if (!bottomBannerDesired) {
-      updateBottomBannerReserve(0);
+    applyPluginBannerSize(size.height);
+  });
+  await AdMob.addListener(BannerAdPluginEvents.Loaded, () => {
+    if (bottomBannerDesired && bannerDisplayMode === 'bottom') {
+      refreshBottomBannerReserveFromCss();
     }
   });
   registerInsetsChangedListener();
+  registerLayoutChangeListener();
   sizeListenerRegistered = true;
 }
 
@@ -383,7 +443,7 @@ export async function showBannerAd(): Promise<void> {
         getComputedStyle(document.documentElement).getPropertyValue('--app-ad-banner-height')
       )
     ) {
-      updateBottomBannerReserve(DEFAULT_BOTTOM_BANNER_HEIGHT_PX);
+      updateBottomBannerReserve(getInitialBottomBannerHeightPx());
     }
     await AdMob.resumeBanner();
     return;
@@ -392,7 +452,7 @@ export async function showBannerAd(): Promise<void> {
   await removeCurrentBanner();
 
   bannerDisplayMode = 'bottom';
-  updateBottomBannerReserve(DEFAULT_BOTTOM_BANNER_HEIGHT_PX);
+  updateBottomBannerReserve(getInitialBottomBannerHeightPx());
 
   await AdMob.showBanner({
     adId: getBannerAdUnitId(),
@@ -428,7 +488,7 @@ export async function resumeBannerAd(): Promise<void> {
       getComputedStyle(document.documentElement).getPropertyValue('--app-ad-banner-height')
     )
   ) {
-    updateBottomBannerReserve(DEFAULT_BOTTOM_BANNER_HEIGHT_PX);
+    updateBottomBannerReserve(getInitialBottomBannerHeightPx());
   }
   const { AdMob } = await import('@capacitor-community/admob');
   await AdMob.resumeBanner();

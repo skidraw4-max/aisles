@@ -65,12 +65,23 @@ html.capacitor-native {
     var(--app-safe-area-top, 28px),
     28px
   );
+  scroll-padding-bottom: var(--app-ad-bottom-reserve, 0px);
 }
 
 html.capacitor-native body {
   padding-top: 0;
-  /* 네이티브 하단 배너 + 시스템 내비 inset + 소량 여백 — 피드가 배너 아래로 스크롤되지 않게 */
-  padding-bottom: var(--app-ad-bottom-reserve, 0px);
+  padding-bottom: 0;
+}
+
+/* 문서 흐름 맨 끝 스페이서 — 네이티브 배너 오버레이 구간에 피드가 그려지지 않게 */
+html.capacitor-native body::after {
+  content: '';
+  display: block;
+  width: 100%;
+  height: var(--app-ad-bottom-reserve, 0px);
+  min-height: var(--app-ad-bottom-reserve, 0px);
+  flex-shrink: 0;
+  pointer-events: none;
 }
 
 h1,

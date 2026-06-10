@@ -40,7 +40,7 @@ Capacitor Android 셸에서 **네이티브 AdMob**을 표시합니다. WebView�
 
 - **위치**: 화면 하단 고정 (`BannerAdPosition.BOTTOM_CENTER`, Adaptive)
 - **숨김**: `/login`, `/auth/*`
-- WebView 본문은 `--app-ad-banner-height` 만큼 `padding-bottom` (하단 배너 전용)
+- WebView 본문은 `--app-ad-bottom-reserve` 로 `body::after` 스페이서 + `scroll-padding-bottom` (배너 높이 + safe-area + 간격)
 
 ### 인피드 MREC (Medium Rectangle)
 
@@ -92,13 +92,26 @@ NEXT_PUBLIC_ADMOB_INTERSTITIAL_ENABLED=true
 
 배포 후 `npm run mobile:sync` → Android 앱 재설치.
 
+## 프로덕션 배포 (Vercel)
+
+실제 광고를 노출하려면 Production 환경 변수에서 **테스트 모드를 끄세요**:
+
+```bash
+# 미설정 또는 false — 프로덕션 배너 유닛 ID 사용
+NEXT_PUBLIC_ADMOB_TEST_MODE=false
+```
+
+`NEXT_PUBLIC_ADMOB_APP_OPEN_ENABLED` / `NEXT_PUBLIC_ADMOB_INTERSTITIAL_ENABLED` 는 미설정(기본)이면 비노출입니다.
+
+변경 후 Vercel 재배포 → `npm run mobile:sync` → 앱 재설치(또는 WebView 캐시 삭제).
+
 ## 테스트 광고
 
 ```bash
 NEXT_PUBLIC_ADMOB_TEST_MODE=true
 ```
 
-- `true`: Google 공식 Android 테스트 ID + `initializeForTesting` / `isTesting`
+- 정확히 `true` 일 때만: Google 공식 Android 테스트 ID + `initializeForTesting` / `isTesting`
 - 배너·MREC: `ca-app-pub-3940256099942544/6300978111` (adSize 로 크기 구분)
 - App Open: `ca-app-pub-3940256099942544/3419835294`
 - 전면: `ca-app-pub-3940256099942544/1033173712`
