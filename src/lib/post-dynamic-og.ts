@@ -29,7 +29,17 @@ function toAbsoluteMediaUrl(raw: string, siteBase: string): string {
   return `${base}${path}`;
 }
 
-/** 썸네일·첫 첨부 중 비디오가 아닌 URL — OG 합성용 */
+/** Satori가 외부 URL 페치 시 타임아웃·OOM을 유발할 수 있어 동일 오리진만 허용 */
+export function isSameOriginMediaUrl(url: string, siteBase: string): boolean {
+  try {
+    const origin = new URL(siteBase.replace(/\/$/, '') || 'https://www.aisleshub.com').origin;
+    return new URL(url).origin === origin;
+  } catch {
+    return false;
+  }
+}
+
+/** 썸네일·첫 첨부 중 비디오가 아닌 URL — OG 합성용(동일 오리진만) */
 export function resolvePostOgThumbnailUrl(
   post: { thumbnail: string | null; attachmentUrls: string[] },
   siteBase: string
@@ -38,7 +48,8 @@ export function resolvePostOgThumbnailUrl(
   const fromAttach = post.attachmentUrls.find((u) => u?.trim())?.trim();
   const raw = fromThumb || fromAttach;
   if (!raw || isProbablyVideoAssetUrl(raw)) return null;
-  return toAbsoluteMediaUrl(raw, siteBase);
+  const abs = toAbsoluteMediaUrl(raw, siteBase);
+  return isSameOriginMediaUrl(abs, siteBase) ? abs : null;
 }
 
 export function truncateForOgTitle(title: string, maxChars: number): string {
