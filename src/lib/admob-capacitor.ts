@@ -31,6 +31,14 @@ const APP_OPEN_WEBVIEW_READY_DELAY_MS = 800;
 /** MEDIUM_RECTANGLE CSS 높이 (300×250 dp) */
 const MREC_HEIGHT_CSS = 250;
 
+/** Adaptive 배너 로드 전 폴백 높이 (dp ≈ CSS px) */
+const DEFAULT_BOTTOM_BANNER_HEIGHT_PX = 50;
+
+/** 배너와 본문 사이 최소 간격 */
+const BANNER_CONTENT_GAP_PX = 8;
+
+const INSETS_CHANGED_EVENT = 'aisle:insets-changed';
+
 const AUTH_PATH_PREFIXES = ['/login', '/auth'];
 
 /** 헤더·상태바 아래 최소 여백 (측정 실패 시 폴백, CSS px ≈ dp) */
@@ -145,13 +153,54 @@ function measureMinSafeMarginTop(): number {
   return Math.ceil(safeTop + 52);
 }
 
+function getBottomSafeInsetPx(): number {
+  if (typeof document === 'undefined') return 0;
+  return (
+    parseFloat(
+      getComputedStyle(document.documentElement).getPropertyValue('--app-safe-area-bottom')
+    ) || 0
+  );
+}
+
+function updateBottomBannerReserve(bannerHeightPx: number): void {
+  if (typeof document === 'undefined') return;
+
+  const root = document.documentElement;
+  const safeBottom = bannerHeightPx > 0 ? getBottomSafeInsetPx() : 0;
+  const gap = bannerHeightPx > 0 ? BANNER_CONTENT_GAP_PX : 0;
+  const totalReserve = Math.ceil(bannerHeightPx + safeBottom + gap);
+
+  if (bannerHeightPx > 0) {
+    root.style.setProperty('--app-ad-banner-height', `${bannerHeightPx}px`);
+    root.style.setProperty('--app-ad-bottom-reserve', `${totalReserve}px`);
+    return;
+  }
+
+  root.style.removeProperty('--app-ad-banner-height');
+  root.style.setProperty('--app-ad-bottom-reserve', '0px');
+}
+
 function measureBottomReservePx(): number {
   if (typeof document === 'undefined') return 0;
+  const reserve =
+    parseFloat(
+      getComputedStyle(document.documentElement).getPropertyValue('--app-ad-bottom-reserve')
+    ) || 0;
+  return Math.ceil(reserve);
+}
+
+function refreshBottomBannerReserveFromCss(): void {
+  if (!bottomBannerDesired || bannerDisplayMode !== 'bottom') return;
   const bannerH =
     parseFloat(
       getComputedStyle(document.documentElement).getPropertyValue('--app-ad-banner-height')
-    ) || 0;
-  return Math.ceil(bannerH + 8);
+    ) || DEFAULT_BOTTOM_BANNER_HEIGHT_PX;
+  updateBottomBannerReserve(bannerH);
+}
+
+function registerInsetsChangedListener(): void {
+  if (typeof window === 'undefined') return;
+  window.addEventListener(INSETS_CHANGED_EVENT, refreshBottomBannerReserveFromCss);
 }
 
 function isSlotInSafeZone(rect: DOMRect): boolean {
@@ -171,9 +220,19 @@ async function registerBannerSizeListener(): Promise<void> {
   if (sizeListenerRegistered || typeof document === 'undefined') return;
   const { AdMob, BannerAdPluginEvents } = await import('@capacitor-community/admob');
   await AdMob.addListener(BannerAdPluginEvents.SizeChanged, (size) => {
-    if (bannerDisplayMode !== 'bottom') return;
-    document.documentElement.style.setProperty('--app-ad-banner-height', `${size.height}px`);
+    if (!bottomBannerDesired && bannerDisplayMode !== 'bottom') {
+      if (size.height <= 0) updateBottomBannerReserve(0);
+      return;
+    }
+    if (size.height > 0) {
+      updateBottomBannerReserve(size.height);
+      return;
+    }
+    if (!bottomBannerDesired) {
+      updateBottomBannerReserve(0);
+    }
   });
+  registerInsetsChangedListener();
   sizeListenerRegistered = true;
 }
 
@@ -292,9 +351,7 @@ async function hideInFeedMrecNative(): Promise<void> {
 async function removeBottomBanner(): Promise<void> {
   const { AdMob } = await import('@capacitor-community/admob');
   await AdMob.removeBanner();
-  if (typeof document !== 'undefined') {
-    document.documentElement.style.removeProperty('--app-ad-banner-height');
-  }
+  updateBottomBannerReserve(0);
 }
 
 async function removeCurrentBanner(): Promise<void> {
@@ -321,11 +378,21 @@ export async function showBannerAd(): Promise<void> {
   const { AdMob, BannerAdSize, BannerAdPosition } = await import('@capacitor-community/admob');
 
   if (bannerDisplayMode === 'bottom') {
+    if (
+      !parseFloat(
+        getComputedStyle(document.documentElement).getPropertyValue('--app-ad-banner-height')
+      )
+    ) {
+      updateBottomBannerReserve(DEFAULT_BOTTOM_BANNER_HEIGHT_PX);
+    }
     await AdMob.resumeBanner();
     return;
   }
 
   await removeCurrentBanner();
+
+  bannerDisplayMode = 'bottom';
+  updateBottomBannerReserve(DEFAULT_BOTTOM_BANNER_HEIGHT_PX);
 
   await AdMob.showBanner({
     adId: getBannerAdUnitId(),
@@ -334,7 +401,6 @@ export async function showBannerAd(): Promise<void> {
     margin: 0,
     isTesting: shouldUseAdMobTestMode(),
   });
-  bannerDisplayMode = 'bottom';
 }
 
 export async function hideBannerAd(): Promise<void> {
@@ -345,6 +411,7 @@ export async function hideBannerAd(): Promise<void> {
 
   if (bannerDisplayMode === 'bottom') {
     await AdMob.hideBanner();
+    updateBottomBannerReserve(0);
     return;
   }
 
@@ -355,6 +422,14 @@ export async function hideBannerAd(): Promise<void> {
 
 export async function resumeBannerAd(): Promise<void> {
   if (!isCapacitorNative() || bannerDisplayMode !== 'bottom') return;
+  if (
+    typeof document !== 'undefined' &&
+    !parseFloat(
+      getComputedStyle(document.documentElement).getPropertyValue('--app-ad-banner-height')
+    )
+  ) {
+    updateBottomBannerReserve(DEFAULT_BOTTOM_BANNER_HEIGHT_PX);
+  }
   const { AdMob } = await import('@capacitor-community/admob');
   await AdMob.resumeBanner();
 }

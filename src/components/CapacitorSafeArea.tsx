@@ -5,15 +5,25 @@ import { isCapacitorNative } from '@/lib/capacitor-oauth';
 
 const ANDROID_MIN_TOP_PX = 28;
 const IOS_MIN_TOP_PX = 20;
+const INSETS_CHANGED_EVENT = 'aisle:insets-changed';
+
+function readEnvSafeAreaInsetPx(edge: 'top' | 'bottom'): number {
+  const probe = document.createElement('div');
+  const edgeProp = edge === 'top' ? 'padding-top' : 'padding-bottom';
+  const constant = edge === 'top' ? 'safe-area-inset-top' : 'safe-area-inset-bottom';
+  probe.style.cssText = `position:fixed;${edge}:0;left:0;${edgeProp}:constant(${constant});${edgeProp}:env(${constant},0px);visibility:hidden;pointer-events:none;`;
+  document.documentElement.appendChild(probe);
+  const value = parseFloat(getComputedStyle(probe)[edge === 'top' ? 'paddingTop' : 'paddingBottom']) || 0;
+  probe.remove();
+  return value;
+}
 
 function readEnvSafeAreaTopPx(): number {
-  const probe = document.createElement('div');
-  probe.style.cssText =
-    'position:fixed;top:0;left:0;padding-top:constant(safe-area-inset-top);padding-top:env(safe-area-inset-top,0px);visibility:hidden;pointer-events:none;';
-  document.documentElement.appendChild(probe);
-  const top = parseFloat(getComputedStyle(probe).paddingTop) || 0;
-  probe.remove();
-  return top;
+  return readEnvSafeAreaInsetPx('top');
+}
+
+function readEnvSafeAreaBottomPx(): number {
+  return readEnvSafeAreaInsetPx('bottom');
 }
 
 function estimateAndroidStatusBarPx(): number {
@@ -42,6 +52,13 @@ async function configureNativeStatusBar(): Promise<void> {
   }
 }
 
+function estimateAndroidNavBarPx(): number {
+  const vv = window.visualViewport;
+  if (!vv) return 0;
+  const gap = window.innerHeight - vv.height - (vv.offsetTop ?? 0);
+  return Math.max(0, Math.round(gap));
+}
+
 function computeTopInsetPx(platform: 'ios' | 'android' | 'web'): number {
   const envTop = readEnvSafeAreaTopPx();
   if (platform === 'ios') {
@@ -51,6 +68,18 @@ function computeTopInsetPx(platform: 'ios' | 'android' | 'web'): number {
     return Math.max(envTop, estimateAndroidStatusBarPx(), ANDROID_MIN_TOP_PX);
   }
   return envTop;
+}
+
+function computeBottomInsetPx(platform: 'ios' | 'android' | 'web'): number {
+  const envBottom = readEnvSafeAreaBottomPx();
+  if (platform === 'android') {
+    return Math.max(envBottom, estimateAndroidNavBarPx());
+  }
+  return envBottom;
+}
+
+function dispatchInsetsChanged(): void {
+  window.dispatchEvent(new CustomEvent(INSETS_CHANGED_EVENT));
 }
 
 /**
@@ -71,14 +100,20 @@ export function CapacitorSafeArea() {
     const applyInsets = async () => {
       await configureNativeStatusBar();
       const topPx = computeTopInsetPx(platform);
+      const bottomPx = computeBottomInsetPx(platform);
       html.style.setProperty('--app-safe-area-top', `${topPx}px`);
+      html.style.setProperty('--app-safe-area-bottom', `${bottomPx}px`);
+      dispatchInsetsChanged();
     };
 
     void applyInsets();
 
     const onViewportChange = () => {
       const topPx = computeTopInsetPx(platform);
+      const bottomPx = computeBottomInsetPx(platform);
       html.style.setProperty('--app-safe-area-top', `${topPx}px`);
+      html.style.setProperty('--app-safe-area-bottom', `${bottomPx}px`);
+      dispatchInsetsChanged();
     };
 
     window.visualViewport?.addEventListener('resize', onViewportChange);
@@ -90,6 +125,7 @@ export function CapacitorSafeArea() {
       html.classList.remove('capacitor-native');
       body.classList.remove('capacitor-native');
       html.style.removeProperty('--app-safe-area-top');
+      html.style.removeProperty('--app-safe-area-bottom');
       window.visualViewport?.removeEventListener('resize', onViewportChange);
       window.visualViewport?.removeEventListener('scroll', onViewportChange);
       window.removeEventListener('orientationchange', onViewportChange);
