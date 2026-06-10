@@ -259,7 +259,9 @@ export async function runTechmemeSync(options: { force: boolean }): Promise<Tech
 
     geminiOrdinal += 1;
     if (geminiOrdinal > 1) {
-      console.log('[techmeme] 3초 대기 중... (Gemini rate limit 완화)');
+      console.log(
+        `[techmeme] ${NEWS_SYNC_GEMINI_GAP_MS / 1000}초 대기 중... (Gemini rate limit 완화)`,
+      );
       await sleepMs(NEWS_SYNC_GEMINI_GAP_MS);
     }
     console.log(

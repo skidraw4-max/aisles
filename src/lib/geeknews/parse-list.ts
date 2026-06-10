@@ -33,7 +33,7 @@ function decodeHtmlEntities(raw: string): string {
  * 동일 외부 URL이 목록에 중복되면 첫 항목만 유지.
  */
 export function parseGeekNewsNewListHtml(html: string): GeekNewsListItem[] {
-  const chunks = html.split(/<div class='topic_row'/);
+  const chunks = html.split(/<div class=['"]topic_row['"]/);
   const out: GeekNewsListItem[] = [];
   const seenExternal = new Set<string>();
 

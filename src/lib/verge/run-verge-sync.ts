@@ -309,7 +309,9 @@ async function runVergeSyncInner(options: { force: boolean }): Promise<VergeSync
 
     geminiOrdinal += 1;
     if (geminiOrdinal > 1) {
-      console.log('[verge] 3초 대기 중... (Gemini rate limit 완화)');
+      console.log(
+        `[verge] ${NEWS_SYNC_GEMINI_GAP_MS / 1000}초 대기 중... (Gemini rate limit 완화)`,
+      );
       await sleepMs(NEWS_SYNC_GEMINI_GAP_MS);
     }
     console.log(

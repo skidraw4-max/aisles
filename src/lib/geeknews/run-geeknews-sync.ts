@@ -125,7 +125,12 @@ export async function runGeekNewsSync(options: { force: boolean }): Promise<Geek
   const parsed = parseGeekNewsNewListHtml(listHtml);
 
   if (parsed.length === 0) {
-    console.warn('[geeknews] 파싱 결과 0건 — 셀렉터·HTML 구조 확인 필요');
+    const topicRowCount = (listHtml.match(/class=['"]topic_row['"]/g) ?? []).length;
+    console.warn('[geeknews] 파싱 결과 0건 — 셀렉터·HTML 구조 확인 필요', {
+      htmlLength: listHtml.length,
+      topicRowCount,
+      preview: listHtml.slice(0, 240).replace(/\s+/g, ' '),
+    });
     return {
       ok: false,
       step: 'geeknews_parse',
@@ -191,7 +196,9 @@ export async function runGeekNewsSync(options: { force: boolean }): Promise<Geek
 
     geminiOrdinal += 1;
     if (geminiOrdinal > 1) {
-      console.log('[geeknews] 3초 대기 중... (Gemini rate limit 완화)');
+      console.log(
+        `[geeknews] ${NEWS_SYNC_GEMINI_GAP_MS / 1000}초 대기 중... (Gemini rate limit 완화)`,
+      );
       await sleepMs(NEWS_SYNC_GEMINI_GAP_MS);
     }
     console.log(

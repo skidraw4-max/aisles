@@ -195,7 +195,9 @@ export async function runHackerNewsSync(options: { force: boolean }): Promise<Ha
 
     geminiOrdinal += 1;
     if (geminiOrdinal > 1) {
-      console.log('[hackernews] 3초 대기 중... (Gemini rate limit 완화)');
+      console.log(
+        `[hackernews] ${NEWS_SYNC_GEMINI_GAP_MS / 1000}초 대기 중... (Gemini rate limit 완화)`,
+      );
       await sleepMs(NEWS_SYNC_GEMINI_GAP_MS);
     }
     console.log(

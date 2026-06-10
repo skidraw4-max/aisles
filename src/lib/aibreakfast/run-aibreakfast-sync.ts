@@ -179,7 +179,9 @@ async function runAiBreakfastSyncInner(options: { force: boolean }): Promise<AiB
     };
   }
 
-  console.log('[aibreakfast] 3초 대기 중… (Gemini rate limit 완화)');
+  console.log(
+    `[aibreakfast] ${NEWS_SYNC_GEMINI_GAP_MS / 1000}초 대기 중… (Gemini rate limit 완화)`,
+  );
   await sleepMs(NEWS_SYNC_GEMINI_GAP_MS);
   console.log('[aibreakfast] 1번 기사 요약 시작 (Gemini — 핵심 주제 3가지)');
 

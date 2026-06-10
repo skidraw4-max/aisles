@@ -259,7 +259,9 @@ export async function runLobstersSync(options: { force: boolean }): Promise<Lobs
 
     geminiOrdinal += 1;
     if (geminiOrdinal > 1) {
-      console.log('[lobsters] 3초 대기 중... (Gemini rate limit 완화)');
+      console.log(
+        `[lobsters] ${NEWS_SYNC_GEMINI_GAP_MS / 1000}초 대기 중... (Gemini rate limit 완화)`,
+      );
       await sleepMs(NEWS_SYNC_GEMINI_GAP_MS);
     }
     console.log(
