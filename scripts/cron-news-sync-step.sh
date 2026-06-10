@@ -1,11 +1,10 @@
 #!/usr/bin/env bash
 # External cron: POST news sync API and fail on HTTP/JSON errors.
-# Usage: cron-news-sync-step.sh <label> <api-path> [warn-rate-limit-zero]
+# Usage: cron-news-sync-step.sh <label> <api-path>
 set -euo pipefail
 
 SOURCE="${1:?source label}"
 API_PATH="${2:?api path e.g. /api/cron/geeknews}"
-WARN_RATE_LIMIT_ZERO="${3:-}"
 
 : "${CRON_SITE_URL:?CRON_SITE_URL unset}"
 : "${CRON_SECRET:?CRON_SECRET unset}"
@@ -41,15 +40,19 @@ if [ "$OK" != "true" ]; then
   exit 1
 fi
 
-if [ "$WARN_RATE_LIMIT_ZERO" = "warn-rate-limit-zero" ]; then
-  CREATED=$(echo "$BODY" | jq -r '.created // 0')
-  if [ "$CREATED" = "0" ]; then
-    RATE_SKIPS=$(echo "$BODY" | jq '[.results[]? | select(.status=="skipped_summary" and (.detail | test("API 이용량|rate limit|quota|resource exhausted"; "i")))] | length')
-    TOTAL_SUMMARY=$(echo "$BODY" | jq '[.results[]? | select(.status=="skipped_summary")] | length')
+# ok:true + created=0 with Gemini rate-limit skips must never fail the chain.
+CREATED=$(echo "$BODY" | jq -r '.created // 0')
+if [ "$CREATED" = "0" ]; then
+  RATE_LIMIT_PATTERN='API 사용량|rate[ _]limit|resource[ _]exhausted|quota exceeded|exceeded your quota|too many requests'
+  RATE_SKIPS=$(echo "$BODY" | jq --arg re "$RATE_LIMIT_PATTERN" '[.results[]? | select(.status=="skipped_summary" and ((.detail // "") | test($re; "i")))] | length')
+  TOTAL_SUMMARY=$(echo "$BODY" | jq '[.results[]? | select(.status=="skipped_summary")] | length')
+  if [ "$RATE_SKIPS" -gt 0 ]; then
     if [ "$TOTAL_SUMMARY" -gt 0 ] && [ "$RATE_SKIPS" = "$TOTAL_SUMMARY" ]; then
-      echo "[cron] ${SOURCE}: created=0, all rate-limit skipped_summary - warn only, chain continues"
-      exit 0
+      echo "[cron] ${SOURCE}: created=0, all Gemini rate-limit skipped_summary - warn only, chain continues"
+    else
+      echo "[cron] ${SOURCE}: created=0, Gemini rate-limit skipped_summary ${RATE_SKIPS}/${TOTAL_SUMMARY} - warn only, chain continues"
     fi
+    exit 0
   fi
 fi
 

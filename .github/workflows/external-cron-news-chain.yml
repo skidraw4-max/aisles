@@ -22,7 +22,7 @@ jobs:
         env:
           CRON_SITE_URL: ${{ secrets.CRON_SITE_URL }}
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
-        run: bash scripts/cron-news-sync-step.sh GeekNews /api/cron/geeknews warn-rate-limit-zero
+        run: bash scripts/cron-news-sync-step.sh GeekNews /api/cron/geeknews
 
       - name: Wait 10 minutes
         run: sleep 600
@@ -31,7 +31,7 @@ jobs:
         env:
           CRON_SITE_URL: ${{ secrets.CRON_SITE_URL }}
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
-        run: bash scripts/cron-news-sync-step.sh "Hacker News" /api/cron/hackernews warn-rate-limit-zero
+        run: bash scripts/cron-news-sync-step.sh "Hacker News" /api/cron/hackernews
 
       - name: Wait 10 minutes
         run: sleep 600
@@ -40,7 +40,7 @@ jobs:
         env:
           CRON_SITE_URL: ${{ secrets.CRON_SITE_URL }}
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
-        run: bash scripts/cron-news-sync-step.sh Lobsters /api/cron/lobsters warn-rate-limit-zero
+        run: bash scripts/cron-news-sync-step.sh Lobsters /api/cron/lobsters
 
       - name: Wait 10 minutes
         run: sleep 600
