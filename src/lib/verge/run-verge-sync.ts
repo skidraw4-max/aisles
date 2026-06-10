@@ -9,9 +9,11 @@ import { formatVergePostBody } from '@/lib/verge/format-verge-body';
 import { loadBlockedSyndicationUrls } from '@/lib/news-sync/blocked-original-urls';
 import { shouldSkipThinLoungePost } from '@/lib/lounge-ingestion-policy';
 import {
+  createSyncDeadline,
   isGeminiRateLimitMessage,
   MAX_GEMINI_CALLS_PER_SYNC_RUN,
   NEWS_SYNC_GEMINI_GAP_MS,
+  NEWS_SYNC_MIN_BUDGET_FOR_GEMINI_MS,
   sleepMs,
 } from '@/lib/news-sync/gemini-request-gap';
 
@@ -269,6 +271,7 @@ async function runVergeSyncInner(options: { force: boolean }): Promise<VergeSync
 
   const blocked = await loadBlockedSyndicationUrls();
   const results: VergeItemResult[] = [];
+  const deadline = createSyncDeadline();
   let created = 0;
   let geminiOrdinal = 0;
 
@@ -307,6 +310,13 @@ async function runVergeSyncInner(options: { force: boolean }): Promise<VergeSync
       break;
     }
 
+    if (!deadline.hasBudget(NEWS_SYNC_MIN_BUDGET_FOR_GEMINI_MS)) {
+      console.warn('[verge] sync wall-clock 예산 임박 — Gemini 호출 중단', {
+        remainingMs: deadline.remainingMs(),
+      });
+      break;
+    }
+
     geminiOrdinal += 1;
     if (geminiOrdinal > 1) {
       console.log(
@@ -321,7 +331,12 @@ async function runVergeSyncInner(options: { force: boolean }): Promise<VergeSync
     let sum: Awaited<ReturnType<typeof summarizeVergeArticle>>;
     try {
       console.log(`[verge] ${geminiOrdinal}번 기사 요약 중... (Gemini 호출)`);
-      sum = await summarizeVergeArticle(keyRes.key, item.title ?? '(제목 없음)', plain);
+      sum = await summarizeVergeArticle(
+        keyRes.key,
+        item.title ?? '(제목 없음)',
+        plain,
+        deadline,
+      );
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       console.warn('[verge] Gemini 요약 예외 — 해당 기사만 건너뜀', { link, message: msg });

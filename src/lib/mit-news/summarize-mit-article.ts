@@ -13,7 +13,10 @@ import {
   GEO_FACTUAL_WRITING_CONSTRAINTS,
   GEO_NEWS_INTRO_THREE_LINE_CONSTRAINT,
 } from '@/lib/geo-prompt-constraints';
-import { retryOnGeminiRateLimit } from '@/lib/news-sync/gemini-request-gap';
+import {
+  retryOnGeminiRateLimit,
+  type SyncDeadline,
+} from '@/lib/news-sync/gemini-request-gap';
 
 const SYSTEM = `너는 MIT News 수준의 학술·연구 뉴스를 한국어 **중학생도 이해할 수 있는 난이도**로 풀어 쓰는 과학 저널리스트다.
 
@@ -70,6 +73,7 @@ export async function summarizeMitNewsArticle(
   apiKey: string,
   title: string,
   bodyPlain: string,
+  deadline?: SyncDeadline,
 ): Promise<{ ok: true; data: MitNewsSummaryJson } | { ok: false; error: string }> {
   const clipped = bodyPlain.length > MAX_BODY_CHARS ? bodyPlain.slice(0, MAX_BODY_CHARS) : bodyPlain;
   const user = `원 제목: ${title}\n\n기사 본문(평문):\n\n${clipped}`;
@@ -94,6 +98,7 @@ export async function summarizeMitNewsArticle(
         const result = await retryOnGeminiRateLimit(
           () => model.generateContent(prompt),
           'mit-news/summarize',
+          { deadline },
         );
         const text = result.response.text().trim();
         const parsed = tryParseJsonFromModelText(text);

@@ -55,7 +55,24 @@ async function handle(req: NextRequest) {
     console.log('[verge] 강제 실행 모드(force=true) — 중복 URL 스킵 없음');
   }
 
-  const result = await runVergeSync({ force });
+  let result: Awaited<ReturnType<typeof runVergeSync>>;
+  try {
+    result = await runVergeSync({ force });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    console.error('[cron/verge] handle 예외', e);
+    return NextResponse.json({
+      ok: true,
+      degraded: true,
+      step: 'verge_rss_fetch',
+      error: `UNHANDLED:${msg}`,
+      message: `The Verge 크론 처리 중 예외: ${msg}`,
+      created: 0,
+      scanned: 0,
+      force,
+      results: [],
+    });
+  }
 
   if (!result.ok) {
     if (isTransientFailureStep(result.step)) {

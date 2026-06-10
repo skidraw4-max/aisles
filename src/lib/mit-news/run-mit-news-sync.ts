@@ -5,9 +5,11 @@ import { fetchExternalArticlePlainText, htmlToPlainText } from '@/lib/geeknews/e
 import { readGeminiApiKeyFromEnv } from '@/lib/gemini-prompt-analysis-engine';
 import { loadBlockedSyndicationUrls } from '@/lib/news-sync/blocked-original-urls';
 import {
+  createSyncDeadline,
   isGeminiRateLimitMessage,
   MAX_GEMINI_CALLS_PER_SYNC_RUN,
   NEWS_SYNC_GEMINI_GAP_MS,
+  NEWS_SYNC_MIN_BUDGET_FOR_GEMINI_MS,
   sleepMs,
 } from '@/lib/news-sync/gemini-request-gap';
 import { summarizeMitNewsArticle } from '@/lib/mit-news/summarize-mit-article';
@@ -248,6 +250,7 @@ async function runMitNewsSyncInner(options: { force: boolean }): Promise<MitNews
   const items = rawFeed.slice(0, MAX_NEW_POSTS_PER_RUN);
   const blocked = await loadBlockedSyndicationUrls();
   const results: MitNewsItemResult[] = [];
+  const deadline = createSyncDeadline();
   let created = 0;
   let geminiOrdinal = 0;
   let fetchAttempts = 0;
@@ -295,6 +298,13 @@ async function runMitNewsSyncInner(options: { force: boolean }): Promise<MitNews
       break;
     }
 
+    if (!deadline.hasBudget(NEWS_SYNC_MIN_BUDGET_FOR_GEMINI_MS)) {
+      console.warn('[mit-news] sync wall-clock 예산 임박 — Gemini 호출 중단', {
+        remainingMs: deadline.remainingMs(),
+      });
+      break;
+    }
+
     geminiOrdinal += 1;
     if (geminiOrdinal > 1) {
       console.log(
@@ -308,7 +318,12 @@ async function runMitNewsSyncInner(options: { force: boolean }): Promise<MitNews
 
     let sum: Awaited<ReturnType<typeof summarizeMitNewsArticle>>;
     try {
-      sum = await summarizeMitNewsArticle(keyRes.key, item.title ?? '(제목 없음)', plain);
+      sum = await summarizeMitNewsArticle(
+        keyRes.key,
+        item.title ?? '(제목 없음)',
+        plain,
+        deadline,
+      );
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       console.warn('[mit-news] Gemini 요약 예외 — 해당 기사만 건너뜀', { link, message: msg });

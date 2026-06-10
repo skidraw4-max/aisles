@@ -50,7 +50,24 @@ async function handle(req: NextRequest) {
     console.log('[mit-news] 강제 실행 모드(force=true)');
   }
 
-  const result = await runMitNewsSync({ force });
+  let result: Awaited<ReturnType<typeof runMitNewsSync>>;
+  try {
+    result = await runMitNewsSync({ force });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    console.error('[cron/mit-news] handle 예외', e);
+    return NextResponse.json({
+      ok: true,
+      degraded: true,
+      step: 'mit_rss_fetch',
+      error: `UNHANDLED:${msg}`,
+      message: `MIT News 크론 처리 중 예외: ${msg}`,
+      created: 0,
+      scanned: 0,
+      force,
+      results: [],
+    });
+  }
 
   if (!result.ok) {
     if (isTransientFailureStep(result.step)) {

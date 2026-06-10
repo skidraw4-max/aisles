@@ -10,7 +10,10 @@ import {
   GEO_FACTUAL_WRITING_CONSTRAINTS,
   GEO_NEWS_INTRO_THREE_LINE_CONSTRAINT,
 } from '@/lib/geo-prompt-constraints';
-import { retryOnGeminiRateLimit } from '@/lib/news-sync/gemini-request-gap';
+import {
+  retryOnGeminiRateLimit,
+  type SyncDeadline,
+} from '@/lib/news-sync/gemini-request-gap';
 
 const SYSTEM = `너는 The Verge 스타일의 테크 저널리즘을 한국어로 옮기는 에디터다. 톤은 날카롭고 트렌디하며, 과장 없이 "왜 지금 이 소식이 중요한지"가 드러나게 쓴다.
 
@@ -80,6 +83,7 @@ export async function summarizeVergeArticle(
   apiKey: string,
   title: string,
   bodyPlain: string,
+  deadline?: SyncDeadline,
 ): Promise<{ ok: true; data: VergeSummaryJson } | { ok: false; error: string }> {
   const user = `원 제목: ${title}\n\n기사 본문(평문, RSS에서 HTML 제거):\n${bodyPlain}`;
   const prompt = `${SYSTEM}\n\n---\n\n${user}`;
@@ -103,6 +107,7 @@ export async function summarizeVergeArticle(
         const result = await retryOnGeminiRateLimit(
           () => model.generateContent(prompt),
           'verge/summarize',
+          { deadline },
         );
         const text = result.response.text().trim();
         const parsed = tryParseJsonFromModelText(text);
