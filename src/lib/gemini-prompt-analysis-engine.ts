@@ -16,9 +16,7 @@ import {
 } from '@/lib/prompt-analysis';
 import {
   GEMINI_API_VERSION_CHAIN,
-  GEMINI_MODEL_FALLBACK,
-  GEMINI_MODEL_PRIMARY,
-  GEMINI_MODEL_TERTIARY,
+  GEMINI_LAB_MODEL_CHAIN,
 } from '@/lib/gemini-models';
 
 export type { PromptAnalysis };
@@ -168,36 +166,38 @@ async function classifyPromptIntent(
   genAI: GoogleGenerativeAI,
   userPrompt: string,
 ): Promise<'image' | 'marketing'> {
-  for (const apiVersion of GEMINI_API_VERSION_CHAIN) {
-    try {
-      const model = genAI.getGenerativeModel(
-        {
-          model: GEMINI_MODEL_PRIMARY,
-          systemInstruction: CLASSIFY_PROMPT_INTENT_SYSTEM,
-          generationConfig: {
-            temperature: 0.15,
+  for (const modelId of GEMINI_LAB_MODEL_CHAIN) {
+    for (const apiVersion of GEMINI_API_VERSION_CHAIN) {
+      try {
+        const model = genAI.getGenerativeModel(
+          {
+            model: modelId,
+            systemInstruction: CLASSIFY_PROMPT_INTENT_SYSTEM,
+            generationConfig: {
+              temperature: 0.15,
+            },
           },
-        },
-        { apiVersion },
-      );
-      const result = await model.generateContent(userPrompt);
-      const text = result.response.text().trim();
-      const parsed = tryParseJsonFromModelText(text);
-      if (!parsed.ok || !isPlainRecord(parsed.value)) {
+          { apiVersion },
+        );
+        const result = await model.generateContent(userPrompt);
+        const text = result.response.text().trim();
+        const parsed = tryParseJsonFromModelText(text);
+        if (!parsed.ok || !isPlainRecord(parsed.value)) {
+          return 'image';
+        }
+        const intent = parsed.value.intent;
+        if (intent === 'marketing') {
+          return 'marketing';
+        }
+        return 'image';
+      } catch (e) {
+        if (e instanceof GoogleGenerativeAIFetchError && e.status === 404) {
+          console.warn('[analyzePrompt] classifyPromptIntent 404, next', { modelId, apiVersion });
+          continue;
+        }
+        console.warn('[analyzePrompt] classifyPromptIntent failed, defaulting to image:', e);
         return 'image';
       }
-      const intent = parsed.value.intent;
-      if (intent === 'marketing') {
-        return 'marketing';
-      }
-      return 'image';
-    } catch (e) {
-      if (e instanceof GoogleGenerativeAIFetchError && e.status === 404) {
-        console.warn('[analyzePrompt] classifyPromptIntent 404, next apiVersion', { apiVersion });
-        continue;
-      }
-      console.warn('[analyzePrompt] classifyPromptIntent failed, defaulting to image:', e);
-      return 'image';
     }
   }
   return 'image';
@@ -474,7 +474,7 @@ export function geminiFailureToResult(e: unknown): AnalyzePromptResult {
 async function getAnalysisModel(
   genAI: GoogleGenerativeAI,
   trimmed: string,
-  modelId: string = GEMINI_MODEL_PRIMARY,
+  modelId: string = GEMINI_LAB_MODEL_CHAIN[0],
   requestOptions?: RequestOptions,
 ) {
   let systemInstruction: string;
@@ -553,27 +553,22 @@ export async function executeGeminiPromptAnalysisWithApiKey(
     throw lastVersionErr ?? new Error('Gemini: all API versions failed');
   };
 
-  try {
-    return await runOnce(GEMINI_MODEL_PRIMARY);
-  } catch (e) {
-    if (isGeminiModelNotFoundForFallback(e)) {
-      console.warn('[executeGeminiPromptAnalysis] primary model unavailable, trying fallback', GEMINI_MODEL_FALLBACK);
-      try {
-        return await runOnce(GEMINI_MODEL_FALLBACK);
-      } catch (e2) {
-        if (isGeminiModelNotFoundForFallback(e2)) {
-          console.warn('[executeGeminiPromptAnalysis] fallback unavailable, trying tertiary', GEMINI_MODEL_TERTIARY);
-          try {
-            return await runOnce(GEMINI_MODEL_TERTIARY);
-          } catch (e3) {
-            return geminiFailureToResult(e3);
-          }
-        }
-        return geminiFailureToResult(e2);
+  let lastErr: unknown;
+  for (let i = 0; i < GEMINI_LAB_MODEL_CHAIN.length; i++) {
+    const modelId = GEMINI_LAB_MODEL_CHAIN[i];
+    try {
+      return await runOnce(modelId);
+    } catch (e) {
+      lastErr = e;
+      const nextModel = GEMINI_LAB_MODEL_CHAIN[i + 1];
+      if (isGeminiModelNotFoundForFallback(e) && nextModel !== undefined) {
+        console.warn('[executeGeminiPromptAnalysis] model unavailable, trying next', nextModel);
+        continue;
       }
+      return geminiFailureToResult(e);
     }
-    return geminiFailureToResult(e);
   }
+  return geminiFailureToResult(lastErr ?? new Error('Gemini: all LAB models failed'));
 }
 
 /** `generateContentStream` — 델타마다 `onTextDelta` 호출 후 최종 파싱 */
@@ -629,27 +624,22 @@ export async function streamGeminiPromptAnalysisWithApiKey(
     throw lastVersionErr ?? new Error('Gemini: all API versions failed');
   };
 
-  try {
-    return await runStreamOnce(GEMINI_MODEL_PRIMARY);
-  } catch (e) {
-    if (isGeminiModelNotFoundForFallback(e)) {
-      console.warn('[streamGeminiPromptAnalysis] primary model unavailable, trying fallback', GEMINI_MODEL_FALLBACK);
-      try {
-        return await runStreamOnce(GEMINI_MODEL_FALLBACK);
-      } catch (e2) {
-        if (isGeminiModelNotFoundForFallback(e2)) {
-          console.warn('[streamGeminiPromptAnalysis] fallback unavailable, trying tertiary', GEMINI_MODEL_TERTIARY);
-          try {
-            return await runStreamOnce(GEMINI_MODEL_TERTIARY);
-          } catch (e3) {
-            return geminiFailureToResult(e3);
-          }
-        }
-        return geminiFailureToResult(e2);
+  let lastErr: unknown;
+  for (let i = 0; i < GEMINI_LAB_MODEL_CHAIN.length; i++) {
+    const modelId = GEMINI_LAB_MODEL_CHAIN[i];
+    try {
+      return await runStreamOnce(modelId);
+    } catch (e) {
+      lastErr = e;
+      const nextModel = GEMINI_LAB_MODEL_CHAIN[i + 1];
+      if (isGeminiModelNotFoundForFallback(e) && nextModel !== undefined) {
+        console.warn('[streamGeminiPromptAnalysis] model unavailable, trying next', nextModel);
+        continue;
       }
+      return geminiFailureToResult(e);
     }
-    return geminiFailureToResult(e);
   }
+  return geminiFailureToResult(lastErr ?? new Error('Gemini: all LAB models failed'));
 }
 
 export function missingApiKeyResult(): AnalyzePromptResult {

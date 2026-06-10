@@ -4,7 +4,7 @@ import { unstable_noStore as noStore } from 'next/cache';
 
 /**
  * Gemini: `@google/generative-ai` — package.json 기준 최신 안내는 npm `0.24.1` (프로젝트와 동일한지 배포 시 확인).
- * 모델: Google AI Studio 할당량 기준 **Gemini 2.5 Flash** → API ID `gemini-2.5-flash`.
+ * LAB 텍스트 분석: `GEMINI_LAB_MODEL_CHAIN` — **Flash-Lite 우선**(TPM 절감) → `gemini-2.5-flash` → `gemini-1.5-flash-latest`.
  * 연결만 검증하려면 `GEMINI_MINIMAL_SYSTEM=1` → 시스템 문구가 "너는 도우미야." 로 바뀜(기본은 정교한 분석 프롬프트).
  *
  * 스트리밍 UI는 `POST /api/posts/[id]/prompt-analysis-stream` + `@/lib/gemini-prompt-analysis-engine`.
@@ -44,7 +44,7 @@ import { pickEstimatedPromptFromAnalysis } from '@/lib/gallery-image-analysis';
 import {
   GEMINI_API_VERSION_CHAIN,
   GEMINI_IMAGE_MODEL_CHAIN,
-  GEMINI_MODEL_PRIMARY,
+  GEMINI_LAB_MODEL_CHAIN,
 } from '@/lib/gemini-models';
 
 export type { PromptAnalysis, AnalyzePromptErrorCode, AnalyzePromptResult };
@@ -59,7 +59,7 @@ export type AnalyzeImageResult =
   | { ok: true; data: Record<string, unknown> }
   | { ok: false; error: string; code: AnalyzePromptErrorCode };
 
-/** 이미지 역분석 — `GEMINI_IMAGE_MODEL_CHAIN` 순서로 시도 (2.5 → 2 flash 폴백) */
+/** 이미지 역분석 — `GEMINI_IMAGE_MODEL_CHAIN` 순서로 시도 (Flash-Lite 우선 → full 2.5 Flash 폴백) */
 const IMAGE_REVERSE_MODELS = GEMINI_IMAGE_MODEL_CHAIN;
 const IMAGE_REVERSE_ATTEMPTS_PER_MODEL = 4;
 const IMAGE_REVERSE_RETRY_BASE_MS = 700;
@@ -574,7 +574,7 @@ export async function executeGeminiPromptAnalysis(trimmed: string): Promise<Anal
 
   if (process.env.NODE_ENV === 'development') {
     console.info(
-      `[executeGeminiPromptAnalysis] API key OK (length=${apiKey.length}, from=${resolved.source}), model="${GEMINI_MODEL_PRIMARY}", minimalSystem=${process.env.GEMINI_MINIMAL_SYSTEM === '1'}`,
+      `[executeGeminiPromptAnalysis] API key OK (length=${apiKey.length}, from=${resolved.source}), modelChain="${GEMINI_LAB_MODEL_CHAIN.join('→')}", minimalSystem=${process.env.GEMINI_MINIMAL_SYSTEM === '1'}`,
     );
   }
 
@@ -582,7 +582,7 @@ export async function executeGeminiPromptAnalysis(trimmed: string): Promise<Anal
 }
 
 /**
- * Gemini만 호출(캐시 없음). 텍스트 분석 모델은 `@/lib/gemini-models`의 primary·fallback과 동일 체인.
+ * Gemini만 호출(캐시 없음). 텍스트 분석 모델은 `@/lib/gemini-models`의 `GEMINI_LAB_MODEL_CHAIN`(Lite 우선).
  */
 export async function analyzePrompt(userPrompt: string): Promise<AnalyzePromptResult> {
   noStore();

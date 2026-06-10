@@ -11,18 +11,30 @@
  */
 /** SDK 기본과 안정판 순서 — 404 시 다음 버전으로 폴백 */
 export const GEMINI_API_VERSION_CHAIN = ['v1beta', 'v1'] as const;
-export const GEMINI_MODEL_PRIMARY = 'gemini-2.5-flash' as const; // 대시보드 명칭
-/** 2.0 Flash 계열은 신규 키에서 404 — 2.5 Flash-Lite(가용·비용 효율)로 폴백 */
+/** full 2.5 Flash — 품질·용량 폴백(2.5 Flash TPM 버킷 소비) */
+export const GEMINI_MODEL_PRIMARY = 'gemini-2.5-flash' as const;
+/** 2.5 Flash-Lite — interactive·배치 1순위(별도 TPM/RPM 버킷, 비용·지연 절감) */
 export const GEMINI_MODEL_FALLBACK = 'gemini-2.5-flash-lite' as const;
 export const GEMINI_MODEL_TERTIARY = 'gemini-1.5-flash-latest' as const; // 1.5는 -latest가 가장 확실함
 
 /**
- * 이미지 역분석: 순차 시도 (`gemini-2.0-flash` 미포함 — 신규 계정 비가용)
+ * LAB 프롬프트 분석·의도 분류: Flash-Lite 우선으로 2.5 Flash TPM 버킷 압력 완화.
+ * Lite 실패(404·모델 미노출) 시 full 2.5 Flash → 1.5-flash-latest 순. `gemini-2.0-flash` 미포함.
+ */
+export const GEMINI_LAB_MODEL_CHAIN = [
+  GEMINI_MODEL_FALLBACK,
+  GEMINI_MODEL_PRIMARY,
+  GEMINI_MODEL_TERTIARY,
+] as const;
+
+/**
+ * 이미지 역분석: Flash-Lite 우선(TPM). full 2.5·`-latest`·1.5 변형 후 최후 1.5-flash-latest.
+ * `gemini-2.0-flash` 미포함 — 신규 계정 비가용.
  */
 export const GEMINI_IMAGE_MODEL_CHAIN = [
+  GEMINI_MODEL_FALLBACK,
   GEMINI_MODEL_PRIMARY,
   'gemini-2.5-flash-latest',
-  GEMINI_MODEL_FALLBACK,
   'gemini-1.5-flash',
   GEMINI_MODEL_TERTIARY,
 ] as const;
