@@ -17,7 +17,12 @@ import {
 
 const GEEKNEWS_NEW_URL = 'https://news.hada.io/new';
 export const MAX_NEW_POSTS_PER_RUN = 5;
-export const MAX_LIST_SCAN = 35;
+/** 목록 HTML 파싱 상한 — 전체 스캔 전 AI 후보만 추려 처리 */
+export const MAX_LIST_SCAN = 20;
+/** AI 제목 후보 중 원문 fetch·요약을 시도할 최대 건수 (Vercel 함수 시간 예산) */
+export const MAX_AI_CANDIDATES_PER_RUN = 10;
+/** 원문 fetch 시도 상한 — 느린 URL 연쇄로 FUNCTION_INVOCATION_TIMEOUT 방지 */
+const MAX_FETCH_ATTEMPTS_PER_RUN = 7;
 const MIN_BODY_CHARS = 120;
 
 export type GeekNewsSyncStep =
@@ -139,28 +144,57 @@ export async function runGeekNewsSync(options: { force: boolean }): Promise<Geek
     };
   }
 
-  console.log(`[geeknews] 링크 ${parsed.length}개 추출 완료 (스캔 상한 ${MAX_LIST_SCAN}까지 사용)`);
+  const scan = parsed.slice(0, MAX_LIST_SCAN);
+  console.log(
+    `[geeknews] 링크 ${parsed.length}개 추출 (목록 상한 ${MAX_LIST_SCAN}, AI 후보 상한 ${MAX_AI_CANDIDATES_PER_RUN})`,
+  );
 
   const existingUrls = await loadBlockedSyndicationUrls();
 
-  const scan = parsed.slice(0, MAX_LIST_SCAN);
   const results: GeekNewsItemResult[] = [];
-  let created = 0;
-  let geminiOrdinal = 0;
-
   for (const item of scan) {
-    if (created >= MAX_NEW_POSTS_PER_RUN) break;
-
     if (!force && existingUrls.has(item.externalUrl)) {
       results.push({ externalUrl: item.externalUrl, status: 'skipped_duplicate' });
       continue;
     }
-
     if (!titleMatchesAiKeywords(item.title.trim())) {
       results.push({ externalUrl: item.externalUrl, status: 'skipped_not_ai' });
-      continue;
+    }
+  }
+
+  const aiCandidates = scan
+    .filter((item) => force || !existingUrls.has(item.externalUrl))
+    .filter((item) => titleMatchesAiKeywords(item.title.trim()))
+    .slice(0, MAX_AI_CANDIDATES_PER_RUN);
+
+  if (aiCandidates.length === 0) {
+    console.warn('[geeknews] AI 키워드 제목 기사 없음 — 등록 생략', { scanned: scan.length });
+    return {
+      ok: true,
+      created: 0,
+      scanned: scan.length,
+      force,
+      results,
+    };
+  }
+
+  console.log(`[geeknews] AI 후보 ${aiCandidates.length}건 처리 시작`);
+
+  let created = 0;
+  let geminiOrdinal = 0;
+  let fetchAttempts = 0;
+
+  for (const item of aiCandidates) {
+    if (created >= MAX_NEW_POSTS_PER_RUN) break;
+
+    if (fetchAttempts >= MAX_FETCH_ATTEMPTS_PER_RUN) {
+      console.warn('[geeknews] 원문 fetch 시도 상한 도달 — 나머지 AI 후보 스킵', {
+        limit: MAX_FETCH_ATTEMPTS_PER_RUN,
+      });
+      break;
     }
 
+    fetchAttempts += 1;
     const fetchRes = await fetchExternalArticlePlainText(item.externalUrl);
     if (!fetchRes.ok) {
       console.warn(

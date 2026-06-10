@@ -8,7 +8,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { runGeekNewsSync } from '@/lib/geeknews/run-geeknews-sync';
 
-export const maxDuration = 60;
+/** HN·Techmeme·Lobsters와 동일 — Gemini 간격·원문 fetch 합산 시 60초 초과 가능 */
+export const maxDuration = 120;
 
 function verifyCronAuth(req: NextRequest): boolean {
   const secret = process.env.CRON_SECRET?.trim();
