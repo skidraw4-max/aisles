@@ -32,6 +32,10 @@ function httpStatusForFailure(step: string): number {
   }
 }
 
+function isTransientFailureStep(step: string): boolean {
+  return step === 'geeknews_list_fetch' || step === 'geeknews_parse';
+}
+
 async function handle(req: NextRequest) {
   if (!verifyCronAuth(req)) {
     return NextResponse.json(
@@ -53,6 +57,25 @@ async function handle(req: NextRequest) {
   const result = await runGeekNewsSync({ force });
 
   if (!result.ok) {
+    if (isTransientFailureStep(result.step)) {
+      console.warn('[cron/geeknews] transient_failure', {
+        step: 'handle_transient_failure',
+        failureStep: result.step,
+        error: result.error,
+      });
+      return NextResponse.json({
+        ok: true,
+        degraded: true,
+        step: result.step,
+        error: result.error,
+        message: result.message,
+        created: 0,
+        scanned: 0,
+        force,
+        results: [],
+      });
+    }
+
     return NextResponse.json(
       {
         ok: false,
