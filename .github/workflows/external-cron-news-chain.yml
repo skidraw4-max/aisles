@@ -16,16 +16,13 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 120
     steps:
+      - uses: actions/checkout@v4
+
       - name: GeekNews
         env:
           CRON_SITE_URL: ${{ secrets.CRON_SITE_URL }}
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
-        run: |
-          set -euo pipefail
-          curl -sS -X POST "${CRON_SITE_URL}/api/cron/geeknews" \
-            -H "Authorization: Bearer ${CRON_SECRET}" \
-            -H "Content-Type: application/json" \
-            -w "\nHTTP %{http_code}\n"
+        run: bash scripts/cron-news-sync-step.sh GeekNews /api/cron/geeknews
 
       - name: Wait 10 minutes
         run: sleep 600
@@ -34,12 +31,7 @@ jobs:
         env:
           CRON_SITE_URL: ${{ secrets.CRON_SITE_URL }}
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
-        run: |
-          set -euo pipefail
-          curl -sS -X POST "${CRON_SITE_URL}/api/cron/hackernews" \
-            -H "Authorization: Bearer ${CRON_SECRET}" \
-            -H "Content-Type: application/json" \
-            -w "\nHTTP %{http_code}\n"
+        run: bash scripts/cron-news-sync-step.sh "Hacker News" /api/cron/hackernews warn-rate-limit-zero
 
       - name: Wait 10 minutes
         run: sleep 600
@@ -48,12 +40,7 @@ jobs:
         env:
           CRON_SITE_URL: ${{ secrets.CRON_SITE_URL }}
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
-        run: |
-          set -euo pipefail
-          curl -sS -X POST "${CRON_SITE_URL}/api/cron/lobsters" \
-            -H "Authorization: Bearer ${CRON_SECRET}" \
-            -H "Content-Type: application/json" \
-            -w "\nHTTP %{http_code}\n"
+        run: bash scripts/cron-news-sync-step.sh Lobsters /api/cron/lobsters
 
       - name: Wait 10 minutes
         run: sleep 600
@@ -62,12 +49,7 @@ jobs:
         env:
           CRON_SITE_URL: ${{ secrets.CRON_SITE_URL }}
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
-        run: |
-          set -euo pipefail
-          curl -sS -X POST "${CRON_SITE_URL}/api/cron/techmeme" \
-            -H "Authorization: Bearer ${CRON_SECRET}" \
-            -H "Content-Type: application/json" \
-            -w "\nHTTP %{http_code}\n"
+        run: bash scripts/cron-news-sync-step.sh Techmeme /api/cron/techmeme
 
       - name: Wait 10 minutes
         run: sleep 600
@@ -76,12 +58,7 @@ jobs:
         env:
           CRON_SITE_URL: ${{ secrets.CRON_SITE_URL }}
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
-        run: |
-          set -euo pipefail
-          curl -sS -X POST "${CRON_SITE_URL}/api/cron/verge" \
-            -H "Authorization: Bearer ${CRON_SECRET}" \
-            -H "Content-Type: application/json" \
-            -w "\nHTTP %{http_code}\n"
+        run: bash scripts/cron-news-sync-step.sh "The Verge" /api/cron/verge
 
       - name: Wait 10 minutes
         run: sleep 600
@@ -90,12 +67,7 @@ jobs:
         env:
           CRON_SITE_URL: ${{ secrets.CRON_SITE_URL }}
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
-        run: |
-          set -euo pipefail
-          curl -sS -X POST "${CRON_SITE_URL}/api/cron/aibreakfast" \
-            -H "Authorization: Bearer ${CRON_SECRET}" \
-            -H "Content-Type: application/json" \
-            -w "\nHTTP %{http_code}\n"
+        run: bash scripts/cron-news-sync-step.sh "AI Breakfast" /api/cron/aibreakfast
 
       - name: Wait 10 minutes
         run: sleep 600
@@ -104,12 +76,7 @@ jobs:
         env:
           CRON_SITE_URL: ${{ secrets.CRON_SITE_URL }}
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
-        run: |
-          set -euo pipefail
-          curl -sS -X POST "${CRON_SITE_URL}/api/cron/mit-news" \
-            -H "Authorization: Bearer ${CRON_SECRET}" \
-            -H "Content-Type: application/json" \
-            -w "\nHTTP %{http_code}\n"
+        run: bash scripts/cron-news-sync-step.sh "MIT News" /api/cron/mit-news
 
       - name: Wait 10 minutes
         run: sleep 600
@@ -118,12 +85,7 @@ jobs:
         env:
           CRON_SITE_URL: ${{ secrets.CRON_SITE_URL }}
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
-        run: |
-          set -euo pipefail
-          curl -fsS -X POST "${CRON_SITE_URL}/api/cron/youtube-sync" \
-            -H "Authorization: Bearer ${CRON_SECRET}" \
-            -H "Content-Type: application/json" \
-            -w "\nHTTP %{http_code}\n"
+        run: bash scripts/cron-news-sync-step.sh "YouTube sync" /api/cron/youtube-sync
 
       - name: Notify cron failure
         if: failure()

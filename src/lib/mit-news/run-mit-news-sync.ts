@@ -4,7 +4,12 @@ import { prisma } from '@/lib/prisma';
 import { fetchExternalArticlePlainText, htmlToPlainText } from '@/lib/geeknews/extract-article-text';
 import { readGeminiApiKeyFromEnv } from '@/lib/gemini-prompt-analysis-engine';
 import { loadBlockedSyndicationUrls } from '@/lib/news-sync/blocked-original-urls';
-import { NEWS_SYNC_GEMINI_GAP_MS, sleepMs } from '@/lib/news-sync/gemini-request-gap';
+import {
+  isGeminiRateLimitMessage,
+  MAX_GEMINI_CALLS_PER_SYNC_RUN,
+  NEWS_SYNC_GEMINI_GAP_MS,
+  sleepMs,
+} from '@/lib/news-sync/gemini-request-gap';
 import { summarizeMitNewsArticle } from '@/lib/mit-news/summarize-mit-article';
 import { formatMitNewsPostBody } from '@/lib/mit-news/format-mit-post-body';
 import { shouldSkipThinLoungePost } from '@/lib/lounge-ingestion-policy';
@@ -279,6 +284,13 @@ async function runMitNewsSyncInner(options: { force: boolean }): Promise<MitNews
       continue;
     }
 
+    if (geminiOrdinal >= MAX_GEMINI_CALLS_PER_SYNC_RUN) {
+      console.warn('[mit-news] Gemini 호출 상한 도달 — 나머지 항목 스킵', {
+        limit: MAX_GEMINI_CALLS_PER_SYNC_RUN,
+      });
+      break;
+    }
+
     geminiOrdinal += 1;
     if (geminiOrdinal > 1) {
       console.log('[mit-news] 3초 대기 중… (Gemini rate limit 완화)');
@@ -311,6 +323,10 @@ async function runMitNewsSyncInner(options: { force: boolean }): Promise<MitNews
         detail: sum.error,
         step: 'gemini_summary',
       });
+      if (isGeminiRateLimitMessage(sum.error)) {
+        console.warn('[mit-news] Gemini rate limit 지속 — 후속 기사 스킵');
+        break;
+      }
       continue;
     }
 

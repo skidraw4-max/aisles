@@ -13,6 +13,7 @@ import {
   GEO_FACTUAL_WRITING_CONSTRAINTS,
   GEO_NEWS_INTRO_THREE_LINE_CONSTRAINT,
 } from '@/lib/geo-prompt-constraints';
+import { retryOnGeminiRateLimit } from '@/lib/news-sync/gemini-request-gap';
 
 const SYSTEM = `너는 AI·테크 뉴스레터를 한국어 독자에게 전달하는 에디터다.
 
@@ -113,7 +114,10 @@ export async function summarizeAiBreakfastNewsletter(
           },
           { apiVersion },
         );
-        const result = await model.generateContent(prompt);
+        const result = await retryOnGeminiRateLimit(
+          () => model.generateContent(prompt),
+          'aibreakfast/summarize',
+        );
         const text = result.response.text().trim();
         const parsed = tryParseJsonFromModelText(text);
         if (!parsed.ok) {

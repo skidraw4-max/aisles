@@ -8,7 +8,12 @@ import { titleMatchesAiKeywords } from '@/lib/hackernews/ai-title';
 import { readGeminiApiKeyFromEnv } from '@/lib/gemini-prompt-analysis-engine';
 import { loadBlockedSyndicationUrls } from '@/lib/news-sync/blocked-original-urls';
 import { shouldSkipThinLoungePost } from '@/lib/lounge-ingestion-policy';
-import { NEWS_SYNC_GEMINI_GAP_MS, sleepMs } from '@/lib/news-sync/gemini-request-gap';
+import {
+  isGeminiRateLimitMessage,
+  MAX_GEMINI_CALLS_PER_SYNC_RUN,
+  NEWS_SYNC_GEMINI_GAP_MS,
+  sleepMs,
+} from '@/lib/news-sync/gemini-request-gap';
 
 const GEEKNEWS_NEW_URL = 'https://news.hada.io/new';
 export const MAX_NEW_POSTS_PER_RUN = 5;
@@ -177,6 +182,13 @@ export async function runGeekNewsSync(options: { force: boolean }): Promise<Geek
       continue;
     }
 
+    if (geminiOrdinal >= MAX_GEMINI_CALLS_PER_SYNC_RUN) {
+      console.warn('[geeknews] Gemini 호출 상한 도달 — 나머지 항목 스킵', {
+        limit: MAX_GEMINI_CALLS_PER_SYNC_RUN,
+      });
+      break;
+    }
+
     geminiOrdinal += 1;
     if (geminiOrdinal > 1) {
       console.log('[geeknews] 3초 대기 중... (Gemini rate limit 완화)');
@@ -213,6 +225,10 @@ export async function runGeekNewsSync(options: { force: boolean }): Promise<Geek
         detail: sum.error,
         step: 'gemini_summary',
       });
+      if (isGeminiRateLimitMessage(sum.error)) {
+        console.warn('[geeknews] Gemini rate limit 지속 — 후속 기사 스킵');
+        break;
+      }
       continue;
     }
 

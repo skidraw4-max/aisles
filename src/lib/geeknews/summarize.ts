@@ -8,6 +8,7 @@ import {
   isGeminiModelNotFoundForFallback,
   tryParseJsonFromModelText,
 } from '@/lib/gemini-prompt-analysis-engine';
+import { retryOnGeminiRateLimit } from '@/lib/news-sync/gemini-request-gap';
 import {
   MIN_SYNDICATED_BODY_CHARS,
   totalCharCount,
@@ -128,7 +129,10 @@ export async function summarizeGeekNewsArticle(
           },
           { apiVersion },
         );
-        const result = await model.generateContent(prompt);
+        const result = await retryOnGeminiRateLimit(
+          () => model.generateContent(prompt),
+          'geeknews/summarize',
+        );
         const text = result.response.text().trim();
         const parsed = tryParseJsonFromModelText(text);
         if (!parsed.ok) {

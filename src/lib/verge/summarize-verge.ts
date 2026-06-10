@@ -10,6 +10,7 @@ import {
   GEO_FACTUAL_WRITING_CONSTRAINTS,
   GEO_NEWS_INTRO_THREE_LINE_CONSTRAINT,
 } from '@/lib/geo-prompt-constraints';
+import { retryOnGeminiRateLimit } from '@/lib/news-sync/gemini-request-gap';
 
 const SYSTEM = `너는 The Verge 스타일의 테크 저널리즘을 한국어로 옮기는 에디터다. 톤은 날카롭고 트렌디하며, 과장 없이 "왜 지금 이 소식이 중요한지"가 드러나게 쓴다.
 
@@ -99,7 +100,10 @@ export async function summarizeVergeArticle(
           },
           { apiVersion },
         );
-        const result = await model.generateContent(prompt);
+        const result = await retryOnGeminiRateLimit(
+          () => model.generateContent(prompt),
+          'verge/summarize',
+        );
         const text = result.response.text().trim();
         const parsed = tryParseJsonFromModelText(text);
         if (!parsed.ok) {

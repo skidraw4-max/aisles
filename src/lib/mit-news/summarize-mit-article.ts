@@ -13,6 +13,7 @@ import {
   GEO_FACTUAL_WRITING_CONSTRAINTS,
   GEO_NEWS_INTRO_THREE_LINE_CONSTRAINT,
 } from '@/lib/geo-prompt-constraints';
+import { retryOnGeminiRateLimit } from '@/lib/news-sync/gemini-request-gap';
 
 const SYSTEM = `너는 MIT News 수준의 학술·연구 뉴스를 한국어 **중학생도 이해할 수 있는 난이도**로 풀어 쓰는 과학 저널리스트다.
 
@@ -90,7 +91,10 @@ export async function summarizeMitNewsArticle(
           },
           { apiVersion },
         );
-        const result = await model.generateContent(prompt);
+        const result = await retryOnGeminiRateLimit(
+          () => model.generateContent(prompt),
+          'mit-news/summarize',
+        );
         const text = result.response.text().trim();
         const parsed = tryParseJsonFromModelText(text);
         if (!parsed.ok) {

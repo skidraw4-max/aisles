@@ -41,7 +41,7 @@ export function parseGeekNewsNewListHtml(html: string): GeekNewsListItem[] {
     const block = chunks[i] ?? '';
     const idMatch = block.match(/data-topic-state-id='(\d+)'/);
     const linkMatch = block.match(
-      /<div class=topictitle>[\s\S]*?<a href=['"](https?:\/\/[^'"]+)['"][^>]*>\s*<h1>([^<]*)<\/h1>/i,
+      /<div class=topictitle>[\s\S]*?<a href=['"](https?:\/\/[^'"]+)['"][^>]*>\s*<h[12][^>]*>([^<]*)<\/h[12]>/i,
     );
     if (!idMatch?.[1] || !linkMatch?.[1] || !linkMatch?.[2]) continue;
 

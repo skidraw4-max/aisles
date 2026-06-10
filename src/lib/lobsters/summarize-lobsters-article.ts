@@ -14,6 +14,7 @@ import {
   GEO_FACTUAL_WRITING_CONSTRAINTS,
   GEO_NEWS_INTRO_THREE_LINE_CONSTRAINT,
 } from '@/lib/geo-prompt-constraints';
+import { retryOnGeminiRateLimit } from '@/lib/news-sync/gemini-request-gap';
 
 const SYSTEM = `너는 개발자·IT 독자를 위한 한국어 에디터다. 입력은 Lobsters 스토리 제목과 웹에서 추출한 기사 평문이다.
 
@@ -59,7 +60,10 @@ export async function summarizeLobstersArticle(
           },
           { apiVersion },
         );
-        const result = await model.generateContent(prompt);
+        const result = await retryOnGeminiRateLimit(
+          () => model.generateContent(prompt),
+          'lobsters/summarize',
+        );
         const text = result.response.text().trim();
         const parsed = tryParseJsonFromModelText(text);
         if (!parsed.ok) {

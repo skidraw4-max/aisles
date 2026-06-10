@@ -9,7 +9,12 @@ import { summarizeLobstersArticle } from '@/lib/lobsters/summarize-lobsters-arti
 import { LOBSTERS_RSS_URL } from '@/lib/news-sync/external-tech-link-sources';
 import { loadBlockedSyndicationUrls } from '@/lib/news-sync/blocked-original-urls';
 import { shouldSkipThinLoungePost } from '@/lib/lounge-ingestion-policy';
-import { NEWS_SYNC_GEMINI_GAP_MS, sleepMs } from '@/lib/news-sync/gemini-request-gap';
+import {
+  isGeminiRateLimitMessage,
+  MAX_GEMINI_CALLS_PER_SYNC_RUN,
+  NEWS_SYNC_GEMINI_GAP_MS,
+  sleepMs,
+} from '@/lib/news-sync/gemini-request-gap';
 
 export const MAX_NEW_POSTS_PER_RUN = 5;
 const MIN_BODY_CHARS = 120;
@@ -245,6 +250,13 @@ export async function runLobstersSync(options: { force: boolean }): Promise<Lobs
       continue;
     }
 
+    if (geminiOrdinal >= MAX_GEMINI_CALLS_PER_SYNC_RUN) {
+      console.warn('[lobsters] Gemini 호출 상한 도달 — 나머지 항목 스킵', {
+        limit: MAX_GEMINI_CALLS_PER_SYNC_RUN,
+      });
+      break;
+    }
+
     geminiOrdinal += 1;
     if (geminiOrdinal > 1) {
       console.log('[lobsters] 3초 대기 중... (Gemini rate limit 완화)');
@@ -281,6 +293,10 @@ export async function runLobstersSync(options: { force: boolean }): Promise<Lobs
         detail: sum.error,
         step: 'gemini_summary',
       });
+      if (isGeminiRateLimitMessage(sum.error)) {
+        console.warn('[lobsters] Gemini rate limit 지속 — 후속 기사 스킵');
+        break;
+      }
       continue;
     }
 

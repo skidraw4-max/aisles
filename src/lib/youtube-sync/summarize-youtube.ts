@@ -7,6 +7,7 @@ import {
 } from '@/lib/gemini-prompt-analysis-engine';
 import type { TranscriptResult } from '@/lib/youtube-sync/fetch-transcript';
 import type { YoutubeVideoSnippet } from '@/lib/youtube-sync/fetch-video-snippet';
+import { retryOnGeminiRateLimit } from '@/lib/news-sync/gemini-request-gap';
 import {
   MIN_SYNDICATED_BODY_CHARS,
   MIN_YOUTUBE_METADATA_SUMMARY_CHARS,
@@ -168,7 +169,10 @@ async function runGeminiYoutubeSummaryPrompt(
           },
           { apiVersion },
         );
-        const result = await model.generateContent(prompt);
+        const result = await retryOnGeminiRateLimit(
+          () => model.generateContent(prompt),
+          'youtube-sync/summarize',
+        );
         const text = result.response.text().trim();
         const parsed = tryParseJsonFromModelText(text);
         if (!parsed.ok) {

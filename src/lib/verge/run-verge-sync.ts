@@ -8,7 +8,12 @@ import { summarizeVergeArticle } from '@/lib/verge/summarize-verge';
 import { formatVergePostBody } from '@/lib/verge/format-verge-body';
 import { loadBlockedSyndicationUrls } from '@/lib/news-sync/blocked-original-urls';
 import { shouldSkipThinLoungePost } from '@/lib/lounge-ingestion-policy';
-import { NEWS_SYNC_GEMINI_GAP_MS, sleepMs } from '@/lib/news-sync/gemini-request-gap';
+import {
+  isGeminiRateLimitMessage,
+  MAX_GEMINI_CALLS_PER_SYNC_RUN,
+  NEWS_SYNC_GEMINI_GAP_MS,
+  sleepMs,
+} from '@/lib/news-sync/gemini-request-gap';
 
 /** The Verge RSS (AI / tech 뉴스 피드) */
 export const VERGE_RSS_URL = 'https://www.theverge.com/rss/ai-artificial-intelligence/index.xml';
@@ -295,6 +300,13 @@ async function runVergeSyncInner(options: { force: boolean }): Promise<VergeSync
       continue;
     }
 
+    if (geminiOrdinal >= MAX_GEMINI_CALLS_PER_SYNC_RUN) {
+      console.warn('[verge] Gemini 호출 상한 도달 — 나머지 항목 스킵', {
+        limit: MAX_GEMINI_CALLS_PER_SYNC_RUN,
+      });
+      break;
+    }
+
     geminiOrdinal += 1;
     if (geminiOrdinal > 1) {
       console.log('[verge] 3초 대기 중... (Gemini rate limit 완화)');
@@ -328,6 +340,10 @@ async function runVergeSyncInner(options: { force: boolean }): Promise<VergeSync
         detail: sum.error,
         step: 'gemini_summary',
       });
+      if (isGeminiRateLimitMessage(sum.error)) {
+        console.warn('[verge] Gemini rate limit 지속 — 후속 기사 스킵');
+        break;
+      }
       continue;
     }
 

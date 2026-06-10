@@ -15,6 +15,7 @@ import {
   GEO_FACTUAL_WRITING_CONSTRAINTS,
   GEO_NEWS_INTRO_THREE_LINE_CONSTRAINT,
 } from '@/lib/geo-prompt-constraints';
+import { retryOnGeminiRateLimit } from '@/lib/news-sync/gemini-request-gap';
 
 const SYSTEM = `너는 IT·테크 뉴스를 **일반인도 이해하기 쉬운 한국어**로 풀어 쓰는 에디터다. 입력은 Techmeme 헤드라인(영문)과 웹에서 추출한 기사 평문이다.
 
@@ -65,7 +66,10 @@ export async function summarizeTechmemeArticle(
           },
           { apiVersion },
         );
-        const result = await model.generateContent(prompt);
+        const result = await retryOnGeminiRateLimit(
+          () => model.generateContent(prompt),
+          'techmeme/summarize',
+        );
         const text = result.response.text().trim();
         const parsed = tryParseJsonFromModelText(text);
         if (!parsed.ok) {

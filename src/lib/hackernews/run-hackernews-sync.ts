@@ -8,7 +8,12 @@ import { rankStoriesForSync } from '@/lib/hackernews/rank-stories';
 import { summarizeHackerNewsArticle } from '@/lib/hackernews/summarize';
 import { readGeminiApiKeyFromEnv } from '@/lib/gemini-prompt-analysis-engine';
 import { loadBlockedSyndicationUrls } from '@/lib/news-sync/blocked-original-urls';
-import { NEWS_SYNC_GEMINI_GAP_MS, sleepMs } from '@/lib/news-sync/gemini-request-gap';
+import {
+  isGeminiRateLimitMessage,
+  MAX_GEMINI_CALLS_PER_SYNC_RUN,
+  NEWS_SYNC_GEMINI_GAP_MS,
+  sleepMs,
+} from '@/lib/news-sync/gemini-request-gap';
 
 /** Lobsters 등 동일 LOUNGE 외부 링크 소스 메타: `src/lib/news-sync/external-tech-link-sources.ts` */
 
@@ -181,6 +186,13 @@ export async function runHackerNewsSync(options: { force: boolean }): Promise<Ha
       continue;
     }
 
+    if (geminiOrdinal >= MAX_GEMINI_CALLS_PER_SYNC_RUN) {
+      console.warn('[hackernews] Gemini 호출 상한 도달 — 나머지 항목 스킵', {
+        limit: MAX_GEMINI_CALLS_PER_SYNC_RUN,
+      });
+      break;
+    }
+
     geminiOrdinal += 1;
     if (geminiOrdinal > 1) {
       console.log('[hackernews] 3초 대기 중... (Gemini rate limit 완화)');
@@ -217,6 +229,10 @@ export async function runHackerNewsSync(options: { force: boolean }): Promise<Ha
         detail: sum.error,
         step: 'gemini_summary',
       });
+      if (isGeminiRateLimitMessage(sum.error)) {
+        console.warn('[hackernews] Gemini rate limit 지속 — 후속 기사 스킵');
+        break;
+      }
       continue;
     }
 
