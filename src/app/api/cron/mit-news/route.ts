@@ -4,7 +4,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { runMitNewsSync } from '@/lib/mit-news/run-mit-news-sync';
 
-export const maxDuration = 60;
+/** RSS 본문 부족 시 원문 fetch·Gemini 간격 합산 시 60초 초과 가능 */
+export const maxDuration = 120;
 
 function verifyCronAuth(req: NextRequest): boolean {
   const secret = process.env.CRON_SECRET?.trim();

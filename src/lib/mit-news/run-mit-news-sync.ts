@@ -18,6 +18,8 @@ import { shouldSkipThinLoungePost } from '@/lib/lounge-ingestion-policy';
 export const MIT_NEWS_AI_RSS_URL = 'https://news.mit.edu/rss/topic/artificial-intelligence2';
 
 export const MAX_NEW_POSTS_PER_RUN = 3;
+/** 원문 fetch 시도 상한 — 느린 URL 연쇄로 FUNCTION_INVOCATION_TIMEOUT 방지 */
+const MAX_FETCH_ATTEMPTS_PER_RUN = 2;
 const MIN_BODY_CHARS = 120;
 
 const FETCH_USER_AGENT =
@@ -248,6 +250,7 @@ async function runMitNewsSyncInner(options: { force: boolean }): Promise<MitNews
   const results: MitNewsItemResult[] = [];
   let created = 0;
   let geminiOrdinal = 0;
+  let fetchAttempts = 0;
 
   for (const item of items) {
     const rawLink = item.link?.trim();
@@ -268,7 +271,8 @@ async function runMitNewsSyncInner(options: { force: boolean }): Promise<MitNews
     }
 
     let plain = rssPlainBody(item);
-    if (plain.length < MIN_BODY_CHARS) {
+    if (plain.length < MIN_BODY_CHARS && fetchAttempts < MAX_FETCH_ATTEMPTS_PER_RUN) {
+      fetchAttempts += 1;
       const ext = await fetchExternalArticlePlainText(link);
       if (ext.ok && ext.text.length >= MIN_BODY_CHARS) {
         plain = ext.text;

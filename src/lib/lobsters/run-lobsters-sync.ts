@@ -17,6 +17,10 @@ import {
 } from '@/lib/news-sync/gemini-request-gap';
 
 export const MAX_NEW_POSTS_PER_RUN = 5;
+/** AI 제목 후보 중 원문 fetch·요약을 시도할 최대 건수 (Vercel 함수 시간 예산) */
+export const MAX_AI_CANDIDATES_PER_RUN = 10;
+/** 원문 fetch 시도 상한 — 느린 URL 연쇄로 FUNCTION_INVOCATION_TIMEOUT 방지 */
+const MAX_FETCH_ATTEMPTS_PER_RUN = 7;
 const MIN_BODY_CHARS = 120;
 
 const FETCH_USER_AGENT =
@@ -112,6 +116,21 @@ async function fetchLobstersRssXml(feedUrl: string): Promise<
 }
 
 export async function runLobstersSync(options: { force: boolean }): Promise<LobstersSyncResult> {
+  try {
+    return await runLobstersSyncInner(options);
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    console.error('[lobsters] runLobstersSync 예외 — 결과 객체로 반환', e);
+    return {
+      ok: false,
+      step: 'lobsters_rss_fetch',
+      error: `UNHANDLED:${msg}`,
+      message: `Lobsters 동기화 중 예외: ${msg}`,
+    };
+  }
+}
+
+async function runLobstersSyncInner(options: { force: boolean }): Promise<LobstersSyncResult> {
   const { force } = options;
 
   const keyRes = readGeminiApiKeyFromEnv();
@@ -194,12 +213,12 @@ export async function runLobstersSync(options: { force: boolean }): Promise<Lobs
     };
   }
 
-  const aiRanked = ranked.filter((s) => s.aiPriority);
+  const aiRankedAll = ranked.filter((s) => s.aiPriority);
   console.log(
-    `[lobsters] 후보 ${ranked.length}건 중 AI 제목 ${aiRanked.length}건, 최대 ${MAX_NEW_POSTS_PER_RUN}건 등록`,
+    `[lobsters] 후보 ${ranked.length}건 중 AI 제목 ${aiRankedAll.length}건 (처리 상한 ${MAX_AI_CANDIDATES_PER_RUN}), 최대 ${MAX_NEW_POSTS_PER_RUN}건 등록`,
   );
 
-  if (aiRanked.length === 0) {
+  if (aiRankedAll.length === 0) {
     console.warn('[lobsters] AI 키워드 제목 항목 없음 — 등록 생략', { rankedTotal: ranked.length });
     return {
       ok: true,
@@ -212,18 +231,37 @@ export async function runLobstersSync(options: { force: boolean }): Promise<Lobs
 
   const blockedUrls = await loadBlockedSyndicationUrls();
   const results: LobstersItemResult[] = [];
-  let created = 0;
-  let geminiOrdinal = 0;
 
-  for (const story of aiRanked) {
-    if (created >= MAX_NEW_POSTS_PER_RUN) break;
-
+  for (const story of aiRankedAll) {
     const externalUrl = story.articleUrl.slice(0, 2048);
     if (!force && blockedUrls.has(externalUrl)) {
       results.push({ externalUrl, status: 'skipped_duplicate' });
-      continue;
+    }
+  }
+
+  const aiCandidates = aiRankedAll
+    .filter((s) => force || !blockedUrls.has(s.articleUrl.slice(0, 2048)))
+    .slice(0, MAX_AI_CANDIDATES_PER_RUN);
+
+  console.log(`[lobsters] AI 후보 ${aiCandidates.length}건 처리 시작`);
+
+  let created = 0;
+  let geminiOrdinal = 0;
+  let fetchAttempts = 0;
+
+  for (const story of aiCandidates) {
+    if (created >= MAX_NEW_POSTS_PER_RUN) break;
+
+    const externalUrl = story.articleUrl.slice(0, 2048);
+
+    if (fetchAttempts >= MAX_FETCH_ATTEMPTS_PER_RUN) {
+      console.warn('[lobsters] 원문 fetch 시도 상한 도달 — 나머지 AI 후보 스킵', {
+        limit: MAX_FETCH_ATTEMPTS_PER_RUN,
+      });
+      break;
     }
 
+    fetchAttempts += 1;
     const fetchRes = await fetchExternalArticlePlainText(story.articleUrl);
     if (!fetchRes.ok) {
       console.warn(

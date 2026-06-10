@@ -9,7 +9,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { runVergeSync } from '@/lib/verge/run-verge-sync';
 
-export const maxDuration = 60;
+/** Gemini 간격(12s)×최대 5건 합산 시 60초 초과 가능 */
+export const maxDuration = 120;
 
 function verifyCronAuth(req: NextRequest): boolean {
   const secret = process.env.CRON_SECRET?.trim();

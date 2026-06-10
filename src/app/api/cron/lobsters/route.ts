@@ -49,7 +49,22 @@ async function handle(req: NextRequest) {
     console.log('[lobsters] 강제 실행 모드(force=true)');
   }
 
-  const result = await runLobstersSync({ force });
+  let result: Awaited<ReturnType<typeof runLobstersSync>>;
+  try {
+    result = await runLobstersSync({ force });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    console.error('[cron/lobsters] handle 예외', e);
+    return NextResponse.json(
+      {
+        ok: false,
+        step: 'lobsters_rss_fetch',
+        error: `UNHANDLED:${msg}`,
+        message: `Lobsters 크론 처리 중 예외: ${msg}`,
+      },
+      { status: 502 },
+    );
+  }
 
   if (!result.ok) {
     return NextResponse.json(
