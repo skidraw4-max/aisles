@@ -29,12 +29,10 @@ export const GEMINI_IMAGE_MODEL_CHAIN = [
 
 /**
  * LOUNGE 뉴스 동기화 텍스트 요약: `GEMINI_API_VERSION_CHAIN`(v1beta→v1)와 함께 순차 시도.
- * 크론·배치는 Flash-Lite를 먼저 써 RPM/RPD 할당량 압력을 줄인다.
+ * 크론·배치는 Flash-Lite만 사용해 RPM/RPD 할당량·429 압력을 줄인다.
+ * 2.5 Flash 폴백은 제외 — Lite 실패 시 1.5-flash-latest만 최후 수단.
  */
 export const GEMINI_GEEKNEWS_MODEL_CHAIN = [
   GEMINI_MODEL_FALLBACK,
-  GEMINI_MODEL_PRIMARY,
-  'gemini-2.5-flash-latest',
-  'gemini-1.5-flash',
   GEMINI_MODEL_TERTIARY,
 ] as const;

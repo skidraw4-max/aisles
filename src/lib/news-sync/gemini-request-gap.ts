@@ -1,7 +1,7 @@
 import { classifyGeminiFailure } from '@/lib/gemini-prompt-analysis-engine';
 
 /** 뉴스 자동 수집 시 Gemini `generateContent` 호출 간 최소 간격 (Rate limit 완화) */
-export const NEWS_SYNC_GEMINI_GAP_MS = 6000;
+export const NEWS_SYNC_GEMINI_GAP_MS = 12000;
 
 /** 크론 1회당 Gemini 요약 시도 상한 (rate limit 연쇄 방지) */
 export const MAX_GEMINI_CALLS_PER_SYNC_RUN = 5;
