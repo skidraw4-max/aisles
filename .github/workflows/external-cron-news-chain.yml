@@ -2,6 +2,12 @@
 # 필요 Secrets: CRON_SITE_URL (예: https://www.aisleshub.com), CRON_SECRET
 # vercel.json 크론과 동시에 쓰면 중복 실행되므로 한쪽만 사용할 것.
 #
+# ⚠️ 실패한 Run의 "Re-run jobs"는 당시 커밋 SHA를 그대로 씁니다 (최신 main 아님).
+#    최신 스크립트로 돌리려면 Actions → 이 워크플로 → "Run workflow" (workflow_dispatch).
+#    로그에 CRON_SYNC_STEP_VERSION=2 와 checkout SHA가 보이면 최신입니다.
+#
+# 실패 조건: HTTP >= 400 (Verge/MIT 504 제외) 또는 ok=false 만. created=0 은 경고 후 통과.
+#
 # 스케줄: UTC 매 3시간 0분에 시작 → 각 소스 10분 간격(총 약 60분 + 요청 시간; Techmeme는 Lobsters 직후)
 name: External cron — news sync chain
 
@@ -17,6 +23,12 @@ jobs:
     timeout-minutes: 120
     steps:
       - uses: actions/checkout@v5
+
+      - name: Show checkout commit SHA
+        run: |
+          echo "GITHUB_SHA=${{ github.sha }}"
+          git rev-parse HEAD
+          git log -1 --oneline
 
       - name: GeekNews
         env:

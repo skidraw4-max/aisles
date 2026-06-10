@@ -1,7 +1,11 @@
 #!/usr/bin/env bash
-# External cron: POST news sync API and fail on HTTP/JSON errors.
+# External cron: POST news sync API and fail on HTTP/JSON errors only.
 # Usage: cron-news-sync-step.sh <label> <api-path>
+# ok:true + created=0 (rate limit, empty feed, etc.) never fails the chain.
 set -euo pipefail
+
+CRON_SYNC_STEP_VERSION=2
+echo "[cron] CRON_SYNC_STEP_VERSION=${CRON_SYNC_STEP_VERSION}"
 
 SOURCE="${1:?source label}"
 API_PATH="${2:?api path e.g. /api/cron/geeknews}"
@@ -40,7 +44,7 @@ if [ "$OK" != "true" ]; then
   exit 1
 fi
 
-# ok:true + created=0 with Gemini rate-limit skips must never fail the chain.
+# ok:true — created=0 never fails (rate limits, skipped summaries, empty feeds).
 CREATED=$(echo "$BODY" | jq -r '.created // 0')
 if [ "$CREATED" = "0" ]; then
   RATE_LIMIT_PATTERN='API 사용량|rate[ _]limit|resource[ _]exhausted|quota exceeded|exceeded your quota|too many requests'
@@ -52,8 +56,10 @@ if [ "$CREATED" = "0" ]; then
     else
       echo "[cron] ${SOURCE}: created=0, Gemini rate-limit skipped_summary ${RATE_SKIPS}/${TOTAL_SUMMARY} - warn only, chain continues"
     fi
-    exit 0
+  else
+    echo "[cron] ${SOURCE}: created=0 (ok:true) - warn only, chain continues"
   fi
+  exit 0
 fi
 
-echo "[cron] ${SOURCE}: ok"
+echo "[cron] ${SOURCE}: ok (created=${CREATED})"
