@@ -1,0 +1,20 @@
+.wrap {
+  margin: 1.25rem 0 0;
+  font-size: var(--type-13);
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.link {
+  color: var(--accent);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.link:hover {
+  text-decoration: underline;
+}
+
+.hint {
+  color: var(--muted);
+}

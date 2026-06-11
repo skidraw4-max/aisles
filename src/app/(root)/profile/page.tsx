@@ -7,6 +7,7 @@ import { SEO_ROBOTS_PRIVATE } from '@/lib/seo-robots';
 import { ProfileForm } from './ProfileForm';
 import { MbtiSelectSection } from './MbtiSelectSection';
 import { WithdrawAccountSection } from './WithdrawAccountSection';
+import { ReportContactSection } from './ReportContactSection';
 import { parseMbtiType } from '@/lib/ai-fortune/mbti';
 import styles from './profile.module.css';
 
@@ -50,6 +51,7 @@ export default async function ProfilePage() {
             email={user.email}
           />
           <MbtiSelectSection initialMbti={parseMbtiType(row?.mbti)} />
+          <ReportContactSection />
           <WithdrawAccountSection />
         </div>
       </main>

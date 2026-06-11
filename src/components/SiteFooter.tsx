@@ -1,7 +1,6 @@
 import Link from 'next/link';
+import { CHILD_SAFETY_POLICY_PATH, getLegalContactEmail } from '@/lib/legal-site';
 import styles from './site-footer.module.css';
-
-const CONTACT_EMAIL = 'skidraw4@gmail.com';
 /** SNS 링크는 필요 시 수정 */
 const SOCIAL_GITHUB = 'https://github.com/skidraw4-max/aisles';
 const SOCIAL_X = 'https://x.com/skidraw4';
@@ -23,6 +22,8 @@ function IconX({ className }: { className?: string }) {
 }
 
 export function SiteFooter() {
+  const contactEmail = getLegalContactEmail();
+
   return (
     <footer className={styles.footer}>
       <div className={styles.inner}>
@@ -36,12 +37,13 @@ export function SiteFooter() {
         <nav className={styles.colCenter} aria-label="정책·고객지원">
           <Link href="/legal/terms">이용약관</Link>
           <Link href="/legal/privacy">개인정보처리방침</Link>
+          <Link href={CHILD_SAFETY_POLICY_PATH}>아동 안전</Link>
           <Link href="/support">고객지원</Link>
         </nav>
 
         <div className={styles.colRight}>
-          <a className={styles.email} href={`mailto:${CONTACT_EMAIL}`}>
-            {CONTACT_EMAIL}
+          <a className={styles.email} href={`mailto:${contactEmail}`}>
+            {contactEmail}
           </a>
           <div className={styles.socialRow}>
             <a

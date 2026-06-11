@@ -16,6 +16,7 @@ const STATIC_PATHS: MetadataRoute.Sitemap = [
   { url: '/support', changeFrequency: 'monthly', priority: 0.4 },
   { url: '/legal/privacy', changeFrequency: 'yearly', priority: 0.3 },
   { url: '/legal/terms', changeFrequency: 'yearly', priority: 0.3 },
+  { url: '/legal/child-safety', changeFrequency: 'yearly', priority: 0.3 },
   { url: '/notices', changeFrequency: 'weekly', priority: 0.5 },
 ];
 

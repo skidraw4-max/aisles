@@ -45,6 +45,7 @@ import { AiFortunePostView } from './AiFortunePostView';
 import { AiFortunePromoBanner } from './AiFortunePromoBanner';
 import { PostRelatedPosts } from './PostRelatedPosts';
 import { PostScrollSubscribeModal } from './PostScrollSubscribeModal';
+import { ContentReportLink } from '@/components/ContentReportLink';
 import { getKstParts, weekOfMonthKst } from '@/lib/ai-fortune/kst-week';
 import { parseMbtiType } from '@/lib/ai-fortune/mbti';
 import { aiFortunePayloadFromDb } from '@/lib/ai-fortune/payload';
@@ -437,6 +438,7 @@ export default async function PostPage({ params }: Props) {
   const isLab = post.category === 'RECIPE';
   const isGallery = post.category === 'GALLERY';
   const siteBase = getCanonicalSiteUrl();
+  const postPageUrl = `${siteBase.replace(/\/$/, '')}/post/${post.id}`;
   const galleryRawUrl = isGallery ? galleryHeroImageUrl(post) : null;
   const galleryAnalysisUrl =
     galleryRawUrl && !isProbablyVideoAssetUrl(galleryRawUrl)
@@ -855,6 +857,8 @@ export default async function PostPage({ params }: Props) {
                     listHref={listHref}
                     adjacentNav={<PostAdjacentNav prev={prevPost} next={nextPost} />}
                   />
+
+                  <ContentReportLink postUrl={postPageUrl} />
 
                   {user?.id === post.authorId ? (
                     <PostOwnerActions postId={post.id} postTitle={post.title} afterDeleteHref={listHref} />

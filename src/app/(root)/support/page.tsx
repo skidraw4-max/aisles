@@ -85,9 +85,18 @@ export default function SupportPage() {
               </p>
             </div>
 
+            <div className={styles.faqItem}>
+              <p className={styles.faqQ}>Q. 아동 안전(CSAE)·유해 콘텐츠는 어떻게 신고하나요?</p>
+              <p className={styles.faqA}>
+                A. <Link href="/legal/child-safety">아동 안전 정책</Link>을 참고해 주세요. 프로필의 「신고·문의」,
+                게시글 하단 「신고」, 또는 이메일로 접수합니다. CSAM·그루밍 등 긴급 건은 경찰(112)·아동학대 신고(132)에도
+                연락해 주세요.
+              </p>
+            </div>
+
             <h2>문의하기</h2>
             <p>
-              운영 관련 문의, 제휴, 저작권·권리 침해 신고는 이메일로 연락해 주세요.
+              운영 관련 문의, 제휴, 저작권·권리 침해·아동 안전(CSAE) 신고는 이메일로 연락해 주세요.
             </p>
             <p>
               <a href={`mailto:${contact}`}>{contact}</a>

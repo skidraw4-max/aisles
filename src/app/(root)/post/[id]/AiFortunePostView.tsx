@@ -10,6 +10,8 @@ import { PostLikeProvider } from './PostLikeContext';
 import { PostBookmarkProvider } from './PostBookmarkContext';
 import { PostAdjacentNav } from './PostAdjacentNav';
 import { PostOwnerActions } from './PostOwnerActions';
+import { ContentReportLink } from '@/components/ContentReportLink';
+import { getCanonicalSiteUrl } from '@/lib/canonical-site-url';
 import { PostSidebar, type SidebarPopularItem, type SidebarRelatedItem } from './PostSidebar';
 import postStyles from './post.module.css';
 
@@ -70,6 +72,7 @@ export function AiFortunePostView({
   if (!payload) notFound();
 
   const listHref = homeHrefForCategory(post.category);
+  const postPageUrl = `${getCanonicalSiteUrl().replace(/\/$/, '')}/post/${post.id}`;
 
   const engagement = (
     <PostLikeProvider postId={post.id} initialLikeCount={post.likeCount} initialLiked={initialLiked}>
@@ -83,6 +86,7 @@ export function AiFortunePostView({
           listHref={listHref}
           adjacentNav={<PostAdjacentNav prev={prevPost} next={nextPost} />}
         />
+        <ContentReportLink postUrl={postPageUrl} />
         {currentUserId === post.author.id ? (
           <PostOwnerActions postId={post.id} postTitle={post.title} afterDeleteHref={listHref} />
         ) : null}
