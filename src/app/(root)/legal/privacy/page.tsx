@@ -43,7 +43,7 @@ export default function PrivacyPage() {
             <p>
               AIsle(이하 &quot;서비스&quot;)는 「개인정보 보호법」 등 국내 법령을 준수하며, 이용자의 개인정보를 보호하고 권익을
               보호하기 위해 다음과 같이 개인정보처리방침을 수립·공개합니다. 본 방침은 서비스가 수집·이용하는 개인정보 항목, 목적,
-              보관·파기, 이용자 권리, 쿠키·광고 식별자(맞춤형 광고 포함)에 관한 사항을 설명합니다.
+              보관·파기, 이용자 권리, 쿠키·광고 식별자(웹 애드센스·Android AdMob 등 맞춤형 광고 포함)에 관한 사항을 설명합니다.
             </p>
 
             <h2>1. 수집하는 개인정보 항목</h2>
@@ -73,8 +73,8 @@ export default function PrivacyPage() {
               <li>법령 위반 행위 대응, 분쟁 해결, 법적 의무 이행</li>
               <li>고객 문의 응대 및 공지 전달</li>
               <li>
-                <strong>맞춤형·비개인 식별 광고</strong>: Google LLC 등 제휴 광고 네트워크를 통한 광고 노출·성과 측정(쿠키·광고
-                식별자 등, 아래 제6조)
+                <strong>맞춤형·비개인 식별 광고</strong>: Google LLC 등 제휴 광고 네트워크(웹 애드센스, Android AdMob 등)를 통한
+                광고 노출·성과 측정(쿠키·기기 광고 ID 등, 아래 제6조)
               </li>
             </ul>
 
@@ -94,8 +94,9 @@ export default function PrivacyPage() {
               <li>인증·데이터베이스·파일 저장: Supabase, Cloudflare R2 등 배포 환경에 따른 제공자</li>
               <li>호스팅·배포: Vercel 등</li>
               <li>
-                <strong>광고</strong>: Google LLC(구글 애드센스 등) — 광고 노출·클릭 측정, 사기 방지 등을 위해 쿠키·모바일 광고
-                식별자 등이 사용될 수 있으며, 구글의 개인정보처리방침 및 광고 설정이 별도로 적용될 수 있습니다.
+                <strong>광고</strong>: Google LLC — 웹에서는 Google 애드센스 등, AIsle Android 앱에서는 Google AdMob 등이
+                적용될 수 있습니다. 광고 노출·클릭·성과 측정, 사기 방지 등을 위해 쿠키·기기 광고 ID(Advertising ID) 등이
+                사용될 수 있으며, Google의 개인정보처리방침 및 광고 설정이 별도로 적용됩니다.
               </li>
             </ul>
 
@@ -106,16 +107,28 @@ export default function PrivacyPage() {
               안내에 따른 브라우저·광고 플랫폼 설정을 병행할 수 있습니다.
             </p>
 
-            <h2>6. 쿠키, 유사 기술 및 맞춤형 광고(구글 애드센스)</h2>
+            <h2>6. 쿠키, 유사 기술 및 맞춤형 광고(애드센스·AdMob)</h2>
             <p>
               서비스는 <strong>로그인 유지·보안·성능 측정·통계</strong>를 위해 쿠키 또는 로컬 스토리지 등과 유사한 기술을 사용할 수
-              있습니다. 또한 서비스에는 <strong>Google 애드센스(또는 구글이 제공하는 광고 프로그램)</strong>가 포함될 수 있으며,
-              이 경우 <strong>Google 및 제휴사가 쿠키를 사용</strong>하여 이용자가 이전에 방문한 웹사이트 정보를 바탕으로 광고를
-              게재하거나, 광고 성과를 측정할 수 있습니다. Google의 광고 쿠키 사용 방식은 Google의 개인정보처리방침 및 광고 정책에
-              따릅니다.
+              있습니다. 또한 <strong>웹 브라우저</strong>에서는 <strong>Google 애드센스(또는 구글이 제공하는 광고 프로그램)</strong>
+              가, <strong>AIsle Android 모바일 앱</strong>에서는 <strong>Google AdMob</strong> 등 제3자 광고 네트워크가 적용될 수
+              있습니다. 이용 환경(웹·앱)에 따라 적용되는 광고 프로그램·처리되는 정보 유형이 다를 수 있습니다.
             </p>
             <p>
-              <strong>구글 애드센스 광고 쿠키</strong>: Google AdSense로 게재되는 광고에는 이용자 브라우저에{' '}
+              <strong>Google AdMob(Android 앱)</strong>: AdMob SDK 및 관련 서비스는 광고 게재·맞춤형 광고·광고 성과 측정·사기
+              방지 등을 위해 <strong>기기 광고 ID(Advertising ID)</strong>, 기기 모델·운영체제 버전, IP 주소(대략적 위치 추정),
+              앱 내 광고 노출·클릭 등 상호작용 정보 등이 처리될 수 있습니다. Google의 데이터 처리 방식은{' '}
+              <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">
+                Google 개인정보처리방침
+              </a>
+              및{' '}
+              <a href="https://policies.google.com/technologies/ads" target="_blank" rel="noopener noreferrer">
+                Google 광고 기술 정책
+              </a>
+              을 참고해 주세요.
+            </p>
+            <p>
+              <strong>Google 애드센스(웹) 광고 쿠키</strong>: Google AdSense로 게재되는 광고에는 이용자 브라우저에{' '}
               <strong>광고 노출·맞춤형 광고·측정·사기 방지</strong> 등을 위한 쿠키가 저장될 수 있습니다. Google 및 제휴사는 이러한
               쿠키를 사용하여 본 사이트와 다른 사이트 방문 정보를 바탕으로 광고를 맞춤 게재할 수 있습니다. Google이 광고에 쿠키를
               사용하는 방식은{' '}
@@ -153,12 +166,16 @@ export default function PrivacyPage() {
                 등 제3자 제공 업체의 옵트아웃 도구를 이용할 수 있습니다(지역·환경에 따라 제공 여부가 다를 수 있음).
               </li>
               <li>
-                <strong>모바일</strong>: 운영체제·광고 플랫폼별 &quot;광고 추적 제한&quot;, &quot;맞춤형 광고 재설정&quot; 등 설정을
-                확인해 주세요.
+                <strong>Android(AdMob)</strong>: <strong>설정 → Google → 광고</strong>에서 &quot;광고 맞춤설정 선택 해제&quot; 또는
+                &quot;광고 ID 재설정&quot; 등을 이용할 수 있습니다.
+              </li>
+              <li>
+                <strong>모바일(기타)</strong>: 운영체제·광고 플랫폼별 &quot;광고 추적 제한&quot;, &quot;맞춤형 광고 재설정&quot; 등
+                설정을 확인해 주세요.
               </li>
             </ul>
             <p>
-              애드센스·광고 파트너의 최신 정책은 구글 고객센터 및 관련 정책 페이지를 참고하시기 바랍니다. 본 방침은 국내법 및
+              애드센스·AdMob 등 광고 파트너의 최신 정책은 Google 고객센터 및 관련 정책 페이지를 참고하시기 바랍니다. 본 방침은 국내법 및
               정보통신망법·개인정보 보호법의 일반 원칙을 따르며, 행태정보의 수집·이용이 중대한 변경을 수반하는 경우 관련 법령이
               정하는 바에 따라 별도 동의 또는 고지를 할 수 있습니다.
             </p>
