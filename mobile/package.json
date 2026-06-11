@@ -1,6 +1,6 @@
 {
   "name": "aisle-mobile",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "description": "AIsle Capacitor Android shell (remote WebView)",
   "scripts": {
