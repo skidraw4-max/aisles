@@ -295,3 +295,139 @@
   opacity: 0.55;
   cursor: not-allowed;
 }
+
+.withdrawSection {
+  margin-top: 1.75rem;
+  border-radius: 16px;
+  padding: 1.75rem;
+  background: linear-gradient(145deg, #161b22 0%, #12161d 100%);
+  border: 1px solid rgba(248, 113, 113, 0.22);
+  box-shadow:
+    0 24px 48px rgba(0, 0, 0, 0.35),
+    0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+}
+
+.withdrawTitle {
+  margin: 0 0 0.35rem;
+  font-size: var(--type-17);
+  font-weight: 700;
+  color: var(--text);
+}
+
+.withdrawLead {
+  margin: 0 0 1rem;
+  color: var(--muted);
+  font-size: var(--type-14);
+  line-height: 1.55;
+}
+
+.withdrawBtn {
+  padding: 0.65rem 1rem;
+  border-radius: 10px;
+  font-size: var(--type-14);
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid rgba(248, 113, 113, 0.45);
+  background: rgba(220, 38, 38, 0.15);
+  color: #fecaca;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.withdrawBtn:hover {
+  background: rgba(220, 38, 38, 0.28);
+  border-color: rgba(248, 113, 113, 0.6);
+}
+
+.withdrawModalRoot {
+  position: fixed;
+  inset: 0;
+  z-index: 220;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  background: rgba(5, 6, 10, 0.75);
+  backdrop-filter: blur(6px);
+}
+
+.withdrawModalPanel {
+  width: 100%;
+  max-width: 400px;
+  border-radius: 16px;
+  padding: 1.5rem 1.5rem 1.25rem;
+  background: linear-gradient(145deg, #161b22 0%, #12161d 100%);
+  border: 1px solid var(--border);
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.45);
+}
+
+.withdrawModalTitle {
+  margin: 0 0 0.65rem;
+  font-size: var(--type-18);
+  font-weight: 700;
+  color: var(--text);
+}
+
+.withdrawModalText {
+  margin: 0 0 1.25rem;
+  font-size: var(--type-14);
+  line-height: 1.55;
+  color: var(--muted);
+}
+
+.withdrawModalErr {
+  margin: 0 0 1rem;
+  padding: 0.55rem 0.65rem;
+  border-radius: 8px;
+  font-size: var(--type-13);
+  color: #fecaca;
+  background: rgba(248, 113, 113, 0.12);
+  border: 1px solid rgba(248, 113, 113, 0.3);
+}
+
+.withdrawModalActions {
+  display: flex;
+  gap: 0.65rem;
+  justify-content: flex-end;
+}
+
+.withdrawModalBtn {
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-size: var(--type-13);
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+}
+
+.withdrawModalBtn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.withdrawModalBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.withdrawModalBtnDanger {
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-size: var(--type-13);
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid rgba(248, 113, 113, 0.45);
+  background: rgba(220, 38, 38, 0.2);
+  color: #fecaca;
+}
+
+.withdrawModalBtnDanger:hover:not(:disabled) {
+  background: rgba(220, 38, 38, 0.32);
+}
+
+.withdrawModalBtnDanger:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}

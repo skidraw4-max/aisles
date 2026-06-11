@@ -6,6 +6,7 @@ import { prisma } from '@/lib/prisma';
 import { SEO_ROBOTS_PRIVATE } from '@/lib/seo-robots';
 import { ProfileForm } from './ProfileForm';
 import { MbtiSelectSection } from './MbtiSelectSection';
+import { WithdrawAccountSection } from './WithdrawAccountSection';
 import { parseMbtiType } from '@/lib/ai-fortune/mbti';
 import styles from './profile.module.css';
 
@@ -49,6 +50,7 @@ export default async function ProfilePage() {
             email={user.email}
           />
           <MbtiSelectSection initialMbti={parseMbtiType(row?.mbti)} />
+          <WithdrawAccountSection />
         </div>
       </main>
     </>
