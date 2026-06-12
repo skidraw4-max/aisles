@@ -4,7 +4,7 @@
 #
 # ⚠️ 실패한 Run의 "Re-run jobs"는 당시 커밋 SHA를 그대로 씁니다 (최신 main 아님).
 #    최신 스크립트로 돌리려면 Actions → 이 워크플로 → "Run workflow" (workflow_dispatch).
-#    로그에 CRON_SYNC_STEP_VERSION=2 와 checkout SHA가 보이면 최신입니다.
+#    로그에 CRON_SYNC_STEP_VERSION=3 와 checkout SHA가 보이면 최신입니다.
 #
 # 실패 조건: HTTP >= 400 (Verge/MIT 504 제외) 또는 ok=false 만. created=0 은 경고 후 통과.
 #

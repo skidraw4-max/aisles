@@ -53,7 +53,24 @@ async function handle(req: NextRequest) {
     console.log('[hackernews] 강제 실행 모드(force=true)');
   }
 
-  const result = await runHackerNewsSync({ force });
+  let result: Awaited<ReturnType<typeof runHackerNewsSync>>;
+  try {
+    result = await runHackerNewsSync({ force });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    console.error('[cron/hackernews] handle 예외', e);
+    return NextResponse.json({
+      ok: true,
+      degraded: true,
+      step: 'hackernews_list_fetch',
+      error: `UNHANDLED:${msg}`,
+      message: `Hacker News 크론 처리 중 예외: ${msg}`,
+      created: 0,
+      scanned: 0,
+      force,
+      results: [],
+    });
+  }
 
   if (!result.ok) {
     if (isTransientFailureStep(result.step)) {

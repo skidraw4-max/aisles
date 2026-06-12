@@ -9,9 +9,11 @@ import { summarizeHackerNewsArticle } from '@/lib/hackernews/summarize';
 import { readGeminiApiKeyFromEnv } from '@/lib/gemini-prompt-analysis-engine';
 import { loadBlockedSyndicationUrls } from '@/lib/news-sync/blocked-original-urls';
 import {
+  createSyncDeadline,
   isGeminiRateLimitMessage,
   MAX_GEMINI_CALLS_PER_SYNC_RUN,
   NEWS_SYNC_GEMINI_GAP_MS,
+  NEWS_SYNC_MIN_BUDGET_FOR_GEMINI_MS,
   sleepMs,
 } from '@/lib/news-sync/gemini-request-gap';
 
@@ -21,6 +23,10 @@ import {
 export const TOP_STORIES_POOL = 200;
 export const ITEM_FETCH_BATCH = 28;
 export const MAX_NEW_POSTS_PER_RUN = 5;
+/** AI 제목 후보 중 원문 fetch·요약을 시도할 최대 건수 (Vercel 함수 시간 예산) */
+export const MAX_AI_CANDIDATES_PER_RUN = 10;
+/** 원문 fetch 시도 상한 — 느린 URL 연쇄로 FUNCTION_INVOCATION_TIMEOUT 방지 */
+const MAX_FETCH_ATTEMPTS_PER_RUN = 7;
 const MIN_BODY_CHARS = 120;
 
 export type HackerNewsSyncStep =
@@ -80,6 +86,8 @@ export async function runHackerNewsSync(options: { force: boolean }): Promise<Ha
     process.env.GEEKNEWS_AUTHOR_USERNAME ??
     'Nedai'
   ).trim();
+  const deadline = createSyncDeadline();
+
   const author = await prisma.user.findFirst({
     where: { username: authorUsername },
     select: { id: true },
@@ -118,7 +126,16 @@ export async function runHackerNewsSync(options: { force: boolean }): Promise<Ha
 
   console.log(`[hackernews] topstories ${ids.length}개 ID 로드`);
 
-  const rawItems = await fetchItemsBatched(ids, ITEM_FETCH_BATCH);
+  const itemFetchIds = deadline.hasBudget(70_000) ? ids : ids.slice(0, Math.min(ids.length, 60));
+  if (itemFetchIds.length < ids.length) {
+    console.warn('[hackernews] sync wall-clock 예산 임박 — item 배치 fetch ID 수 축소', {
+      original: ids.length,
+      reduced: itemFetchIds.length,
+      remainingMs: deadline.remainingMs(),
+    });
+  }
+
+  const rawItems = await fetchItemsBatched(itemFetchIds, ITEM_FETCH_BATCH);
   const ranked = rankStoriesForSync(rawItems);
 
   if (ranked.length === 0) {
@@ -150,8 +167,9 @@ export async function runHackerNewsSync(options: { force: boolean }): Promise<Ha
   const results: HackerNewsItemResult[] = [];
   let created = 0;
   let geminiOrdinal = 0;
+  let fetchAttempts = 0;
 
-  for (const story of aiRanked) {
+  for (const story of aiRanked.slice(0, MAX_AI_CANDIDATES_PER_RUN)) {
     if (created >= MAX_NEW_POSTS_PER_RUN) break;
 
     const externalUrl = story.url.slice(0, 2048);
@@ -159,6 +177,14 @@ export async function runHackerNewsSync(options: { force: boolean }): Promise<Ha
       results.push({ externalUrl, status: 'skipped_duplicate' });
       continue;
     }
+
+    if (fetchAttempts >= MAX_FETCH_ATTEMPTS_PER_RUN) {
+      console.warn('[hackernews] 원문 fetch 상한 도달 — 나머지 항목 스킵', {
+        limit: MAX_FETCH_ATTEMPTS_PER_RUN,
+      });
+      break;
+    }
+    fetchAttempts += 1;
 
     const fetchRes = await fetchExternalArticlePlainText(story.url);
     if (!fetchRes.ok) {
@@ -193,6 +219,13 @@ export async function runHackerNewsSync(options: { force: boolean }): Promise<Ha
       break;
     }
 
+    if (!deadline.hasBudget(NEWS_SYNC_MIN_BUDGET_FOR_GEMINI_MS)) {
+      console.warn('[hackernews] sync wall-clock 예산 임박 — Gemini 호출 중단', {
+        remainingMs: deadline.remainingMs(),
+      });
+      break;
+    }
+
     geminiOrdinal += 1;
     if (geminiOrdinal > 1) {
       console.log(
@@ -207,7 +240,7 @@ export async function runHackerNewsSync(options: { force: boolean }): Promise<Ha
     let sum: Awaited<ReturnType<typeof summarizeHackerNewsArticle>>;
     try {
       console.log(`[hackernews] ${geminiOrdinal}번 기사 요약 중... (Gemini 호출)`);
-      sum = await summarizeHackerNewsArticle(keyRes.key, story.title, plain);
+      sum = await summarizeHackerNewsArticle(keyRes.key, story.title, plain, deadline);
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       console.warn('[hackernews] Gemini 요약 예외 — 해당 기사만 건너뜀', {
