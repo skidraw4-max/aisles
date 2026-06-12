@@ -35,6 +35,7 @@ export function SiteFooter() {
         </div>
 
         <nav className={styles.colCenter} aria-label="정책·고객지원">
+          <Link href="/about">서비스 소개</Link>
           <Link href="/legal/terms">이용약관</Link>
           <Link href="/legal/privacy">개인정보처리방침</Link>
           <Link href={CHILD_SAFETY_POLICY_PATH}>아동 안전</Link>

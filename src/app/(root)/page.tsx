@@ -20,6 +20,7 @@ import {
   shouldHideAuthorInRecentSidebar,
 } from '@/lib/post-categories';
 import { getCanonicalSiteUrl } from '@/lib/canonical-site-url';
+import { buildHomeWebApplicationJsonLd } from '@/lib/home-web-application-json-ld';
 import { fetchLatestAiFortunePost } from '@/lib/ai-fortune/latest-fortune.server';
 import { AiFortuneCategoryIntro } from '@/components/AiFortuneCategoryIntro';
 import { HomeFortuneCard } from '@/components/HomeFortuneCard';
@@ -134,8 +135,17 @@ export default async function HomePage({ searchParams }: PageProps) {
       })
     : (ui['home.hero.lead_home'] ?? '');
 
+  const webAppJsonLd = !filterCategory ? buildHomeWebApplicationJsonLd() : null;
+
   return (
     <>
+      {webAppJsonLd ? (
+        <script
+          type="application/ld+json"
+          // eslint-disable-next-line react/no-danger
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(webAppJsonLd) }}
+        />
+      ) : null}
       {ugcPostedMessage ? (
         <div className={styles.supabaseLinkError} role="status" style={{ borderColor: 'rgba(34,197,94,0.35)' }}>
           <p className={styles.supabaseLinkErrorTitle}>{ugcPostedMessage}</p>
