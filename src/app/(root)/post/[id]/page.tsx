@@ -5,6 +5,13 @@ import type { Metadata } from 'next';
 import type { Category, Role } from '@prisma/client';
 import { MediaThumb } from '@/components/MediaThumb';
 import { prisma } from '@/lib/prisma';
+import { withDbRetry } from '@/lib/db-retry';
+import {
+  getPostComments,
+  getPostDetail,
+  getPostMetadataFields,
+  getPostSidebarData,
+} from '@/lib/post-page-data';
 import { createClient } from '@/lib/supabase/server';
 import { homeHrefForCategory, labKindFromMetadataParams } from '@/lib/post-categories';
 import { corridorLabel, getAllUiLabels } from '@/lib/ui-config';
@@ -138,16 +145,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const base = getCanonicalSiteUrl();
   const ui = await getAllUiLabels();
   try {
-    const post = await prisma.post.findUnique({
-      where: { id },
-      select: {
-        title: true,
-        content: true,
-        thumbnail: true,
-        createdAt: true,
-        category: true,
-      },
-    });
+    const post = await getPostMetadataFields(id);
     if (!post) return { title: '게시글 — AIsle' };
     const catLabel = corridorLabel(ui, post.category);
     const description = buildPostMetaDescription({
@@ -206,14 +204,7 @@ export default async function PostPage({ params }: Props) {
   const ui = await getAllUiLabels();
   let post;
   try {
-    post = await prisma.post.findUnique({
-      where: { id },
-      include: {
-        author: true,
-        metadata: true,
-        launchInfo: true,
-      },
-    });
+    post = await getPostDetail(id);
   } catch {
     notFound();
   }
@@ -226,129 +217,44 @@ export default async function PostPage({ params }: Props) {
   const displayViews = post.views + 1;
 
   const supabase = await createClient();
-  const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
-  const [
-    authRes,
-    comments,
+  const [authRes, comments, sidebarData] = await Promise.all([
+    supabase.auth.getUser(),
+    getPostComments(id),
+    getPostSidebarData(post.id, post.category, post.createdAt),
+  ]);
+
+  const {
     relatedPosts,
-    weekPopular,
+    popularPosts,
     prevPost,
     nextPost,
     categoryBoardPosts,
-  ] = await Promise.all([
-    supabase.auth.getUser(),
-    prisma.comment.findMany({
-      where: { postId: id },
-      orderBy: { createdAt: 'asc' },
-      include: { author: { select: { id: true, username: true, avatarUrl: true } } },
-    }),
-    prisma.post.findMany({
-      where: { category: post.category, id: { not: id } },
-      orderBy: { createdAt: 'desc' },
-      take: 5,
-      select: {
-        id: true,
-        title: true,
-        thumbnail: true,
-        likeCount: true,
-        category: true,
-        author: { select: { username: true } },
-        metadata: { select: { params: true } },
-      },
-    }),
-    prisma.post.findMany({
-      where: { id: { not: id }, createdAt: { gte: weekAgo } },
-      orderBy: { likeCount: 'desc' },
-      take: 3,
-      select: {
-        id: true,
-        title: true,
-        thumbnail: true,
-        likeCount: true,
-        content: true,
-        category: true,
-        metadata: { select: { params: true } },
-      },
-    }),
-    prisma.post.findFirst({
-      where: {
-        category: post.category,
-        id: { not: post.id },
-        OR: [
-          { createdAt: { lt: post.createdAt } },
-          { AND: [{ createdAt: post.createdAt }, { id: { lt: post.id } }] },
-        ],
-      },
-      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
-      select: { id: true, title: true },
-    }),
-    prisma.post.findFirst({
-      where: {
-        category: post.category,
-        id: { not: post.id },
-        OR: [
-          { createdAt: { gt: post.createdAt } },
-          { AND: [{ createdAt: post.createdAt }, { id: { gt: post.id } }] },
-        ],
-      },
-      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
-      select: { id: true, title: true },
-    }),
-    prisma.post.findMany({
-      where: { category: post.category },
-      orderBy: { createdAt: 'desc' },
-      take: 50,
-      select: {
-        id: true,
-        title: true,
-        views: true,
-        author: { select: { username: true } },
-        _count: { select: { comments: true } },
-      },
-    }),
-  ]);
+    latestAiFortuneId,
+  } = sidebarData;
 
   const user = authRes.data.user;
   /** LAB·갤러리 등 별도 AI 패널만 회원에게 노출. LOUNGE/GOSSIP 본문은 크론 요약이 곧 글 자체이므로 비회원도 그대로 읽음 */
   const showAiExtras = Boolean(user);
 
   const [likedRow, bookmarkRow, meProfile] = user?.id
-    ? await Promise.all([
-        prisma.postLike.findUnique({
-          where: { postId_userId: { postId: id, userId: user.id } },
-          select: { postId: true },
-        }),
-        prisma.bookmark.findUnique({
-          where: { userId_postId: { postId: id, userId: user.id } },
-          select: { postId: true },
-        }),
-        prisma.user.findUnique({
-          where: { id: user.id },
-          select: { username: true, avatarUrl: true, newsletterSubscribed: true, mbti: true },
-        }),
-      ])
+    ? await withDbRetry(() =>
+        Promise.all([
+          prisma.postLike.findUnique({
+            where: { postId_userId: { postId: id, userId: user.id } },
+            select: { postId: true },
+          }),
+          prisma.bookmark.findUnique({
+            where: { userId_postId: { postId: id, userId: user.id } },
+            select: { postId: true },
+          }),
+          prisma.user.findUnique({
+            where: { id: user.id },
+            select: { username: true, avatarUrl: true, newsletterSubscribed: true, mbti: true },
+          }),
+        ])
+      )
     : [null, null, null];
-
-  let popularPosts = weekPopular;
-  if (popularPosts.length < 3) {
-    const exclude = new Set<string>([id, ...popularPosts.map((p) => p.id)]);
-    const more = await prisma.post.findMany({
-      where: { id: { notIn: [...exclude] } },
-      orderBy: { likeCount: 'desc' },
-      take: 3 - popularPosts.length,
-      select: {
-        id: true,
-        title: true,
-        thumbnail: true,
-        likeCount: true,
-        content: true,
-        category: true,
-        metadata: { select: { params: true } },
-      },
-    });
-    popularPosts = [...popularPosts, ...more];
-  }
 
   const initialComments = comments.map((c) => ({
     id: c.id,
@@ -428,12 +334,9 @@ export default async function PostPage({ params }: Props) {
     );
   }
 
-  const latestAiFortune = await prisma.post.findFirst({
-    where: { category: 'AI_FORTUNE' },
-    orderBy: { createdAt: 'desc' },
-    select: { id: true },
-  });
-  const aiFortuneCtaHref = latestAiFortune ? `/post/${latestAiFortune.id}` : '/?category=AI_FORTUNE';
+  const aiFortuneCtaHref = latestAiFortuneId
+    ? `/post/${latestAiFortuneId}`
+    : '/?category=AI_FORTUNE';
 
   const isLab = post.category === 'RECIPE';
   const isGallery = post.category === 'GALLERY';
