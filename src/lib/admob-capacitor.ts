@@ -22,6 +22,12 @@ const ANDROID_TEST_APP_OPEN_UNIT_ID = 'ca-app-pub-3940256099942544/3419835294';
 /** Google 공식 Android 테스트 전면 */
 const ANDROID_TEST_INTERSTITIAL_UNIT_ID = 'ca-app-pub-3940256099942544/1033173712';
 
+/** Capacitor 네이티브 앱에서 App Open 영구 비활성 (v1.2.0) */
+const CAPACITOR_APP_OPEN_ADS_ENABLED = false;
+
+/** Capacitor 네이티브 앱에서 전면 광고 영구 비활성 (v1.2.0) */
+const CAPACITOR_INTERSTITIAL_ADS_ENABLED = false;
+
 /** 전면: 보수적 트리거 — N회 라우트 이동 후 1회만 (세션당) */
 export const INTERSTITIAL_NAVIGATION_THRESHOLD = 8;
 
@@ -75,13 +81,15 @@ export function shouldUseAdMobTestMode(): boolean {
   return process.env.NEXT_PUBLIC_ADMOB_TEST_MODE === 'true';
 }
 
-/** 기본 OFF — 정확히 `true` 일 때만 App Open 노출 */
+/** Capacitor 앱에서는 코드상 비활성. 웹 빌드 env 는 폐쇄 테스트용으로만 유지 */
 export function isAppOpenAdEnabled(): boolean {
+  if (isCapacitorNative()) return CAPACITOR_APP_OPEN_ADS_ENABLED;
   return process.env.NEXT_PUBLIC_ADMOB_APP_OPEN_ENABLED === 'true';
 }
 
-/** 기본 OFF — 정확히 `true` 일 때만 전면 노출 */
+/** Capacitor 앱에서는 코드상 비활성. 웹 빌드 env 는 폐쇄 테스트용으로만 유지 */
 export function isInterstitialAdEnabled(): boolean {
+  if (isCapacitorNative()) return CAPACITOR_INTERSTITIAL_ADS_ENABLED;
   return process.env.NEXT_PUBLIC_ADMOB_INTERSTITIAL_ENABLED === 'true';
 }
 
@@ -125,13 +133,14 @@ export function estimateAdaptiveBannerHeightPx(viewportWidthPx: number): number 
   return 50;
 }
 
-/** 배너 시각 높이 + 시스템 하단 inset + 본문 간격 */
-export function computeBottomBannerReservePx(
-  bannerVisualHeightPx: number,
-  safeBottomPx = 0
-): number {
+/**
+ * 배너 시각 높이 + 본문 간격.
+ * MainActivity 는 decorFitsSystemWindows(true) — WebView 하단이 이미 내비게이션 바 위이므로
+ * safe-area 를 reserve 에 더하면 배너가 화면 최하단에서 떠 보입니다.
+ */
+export function computeBottomBannerReservePx(bannerVisualHeightPx: number): number {
   if (bannerVisualHeightPx <= 0) return 0;
-  return Math.ceil(bannerVisualHeightPx + safeBottomPx + BANNER_CONTENT_GAP_PX);
+  return Math.ceil(bannerVisualHeightPx + BANNER_CONTENT_GAP_PX);
 }
 
 function cssPxToDp(value: number): number {
@@ -208,8 +217,7 @@ function updateBottomBannerReserve(bannerHeightPx: number): void {
   if (typeof document === 'undefined') return;
 
   const root = document.documentElement;
-  const safeBottom = bannerHeightPx > 0 ? getBottomSafeInsetPx() : 0;
-  const totalReserve = computeBottomBannerReservePx(bannerHeightPx, safeBottom);
+  const totalReserve = computeBottomBannerReservePx(bannerHeightPx);
 
   if (bannerHeightPx > 0) {
     root.style.setProperty('--app-ad-banner-height', `${bannerHeightPx}px`);
@@ -253,9 +261,23 @@ function refreshBottomBannerReserveFromCss(): void {
   updateBottomBannerReserve(bannerH);
 }
 
+/** safe-area·뷰포트 변경 시 CSS reserve 와 네이티브 배너 위치를 동기화 */
+async function refreshBottomBannerNativeLayout(): Promise<void> {
+  if (!bottomBannerDesired || bannerDisplayMode !== 'bottom' || !isCapacitorNative()) return;
+  refreshBottomBannerReserveFromCss();
+  try {
+    const { AdMob } = await import('@capacitor-community/admob');
+    await AdMob.resumeBanner();
+  } catch {
+    // 배너 미표시·플러그인 오류는 무시
+  }
+}
+
 function registerLayoutChangeListener(): void {
   if (layoutListenerRegistered || typeof window === 'undefined') return;
-  const onLayoutChange = () => refreshBottomBannerReserveFromCss();
+  const onLayoutChange = () => {
+    void refreshBottomBannerNativeLayout();
+  };
   window.addEventListener('resize', onLayoutChange);
   window.addEventListener('orientationchange', onLayoutChange);
   window.visualViewport?.addEventListener('resize', onLayoutChange);
@@ -264,7 +286,9 @@ function registerLayoutChangeListener(): void {
 
 function registerInsetsChangedListener(): void {
   if (typeof window === 'undefined') return;
-  window.addEventListener(INSETS_CHANGED_EVENT, refreshBottomBannerReserveFromCss);
+  window.addEventListener(INSETS_CHANGED_EVENT, () => {
+    void refreshBottomBannerNativeLayout();
+  });
 }
 
 function isSlotInSafeZone(rect: DOMRect): boolean {
