@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import { isTrustedMediaUrl } from '@/lib/r2-url';
 import { isVideoUrl } from '@/lib/post-media-urls';
 
@@ -71,12 +72,15 @@ export function PostRichContent({ text, className, textClassName, embedMediaClas
           );
         }
         return (
-          // eslint-disable-next-line @next/next/no-img-element -- R2 등 신뢰 URL만
-          <img
+          <Image
             key={i}
             src={seg.url}
             alt={seg.alt || '본문 이미지'}
             className={embedMediaClassName}
+            width={1200}
+            height={675}
+            sizes="(max-width: 960px) 100vw, 960px"
+            style={{ width: '100%', height: 'auto' }}
           />
         );
       })}

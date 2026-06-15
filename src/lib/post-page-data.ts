@@ -6,6 +6,8 @@ import { prisma } from '@/lib/prisma';
 import { withDbRetry } from '@/lib/db-retry';
 
 const POST_SIDEBAR_REVALIDATE_SEC = 60;
+const POST_DETAIL_REVALIDATE_SEC = 3600;
+const POST_COMMENTS_REVALIDATE_SEC = 60;
 
 const postInclude = {
   author: true,
@@ -65,14 +67,25 @@ export const EMPTY_POST_SIDEBAR: PostSidebarData = {
   latestAiFortuneId: null,
 };
 
-/** 동일 요청에서 metadata·page가 중복 조회하지 않도록 dedupe */
-export const getPostDetail = cache(async (id: string): Promise<PostDetail | null> => {
+async function fetchPostDetailUncached(id: string): Promise<PostDetail | null> {
   return withDbRetry(() =>
     prisma.post.findUnique({
       where: { id },
       include: postInclude,
     })
   );
+}
+
+/** ISR 본문 — cross-request 캐시 + 동일 요청 dedupe */
+export const getPostDetail = cache(async (id: string): Promise<PostDetail | null> => {
+  return unstable_cache(
+    () => fetchPostDetailUncached(id),
+    ['post-detail-v1', id],
+    {
+      revalidate: POST_DETAIL_REVALIDATE_SEC,
+      tags: [`post-${id}`],
+    }
+  )();
 });
 
 /** metadata는 getPostDetail과 React cache로 dedupe — 동일 요청에서 이중 조회 방지 */
@@ -200,7 +213,7 @@ export function getPostSidebarData(
   )();
 }
 
-export async function getPostComments(postId: string) {
+async function fetchPostCommentsUncached(postId: string) {
   return withDbRetry(() =>
     prisma.comment.findMany({
       where: { postId },
@@ -208,4 +221,16 @@ export async function getPostComments(postId: string) {
       include: { author: { select: { id: true, username: true, avatarUrl: true } } },
     })
   );
+}
+
+/** 댓글 목록 — 짧은 TTL ISR (개인화 없음) */
+export function getPostComments(postId: string) {
+  return unstable_cache(
+    () => fetchPostCommentsUncached(postId),
+    ['post-comments-v1', postId],
+    {
+      revalidate: POST_COMMENTS_REVALIDATE_SEC,
+      tags: [`post-${postId}`, 'post-comments'],
+    }
+  )();
 }

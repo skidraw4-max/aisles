@@ -75,6 +75,16 @@ export function MediaThumb({
     );
   }
 
-  // eslint-disable-next-line @next/next/no-img-element -- intrinsic 레이아웃(상세 전체 너비)
-  return <img className={cn} style={fit} src={url} alt={alt} loading="lazy" decoding="async" />;
+  return (
+    <Image
+      src={url}
+      alt={alt}
+      width={1600}
+      height={900}
+      className={cn}
+      style={{ ...fit, width: '100%', height: 'auto' }}
+      sizes={sizes ?? '(max-width: 960px) 100vw, 960px'}
+      priority={priority}
+    />
+  );
 }

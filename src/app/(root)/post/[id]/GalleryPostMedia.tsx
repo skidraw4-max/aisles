@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import { MediaThumb } from '@/components/MediaThumb';
 import styles from './post.module.css';
 
@@ -48,8 +49,14 @@ export function GalleryPostMedia({ url, alt, compact }: Props) {
             aria-hidden
           />
         ) : (
-          // eslint-disable-next-line @next/next/no-img-element -- 외부 R2 URL
-          <img className={styles.galleryBackdropMedia} src={url} alt="" />
+          <Image
+            className={styles.galleryBackdropMedia}
+            src={url}
+            alt=""
+            fill
+            sizes="100vw"
+            aria-hidden
+          />
         )}
       </div>
       <div className={styles.galleryVignette} aria-hidden />

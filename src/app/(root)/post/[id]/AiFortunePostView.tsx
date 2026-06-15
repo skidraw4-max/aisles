@@ -1,15 +1,14 @@
 import { notFound } from 'next/navigation';
 import type { Category } from '@prisma/client';
 import { aiFortunePayloadFromDb } from '@/lib/ai-fortune/payload';
-import type { MbtiType } from '@/lib/ai-fortune/mbti';
 import { homeHrefForCategory } from '@/lib/post-categories';
-import { AiFortuneReport } from './AiFortuneReport';
-import { FortuneDigestSubscribeCta } from './FortuneDigestSubscribeCta';
+import { AiFortuneReportWithViewer } from './AiFortuneReportWithViewer';
+import { FortuneDigestSubscribeCtaWithViewer } from './FortuneDigestSubscribeCtaWithViewer';
 import { PostEngagement } from './PostEngagement';
-import { PostLikeProvider } from './PostLikeContext';
-import { PostBookmarkProvider } from './PostBookmarkContext';
+import { PostEngagementProviders } from './PostEngagementProviders';
+import { PostViewerProvider } from './PostViewerContext';
 import { PostAdjacentNav } from './PostAdjacentNav';
-import { PostOwnerActions } from './PostOwnerActions';
+import { PostOwnerActionsGate } from './PostOwnerActionsGate';
 import { ContentReportLink } from '@/components/ContentReportLink';
 import { getCanonicalSiteUrl } from '@/lib/canonical-site-url';
 import { PostSidebar, type SidebarPopularItem, type SidebarRelatedItem } from './PostSidebar';
@@ -37,13 +36,6 @@ type Props = {
   };
   weekLabel: string;
   initialComments: CommentRow[];
-  currentUserId: string | null;
-  currentUsername: string | null;
-  currentAvatarUrl: string | null;
-  userMbti: MbtiType | null;
-  initialLiked: boolean;
-  initialBookmarked: boolean;
-  newsletterSubscribed: boolean;
   prevPost: { id: string; title: string } | null;
   nextPost: { id: string; title: string } | null;
   related: SidebarRelatedItem[];
@@ -55,13 +47,6 @@ export function AiFortunePostView({
   post,
   weekLabel,
   initialComments,
-  currentUserId,
-  currentUsername,
-  currentAvatarUrl,
-  userMbti,
-  initialLiked,
-  initialBookmarked,
-  newsletterSubscribed,
   prevPost,
   nextPost,
   related,
@@ -75,55 +60,55 @@ export function AiFortunePostView({
   const postPageUrl = `${getCanonicalSiteUrl().replace(/\/$/, '')}/post/${post.id}`;
 
   const engagement = (
-    <PostLikeProvider postId={post.id} initialLikeCount={post.likeCount} initialLiked={initialLiked}>
-      <PostBookmarkProvider postId={post.id} initialBookmarked={initialBookmarked}>
-        <PostEngagement
-          postId={post.id}
-          initialComments={initialComments}
-          currentUserId={currentUserId}
-          currentUsername={currentUsername}
-          currentAvatarUrl={currentAvatarUrl}
-          listHref={listHref}
-          adjacentNav={<PostAdjacentNav prev={prevPost} next={nextPost} />}
-        />
-        <ContentReportLink postUrl={postPageUrl} />
-        {currentUserId === post.author.id ? (
-          <PostOwnerActions postId={post.id} postTitle={post.title} afterDeleteHref={listHref} />
-        ) : null}
-      </PostBookmarkProvider>
-    </PostLikeProvider>
+    <>
+      <PostEngagement
+        postId={post.id}
+        initialComments={initialComments}
+        currentUserId={null}
+        currentUsername={null}
+        currentAvatarUrl={null}
+        listHref={listHref}
+        adjacentNav={<PostAdjacentNav prev={prevPost} next={nextPost} />}
+      />
+      <ContentReportLink postUrl={postPageUrl} />
+      <PostOwnerActionsGate
+        postId={post.id}
+        postTitle={post.title}
+        authorId={post.author.id}
+        afterDeleteHref={listHref}
+      />
+    </>
   );
 
   return (
-    <main className={postStyles.magazineShell}>
-      <div className={postStyles.magazineInner}>
-        <div className={postStyles.magazineGrid}>
-          <div className={postStyles.magazineMainCol}>
-            <AiFortuneReport
-              title={post.title}
-              weekLabel={weekLabel}
-              authorUsername={post.author.username}
-              createdAt={post.createdAt}
-              payload={payload}
-              userMbti={userMbti}
-              engagement={engagement}
-            />
-            <FortuneDigestSubscribeCta
-              postId={post.id}
-              isLoggedIn={Boolean(currentUserId)}
-              newsletterSubscribed={newsletterSubscribed}
-            />
+    <PostViewerProvider postId={post.id}>
+      <PostEngagementProviders postId={post.id} initialLikeCount={post.likeCount}>
+        <main className={postStyles.magazineShell}>
+          <div className={postStyles.magazineInner}>
+            <div className={postStyles.magazineGrid}>
+              <div className={postStyles.magazineMainCol}>
+                <AiFortuneReportWithViewer
+                  title={post.title}
+                  weekLabel={weekLabel}
+                  authorUsername={post.author.username}
+                  createdAt={post.createdAt}
+                  payload={payload}
+                  engagement={engagement}
+                />
+                <FortuneDigestSubscribeCtaWithViewer postId={post.id} />
+              </div>
+              <div className={postStyles.magazineSidebar}>
+                <PostSidebar
+                  category={post.category}
+                  related={related}
+                  popular={popular}
+                  uiLabels={uiLabels}
+                />
+              </div>
+            </div>
           </div>
-          <div className={postStyles.magazineSidebar}>
-            <PostSidebar
-              category={post.category}
-              related={related}
-              popular={popular}
-              uiLabels={uiLabels}
-            />
-          </div>
-        </div>
-      </div>
-    </main>
+        </main>
+      </PostEngagementProviders>
+    </PostViewerProvider>
   );
 }

@@ -14,7 +14,6 @@ const PENDING_SUBSCRIBE_KEY = 'aisle:pending-news-subscribe';
 const SCROLL_THRESHOLD = 0.6;
 
 type Props = {
-  isLoggedIn: boolean;
   postId: string;
 };
 
@@ -44,11 +43,22 @@ async function subscribeNewsletter(token: string): Promise<boolean> {
   return res.ok;
 }
 
-export function PostScrollSubscribeModal({ isLoggedIn, postId }: Props) {
+export function PostScrollSubscribeModal({ postId }: Props) {
   const [visible, setVisible] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(true);
   const shownRef = useRef(false);
+
+  useEffect(() => {
+    void (async () => {
+      const supabase = createClient();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      setIsLoggedIn(Boolean(session?.user?.id));
+    })();
+  }, []);
 
   const dismiss = useCallback(() => {
     sendGAEvent('digest_modal_dismiss', { post_id: postId });

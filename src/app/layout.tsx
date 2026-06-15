@@ -14,18 +14,21 @@ const display = Syne({
   subsets: ['latin'],
   variable: '--font-display',
   weight: ['600', '700', '800'],
+  display: 'swap',
 });
 
 const body = DM_Sans({
   subsets: ['latin'],
   variable: '--font-body',
   weight: ['400', '500', '600', '700'],
+  display: 'swap',
 });
 
 const mono = Roboto_Mono({
   subsets: ['latin'],
   variable: '--font-mono',
   weight: ['400', '500', '700'],
+  display: 'swap',
 });
 
 const ADSENSE_CLIENT_ID = 'ca-pub-2237287742271246';

@@ -4,7 +4,7 @@ import { Suspense } from 'react';
 import { SiteFooter } from '@/components/SiteFooter';
 import { RecentPostListThumb } from '@/components/RecentPostListThumb';
 import { HomeMainHero } from '@/components/HomeMainHero';
-import { HomeHeroCarousel } from '@/components/HomeHeroCarousel';
+import { HomeHeroCarousel } from '@/components/HomeHeroCarouselLoader';
 import { HomeContentTabs } from '@/components/HomeContentTabs';
 import { HomeQuasarBoard } from '@/components/HomeQuasarBoard';
 import { HomeDeferredLower } from '@/components/HomeDeferredLower';

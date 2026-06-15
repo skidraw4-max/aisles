@@ -1,11 +1,14 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { usePostLike } from './PostLikeContext';
 import { usePostBookmark } from './PostBookmarkContext';
+import { usePostViewerOptional } from './PostViewerContext';
+import { PostSignupPromptModal } from './PostSignupPromptModalLoader';
 import { copyTextToClipboard } from '@/lib/clipboard-copy';
 import styles from './post.module.css';
 
@@ -45,13 +48,17 @@ function avatarInitials(username: string) {
 export function PostEngagement({
   postId,
   initialComments,
-  currentUserId,
-  currentUsername,
-  currentAvatarUrl,
+  currentUserId: currentUserIdProp,
+  currentUsername: currentUsernameProp,
+  currentAvatarUrl: currentAvatarUrlProp,
   listHref,
   adjacentNav,
 }: Props) {
   const router = useRouter();
+  const viewer = usePostViewerOptional();
+  const currentUserId = viewer?.userId ?? currentUserIdProp;
+  const currentUsername = viewer?.username ?? currentUsernameProp;
+  const currentAvatarUrl = viewer?.avatarUrl ?? currentAvatarUrlProp;
   const { likeCount, liked, likePending, toggleLike, likeError } = usePostLike();
   const { bookmarked, bookmarkPending, bookmarkError, toggleBookmark } = usePostBookmark();
   const [comments, setComments] = useState(initialComments);
@@ -143,11 +150,6 @@ export function PostEngagement({
     } catch {
       // noop
     }
-  }
-
-  function goSignup() {
-    closeSignupPrompt();
-    router.push(`/login?next=${encodeURIComponent(`/post/${postId}`)}`);
   }
 
   async function handleComment(e: React.FormEvent) {
@@ -302,37 +304,7 @@ export function PostEngagement({
       ) : null}
 
       {showSignupPrompt ? (
-        <div
-          className={styles.signupPromptBackdrop}
-          role="presentation"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) closeSignupPrompt();
-          }}
-        >
-          <div
-            className={styles.signupPromptModal}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="signup-prompt-title"
-            aria-describedby="signup-prompt-desc"
-          >
-            <h3 id="signup-prompt-title" className={styles.signupPromptTitle}>
-              읽은 AI 기사, 한곳에 모아보세요
-            </h3>
-            <p id="signup-prompt-desc" className={styles.signupPromptDesc}>
-              회원가입하면 관심 기사를 북마크해 <strong>My Aisles</strong>에서 언제든 다시 볼 수 있어요.
-            </p>
-            <p className={styles.signupPromptSub}>무료로 바로 시작할 수 있습니다.</p>
-            <div className={styles.signupPromptActions}>
-              <button type="button" className={styles.signupPromptPrimary} onClick={goSignup}>
-                회원가입하고 모아보기
-              </button>
-              <button type="button" className={styles.signupPromptGhost} onClick={closeSignupPrompt}>
-                나중에
-              </button>
-            </div>
-          </div>
-        </div>
+        <PostSignupPromptModal postId={postId} onClose={closeSignupPrompt} />
       ) : null}
 
       {adjacentNav}
@@ -350,8 +322,13 @@ export function PostEngagement({
               <li key={c.id} className={styles.commentItemMagazine}>
                 <div className={styles.commentAvatarWrap}>
                   {c.authorAvatarUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element -- 외부 URL
-                    <img src={c.authorAvatarUrl} alt="" className={styles.commentAvatarImg} />
+                    <Image
+                      src={c.authorAvatarUrl}
+                      alt=""
+                      width={36}
+                      height={36}
+                      className={styles.commentAvatarImg}
+                    />
                   ) : (
                     <span className={styles.commentAvatarFallback}>{avatarInitials(c.authorUsername)}</span>
                   )}

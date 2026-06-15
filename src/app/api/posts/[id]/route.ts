@@ -5,6 +5,7 @@ import { ensurePrismaUser } from '@/lib/ensure-user';
 import { isTrustedMediaUrl } from '@/lib/r2-url';
 import { parseMediaUrlsField } from '@/lib/post-media-urls';
 import { normalizePostTagsInput } from '@/lib/post-tags';
+import { revalidatePostCaches } from '@/lib/post-revalidate';
 import type { Category, Prisma } from '@prisma/client';
 import { validateContentMinForCategory } from '@/lib/post-description-policy';
 import {
@@ -71,6 +72,7 @@ export async function DELETE(req: NextRequest, ctx: Ctx) {
 
   try {
     await prisma.post.delete({ where: { id } });
+    revalidatePostCaches(id);
     return NextResponse.json({ ok: true });
   } catch (e) {
     console.error(e);
@@ -275,6 +277,7 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
         createdAt: true,
       },
     });
+    revalidatePostCaches(id);
     return NextResponse.json({ ok: true, post: updated });
   } catch (e) {
     console.error(e);

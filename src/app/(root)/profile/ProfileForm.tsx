@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { compressImageForUpload, CompressedTooLargeError } from '@/lib/client-image-compression';
@@ -103,8 +104,13 @@ export function ProfileForm({ initialUsername, initialAvatarUrl, email }: Props)
 
       <div className={styles.avatarBlock}>
         {avatarUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element -- R2 퍼블릭 도메인이 환경마다 달라 next/image 도메인 설정을 강제하지 않음
-          <img className={styles.avatarPreview} src={avatarUrl} alt="" width={96} height={96} />
+          <Image
+            className={styles.avatarPreview}
+            src={avatarUrl}
+            alt=""
+            width={96}
+            height={96}
+          />
         ) : (
           <div className={styles.avatarPlaceholder}>이미지 없음</div>
         )}

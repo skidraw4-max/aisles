@@ -17,7 +17,7 @@
 |--------|----------------|
 | `/` (홈) | 60s |
 | `/sitemap.xml` | 3600s |
-| `/post/[id]` | `force-dynamic` (좋아요·북마크·조회수 개인화) |
+| `/post/[id]` | 3600s (본문 ISR) · 좋아요·북마크·조회수는 `/api/posts/[id]/viewer-state`·클라이언트 |
 | `/api/feed` | `s-maxage=60`, `stale-while-revalidate=120` |
 
 ### 접근성·모션

@@ -4,8 +4,6 @@ import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import type { Category, Role } from '@prisma/client';
 import { MediaThumb } from '@/components/MediaThumb';
-import { prisma } from '@/lib/prisma';
-import { withDbRetry } from '@/lib/db-retry';
 import {
   EMPTY_POST_SIDEBAR,
   getPostComments,
@@ -13,7 +11,6 @@ import {
   getPostMetadataFields,
   getPostSidebarData,
 } from '@/lib/post-page-data';
-import { createClient } from '@/lib/supabase/server';
 import { homeHrefForCategory, labKindFromMetadataParams } from '@/lib/post-categories';
 import { corridorLabel, getAllUiLabels } from '@/lib/ui-config';
 import { defaultUiLabelMap } from '@/lib/ui-config-defaults';
@@ -21,9 +18,13 @@ import { resolveRecipePrompt } from '@/lib/recipe-prompt';
 import { fingerprintPrompt } from '@/lib/prompt-analysis-fingerprint';
 import { parseStoredPromptAnalysisJson } from '@/lib/prompt-analysis';
 import { PostEngagement } from './PostEngagement';
-import { PostLikeProvider } from './PostLikeContext';
-import { PostBookmarkProvider } from './PostBookmarkContext';
-import { PostSocialIndicatorBar } from './PostSocialIndicatorBar';
+import { PostEngagementProviders } from './PostEngagementProviders';
+import { PostViewerProvider } from './PostViewerContext';
+import { PostSocialIndicatorBarClient } from './PostSocialIndicatorBarClient';
+import { PostAuthorAvatar } from './PostAuthorAvatar';
+import { PostOwnerActionsGate } from './PostOwnerActionsGate';
+import { PostAiAnalysisWithViewer } from './PostAiAnalysisWithViewer';
+import { GalleryAiExtrasGate } from './GalleryAiExtrasGate';
 import { RecipePromptSection } from './RecipePromptSection';
 import { GalleryPostMedia } from './GalleryPostMedia';
 import { BuildLaunchDoc } from './BuildLaunchDoc';
@@ -33,17 +34,14 @@ import { PostAdjacentNav } from './PostAdjacentNav';
 import { DosDontsSection } from './DosDontsSection';
 import { ExternalServiceCta } from './ExternalServiceCta';
 import { LaunchVisitProjectCta } from './LaunchVisitProjectCta';
-import { PostAiAnalysis } from '@/components/post/PostAiAnalysis';
 import {
   GalleryImageReverseFallback,
   GalleryImageReverseFromDb,
   GalleryImageReverseSection,
 } from './GalleryImageReverse';
-import { MemberAiExtrasLoginGate } from '@/components/post/MemberAiExtrasLoginGate';
 import { PostCategoryBoardList } from './PostCategoryBoardList';
 import { PostTags } from './PostTags';
 import { incrementPostViews } from './actions';
-import { PostOwnerActions } from './PostOwnerActions';
 import { PostRichContent } from '@/lib/PostRichContent';
 import { getCanonicalSiteUrl } from '@/lib/canonical-site-url';
 import { categoryUsesDynamicPostOg } from '@/lib/post-dynamic-og';
@@ -53,15 +51,15 @@ import { PostDescriptionEmptyCallout } from './PostDescriptionEmptyCallout';
 import { AiFortunePostView } from './AiFortunePostView';
 import { AiFortunePromoBanner } from './AiFortunePromoBanner';
 import { PostRelatedPosts } from './PostRelatedPosts';
-import { PostScrollSubscribeModal } from './PostScrollSubscribeModal';
+import { PostScrollSubscribeModal } from './PostScrollSubscribeModalLoader';
 import { ContentReportLink } from '@/components/ContentReportLink';
 import { getKstParts, weekOfMonthKst } from '@/lib/ai-fortune/kst-week';
-import { parseMbtiType } from '@/lib/ai-fortune/mbti';
 import { aiFortunePayloadFromDb } from '@/lib/ai-fortune/payload';
 import { buildPostArticleJsonLd } from '@/lib/post-json-ld';
 import styles from './post.module.css';
 
-export const dynamic = 'force-dynamic';
+/** 3600초 ISR — 좋아요·북마크·조회수 개인화는 클라이언트·API 분리 */
+export const revalidate = 3600;
 
 /** lucide 에 Youtube 전용 마크가 없어 브랜드에 가까운 간단 SVG 사용 */
 function YoutubeGlyph({ className }: { className?: string }) {
@@ -222,24 +220,18 @@ export default async function PostPage({ params }: Props) {
   }
   if (!post) notFound();
 
-  /** 조회수 +1은 응답 생성을 막지 않도록 비동기 후행 처리(표시는 이번 조회를 반영해 +1) */
   after(() => {
     void incrementPostViews(post.id);
   });
-  const displayViews = post.views + 1;
 
-  const supabase = await createClient();
-
-  const [commentsResult, sidebarResult, authRes] = await Promise.allSettled([
+  const [commentsResult, sidebarResult] = await Promise.allSettled([
     getPostComments(id),
     getPostSidebarData(post.id, post.category, post.createdAt),
-    supabase.auth.getUser(),
   ]);
 
   const comments = commentsResult.status === 'fulfilled' ? commentsResult.value : [];
   const sidebarData =
     sidebarResult.status === 'fulfilled' ? sidebarResult.value : EMPTY_POST_SIDEBAR;
-  const user = authRes.status === 'fulfilled' ? authRes.value.data.user : null;
   const {
     relatedPosts,
     popularPosts,
@@ -248,41 +240,6 @@ export default async function PostPage({ params }: Props) {
     categoryBoardPosts,
     latestAiFortuneId,
   } = sidebarData;
-
-  /** LAB·갤러리 등 별도 AI 패널만 회원에게 노출. LOUNGE/GOSSIP 본문은 크론 요약이 곧 글 자체이므로 비회원도 그대로 읽음 */
-  const showAiExtras = Boolean(user);
-
-  let likedRow: { postId: string } | null = null;
-  let bookmarkRow: { postId: string } | null = null;
-  let meProfile: {
-    username: string;
-    avatarUrl: string | null;
-    newsletterSubscribed: boolean;
-    mbti: string | null;
-  } | null = null;
-
-  if (user?.id) {
-    try {
-      [likedRow, bookmarkRow, meProfile] = await withDbRetry(() =>
-        Promise.all([
-          prisma.postLike.findUnique({
-            where: { postId_userId: { postId: id, userId: user.id } },
-            select: { postId: true },
-          }),
-          prisma.bookmark.findUnique({
-            where: { userId_postId: { postId: id, userId: user.id } },
-            select: { postId: true },
-          }),
-          prisma.user.findUnique({
-            where: { id: user.id },
-            select: { username: true, avatarUrl: true, newsletterSubscribed: true, mbti: true },
-          }),
-        ])
-      );
-    } catch {
-      // 좋아요·북마크·프로필은 실패 시 비로그인과 동일한 기본값
-    }
-  }
 
   const initialComments = comments.map((c) => ({
     id: c.id,
@@ -345,13 +302,6 @@ export default async function PostPage({ params }: Props) {
         }}
         weekLabel={weekLabel}
         initialComments={initialComments}
-        currentUserId={user?.id ?? null}
-        currentUsername={meProfile?.username ?? null}
-        currentAvatarUrl={meProfile?.avatarUrl ?? null}
-        userMbti={parseMbtiType(meProfile?.mbti)}
-        initialLiked={Boolean(likedRow)}
-        initialBookmarked={Boolean(bookmarkRow)}
-        newsletterSubscribed={meProfile?.newsletterSubscribed ?? false}
         prevPost={prevPost}
         nextPost={nextPost}
         related={relatedSidebar}
@@ -384,7 +334,6 @@ export default async function PostPage({ params }: Props) {
   const labPromptFingerprint = labPromptText.trim() ? fingerprintPrompt(labPromptText) : '';
   const promptJobStatus = post.metadata?.promptAnalysisStatus ?? null;
   const initialCachedPromptAnalysis =
-    Boolean(user) &&
     isLab &&
     labPromptFingerprint &&
     post.metadata?.promptAnalysisPromptHash === labPromptFingerprint &&
@@ -483,23 +432,21 @@ export default async function PostPage({ params }: Props) {
         )}
         {titleLaunchCta}
       </div>
-      <PostSocialIndicatorBar views={displayViews} commentCount={comments.length} />
+      <PostSocialIndicatorBarClient cachedViews={post.views} commentCount={comments.length} />
       <div className={styles.authorStatsRow}>
         <div className={styles.authorBlock}>
-          <div className={styles.authorAvatar}>
-            {post.author.avatarUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element -- 외부 R2 URL
-              <img
-                src={post.author.avatarUrl}
-                alt={`${post.author.username} 프로필`}
-                className={styles.authorAvatarImg}
-              />
-            ) : (
+          {post.author.avatarUrl ? (
+            <PostAuthorAvatar
+              src={post.author.avatarUrl}
+              alt={`${post.author.username} 프로필`}
+            />
+          ) : (
+            <div className={styles.authorAvatar}>
               <span className={styles.authorAvatarFallback} title={post.author.username}>
                 {authorInitials}
               </span>
-            )}
-          </div>
+            </div>
+          )}
           <div className={styles.authorText}>
             <p className={styles.authorName}>{post.author.username}</p>
             <span className={styles.authorRolePill}>{roleLabel(post.author.role)}</span>
@@ -592,12 +539,8 @@ export default async function PostPage({ params }: Props) {
           <div className={styles.magazineGrid}>
             <div className={styles.magazineMainCol}>
               <article className={styles.magazineArticle}>
-                <PostLikeProvider
-                  postId={post.id}
-                  initialLikeCount={post.likeCount}
-                  initialLiked={Boolean(likedRow)}
-                >
-                  <PostBookmarkProvider postId={post.id} initialBookmarked={Boolean(bookmarkRow)}>
+                <PostViewerProvider postId={post.id}>
+                  <PostEngagementProviders postId={post.id} initialLikeCount={post.likeCount}>
                   <PostTopBreadcrumb category={post.category} label={catLabel} />
                   {isGallery ? (
                     <>
@@ -644,35 +587,32 @@ export default async function PostPage({ params }: Props) {
                 ) : null}
 
                 {isGallery && galleryAnalysisUrl ? (
-                  !showAiExtras ? (
-                    <MemberAiExtrasLoginGate
-                      loginNextPath={`/post/${post.id}`}
-                      headingId="gallery-reverse-heading"
-                      eyebrow="Image intelligence"
-                      title="AI 이미지 역분석"
-                      description="AI 이미지 역분석·추정 프롬프트·키워드 패널은 로그인한 회원만 볼 수 있습니다. 본문 설명은 그대로 읽을 수 있어요."
-                    />
-                  ) : post.aiReversePrompt?.trim() ? (
-                    <GalleryImageReverseFromDb
-                      authorOriginalPrompt={galleryAuthorPromptText}
-                      aiReversePrompt={post.aiReversePrompt}
-                      aiImageAnalysis={
-                        post.aiImageAnalysis != null &&
-                        typeof post.aiImageAnalysis === 'object' &&
-                        !Array.isArray(post.aiImageAnalysis)
-                          ? (post.aiImageAnalysis as Record<string, unknown>)
-                          : null
-                      }
-                    />
-                  ) : (
-                    <Suspense fallback={<GalleryImageReverseFallback />}>
-                      <GalleryImageReverseSection
-                        postId={post.id}
-                        imageUrl={galleryAnalysisUrl}
-                        authorOriginalPrompt={galleryAuthorPromptText}
-                      />
-                    </Suspense>
-                  )
+                  <GalleryAiExtrasGate
+                    postId={post.id}
+                    loggedInContent={
+                      post.aiReversePrompt?.trim() ? (
+                        <GalleryImageReverseFromDb
+                          authorOriginalPrompt={galleryAuthorPromptText}
+                          aiReversePrompt={post.aiReversePrompt}
+                          aiImageAnalysis={
+                            post.aiImageAnalysis != null &&
+                            typeof post.aiImageAnalysis === 'object' &&
+                            !Array.isArray(post.aiImageAnalysis)
+                              ? (post.aiImageAnalysis as Record<string, unknown>)
+                              : null
+                          }
+                        />
+                      ) : (
+                        <Suspense fallback={<GalleryImageReverseFallback />}>
+                          <GalleryImageReverseSection
+                            postId={post.id}
+                            imageUrl={galleryAnalysisUrl}
+                            authorOriginalPrompt={galleryAuthorPromptText}
+                          />
+                        </Suspense>
+                      )
+                    }
+                  />
                 ) : null}
 
                 {isGallery && post.category === 'BUILD' && externalHref ? (
@@ -682,12 +622,11 @@ export default async function PostPage({ params }: Props) {
                 {isLab && !ytId ? <RecipePromptSection promptText={labPromptText} /> : null}
                 {isLab && !ytId ? <DosDontsSection /> : null}
                 {isLab && labPromptText.trim() && !ytId ? (
-                  <PostAiAnalysis
+                  <PostAiAnalysisWithViewer
                     postId={post.id}
                     promptText={labPromptText}
-                    initialCachedAnalysis={initialCachedPromptAnalysis}
+                    serverCachedAnalysis={initialCachedPromptAnalysis}
                     promptAnalysisJobStatus={promptJobStatus}
-                    isLoggedIn={showAiExtras}
                     loginNextPath={`/post/${post.id}`}
                   />
                 ) : null}
@@ -782,18 +721,21 @@ export default async function PostPage({ params }: Props) {
                   <PostEngagement
                     postId={post.id}
                     initialComments={initialComments}
-                    currentUserId={user?.id ?? null}
-                    currentUsername={meProfile?.username ?? null}
-                    currentAvatarUrl={meProfile?.avatarUrl ?? null}
+                    currentUserId={null}
+                    currentUsername={null}
+                    currentAvatarUrl={null}
                     listHref={listHref}
                     adjacentNav={<PostAdjacentNav prev={prevPost} next={nextPost} />}
                   />
 
                   <ContentReportLink postUrl={postPageUrl} />
 
-                  {user?.id === post.authorId ? (
-                    <PostOwnerActions postId={post.id} postTitle={post.title} afterDeleteHref={listHref} />
-                  ) : null}
+                  <PostOwnerActionsGate
+                    postId={post.id}
+                    postTitle={post.title}
+                    authorId={post.authorId}
+                    afterDeleteHref={listHref}
+                  />
 
                   <PostCategoryBoardList
                     category={post.category}
@@ -801,15 +743,15 @@ export default async function PostPage({ params }: Props) {
                     currentPostId={post.id}
                     posts={categoryBoardItems}
                   />
-                  </PostBookmarkProvider>
-                </PostLikeProvider>
+                  </PostEngagementProviders>
+                </PostViewerProvider>
               </article>
             </div>
             {sidebar}
           </div>
         </div>
       </main>
-      <PostScrollSubscribeModal isLoggedIn={Boolean(user)} postId={post.id} />
+      <PostScrollSubscribeModal postId={post.id} />
     </>
   );
 }

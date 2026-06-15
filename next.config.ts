@@ -10,6 +10,7 @@ const nextConfig: NextConfig = {
     },
   },
   images: {
+    formats: ['image/avif', 'image/webp'],
     remotePatterns: buildImageRemotePatterns(),
   },
   serverExternalPackages: ['sharp'],
