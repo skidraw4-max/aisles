@@ -72,8 +72,8 @@ public class AislesAdPlugin extends Plugin {
                 int leftPx = Math.round(leftDp * density);
 
                 AdSize mrecSize = AdSize.MEDIUM_RECTANGLE;
-                int widthPx = Math.round(mrecSize.getWidth() * density);
-                int heightPx = Math.round(mrecSize.getHeight() * density);
+                int widthPx = Math.round(mrecSize.getWidthInPixels(getContext()));
+                int heightPx = Math.round(mrecSize.getHeightInPixels(getContext()));
 
                 if (root instanceof ViewGroup) {
                     ((ViewGroup) root).setClipChildren(true);
@@ -98,6 +98,7 @@ public class AislesAdPlugin extends Plugin {
                     params.gravity = Gravity.TOP | Gravity.START;
                     params.setMargins(leftPx, topPx, 0, 0);
                     adView.setLayoutParams(params);
+                    adView.requestLayout();
                     adView.setVisibility(View.VISIBLE);
 
                     if (!unitId.equals(loadedUnitId)) {

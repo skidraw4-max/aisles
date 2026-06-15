@@ -8,7 +8,6 @@ import {
   hideInFeedMrec,
   initializeAdMob,
   isAppOpenAdEnabled,
-  isInFeedMrecActive,
   isInterstitialAdEnabled,
   maybeShowInterstitialAfterNavigation,
   prepareAndShowAppOpenAd,
@@ -39,9 +38,7 @@ export function AdMobCapacitorInit() {
         await hideBannerAd();
         return;
       }
-      if (!isInFeedMrecActive()) {
-        await showBannerAd();
-      }
+      await showBannerAd();
     };
 
     void syncBanner();

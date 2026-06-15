@@ -42,7 +42,7 @@ export const MREC_HEIGHT_CSS = 250;
 const BANNER_CONTENT_GAP_PX = 8;
 
 /** AdMob 라벨·테두리 등으로 실제 시각 높이가 adSize.height 보다 클 수 있음 */
-const BANNER_VISUAL_BUFFER_PX = 12;
+const BANNER_VISUAL_BUFFER_PX = 4;
 
 const INSETS_CHANGED_EVENT = 'aisle:insets-changed';
 
@@ -51,7 +51,6 @@ const AUTH_PATH_PREFIXES = ['/login', '/auth'];
 /** 헤더·상태바 아래 최소 여백 (측정 실패 시 폴백, CSS px ≈ dp) */
 const MIN_TOP_FALLBACK_PX = 80;
 
-const RECT_EPSILON_PX = 2;
 const MIN_SLOT_VISIBILITY_RATIO = 0.5;
 
 type BannerDisplayMode = 'none' | 'bottom' | 'infeed';
@@ -68,8 +67,7 @@ let interstitialPreparePromise: Promise<void> | null = null;
 let appOpenCyclePromise: Promise<void> | null = null;
 let bannerDisplayMode: BannerDisplayMode = 'none';
 let bottomBannerDesired = false;
-let inFeedRectKey: string | null = null;
-let inFeedSyncPromise: Promise<void> | null = null;
+let inFeedHidePromise: Promise<void> | null = null;
 let sizeListenerRegistered = false;
 let layoutListenerRegistered = false;
 
@@ -152,26 +150,6 @@ function cssPxToDp(value: number): number {
   return Math.max(0, Math.round(value));
 }
 
-function rectToKey(rect: DOMRect): string {
-  return [
-    cssPxToDp(rect.top),
-    cssPxToDp(rect.left),
-    cssPxToDp(rect.width),
-    cssPxToDp(rect.height),
-  ].join(',');
-}
-
-function rectsNearEqual(a: DOMRect, bKey: string): boolean {
-  const parts = bKey.split(',').map(Number);
-  if (parts.length !== 4) return false;
-  return (
-    Math.abs(cssPxToDp(a.top) - parts[0]) < RECT_EPSILON_PX &&
-    Math.abs(cssPxToDp(a.left) - parts[1]) < RECT_EPSILON_PX &&
-    Math.abs(cssPxToDp(a.width) - parts[2]) < RECT_EPSILON_PX &&
-    Math.abs(cssPxToDp(a.height) - parts[3]) < RECT_EPSILON_PX
-  );
-}
-
 /** SiteHeader `<header>` 하단 — 인피드 MREC가 메뉴·헤더를 가리지 않도록 */
 function measureMinSafeMarginTop(): number {
   if (typeof document === 'undefined') return MIN_TOP_FALLBACK_PX;
@@ -197,15 +175,19 @@ function getBottomSafeInsetPx(): number {
   );
 }
 
+/**
+ * Edge-to-edge WebView + Android 15+ community AdMob: BannerExecutor 가 bottomInset 을
+ * 자동 적용하므로 JS margin 을 더하면 배너가 떠 보입니다 (MainActivity decorFitsSystemWindows false).
+ */
 function getBottomBannerMarginDp(): number {
-  return cssPxToDp(getBottomSafeInsetPx());
+  return 0;
 }
 
 function computeMrecDisplayRect(slotRect: DOMRect): DOMRect {
   const width = Math.min(MREC_WIDTH_CSS, Math.max(1, slotRect.width));
-  const height = MREC_HEIGHT_CSS;
+  const height = Math.min(MREC_HEIGHT_CSS, Math.max(1, slotRect.height));
   const left = slotRect.left + (slotRect.width - width) / 2;
-  const top = slotRect.top + (slotRect.height - height) / 2;
+  const top = slotRect.top;
   return new DOMRect(left, top, width, height);
 }
 
@@ -447,7 +429,6 @@ export async function maybeShowInterstitialAfterNavigation(
 async function hideInFeedMrecNative(): Promise<void> {
   if (!isCapacitorNative()) return;
   await AislesAd.hideMrec();
-  inFeedRectKey = null;
 }
 
 async function removeBottomBanner(): Promise<void> {
@@ -466,14 +447,23 @@ async function removeCurrentBanner(): Promise<void> {
   }
 
   bannerDisplayMode = 'none';
-  inFeedRectKey = null;
 }
 
 /** 하단 고정 배너 표시 (BOTTOM_CENTER, Adaptive) */
 export async function showBannerAd(): Promise<void> {
   if (!isCapacitorNative()) return;
   bottomBannerDesired = true;
-  if (isInFeedMrecActive() || pickBestInFeedSlot()) return;
+
+  const eligibleInFeedSlot = pickBestInFeedSlot();
+  if (eligibleInFeedSlot) {
+    scheduleInFeedMrecSync();
+    if (isInFeedMrecActive()) return;
+    return;
+  }
+
+  if (isInFeedMrecActive()) {
+    await hideInFeedMrec();
+  }
 
   await initializeAdMob();
 
@@ -523,17 +513,12 @@ export async function hideBannerAd(): Promise<void> {
 }
 
 export async function resumeBannerAd(): Promise<void> {
-  if (!isCapacitorNative() || bannerDisplayMode !== 'bottom') return;
-  if (
-    typeof document !== 'undefined' &&
-    !parseFloat(
-      getComputedStyle(document.documentElement).getPropertyValue('--app-ad-banner-height')
-    )
-  ) {
-    updateBottomBannerReserve(getInitialBottomBannerHeightPx());
+  if (!isCapacitorNative() || !bottomBannerDesired) return;
+  if (pickBestInFeedSlot()) {
+    scheduleInFeedMrecSync();
+    return;
   }
-  const { AdMob } = await import('@capacitor-community/admob');
-  await AdMob.resumeBanner();
+  await showBannerAd();
 }
 
 export async function removeBannerAd(): Promise<void> {
@@ -564,7 +549,9 @@ function ensureInFeedObserver(): void {
 
 function scheduleInFeedMrecSync(): void {
   if (typeof window === 'undefined') return;
-  if (inFeedScrollRafId !== null) return;
+  if (inFeedScrollRafId !== null) {
+    cancelAnimationFrame(inFeedScrollRafId);
+  }
   inFeedScrollRafId = requestAnimationFrame(() => {
     inFeedScrollRafId = null;
     void syncInFeedMrecDisplay();
@@ -577,6 +564,7 @@ function ensureInFeedGlobalScrollListener(): void {
   const onScroll = () => scheduleInFeedMrecSync();
   inFeedGlobalScrollHandler = onScroll;
   window.addEventListener('scroll', onScroll, { passive: true, capture: true });
+  document.addEventListener('scroll', onScroll, { passive: true, capture: true });
   window.addEventListener('resize', onScroll);
   window.visualViewport?.addEventListener('scroll', onScroll);
   window.visualViewport?.addEventListener('resize', onScroll);
@@ -587,6 +575,7 @@ function releaseInFeedGlobalScrollListener(): void {
   if (inFeedScrollListenerCount > 0) return;
 
   window.removeEventListener('scroll', inFeedGlobalScrollHandler, true);
+  document.removeEventListener('scroll', inFeedGlobalScrollHandler, true);
   window.removeEventListener('resize', inFeedGlobalScrollHandler);
   window.visualViewport?.removeEventListener('scroll', inFeedGlobalScrollHandler);
   window.visualViewport?.removeEventListener('resize', inFeedGlobalScrollHandler);
@@ -617,10 +606,6 @@ async function showInFeedMrecAtRect(slotRect: DOMRect): Promise<void> {
 
   const rect = computeMrecDisplayRect(slotRect);
 
-  if (bannerDisplayMode === 'infeed' && inFeedRectKey && rectsNearEqual(rect, inFeedRectKey)) {
-    return;
-  }
-
   await initializeAdMob();
 
   if (bannerDisplayMode === 'bottom') {
@@ -638,12 +623,24 @@ async function showInFeedMrecAtRect(slotRect: DOMRect): Promise<void> {
   });
 
   bannerDisplayMode = 'infeed';
-  inFeedRectKey = rectToKey(rect);
+}
+
+async function hideInFeedMrecInternal(): Promise<void> {
+  if (bannerDisplayMode !== 'infeed') return;
+  if (inFeedHidePromise) return inFeedHidePromise;
+
+  inFeedHidePromise = (async () => {
+    await hideInFeedMrecNative();
+    bannerDisplayMode = 'none';
+  })().finally(() => {
+    inFeedHidePromise = null;
+  });
+
+  return inFeedHidePromise;
 }
 
 export async function hideInFeedMrec(): Promise<void> {
-  if (bannerDisplayMode !== 'infeed') return;
-  await removeCurrentBanner();
+  await hideInFeedMrecInternal();
 }
 
 async function restoreBottomBannerIfNeeded(): Promise<void> {
@@ -653,34 +650,27 @@ async function restoreBottomBannerIfNeeded(): Promise<void> {
 
 async function syncInFeedMrecDisplay(): Promise<void> {
   if (!isCapacitorNative()) return;
-  if (inFeedSyncPromise) return inFeedSyncPromise;
 
-  inFeedSyncPromise = (async () => {
-    const best = pickBestInFeedSlot();
+  const best = pickBestInFeedSlot();
 
-    if (!best) {
-      if (bannerDisplayMode === 'infeed') {
-        await hideInFeedMrec();
-        await restoreBottomBannerIfNeeded();
-      }
-      return;
+  if (!best) {
+    if (bannerDisplayMode === 'infeed') {
+      await hideInFeedMrecInternal();
+      await restoreBottomBannerIfNeeded();
     }
+    return;
+  }
 
-    const rect = best.element.getBoundingClientRect();
-    if (!isSlotInSafeZone(rect)) {
-      if (bannerDisplayMode === 'infeed') {
-        await hideInFeedMrec();
-        await restoreBottomBannerIfNeeded();
-      }
-      return;
+  const rect = best.element.getBoundingClientRect();
+  if (!isSlotInSafeZone(rect)) {
+    if (bannerDisplayMode === 'infeed') {
+      await hideInFeedMrecInternal();
+      await restoreBottomBannerIfNeeded();
     }
+    return;
+  }
 
-    await showInFeedMrecAtRect(rect);
-  })().finally(() => {
-    inFeedSyncPromise = null;
-  });
-
-  return inFeedSyncPromise;
+  void showInFeedMrecAtRect(rect);
 }
 
 /**

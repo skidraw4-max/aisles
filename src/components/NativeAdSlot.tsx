@@ -17,7 +17,7 @@ type Props = {
  * Capacitor 네이티브 전용 — DOM 슬롯 좌표에 맞춰 AislesAd 플러그인으로 MEDIUM_RECTANGLE 오버레이.
  */
 export function NativeAdSlot({ slotIndex = 0, variant = 'fullWidthRow' }: Props) {
-  const anchorRef = useRef<HTMLDivElement>(null);
+  const slotRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!isCapacitorNative()) return;
@@ -26,7 +26,7 @@ export function NativeAdSlot({ slotIndex = 0, variant = 'fullWidthRow' }: Props)
 
   useEffect(() => {
     if (!isCapacitorNative()) return;
-    const el = anchorRef.current;
+    const el = slotRef.current;
     if (!el) return;
     return registerInFeedMrecSlot(slotIndex, el);
   }, [slotIndex]);
@@ -35,16 +35,14 @@ export function NativeAdSlot({ slotIndex = 0, variant = 'fullWidthRow' }: Props)
 
   return (
     <div
+      ref={slotRef}
       className={variant === 'boardRow' ? styles.boardRowSlot : styles.fullWidthRowSlot}
       role="complementary"
       aria-label="광고"
       data-admob-slot="mrec-infeed"
       data-ad-index={slotIndex}
     >
-      <div ref={anchorRef} className={styles.mrecAnchor}>
-        <span className={styles.placeholderBadge}>광고</span>
-      </div>
+      <span className={styles.placeholderBadge}>광고</span>
     </div>
   );
 }
-
