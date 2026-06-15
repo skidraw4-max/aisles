@@ -7,6 +7,7 @@ import { MediaThumb } from '@/components/MediaThumb';
 import { prisma } from '@/lib/prisma';
 import { withDbRetry } from '@/lib/db-retry';
 import {
+  EMPTY_POST_SIDEBAR,
   getPostComments,
   getPostDetail,
   getPostMetadataFields,
@@ -15,6 +16,7 @@ import {
 import { createClient } from '@/lib/supabase/server';
 import { homeHrefForCategory, labKindFromMetadataParams } from '@/lib/post-categories';
 import { corridorLabel, getAllUiLabels } from '@/lib/ui-config';
+import { defaultUiLabelMap } from '@/lib/ui-config-defaults';
 import { resolveRecipePrompt } from '@/lib/recipe-prompt';
 import { fingerprintPrompt } from '@/lib/prompt-analysis-fingerprint';
 import { parseStoredPromptAnalysisJson } from '@/lib/prompt-analysis';
@@ -143,7 +145,12 @@ function toAbsoluteMediaUrl(raw: string, siteBase: string): string {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
   const base = getCanonicalSiteUrl();
-  const ui = await getAllUiLabels();
+  let ui: Record<string, string>;
+  try {
+    ui = await getAllUiLabels();
+  } catch {
+    ui = defaultUiLabelMap();
+  }
   try {
     const post = await getPostMetadataFields(id);
     if (!post) return { title: '게시글 — AIsle' };
@@ -201,7 +208,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function PostPage({ params }: Props) {
   const { id } = await params;
-  const ui = await getAllUiLabels();
+  let ui: Record<string, string>;
+  try {
+    ui = await getAllUiLabels();
+  } catch {
+    ui = defaultUiLabelMap();
+  }
   let post;
   try {
     post = await getPostDetail(id);
@@ -218,12 +230,16 @@ export default async function PostPage({ params }: Props) {
 
   const supabase = await createClient();
 
-  const [authRes, comments, sidebarData] = await Promise.all([
-    supabase.auth.getUser(),
+  const [commentsResult, sidebarResult, authRes] = await Promise.allSettled([
     getPostComments(id),
     getPostSidebarData(post.id, post.category, post.createdAt),
+    supabase.auth.getUser(),
   ]);
 
+  const comments = commentsResult.status === 'fulfilled' ? commentsResult.value : [];
+  const sidebarData =
+    sidebarResult.status === 'fulfilled' ? sidebarResult.value : EMPTY_POST_SIDEBAR;
+  const user = authRes.status === 'fulfilled' ? authRes.value.data.user : null;
   const {
     relatedPosts,
     popularPosts,
@@ -233,12 +249,21 @@ export default async function PostPage({ params }: Props) {
     latestAiFortuneId,
   } = sidebarData;
 
-  const user = authRes.data.user;
   /** LAB·갤러리 등 별도 AI 패널만 회원에게 노출. LOUNGE/GOSSIP 본문은 크론 요약이 곧 글 자체이므로 비회원도 그대로 읽음 */
   const showAiExtras = Boolean(user);
 
-  const [likedRow, bookmarkRow, meProfile] = user?.id
-    ? await withDbRetry(() =>
+  let likedRow: { postId: string } | null = null;
+  let bookmarkRow: { postId: string } | null = null;
+  let meProfile: {
+    username: string;
+    avatarUrl: string | null;
+    newsletterSubscribed: boolean;
+    mbti: string | null;
+  } | null = null;
+
+  if (user?.id) {
+    try {
+      [likedRow, bookmarkRow, meProfile] = await withDbRetry(() =>
         Promise.all([
           prisma.postLike.findUnique({
             where: { postId_userId: { postId: id, userId: user.id } },
@@ -253,8 +278,11 @@ export default async function PostPage({ params }: Props) {
             select: { username: true, avatarUrl: true, newsletterSubscribed: true, mbti: true },
           }),
         ])
-      )
-    : [null, null, null];
+      );
+    } catch {
+      // 좋아요·북마크·프로필은 실패 시 비로그인과 동일한 기본값
+    }
+  }
 
   const initialComments = comments.map((c) => ({
     id: c.id,

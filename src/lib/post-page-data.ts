@@ -1,6 +1,7 @@
 import { unstable_cache } from 'next/cache';
 import { cache } from 'react';
 import type { Category, Prisma } from '@prisma/client';
+import { fetchLatestAiFortunePost } from '@/lib/ai-fortune/latest-fortune.server';
 import { prisma } from '@/lib/prisma';
 import { withDbRetry } from '@/lib/db-retry';
 
@@ -55,6 +56,15 @@ export type PostSidebarData = {
   latestAiFortuneId: string | null;
 };
 
+export const EMPTY_POST_SIDEBAR: PostSidebarData = {
+  relatedPosts: [],
+  popularPosts: [],
+  prevPost: null,
+  nextPost: null,
+  categoryBoardPosts: [],
+  latestAiFortuneId: null,
+};
+
 /** 동일 요청에서 metadata·page가 중복 조회하지 않도록 dedupe */
 export const getPostDetail = cache(async (id: string): Promise<PostDetail | null> => {
   return withDbRetry(() =>
@@ -65,7 +75,7 @@ export const getPostDetail = cache(async (id: string): Promise<PostDetail | null
   );
 });
 
-/** metadata 전용 경량 조회 — page가 이미 돌았으면 React cache로 dedupe되지 않으므로 별도 cache */
+/** metadata는 getPostDetail과 React cache로 dedupe — 동일 요청에서 이중 조회 방지 */
 export const getPostMetadataFields = cache(
   async (
     id: string
@@ -76,18 +86,15 @@ export const getPostMetadataFields = cache(
     createdAt: Date;
     category: Category;
   } | null> => {
-    return withDbRetry(() =>
-      prisma.post.findUnique({
-        where: { id },
-        select: {
-          title: true,
-          content: true,
-          thumbnail: true,
-          createdAt: true,
-          category: true,
-        },
-      })
-    );
+    const post = await getPostDetail(id);
+    if (!post) return null;
+    return {
+      title: post.title,
+      content: post.content,
+      thumbnail: post.thumbnail,
+      createdAt: post.createdAt,
+      category: post.category,
+    };
   }
 );
 
@@ -100,63 +107,57 @@ async function fetchPostSidebarUncached(
   const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
   const [
-    relatedPosts,
-    weekPopular,
-    prevPost,
-    nextPost,
-    categoryBoardPosts,
-    latestAiFortune,
-  ] = await withDbRetry(() =>
-    Promise.all([
-      prisma.post.findMany({
-        where: { category, id: { not: postId } },
-        orderBy: { createdAt: 'desc' },
-        take: 5,
-        select: relatedSelect,
-      }),
-      prisma.post.findMany({
-        where: { id: { not: postId }, createdAt: { gte: weekAgo } },
-        orderBy: { likeCount: 'desc' },
-        take: 3,
-        select: popularSelect,
-      }),
-      prisma.post.findFirst({
-        where: {
-          category,
-          id: { not: postId },
-          OR: [
-            { createdAt: { lt: createdAt } },
-            { AND: [{ createdAt }, { id: { lt: postId } }] },
-          ],
-        },
-        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
-        select: { id: true, title: true },
-      }),
-      prisma.post.findFirst({
-        where: {
-          category,
-          id: { not: postId },
-          OR: [
-            { createdAt: { gt: createdAt } },
-            { AND: [{ createdAt }, { id: { gt: postId } }] },
-          ],
-        },
-        orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
-        select: { id: true, title: true },
-      }),
-      prisma.post.findMany({
-        where: { category },
-        orderBy: { createdAt: 'desc' },
-        take: 50,
-        select: categoryBoardSelect,
-      }),
-      prisma.post.findFirst({
-        where: { category: 'AI_FORTUNE' },
-        orderBy: { createdAt: 'desc' },
-        select: { id: true },
-      }),
-    ])
-  );
+    [relatedPosts, weekPopular, prevPost, nextPost, categoryBoardPosts],
+    latestFortune,
+  ] = await Promise.all([
+    withDbRetry(() =>
+      Promise.all([
+        prisma.post.findMany({
+          where: { category, id: { not: postId } },
+          orderBy: { createdAt: 'desc' },
+          take: 5,
+          select: relatedSelect,
+        }),
+        prisma.post.findMany({
+          where: { id: { not: postId }, createdAt: { gte: weekAgo } },
+          orderBy: { likeCount: 'desc' },
+          take: 3,
+          select: popularSelect,
+        }),
+        prisma.post.findFirst({
+          where: {
+            category,
+            id: { not: postId },
+            OR: [
+              { createdAt: { lt: createdAt } },
+              { AND: [{ createdAt }, { id: { lt: postId } }] },
+            ],
+          },
+          orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+          select: { id: true, title: true },
+        }),
+        prisma.post.findFirst({
+          where: {
+            category,
+            id: { not: postId },
+            OR: [
+              { createdAt: { gt: createdAt } },
+              { AND: [{ createdAt }, { id: { gt: postId } }] },
+            ],
+          },
+          orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+          select: { id: true, title: true },
+        }),
+        prisma.post.findMany({
+          where: { category },
+          orderBy: { createdAt: 'desc' },
+          take: 50,
+          select: categoryBoardSelect,
+        }),
+      ])
+    ),
+    fetchLatestAiFortunePost(),
+  ]);
 
   let popularPosts = weekPopular;
   if (popularPosts.length < 3) {
@@ -178,7 +179,7 @@ async function fetchPostSidebarUncached(
     prevPost,
     nextPost,
     categoryBoardPosts,
-    latestAiFortuneId: latestAiFortune?.id ?? null,
+    latestAiFortuneId: latestFortune?.id ?? null,
   };
 }
 

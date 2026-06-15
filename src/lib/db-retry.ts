@@ -1,5 +1,5 @@
 const CONNECTION_ERROR_RE =
-  /max client connections|EMAXCONN|too many clients|connection terminated|connection timeout|ECONNREFUSED|ETIMEDOUT|pool exhausted/i;
+  /max client connections|EMAXCONN|too many clients|connection terminated|connection timeout|timeout exceeded|ECONNREFUSED|ETIMEDOUT|pool exhausted/i;
 
 function isConnectionError(error: unknown): boolean {
   if (!(error instanceof Error)) return false;

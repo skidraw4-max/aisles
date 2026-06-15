@@ -1,5 +1,6 @@
 import { cache } from 'react';
 import { prisma } from '@/lib/prisma';
+import { withDbRetry } from '@/lib/db-retry';
 import {
   CATEGORY_TO_UI_KEY,
   defaultUiLabelMap,
@@ -31,13 +32,13 @@ export async function getLabel(key: string): Promise<string> {
 export const getAllUiLabels = cache(async (): Promise<Record<string, string>> => {
   const merged = { ...FALLBACK };
   try {
-    const rows = await prisma.uiConfig.findMany();
+    const rows = await withDbRetry(() => prisma.uiConfig.findMany());
     for (const r of rows) {
       merged[r.key] = r.value;
     }
   } catch (e) {
     if (!isPrismaUiConfigTableMissing(e)) {
-      throw e;
+      console.error('[getAllUiLabels] DB fallback to seed defaults', e);
     }
   }
   return merged;
