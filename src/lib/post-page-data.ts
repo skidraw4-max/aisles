@@ -9,6 +9,35 @@ const POST_SIDEBAR_REVALIDATE_SEC = 60;
 const POST_DETAIL_REVALIDATE_SEC = 3600;
 const POST_COMMENTS_REVALIDATE_SEC = 60;
 
+/** unstable_cache JSON 직렬화로 Date가 ISO 문자열이 된 경우 복원 */
+function coerceToDate(value: Date | string): Date {
+  return value instanceof Date ? value : new Date(value);
+}
+
+function revivePostDetail(post: PostDetail | null): PostDetail | null {
+  if (!post) return null;
+  return {
+    ...post,
+    createdAt: coerceToDate(post.createdAt as Date | string),
+    launchBannerUntil: post.launchBannerUntil
+      ? coerceToDate(post.launchBannerUntil as Date | string)
+      : null,
+    author: {
+      ...post.author,
+      createdAt: coerceToDate(post.author.createdAt as Date | string),
+    },
+  };
+}
+
+type PostCommentRow = Awaited<ReturnType<typeof fetchPostCommentsUncached>>[number];
+
+function revivePostComments(comments: PostCommentRow[]): PostCommentRow[] {
+  return comments.map((c) => ({
+    ...c,
+    createdAt: coerceToDate(c.createdAt as Date | string),
+  }));
+}
+
 const postInclude = {
   author: true,
   metadata: true,
@@ -78,7 +107,7 @@ async function fetchPostDetailUncached(id: string): Promise<PostDetail | null> {
 
 /** ISR 본문 — cross-request 캐시 + 동일 요청 dedupe */
 export const getPostDetail = cache(async (id: string): Promise<PostDetail | null> => {
-  return unstable_cache(
+  const cached = await unstable_cache(
     () => fetchPostDetailUncached(id),
     ['post-detail-v1', id],
     {
@@ -86,6 +115,7 @@ export const getPostDetail = cache(async (id: string): Promise<PostDetail | null
       tags: [`post-${id}`],
     }
   )();
+  return revivePostDetail(cached);
 });
 
 /** metadata는 getPostDetail과 React cache로 dedupe — 동일 요청에서 이중 조회 방지 */
@@ -200,9 +230,9 @@ async function fetchPostSidebarUncached(
 export function getPostSidebarData(
   postId: string,
   category: Category,
-  createdAt: Date
+  createdAt: Date | string
 ): Promise<PostSidebarData> {
-  const createdAtIso = createdAt.toISOString();
+  const createdAtIso = coerceToDate(createdAt).toISOString();
   return unstable_cache(
     () => fetchPostSidebarUncached(postId, category, createdAtIso),
     ['post-sidebar-v1', postId, category, createdAtIso],
@@ -224,8 +254,8 @@ async function fetchPostCommentsUncached(postId: string) {
 }
 
 /** 댓글 목록 — 짧은 TTL ISR (개인화 없음) */
-export function getPostComments(postId: string) {
-  return unstable_cache(
+export async function getPostComments(postId: string) {
+  const cached = await unstable_cache(
     () => fetchPostCommentsUncached(postId),
     ['post-comments-v1', postId],
     {
@@ -233,4 +263,5 @@ export function getPostComments(postId: string) {
       tags: [`post-${postId}`, 'post-comments'],
     }
   )();
+  return revivePostComments(cached);
 }
