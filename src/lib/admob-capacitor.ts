@@ -34,8 +34,9 @@ export const INTERSTITIAL_NAVIGATION_THRESHOLD = 8;
 /** App Open: WebView 초기 로드 후 표시까지 대기 (ms) */
 const APP_OPEN_WEBVIEW_READY_DELAY_MS = 800;
 
-/** MEDIUM_RECTANGLE CSS 높이 (300×250 dp) */
-const MREC_HEIGHT_CSS = 250;
+/** MEDIUM_RECTANGLE CSS 크기 (300×250 dp) */
+export const MREC_WIDTH_CSS = 300;
+export const MREC_HEIGHT_CSS = 250;
 
 /** 배너와 본문 사이 최소 간격 */
 const BANNER_CONTENT_GAP_PX = 8;
@@ -50,8 +51,7 @@ const AUTH_PATH_PREFIXES = ['/login', '/auth'];
 /** 헤더·상태바 아래 최소 여백 (측정 실패 시 폴백, CSS px ≈ dp) */
 const MIN_TOP_FALLBACK_PX = 80;
 
-const RECT_EPSILON_PX = 6;
-const SCROLL_DEBOUNCE_MS = 120;
+const RECT_EPSILON_PX = 2;
 const MIN_SLOT_VISIBILITY_RATIO = 0.5;
 
 type BannerDisplayMode = 'none' | 'bottom' | 'infeed';
@@ -75,7 +75,9 @@ let layoutListenerRegistered = false;
 
 const inFeedSlots = new Map<number, InFeedSlotState>();
 let inFeedObserver: IntersectionObserver | null = null;
-let inFeedScrollTimer: ReturnType<typeof setTimeout> | null = null;
+let inFeedScrollRafId: number | null = null;
+let inFeedScrollListenerCount = 0;
+let inFeedGlobalScrollHandler: (() => void) | null = null;
 
 export function shouldUseAdMobTestMode(): boolean {
   return process.env.NEXT_PUBLIC_ADMOB_TEST_MODE === 'true';
@@ -134,13 +136,16 @@ export function estimateAdaptiveBannerHeightPx(viewportWidthPx: number): number 
 }
 
 /**
- * 배너 시각 높이 + 본문 간격.
- * MainActivity 는 decorFitsSystemWindows(true) — WebView 하단이 이미 내비게이션 바 위이므로
- * safe-area 를 reserve 에 더하면 배너가 화면 최하단에서 떠 보입니다.
+ * 배너 시각 높이 + 시스템 하단 inset + 본문 간격.
+ * edge-to-edge WebView(decorFitsSystemWindows false)에서 네이티브 배너는 내비게이션 바 위에
+ * 오버레이되므로 본문 reserve 에 safe-area-bottom 을 포함합니다.
  */
-export function computeBottomBannerReservePx(bannerVisualHeightPx: number): number {
+export function computeBottomBannerReservePx(
+  bannerVisualHeightPx: number,
+  safeBottomPx = 0
+): number {
   if (bannerVisualHeightPx <= 0) return 0;
-  return Math.ceil(bannerVisualHeightPx + BANNER_CONTENT_GAP_PX);
+  return Math.ceil(bannerVisualHeightPx + safeBottomPx + BANNER_CONTENT_GAP_PX);
 }
 
 function cssPxToDp(value: number): number {
@@ -192,6 +197,18 @@ function getBottomSafeInsetPx(): number {
   );
 }
 
+function getBottomBannerMarginDp(): number {
+  return cssPxToDp(getBottomSafeInsetPx());
+}
+
+function computeMrecDisplayRect(slotRect: DOMRect): DOMRect {
+  const width = Math.min(MREC_WIDTH_CSS, Math.max(1, slotRect.width));
+  const height = MREC_HEIGHT_CSS;
+  const left = slotRect.left + (slotRect.width - width) / 2;
+  const top = slotRect.top + (slotRect.height - height) / 2;
+  return new DOMRect(left, top, width, height);
+}
+
 function effectiveBannerVisualHeightPx(reportedAdHeightPx: number): number {
   if (reportedAdHeightPx <= 0) return 0;
 
@@ -217,7 +234,8 @@ function updateBottomBannerReserve(bannerHeightPx: number): void {
   if (typeof document === 'undefined') return;
 
   const root = document.documentElement;
-  const totalReserve = computeBottomBannerReservePx(bannerHeightPx);
+  const safeBottom = bannerHeightPx > 0 ? getBottomSafeInsetPx() : 0;
+  const totalReserve = computeBottomBannerReservePx(bannerHeightPx, safeBottom);
 
   if (bannerHeightPx > 0) {
     root.style.setProperty('--app-ad-banner-height', `${bannerHeightPx}px`);
@@ -482,7 +500,7 @@ export async function showBannerAd(): Promise<void> {
     adId: getBannerAdUnitId(),
     adSize: BannerAdSize.ADAPTIVE_BANNER,
     position: BannerAdPosition.BOTTOM_CENTER,
-    margin: 0,
+    margin: getBottomBannerMarginDp(),
     isTesting: shouldUseAdMobTestMode(),
   });
 }
@@ -546,13 +564,33 @@ function ensureInFeedObserver(): void {
 
 function scheduleInFeedMrecSync(): void {
   if (typeof window === 'undefined') return;
-  if (inFeedScrollTimer) clearTimeout(inFeedScrollTimer);
-  inFeedScrollTimer = setTimeout(() => {
-    inFeedScrollTimer = null;
-    requestAnimationFrame(() => {
-      void syncInFeedMrecDisplay();
-    });
-  }, SCROLL_DEBOUNCE_MS);
+  if (inFeedScrollRafId !== null) return;
+  inFeedScrollRafId = requestAnimationFrame(() => {
+    inFeedScrollRafId = null;
+    void syncInFeedMrecDisplay();
+  });
+}
+
+function ensureInFeedGlobalScrollListener(): void {
+  if (inFeedGlobalScrollHandler || typeof window === 'undefined') return;
+
+  const onScroll = () => scheduleInFeedMrecSync();
+  inFeedGlobalScrollHandler = onScroll;
+  window.addEventListener('scroll', onScroll, { passive: true, capture: true });
+  window.addEventListener('resize', onScroll);
+  window.visualViewport?.addEventListener('scroll', onScroll);
+  window.visualViewport?.addEventListener('resize', onScroll);
+}
+
+function releaseInFeedGlobalScrollListener(): void {
+  if (!inFeedGlobalScrollHandler || typeof window === 'undefined') return;
+  if (inFeedScrollListenerCount > 0) return;
+
+  window.removeEventListener('scroll', inFeedGlobalScrollHandler, true);
+  window.removeEventListener('resize', inFeedGlobalScrollHandler);
+  window.visualViewport?.removeEventListener('scroll', inFeedGlobalScrollHandler);
+  window.visualViewport?.removeEventListener('resize', inFeedGlobalScrollHandler);
+  inFeedGlobalScrollHandler = null;
 }
 
 function pickBestInFeedSlot(): InFeedSlotState | null {
@@ -574,8 +612,10 @@ function pickBestInFeedSlot(): InFeedSlotState | null {
   return best;
 }
 
-async function showInFeedMrecAtRect(rect: DOMRect): Promise<void> {
+async function showInFeedMrecAtRect(slotRect: DOMRect): Promise<void> {
   if (!isCapacitorNative()) return;
+
+  const rect = computeMrecDisplayRect(slotRect);
 
   if (bannerDisplayMode === 'infeed' && inFeedRectKey && rectsNearEqual(rect, inFeedRectKey)) {
     return;
@@ -651,21 +691,19 @@ export function registerInFeedMrecSlot(slotIndex: number, element: HTMLElement):
   if (!isCapacitorNative()) return () => {};
 
   ensureInFeedObserver();
+  ensureInFeedGlobalScrollListener();
+  inFeedScrollListenerCount += 1;
   element.dataset.adSlotIndex = String(slotIndex);
   inFeedSlots.set(slotIndex, { element, ratio: 0, intersecting: false });
   inFeedObserver!.observe(element);
-
-  const onLayoutChange = () => scheduleInFeedMrecSync();
-  window.addEventListener('scroll', onLayoutChange, { passive: true });
-  window.addEventListener('resize', onLayoutChange);
 
   scheduleInFeedMrecSync();
 
   return () => {
     inFeedSlots.delete(slotIndex);
     inFeedObserver?.unobserve(element);
-    window.removeEventListener('scroll', onLayoutChange);
-    window.removeEventListener('resize', onLayoutChange);
+    inFeedScrollListenerCount = Math.max(0, inFeedScrollListenerCount - 1);
+    releaseInFeedGlobalScrollListener();
     scheduleInFeedMrecSync();
   };
 }

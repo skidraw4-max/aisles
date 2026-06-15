@@ -70,12 +70,19 @@ public class AislesAdPlugin extends Plugin {
                 float density = getContext().getResources().getDisplayMetrics().density;
                 int topPx = Math.round(topDp * density);
                 int leftPx = Math.round(leftDp * density);
-                int widthPx = Math.max(Math.round(widthDp * density), 1);
-                int heightPx = Math.max(Math.round(heightDp * density), 1);
+
+                AdSize mrecSize = AdSize.MEDIUM_RECTANGLE;
+                int widthPx = Math.round(mrecSize.getWidth() * density);
+                int heightPx = Math.round(mrecSize.getHeight() * density);
+
+                if (root instanceof ViewGroup) {
+                    ((ViewGroup) root).setClipChildren(true);
+                    ((ViewGroup) root).setClipToPadding(true);
+                }
 
                 if (adView == null) {
                     adView = new AdView(getContext());
-                    adView.setAdSize(AdSize.MEDIUM_RECTANGLE);
+                    adView.setAdSize(mrecSize);
                     adView.setAdUnitId(unitId);
                     loadedUnitId = unitId;
 
@@ -192,7 +199,10 @@ public class AislesAdPlugin extends Plugin {
         }
 
         getActivity().runOnUiThread(() -> {
-            destroyAdView();
+            if (adView != null) {
+                adView.pause();
+                adView.setVisibility(View.GONE);
+            }
             call.resolve();
         });
     }

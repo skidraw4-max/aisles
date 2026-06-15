@@ -9,7 +9,8 @@ public class MainActivity extends BridgeActivity {
     public void onCreate(Bundle savedInstanceState) {
         registerPlugin(AislesAdPlugin.class);
         super.onCreate(savedInstanceState);
-        // WebView 콘텐츠가 상태표시줄 아래에서 시작하도록 (Android 15+ edge-to-edge 대응)
-        WindowCompat.setDecorFitsSystemWindows(getWindow(), true);
+        // Edge-to-edge: WebView 전체 화면 + CSS safe-area. decorFitsSystemWindows(true) 이면
+        // AdMob 플러그인(API 35+)이 bottomInset 을 또 더해 하단 배너가 떠 보입니다.
+        WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
     }
 }
