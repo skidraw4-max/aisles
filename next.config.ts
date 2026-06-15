@@ -17,7 +17,7 @@ const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
     '/api/posts/upload-image': ['./public/watermark.png'],
     '/api/posts': ['./public/watermark.png'],
-    '/og/post/[id]': ['./public/fonts/Pretendard-Bold.woff2', './public/og-image.png'],
+    '/og/post/[id]': ['./public/fonts/Pretendard-Bold.otf', './public/og-image.png'],
   },
 };
 
