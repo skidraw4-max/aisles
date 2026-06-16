@@ -6,6 +6,7 @@ import { RecentPostListThumb } from '@/components/RecentPostListThumb';
 import { HomeMainHero } from '@/components/HomeMainHero';
 import { HomeHeroCarousel } from '@/components/HomeHeroCarouselLoader';
 import { HomeContentTabs } from '@/components/HomeContentTabs';
+import { HomeCorridorStripBanner } from '@/components/HomeCorridorStripBanner';
 import { HomeQuasarBoard } from '@/components/HomeQuasarBoard';
 import { HomeDeferredLower } from '@/components/HomeDeferredLower';
 import { SHOW_HOME_MAIN_HERO } from '@/lib/home-flags';
@@ -204,6 +205,12 @@ export default async function HomePage({ searchParams }: PageProps) {
             <HomeContentTabs />
           </Suspense>
         </section>
+
+        {filterCategory ? (
+          <section className={`${styles.section} ${styles.corridorStripAdSection}`}>
+            <HomeCorridorStripBanner />
+          </section>
+        ) : null}
 
         {!filterCategory && SHOW_HOME_MAIN_HERO ? (
           <section className={`${styles.section} ${styles.quasarHeroBanner}`}>

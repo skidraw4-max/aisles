@@ -473,6 +473,16 @@
   margin-bottom: var(--launch-block-gap);
 }
 
+/* 복도 탭: 콘텐츠 탭 바로 아래 728×90 띠배너 */
+.corridorStripAdSection {
+  padding-top: 0;
+  padding-bottom: 12px;
+}
+
+.corridorStripAdWrap {
+  width: 100%;
+}
+
 .launchBlockWrap {
   margin-bottom: var(--launch-block-gap);
 }
