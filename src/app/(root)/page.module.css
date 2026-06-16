@@ -469,6 +469,10 @@
   padding-top: var(--launch-block-gap);
 }
 
+.mainStripAdWrap {
+  margin-bottom: var(--launch-block-gap);
+}
+
 .launchBlockWrap {
   margin-bottom: var(--launch-block-gap);
 }

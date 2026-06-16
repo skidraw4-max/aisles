@@ -43,3 +43,44 @@
   color: #e9d5ff;
   pointer-events: none;
 }
+
+/* 728×90 메인 띠배너 — 좁은 뷰포트에서 scale(ResizeObserver) */
+.leaderboardWrap {
+  width: 100%;
+  max-width: 728px;
+  margin-inline: auto;
+}
+
+.leaderboardOuter {
+  width: 100%;
+  overflow: hidden;
+}
+
+.leaderboardScaler {
+  transform-origin: top center;
+  margin-inline: auto;
+}
+
+.leaderboardCard {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-sizing: border-box;
+}
+
+.leaderboardCard .slot {
+  width: 728px;
+  min-height: 90px;
+}
+
+.leaderboardCard .badge {
+  top: 0.4rem;
+  left: 0.4rem;
+}

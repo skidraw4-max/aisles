@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import nextDynamic from 'next/dynamic';
 import type { Category } from '@prisma/client';
 import type { FeedPostJson } from '@/lib/home-feed';
+import { AdBanner } from '@/components/AdBanner';
 import { LaunchFeedSlider, type LaunchFeedSlide } from '@/components/LaunchFeedSlider';
 import { useUiLabels } from '@/components/UiLabelsProvider';
 import styles from '@/app/(root)/page.module.css';
@@ -83,6 +84,11 @@ export function HomeDeferredLower({
       <div className={styles.feedLayoutMainFeed}>
         {mainFeedPrefix}
         {fortuneCard}
+        {!filterCategory ? (
+          <div className={styles.mainStripAdWrap}>
+            <AdBanner variant="kakao-leaderboard" />
+          </div>
+        ) : null}
         {!filterCategory ? (
           <div className={styles.launchBlockWrap}>
             <h2 className={styles.launchSectionHeading}>{launchHeading}</h2>
