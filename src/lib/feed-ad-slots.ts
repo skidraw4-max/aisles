@@ -4,11 +4,16 @@ export const FEED_AD_INTERVAL = 5;
 /** 텍스트 보드 리스트: 첫 화면에 1개만 — 5번째 게시글(0-based index 4) 뒤에 삽입 */
 export const FEED_AD_SINGLE_INSERT_AFTER_INDEX = 4;
 
+/** 웹 Kakao 인피드: 7개 게시글 뒤(8번째 항목)에 1개 삽입 */
+export const WEB_KAKAO_INFEED_AD_INSERT_AFTER_INDEX = 6;
+
 export type FeedAdMode = 'everyN' | 'singlePerScreen';
+
+export type FeedAdProvider = 'native' | 'kakao';
 
 export type FeedListItem<T> =
   | { type: 'post'; post: T }
-  | { type: 'ad'; slotIndex: number };
+  | { type: 'ad'; slotIndex: number; provider?: FeedAdProvider };
 
 function singleAdInsertIndex(postCount: number): number {
   if (postCount <= 0) return -1;
@@ -54,6 +59,31 @@ export function interleaveFeedAdSlots<T>(
     result.push({ type: 'post', post: posts[i] });
     if ((i + 1) % interval === 0) {
       result.push({ type: 'ad', slotIndex: (i + 1) / interval - 1 });
+    }
+  }
+  return result;
+}
+
+/**
+ * 웹 Kakao 인피드 — 지정 인덱스(기본 6) 뒤에 슬롯 1개만 삽입.
+ * 게시글이 insertAfterIndex+1개 미만이면 광고 없음.
+ */
+export function interleaveWebKakaoInfeedAd<T>(
+  posts: T[],
+  insertAfterIndex: number = WEB_KAKAO_INFEED_AD_INSERT_AFTER_INDEX,
+  includeAd = true
+): FeedListItem<T>[] {
+  if (posts.length === 0) return [];
+
+  if (!includeAd || posts.length <= insertAfterIndex) {
+    return posts.map((post) => ({ type: 'post', post }));
+  }
+
+  const result: FeedListItem<T>[] = [];
+  for (let i = 0; i < posts.length; i++) {
+    result.push({ type: 'post', post: posts[i] });
+    if (i === insertAfterIndex) {
+      result.push({ type: 'ad', slotIndex: 0, provider: 'kakao' });
     }
   }
   return result;

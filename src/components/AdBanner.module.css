@@ -1,0 +1,45 @@
+.wrap {
+  position: relative;
+  height: 100%;
+}
+
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-height: 250px;
+  border-radius: 16px;
+  overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 0.75rem;
+  box-sizing: border-box;
+}
+
+.slot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 300px;
+  max-width: 100%;
+  min-height: 250px;
+}
+
+.badge {
+  position: absolute;
+  top: 0.65rem;
+  left: 0.65rem;
+  z-index: 1;
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+  font-size: var(--type-11);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  background: rgba(11, 13, 23, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #e9d5ff;
+  pointer-events: none;
+}
