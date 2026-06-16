@@ -34,9 +34,9 @@ export const INTERSTITIAL_NAVIGATION_THRESHOLD = 8;
 /** App Open: WebView 초기 로드 후 표시까지 대기 (ms) */
 const APP_OPEN_WEBVIEW_READY_DELAY_MS = 800;
 
-/** 인피드 슬롯 앵커 크기 (문서 흐름 간격용, 1/3 축소) */
+/** 인피드 슬롯 앵커 크기 (문서 흐름 간격용) */
 export const MREC_WIDTH_CSS = 100;
-export const MREC_HEIGHT_CSS = 83;
+export const MREC_HEIGHT_CSS = 166;
 
 /** MEDIUM_RECTANGLE 네이티브 오버레이 표시 크기 (원본 300×250, 슬롯 중심에 정렬) */
 export const MREC_DISPLAY_WIDTH_CSS = 300;
@@ -461,11 +461,9 @@ export async function showBannerAd(): Promise<void> {
   if (!isCapacitorNative()) return;
   bottomBannerDesired = true;
 
-  const eligibleInFeedSlot = pickBestInFeedSlot();
-  if (eligibleInFeedSlot) {
-    scheduleInFeedMrecSync();
+  if (pickBestInFeedSlot()) {
+    await syncInFeedMrecDisplay();
     if (isInFeedMrecActive()) return;
-    return;
   }
 
   if (isInFeedMrecActive()) {
@@ -522,8 +520,8 @@ export async function hideBannerAd(): Promise<void> {
 export async function resumeBannerAd(): Promise<void> {
   if (!isCapacitorNative() || !bottomBannerDesired) return;
   if (pickBestInFeedSlot()) {
-    scheduleInFeedMrecSync();
-    return;
+    await syncInFeedMrecDisplay();
+    if (isInFeedMrecActive()) return;
   }
   await showBannerAd();
 }
@@ -663,8 +661,8 @@ async function syncInFeedMrecDisplay(): Promise<void> {
   if (!best) {
     if (bannerDisplayMode === 'infeed') {
       await hideInFeedMrecInternal();
-      await restoreBottomBannerIfNeeded();
     }
+    await restoreBottomBannerIfNeeded();
     return;
   }
 
@@ -672,12 +670,12 @@ async function syncInFeedMrecDisplay(): Promise<void> {
   if (!isSlotInSafeZone(rect)) {
     if (bannerDisplayMode === 'infeed') {
       await hideInFeedMrecInternal();
-      await restoreBottomBannerIfNeeded();
     }
+    await restoreBottomBannerIfNeeded();
     return;
   }
 
-  void showInFeedMrecAtRect(rect);
+  await showInFeedMrecAtRect(rect);
 }
 
 /**
