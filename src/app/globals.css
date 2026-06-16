@@ -73,6 +73,19 @@ html.capacitor-native body {
   padding-bottom: 0;
 }
 
+/* Android 시스템 내비게이션 바 영역 — 네이티브 setNavigationBarColor 보조 (WebView 레이어) */
+html.capacitor-native.capacitor-android::before {
+  content: '';
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: var(--app-safe-area-bottom, 0px);
+  background: rgba(255, 255, 255, 0.3);
+  pointer-events: none;
+  z-index: 1;
+}
+
 /* 문서 흐름 맨 끝 스페이서 — 네이티브 배너 오버레이 구간에 피드가 그려지지 않게 */
 html.capacitor-native body::after {
   content: '';

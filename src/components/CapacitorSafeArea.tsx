@@ -96,6 +96,10 @@ export function CapacitorSafeArea() {
     body.classList.add('capacitor-native');
 
     const platform = resolvePlatform();
+    if (platform === 'android') {
+      html.classList.add('capacitor-android');
+      body.classList.add('capacitor-android');
+    }
 
     const applyInsets = async () => {
       await configureNativeStatusBar();
@@ -122,8 +126,8 @@ export function CapacitorSafeArea() {
     window.addEventListener('resize', onViewportChange);
 
     return () => {
-      html.classList.remove('capacitor-native');
-      body.classList.remove('capacitor-native');
+      html.classList.remove('capacitor-native', 'capacitor-android');
+      body.classList.remove('capacitor-native', 'capacitor-android');
       html.style.removeProperty('--app-safe-area-top');
       html.style.removeProperty('--app-safe-area-bottom');
       window.visualViewport?.removeEventListener('resize', onViewportChange);
