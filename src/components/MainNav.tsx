@@ -6,11 +6,12 @@ import { usePathname, useSearchParams } from 'next/navigation';
 import { X } from 'lucide-react';
 import { useUiLabels } from '@/components/UiLabelsProvider';
 import { shouldShowBuildLaunchInNav } from '@/lib/hide-build-launch-menu';
+import { HOME_ALL_HREF, useNavigateHomeAll } from '@/lib/home-corridor-nav';
 import styles from './SiteHeader.module.css';
 
 /** 홈 상단 복도 — `labelKey`는 UI 설정(DB) 키 */
 export const HOME_NAV_ITEMS: { href: string; queryKey: string | null; labelKey: string }[] = [
-  { href: '/', queryKey: null, labelKey: 'corridor.all' },
+  { href: HOME_ALL_HREF, queryKey: null, labelKey: 'corridor.all' },
   { href: '/?category=LAB', queryKey: 'LAB', labelKey: 'corridor.lab' },
   { href: '/?category=GALLERY', queryKey: 'GALLERY', labelKey: 'corridor.gallery' },
   { href: '/?category=LOUNGE', queryKey: 'LOUNGE', labelKey: 'corridor.lounge' },
@@ -39,6 +40,7 @@ export function MainNav() {
   const m = useUiLabels();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const navigateHomeAll = useNavigateHomeAll();
   const raw = searchParams.get('category');
   const current = raw?.trim() ? raw.trim().toUpperCase() : null;
   const aboutActive = pathname === '/about';
@@ -55,6 +57,7 @@ export function MainNav() {
             className={navClassName(active)}
             aria-current={active ? 'page' : undefined}
             scroll={false}
+            onClick={item.queryKey === null ? navigateHomeAll : undefined}
           >
             {pick(m, item.labelKey)}
           </Link>
@@ -155,6 +158,7 @@ export function MobileMainNavPanel({ onClose }: { onClose: () => void }) {
   const m = useUiLabels();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const navigateHomeAll = useNavigateHomeAll();
   const raw = searchParams.get('category');
   const current = raw?.trim() ? raw.trim().toUpperCase() : null;
   const aboutActive = pathname === '/about';
@@ -171,7 +175,10 @@ export function MobileMainNavPanel({ onClose }: { onClose: () => void }) {
               className={mobileNavLinkClass(active)}
               aria-current={active ? 'page' : undefined}
               scroll={false}
-              onClick={onClose}
+              onClick={(e) => {
+                if (item.queryKey === null) navigateHomeAll(e);
+                onClose();
+              }}
             >
               {pick(m, item.labelKey)}
             </Link>

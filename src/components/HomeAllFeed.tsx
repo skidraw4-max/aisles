@@ -394,6 +394,14 @@ export function HomeAllFeed({ category, excludeIds, initialPosts, initialHasMore
     Math.min(ALL_CARD_FEED_INITIAL_COUNT, initialPosts.length)
   );
 
+  useEffect(() => {
+    abortRef.current?.abort();
+    setPosts(initialPosts);
+    setHasMore(initialHasMore);
+    setVisibleCount(Math.min(ALL_CARD_FEED_INITIAL_COUNT, initialPosts.length));
+    setLoading(false);
+  }, [category, initialPosts, initialHasMore]);
+
   const fetchJson = useCallback(
     async (url: string, signal: AbortSignal) => {
       const res = await fetch(url, { signal, cache: 'no-store' });
