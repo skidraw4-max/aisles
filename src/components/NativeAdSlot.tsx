@@ -13,8 +13,8 @@ type Props = {
 };
 
 /**
- * 인피드 MREC(300×250) 슬롯.
- * Capacitor 네이티브 전용 — DOM 슬롯 좌표에 맞춰 AislesAd 플러그인으로 MEDIUM_RECTANGLE 오버레이.
+ * 인피드 MREC 슬롯 (원본 300×250의 1/3, 100×83).
+ * Capacitor 네이티브 전용 — DOM 슬롯 좌표에 맞춰 AislesAd 플러그인으로 축소·중앙 정렬 오버레이.
  */
 export function NativeAdSlot({ slotIndex = 0, variant = 'fullWidthRow' }: Props) {
   const slotRef = useRef<HTMLDivElement>(null);

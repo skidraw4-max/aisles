@@ -4,6 +4,7 @@ import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.FrameLayout;
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
@@ -29,6 +30,7 @@ public class AislesAdPlugin extends Plugin {
     private static final String TEST_APP_OPEN_ID = "ca-app-pub-3940256099942544/3419835294";
 
     private AdView adView;
+    private FrameLayout mrecContainer;
     private AppOpenAd appOpenAd;
     private boolean isLoadingAppOpen;
     private ViewGroup rootViewGroup;
@@ -53,8 +55,8 @@ public class AislesAdPlugin extends Plugin {
 
         final int topDp = call.getInt("top", 0);
         final int leftDp = call.getInt("left", 0);
-        final int widthDp = call.getInt("width", 300);
-        final int heightDp = call.getInt("height", 250);
+        final int widthDp = call.getInt("width", 100);
+        final int heightDp = call.getInt("height", 83);
         final String adId = call.getString("adId", TEST_BANNER_ID);
         final boolean isTesting = call.getBoolean("isTesting", false);
         final String unitId = isTesting ? TEST_BANNER_ID : adId;
@@ -70,36 +72,54 @@ public class AislesAdPlugin extends Plugin {
                 float density = getContext().getResources().getDisplayMetrics().density;
                 int topPx = Math.round(topDp * density);
                 int leftPx = Math.round(leftDp * density);
+                int slotWidthPx = Math.round(widthDp * density);
+                int slotHeightPx = Math.round(heightDp * density);
 
                 AdSize mrecSize = AdSize.MEDIUM_RECTANGLE;
-                int widthPx = Math.round(mrecSize.getWidthInPixels(getContext()));
-                int heightPx = Math.round(mrecSize.getHeightInPixels(getContext()));
+                int mrecWidthPx = Math.round(mrecSize.getWidthInPixels(getContext()));
+                int mrecHeightPx = Math.round(mrecSize.getHeightInPixels(getContext()));
+                float scale = Math.min(
+                    (float) slotWidthPx / mrecWidthPx,
+                    (float) slotHeightPx / mrecHeightPx
+                );
+                scale = Math.min(scale, 1f);
 
                 if (root instanceof ViewGroup) {
                     ((ViewGroup) root).setClipChildren(true);
                     ((ViewGroup) root).setClipToPadding(true);
                 }
 
-                if (adView == null) {
+                if (mrecContainer == null) {
+                    mrecContainer = new FrameLayout(getContext());
                     adView = new AdView(getContext());
                     adView.setAdSize(mrecSize);
                     adView.setAdUnitId(unitId);
                     loadedUnitId = unitId;
 
-                    CoordinatorLayout.LayoutParams params = new CoordinatorLayout.LayoutParams(widthPx, heightPx);
+                    FrameLayout.LayoutParams adParams = new FrameLayout.LayoutParams(
+                        mrecWidthPx,
+                        mrecHeightPx,
+                        Gravity.CENTER
+                    );
+                    mrecContainer.addView(adView, adParams);
+
+                    CoordinatorLayout.LayoutParams params = new CoordinatorLayout.LayoutParams(
+                        slotWidthPx,
+                        slotHeightPx
+                    );
                     params.gravity = Gravity.TOP | Gravity.START;
                     params.setMargins(leftPx, topPx, 0, 0);
-                    root.addView(adView, params);
+                    root.addView(mrecContainer, params);
                     adView.loadAd(new AdRequest.Builder().build());
                 } else {
-                    CoordinatorLayout.LayoutParams params = (CoordinatorLayout.LayoutParams) adView.getLayoutParams();
-                    params.width = widthPx;
-                    params.height = heightPx;
+                    CoordinatorLayout.LayoutParams params = (CoordinatorLayout.LayoutParams) mrecContainer.getLayoutParams();
+                    params.width = slotWidthPx;
+                    params.height = slotHeightPx;
                     params.gravity = Gravity.TOP | Gravity.START;
                     params.setMargins(leftPx, topPx, 0, 0);
-                    adView.setLayoutParams(params);
-                    adView.requestLayout();
-                    adView.setVisibility(View.VISIBLE);
+                    mrecContainer.setLayoutParams(params);
+                    mrecContainer.requestLayout();
+                    mrecContainer.setVisibility(View.VISIBLE);
 
                     if (!unitId.equals(loadedUnitId)) {
                         adView.setAdUnitId(unitId);
@@ -108,6 +128,11 @@ public class AislesAdPlugin extends Plugin {
                     }
                 }
 
+                adView.setScaleX(scale);
+                adView.setScaleY(scale);
+                adView.setPivotX(mrecWidthPx / 2f);
+                adView.setPivotY(mrecHeightPx / 2f);
+                adView.setVisibility(View.VISIBLE);
                 adView.resume();
                 call.resolve();
             } catch (Exception ex) {
@@ -204,6 +229,9 @@ public class AislesAdPlugin extends Plugin {
                 adView.pause();
                 adView.setVisibility(View.GONE);
             }
+            if (mrecContainer != null) {
+                mrecContainer.setVisibility(View.GONE);
+            }
             call.resolve();
         });
     }
@@ -216,8 +244,9 @@ public class AislesAdPlugin extends Plugin {
         ViewGroup root = getRootViewGroup();
         adView.pause();
         adView.setVisibility(View.GONE);
-        if (root != null) {
-            root.removeView(adView);
+        if (mrecContainer != null && root != null) {
+            root.removeView(mrecContainer);
+            mrecContainer = null;
         }
         adView.destroy();
         adView = null;

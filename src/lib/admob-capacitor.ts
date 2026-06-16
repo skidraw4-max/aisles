@@ -34,9 +34,9 @@ export const INTERSTITIAL_NAVIGATION_THRESHOLD = 8;
 /** App Open: WebView 초기 로드 후 표시까지 대기 (ms) */
 const APP_OPEN_WEBVIEW_READY_DELAY_MS = 800;
 
-/** MEDIUM_RECTANGLE CSS 크기 (300×250 dp) */
-export const MREC_WIDTH_CSS = 300;
-export const MREC_HEIGHT_CSS = 250;
+/** MEDIUM_RECTANGLE 원본 300×250 — 인피드 슬롯·오버레이는 1/3 축소 (100×83) */
+export const MREC_WIDTH_CSS = 100;
+export const MREC_HEIGHT_CSS = 83;
 
 /** 배너와 본문 사이 최소 간격 */
 const BANNER_CONTENT_GAP_PX = 8;
@@ -135,8 +135,7 @@ export function estimateAdaptiveBannerHeightPx(viewportWidthPx: number): number 
 
 /**
  * 배너 시각 높이 + 시스템 하단 inset + 본문 간격.
- * edge-to-edge WebView(decorFitsSystemWindows false)에서 네이티브 배너는 내비게이션 바 위에
- * 오버레이되므로 본문 reserve 에 safe-area-bottom 을 포함합니다.
+ * edge-to-edge WebView(decorFitsSystemWindows false)에서 본문 reserve 에 safe-area-bottom 을 포함합니다.
  */
 export function computeBottomBannerReservePx(
   bannerVisualHeightPx: number,
@@ -187,7 +186,7 @@ function computeMrecDisplayRect(slotRect: DOMRect): DOMRect {
   const width = Math.min(MREC_WIDTH_CSS, Math.max(1, slotRect.width));
   const height = Math.min(MREC_HEIGHT_CSS, Math.max(1, slotRect.height));
   const left = slotRect.left + (slotRect.width - width) / 2;
-  const top = slotRect.top;
+  const top = slotRect.top + (slotRect.height - height) / 2;
   return new DOMRect(left, top, width, height);
 }
 

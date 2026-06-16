@@ -1,0 +1,60 @@
+diff --git a/node_modules/@capacitor-community/admob/android/src/main/java/com/getcapacitor/community/admob/banner/BannerExecutor.java b/node_modules/@capacitor-community/admob/android/src/main/java/com/getcapacitor/community/admob/banner/BannerExecutor.java
+index c629139..7ac3f54 100644
+--- a/node_modules/@capacitor-community/admob/android/src/main/java/com/getcapacitor/community/admob/banner/BannerExecutor.java
++++ b/node_modules/@capacitor-community/admob/android/src/main/java/com/getcapacitor/community/admob/banner/BannerExecutor.java
+@@ -103,26 +103,7 @@ public class BannerExecutor extends Executor {
+                     break;
+             }
+ 
+-            // set Safe Area only for Android 15+
+-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+-                View rootView = activitySupplier.get().getWindow().getDecorView();
+-                rootView.setOnApplyWindowInsetsListener((v, insets) -> {
+-                    int bottomInset = insets.getSystemWindowInsetBottom();
+-                    int topInset = insets.getSystemWindowInsetTop();
+-
+-                    if ("TOP_CENTER".equals(adOptions.position)) {
+-                        mAdViewLayoutParams.setMargins(0, topInset, 0, 0);
+-                    } else {
+-                        mAdViewLayoutParams.setMargins(0, 0, 0, bottomInset);
+-                    }
+-
+-                    mAdViewLayout.setLayoutParams(mAdViewLayoutParams);
+-                    return insets;
+-                });
+-            }
+-
+-            mAdViewLayout.setLayoutParams(mAdViewLayoutParams);
+-
++            // Edge-to-edge: bottomInset 을 자동 더하면 배너가 한 칸 떠 보임 — margin 옵션만 사용
+             int densityMargin = (int) (adOptions.margin * density);
+ 
+             // Center Banner Ads
+@@ -133,15 +114,25 @@ public class BannerExecutor extends Executor {
+                 if (fullscreen) {
+                     margin = (realWidthPixels - defaultWidthPixels) / 2;
+                 }
+-                mAdViewLayoutParams.setMargins(margin, densityMargin, margin, densityMargin);
++                if ("TOP_CENTER".equals(adOptions.position)) {
++                    mAdViewLayoutParams.setMargins(margin, densityMargin, margin, 0);
++                } else {
++                    mAdViewLayoutParams.setMargins(margin, 0, margin, densityMargin);
++                }
+             } else {
+                 int sideMargin = ((int) defaultWidthPixels - adWidth) / 2;
+                 if (fullscreen) {
+                     sideMargin = (realWidthPixels - adWidth) / 2;
+                 }
+-                mAdViewLayoutParams.setMargins(sideMargin, densityMargin, sideMargin, densityMargin);
++                if ("TOP_CENTER".equals(adOptions.position)) {
++                    mAdViewLayoutParams.setMargins(sideMargin, densityMargin, sideMargin, 0);
++                } else {
++                    mAdViewLayoutParams.setMargins(sideMargin, 0, sideMargin, densityMargin);
++                }
+             }
+ 
++            mAdViewLayout.setLayoutParams(mAdViewLayoutParams);
++
+             createNewAdView(adOptions);
+ 
+             call.resolve();
