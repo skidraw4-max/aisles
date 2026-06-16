@@ -55,8 +55,8 @@ public class AislesAdPlugin extends Plugin {
 
         final int topDp = call.getInt("top", 0);
         final int leftDp = call.getInt("left", 0);
-        final int widthDp = call.getInt("width", 100);
-        final int heightDp = call.getInt("height", 83);
+        final int widthDp = call.getInt("width", 300);
+        final int heightDp = call.getInt("height", 250);
         final String adId = call.getString("adId", TEST_BANNER_ID);
         final boolean isTesting = call.getBoolean("isTesting", false);
         final String unitId = isTesting ? TEST_BANNER_ID : adId;
@@ -72,21 +72,16 @@ public class AislesAdPlugin extends Plugin {
                 float density = getContext().getResources().getDisplayMetrics().density;
                 int topPx = Math.round(topDp * density);
                 int leftPx = Math.round(leftDp * density);
-                int slotWidthPx = Math.round(widthDp * density);
-                int slotHeightPx = Math.round(heightDp * density);
+                int containerWidthPx = Math.round(widthDp * density);
+                int containerHeightPx = Math.round(heightDp * density);
 
                 AdSize mrecSize = AdSize.MEDIUM_RECTANGLE;
                 int mrecWidthPx = Math.round(mrecSize.getWidthInPixels(getContext()));
                 int mrecHeightPx = Math.round(mrecSize.getHeightInPixels(getContext()));
-                float scale = Math.min(
-                    (float) slotWidthPx / mrecWidthPx,
-                    (float) slotHeightPx / mrecHeightPx
-                );
-                scale = Math.min(scale, 1f);
 
                 if (root instanceof ViewGroup) {
-                    ((ViewGroup) root).setClipChildren(true);
-                    ((ViewGroup) root).setClipToPadding(true);
+                    ((ViewGroup) root).setClipChildren(false);
+                    ((ViewGroup) root).setClipToPadding(false);
                 }
 
                 if (mrecContainer == null) {
@@ -104,8 +99,8 @@ public class AislesAdPlugin extends Plugin {
                     mrecContainer.addView(adView, adParams);
 
                     CoordinatorLayout.LayoutParams params = new CoordinatorLayout.LayoutParams(
-                        slotWidthPx,
-                        slotHeightPx
+                        containerWidthPx,
+                        containerHeightPx
                     );
                     params.gravity = Gravity.TOP | Gravity.START;
                     params.setMargins(leftPx, topPx, 0, 0);
@@ -113,8 +108,8 @@ public class AislesAdPlugin extends Plugin {
                     adView.loadAd(new AdRequest.Builder().build());
                 } else {
                     CoordinatorLayout.LayoutParams params = (CoordinatorLayout.LayoutParams) mrecContainer.getLayoutParams();
-                    params.width = slotWidthPx;
-                    params.height = slotHeightPx;
+                    params.width = containerWidthPx;
+                    params.height = containerHeightPx;
                     params.gravity = Gravity.TOP | Gravity.START;
                     params.setMargins(leftPx, topPx, 0, 0);
                     mrecContainer.setLayoutParams(params);
@@ -128,10 +123,8 @@ public class AislesAdPlugin extends Plugin {
                     }
                 }
 
-                adView.setScaleX(scale);
-                adView.setScaleY(scale);
-                adView.setPivotX(mrecWidthPx / 2f);
-                adView.setPivotY(mrecHeightPx / 2f);
+                adView.setScaleX(1f);
+                adView.setScaleY(1f);
                 adView.setVisibility(View.VISIBLE);
                 adView.resume();
                 call.resolve();

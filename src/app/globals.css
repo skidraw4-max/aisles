@@ -81,7 +81,7 @@ html.capacitor-native.capacitor-android::before {
   right: 0;
   bottom: 0;
   height: var(--app-safe-area-bottom, 0px);
-  background: rgba(255, 255, 255, 0.3);
+  background: rgba(0, 0, 0, 0.3);
   pointer-events: none;
   z-index: 1;
 }

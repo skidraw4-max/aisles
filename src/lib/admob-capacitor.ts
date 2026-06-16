@@ -34,9 +34,13 @@ export const INTERSTITIAL_NAVIGATION_THRESHOLD = 8;
 /** App Open: WebView 초기 로드 후 표시까지 대기 (ms) */
 const APP_OPEN_WEBVIEW_READY_DELAY_MS = 800;
 
-/** MEDIUM_RECTANGLE 원본 300×250 — 인피드 슬롯·오버레이는 1/3 축소 (100×83) */
+/** 인피드 슬롯 앵커 크기 (문서 흐름 간격용, 1/3 축소) */
 export const MREC_WIDTH_CSS = 100;
 export const MREC_HEIGHT_CSS = 83;
+
+/** MEDIUM_RECTANGLE 네이티브 오버레이 표시 크기 (원본 300×250, 슬롯 중심에 정렬) */
+export const MREC_DISPLAY_WIDTH_CSS = 300;
+export const MREC_DISPLAY_HEIGHT_CSS = 250;
 
 /** 배너와 본문 사이 최소 간격 */
 const BANNER_CONTENT_GAP_PX = 8;
@@ -182,11 +186,14 @@ function getBottomBannerMarginDp(): number {
   return 0;
 }
 
+/** 슬롯 앵커 중심에 원본 MREC(300×250)을 배치 — 슬롯 위·아래로 넘쳐도 됨 */
 function computeMrecDisplayRect(slotRect: DOMRect): DOMRect {
-  const width = Math.min(MREC_WIDTH_CSS, Math.max(1, slotRect.width));
-  const height = Math.min(MREC_HEIGHT_CSS, Math.max(1, slotRect.height));
-  const left = slotRect.left + (slotRect.width - width) / 2;
-  const top = slotRect.top + (slotRect.height - height) / 2;
+  const width = MREC_DISPLAY_WIDTH_CSS;
+  const height = MREC_DISPLAY_HEIGHT_CSS;
+  const centerX = slotRect.left + slotRect.width / 2;
+  const centerY = slotRect.top + slotRect.height / 2;
+  const left = centerX - width / 2;
+  const top = centerY - height / 2;
   return new DOMRect(left, top, width, height);
 }
 
@@ -292,13 +299,14 @@ function registerInsetsChangedListener(): void {
 
 function isSlotInSafeZone(rect: DOMRect): boolean {
   if (typeof window === 'undefined') return false;
-
-  const minTop = measureMinSafeMarginTop();
-  const maxTop = window.innerHeight - measureBottomReservePx() - MREC_HEIGHT_CSS;
-
-  if (rect.top < minTop) return false;
-  if (rect.top > maxTop) return false;
   if (rect.width < 1 || rect.height < 1) return false;
+
+  const displayRect = computeMrecDisplayRect(rect);
+  const minTop = measureMinSafeMarginTop();
+  const maxTop = window.innerHeight - measureBottomReservePx() - MREC_DISPLAY_HEIGHT_CSS;
+
+  if (displayRect.top < minTop) return false;
+  if (displayRect.top > maxTop) return false;
 
   return true;
 }
