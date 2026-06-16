@@ -165,8 +165,8 @@ export function AdBanner({
             >
               <div className={styles.leaderboardCard} role="complementary" aria-label="광고">
                 {slot}
-                <span className={styles.badge}>광고</span>
               </div>
+              <span className={styles.badge}>광고</span>
             </div>
           </div>
         </div>
@@ -174,8 +174,8 @@ export function AdBanner({
         <div className={styles.wrap}>
           <div className={styles.card} role="complementary" aria-label="광고">
             {slot}
-            <span className={styles.badge}>광고</span>
           </div>
+          <span className={styles.badge}>광고</span>
         </div>
       )}
     </>

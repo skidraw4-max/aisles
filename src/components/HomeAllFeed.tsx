@@ -544,7 +544,7 @@ export function HomeAllFeed({ category, excludeIds, initialPosts, initialHasMore
                 <FeedPostCard post={item.post} imagePriority={i < 4} />
               </li>
             ) : item.provider === 'kakao' ? (
-              <li key="feed-kakao-ad">
+              <li key="feed-kakao-ad" className={styles.feedAdRow}>
                 <AdBanner variant="kakao-infeed" />
               </li>
             ) : (

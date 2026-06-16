@@ -3,19 +3,14 @@
   height: 100%;
 }
 
+/* AdFit: 광고 영역(ins.kakao_ad_area)은 직사각형 슬롯만 — 라운딩·클리핑·테두리 없음 */
 .card {
-  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   height: 100%;
   min-height: 250px;
-  border-radius: 16px;
-  overflow: hidden;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  padding: 0.75rem;
   box-sizing: border-box;
 }
 
@@ -26,6 +21,16 @@
   width: 300px;
   max-width: 100%;
   min-height: 250px;
+  border-radius: 0;
+  overflow: visible;
+}
+
+/* AdFit 스크립트가 주입하는 ins/iframe — 외곽 라운딩·클리핑 금지 */
+.slot :global(.kakao_ad_area),
+.slot :global(.kakao_ad_area iframe),
+.slot :global(.kakao_ad_area img) {
+  border-radius: 0 !important;
+  overflow: visible !important;
 }
 
 .badge {
@@ -57,21 +62,17 @@
 }
 
 .leaderboardScaler {
+  position: relative;
   transform-origin: top center;
   margin-inline: auto;
 }
 
 .leaderboardCard {
-  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
   width: 100%;
   height: 100%;
-  border-radius: 12px;
-  overflow: hidden;
-  background: var(--surface);
-  border: 1px solid var(--border);
   box-sizing: border-box;
 }
 
@@ -80,7 +81,7 @@
   min-height: 90px;
 }
 
-.leaderboardCard .badge {
+.leaderboardScaler .badge {
   top: 0.4rem;
   left: 0.4rem;
 }
