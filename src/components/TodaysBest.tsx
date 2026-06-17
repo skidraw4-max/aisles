@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ChevronLeft, ChevronRight, MessageCircle } from 'lucide-react';
 import { useUiLabels } from '@/components/UiLabelsProvider';
-import { shouldShowBuildLaunchInNav } from '@/lib/hide-build-launch-menu';
 import styles from '@/app/(root)/page.module.css';
 
 type BestCategory = 'ALL' | 'LAB' | 'GALLERY' | 'LOUNGE' | 'GOSSIP' | 'BUILD' | 'LAUNCH';
@@ -27,10 +26,6 @@ const CAT_DEF: { id: BestCategory; labelKey: string }[] = [
   { id: 'BUILD', labelKey: 'corridor.build' },
   { id: 'LAUNCH', labelKey: 'corridor.launch' },
 ];
-
-function visibleCatDefs() {
-  return CAT_DEF.filter((c) => shouldShowBuildLaunchInNav(c.id));
-}
 
 export function TodaysBest() {
   const m = useUiLabels();
@@ -114,7 +109,7 @@ export function TodaysBest() {
       </div>
 
       <div className={styles.todaysBestFilters} role="tablist" aria-label="베스트 복도 필터">
-        {visibleCatDefs().map((c) => {
+        {CAT_DEF.map((c) => {
           const active = c.id === category;
           return (
             <button

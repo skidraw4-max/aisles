@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { X } from 'lucide-react';
 import { useUiLabels } from '@/components/UiLabelsProvider';
-import { shouldShowBuildLaunchInNav } from '@/lib/hide-build-launch-menu';
 import { HOME_ALL_HREF, useNavigateHomeAll } from '@/lib/home-corridor-nav';
 import styles from './SiteHeader.module.css';
 
@@ -20,10 +19,6 @@ export const HOME_NAV_ITEMS: { href: string; queryKey: string | null; labelKey: 
   { href: '/?category=LAUNCH', queryKey: 'LAUNCH', labelKey: 'corridor.launch' },
   { href: '/?category=AI_FORTUNE', queryKey: 'AI_FORTUNE', labelKey: 'corridor.ai_fortune' },
 ];
-
-function visibleHomeNavItems() {
-  return HOME_NAV_ITEMS.filter((item) => shouldShowBuildLaunchInNav(item.queryKey));
-}
 
 function navClassName(active: boolean) {
   return active
@@ -48,7 +43,7 @@ export function MainNav() {
 
   return (
     <nav className={`${styles.nav} ${styles.navQuasi}`} aria-label="주요 메뉴">
-      {visibleHomeNavItems().map((item) => {
+      {HOME_NAV_ITEMS.map((item) => {
         const active = item.queryKey === null ? current === null : current === item.queryKey;
         return (
           <Link
@@ -80,7 +75,7 @@ export function MainNavFallback() {
   const guideLabel = pick(m, 'corridor.guide');
   return (
     <nav className={`${styles.nav} ${styles.navQuasi}`} aria-label="주요 메뉴">
-      {visibleHomeNavItems().map((item) => (
+      {HOME_NAV_ITEMS.map((item) => (
         <Link key={item.href} href={item.href} className={`${styles.navLink} ${styles.navLinkQuasi}`}>
           {pick(m, item.labelKey)}
         </Link>
@@ -137,7 +132,7 @@ export function MobileMainNavPanelFallback({ onClose }: { onClose: () => void })
   const guideLabel = pick(m, 'corridor.guide');
   return (
     <MobileNavShell onClose={onClose}>
-      {visibleHomeNavItems().map((item) => (
+      {HOME_NAV_ITEMS.map((item) => (
         <li key={item.href}>
           <Link href={item.href} className={styles.mobileNavLink} scroll={false} onClick={onClose}>
             {pick(m, item.labelKey)}
@@ -166,7 +161,7 @@ export function MobileMainNavPanel({ onClose }: { onClose: () => void }) {
 
   return (
     <MobileNavShell onClose={onClose}>
-      {visibleHomeNavItems().map((item) => {
+      {HOME_NAV_ITEMS.map((item) => {
         const active = item.queryKey === null ? current === null : current === item.queryKey;
         return (
           <li key={item.href}>

@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import type { ContentTabId } from '@/lib/content-tab';
 import { getContentTabFromSearchParams } from '@/lib/content-tab';
-import { shouldShowBuildLaunchInNav } from '@/lib/hide-build-launch-menu';
 import { HOME_ALL_HREF, useNavigateHomeAll } from '@/lib/home-corridor-nav';
 import { useUiLabels } from '@/components/UiLabelsProvider';
 import styles from '@/app/(root)/page.module.css';
@@ -21,10 +20,6 @@ const TABS: { id: ContentTabId; labelKey: string; href: string }[] = [
   { id: 'ai_fortune', labelKey: 'corridor.ai_fortune', href: '/?category=AI_FORTUNE' },
 ];
 
-function visibleTabs() {
-  return TABS.filter((tab) => shouldShowBuildLaunchInNav(tab.id));
-}
-
 export function HomeContentTabs() {
   const searchParams = useSearchParams();
   const active = getContentTabFromSearchParams(searchParams);
@@ -34,7 +29,7 @@ export function HomeContentTabs() {
   return (
     <nav className={`${styles.contentTabBar} ${styles.contentTabBarStrip}`} aria-label="콘텐츠 구분">
       <ul className={styles.contentTabList}>
-        {visibleTabs().map((tab) => {
+        {TABS.map((tab) => {
           const isActive = tab.id === active;
           const label = m?.[tab.labelKey] ?? '';
           return (
