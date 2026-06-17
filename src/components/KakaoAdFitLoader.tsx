@@ -3,15 +3,12 @@
 import { Suspense, useEffect, useRef } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { isCapacitorNative } from '@/lib/capacitor-oauth';
-import {
-  ensureAdfitScriptAfterSlots,
-  renderAllAdfitUnitsInDom,
-  whenAdfitReady,
-} from '@/lib/kakao-adfit-runtime';
+import { renderAllAdfitUnitsInDom, whenAdfitReady } from '@/lib/kakao-adfit-runtime';
 
-const NAV_RESCAN_DELAYS_MS = [0, 150, 400, 800];
+const NAV_RESCAN_DELAYS_MS = [0, 150, 400, 800, 1500];
 
-function KakaoAdFitLoaderInner() {
+/** 복도 탭 전환 등으로 ins가 갱신될 때 render만 재호출 (destroy 금지) */
+function KakaoAdFitTabRescan() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const categoryKey = searchParams.get('category')?.trim() || 'all';
@@ -19,21 +16,20 @@ function KakaoAdFitLoaderInner() {
 
   useEffect(() => {
     if (isCapacitorNative()) return;
+    if (pathname !== '/') return;
 
-    ensureAdfitScriptAfterSlots();
-
-    const observer = new MutationObserver(() => {
-      ensureAdfitScriptAfterSlots();
-      if (document.querySelector('script[data-aisle-kakao-adfit]')) {
+    const timers = NAV_RESCAN_DELAYS_MS.map((delay) =>
+      setTimeout(() => {
         whenAdfitReady(() => renderAllAdfitUnitsInDom());
-      }
-    });
-    observer.observe(document.body, { childList: true, subtree: true });
-
-    return () => observer.disconnect();
-  }, []);
+      }, delay)
+    );
+    return () => {
+      for (const timer of timers) clearTimeout(timer);
+    };
+  }, [pathname]);
 
   useEffect(() => {
+    if (isCapacitorNative()) return;
     if (pathname !== '/') return;
     if (prevCategoryRef.current === null) {
       prevCategoryRef.current = categoryKey;
@@ -44,7 +40,6 @@ function KakaoAdFitLoaderInner() {
 
     const timers = NAV_RESCAN_DELAYS_MS.map((delay) =>
       setTimeout(() => {
-        ensureAdfitScriptAfterSlots();
         whenAdfitReady(() => renderAllAdfitUnitsInDom());
       }, delay)
     );
@@ -56,11 +51,10 @@ function KakaoAdFitLoaderInner() {
   return null;
 }
 
-/** ins.kakao_ad_area가 DOM에 붙은 뒤 마지막 ins 바로 다음에 ba.min.js 1회 주입 */
 export function KakaoAdFitLoader() {
   return (
     <Suspense fallback={null}>
-      <KakaoAdFitLoaderInner />
+      <KakaoAdFitTabRescan />
     </Suspense>
   );
 }

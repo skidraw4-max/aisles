@@ -3,7 +3,6 @@ import Script from 'next/script';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import { Syne, DM_Sans, Roboto_Mono } from 'next/font/google';
 import { AdMobCapacitorInit } from '@/components/AdMobCapacitorInit';
-import { KakaoAdFitLoader } from '@/components/KakaoAdFitLoader';
 import { CapacitorSafeArea } from '@/components/CapacitorSafeArea';
 import { HomeSupabaseRedirectHandler } from '@/components/HomeSupabaseRedirectHandler';
 import { getCanonicalSiteUrl } from '@/lib/canonical-site-url';
@@ -183,7 +182,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           />
           <HomeSupabaseRedirectHandler />
           {children}
-          <KakaoAdFitLoader />
           <SpeedInsights />
         </>
       </body>

@@ -1,4 +1,4 @@
-/** Kakao AdFit ba.min.js — ins 뒤에 1회 주입 (KakaoAdFitLoader) */
+/** Kakao AdFit ba.min.js — ins 뒤에 주입 (KakaoAdFitLoader) */
 
 export const KAKAO_ADFIT_SCRIPT_SRC = 'https://t1.kakaocdn.net/kas/static/ba.min.js';
 
@@ -125,6 +125,10 @@ export function renderAllAdfitUnitsInDom(): void {
     const unit = ins.getAttribute('data-ad-unit')?.trim();
     if (unit) units.add(unit);
   }
+  const adfit = getAdfit();
+  if (adfit?.render) {
+    safeAdfitCall(() => adfit.render!());
+  }
   for (const unit of units) {
     renderAdUnit(unit);
   }
@@ -135,9 +139,17 @@ function getAdfitScriptEl(): HTMLScriptElement | null {
   return document.querySelector<HTMLScriptElement>(`script[${SCRIPT_MARKER}]`);
 }
 
+function isScriptImmediatelyAfterIns(script: HTMLScriptElement, ins: HTMLElement): boolean {
+  let node: ChildNode | null = ins.nextSibling;
+  while (node && node.nodeType === Node.TEXT_NODE && !node.textContent?.trim()) {
+    node = node.nextSibling;
+  }
+  return node === script;
+}
+
 /**
- * 공식 설치 순서: ins가 DOM에 있을 때만, 마지막 ins 바로 뒤에 ba.min.js 1회 주입.
- * body 맨 아래 선주입 시(HomeDeferredLower ssr:false) SDK가 슬롯을 등록하지 못함.
+ * ins가 DOM에 있을 때만 마지막 ins 바로 뒤에 ba.min.js 주입·재배치.
+ * 탭 전환으로 ins가 remount되면 script를 새 ins 뒤로 옮김.
  */
 export function ensureAdfitScriptAfterSlots(): boolean {
   if (typeof document === 'undefined') return false;
@@ -145,13 +157,19 @@ export function ensureAdfitScriptAfterSlots(): boolean {
   const insList = document.querySelectorAll<HTMLElement>('ins.kakao_ad_area');
   if (insList.length === 0) return false;
 
+  const lastIns = insList[insList.length - 1];
   const existing = getAdfitScriptEl();
+
   if (existing) {
-    whenAdfitReady(() => renderAllAdfitUnitsInDom());
+    if (!isScriptImmediatelyAfterIns(existing, lastIns)) {
+      lastIns.after(existing);
+    }
+    if (isAdfitPresent()) {
+      whenAdfitReady(() => renderAllAdfitUnitsInDom());
+    }
     return true;
   }
 
-  const lastIns = insList[insList.length - 1];
   const script = document.createElement('script');
   script.async = true;
   script.type = 'text/javascript';
