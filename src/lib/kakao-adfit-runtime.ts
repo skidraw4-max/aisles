@@ -224,3 +224,23 @@ export function refreshAdUnitWithBackoff(unit: string): () => void {
 export function requestAdfitRescan(unit?: string): void {
   renderAdUnit(unit);
 }
+
+const NAV_RESCAN_DELAYS_MS = [0, 100, 400, 800, 1600];
+
+/**
+ * 홈 복도 탭 전환 후 DOM이 갱신된 뒤 전체 슬롯 재스캔.
+ * destroy 없이 render()만 반복 호출 — SDK가 새 ins에 다시 바인딩한다.
+ */
+export function scheduleAdfitRescanAfterNav(): () => void {
+  const timers: ReturnType<typeof setTimeout>[] = [];
+  for (const delay of NAV_RESCAN_DELAYS_MS) {
+    timers.push(
+      setTimeout(() => {
+        whenAdfitReady(() => scanAllAdfitSlots());
+      }, delay)
+    );
+  }
+  return () => {
+    for (const t of timers) clearTimeout(t);
+  };
+}

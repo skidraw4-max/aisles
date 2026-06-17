@@ -6,7 +6,6 @@ import { isCapacitorNative } from '@/lib/capacitor-oauth';
 import { getKakaoAdfitMainBannerUnitId, getKakaoAdfitUnitId } from '@/lib/kakao-adfit';
 import {
   bootstrapAdfitOnClient,
-  destroyAdUnit,
   renderAdUnitWithBackoff,
   whenAdfitReady,
 } from '@/lib/kakao-adfit-runtime';
@@ -96,7 +95,6 @@ export function AdBanner({
 
     return () => {
       stopRender?.();
-      destroyAdUnit(kakaoUnit);
     };
   }, [shouldActivate, kakaoUnit, kakaoWidth, kakaoHeight, slotRemountKey]);
 
@@ -152,7 +150,6 @@ export function AdBanner({
   const insSlot = (
     <ins
       ref={insRef}
-      key={`${slotRemountKey}:${kakaoUnit}`}
       className="kakao_ad_area"
       style={{ display: 'none', width: '100%' }}
       data-ad-unit={kakaoUnit}

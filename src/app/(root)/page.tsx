@@ -233,7 +233,6 @@ export default async function HomePage({ searchParams }: PageProps) {
           className={`${styles.section} ${!filterCategory ? styles.sectionFeedAfterQuasar : ''}`}
         >
           <HomeDeferredLower
-            key={cacheKey}
             mainFeedPrefix={
               filterCategory ? (
                 <>
