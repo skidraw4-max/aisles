@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useRef, Suspense, type ReactNode } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { scheduleAdfitRescanAfterNav } from '@/lib/kakao-adfit-runtime';
+import { scheduleAdfitRescanAfterNav, whenAdfitReady, renderAllAdfitUnitsInDom } from '@/lib/kakao-adfit-runtime';
 
 type AdFitContextValue = {
   /** @deprecated ba.min.js는 KakaoAdFitScript에서 로드 — 컨텍스트는 하위 호환용 */
@@ -21,6 +21,15 @@ function AdFitHomeTabRescan() {
   const searchParams = useSearchParams();
   const categoryKey = searchParams.get('category')?.trim() || 'all';
   const prevCategoryRef = useRef<string | null>(null);
+
+  // HomeDeferredLower(ssr:false) 청크 로드 후 슬롯이 늦게 붙는 경우 대비
+  useEffect(() => {
+    if (pathname !== '/') return;
+    const timer = setTimeout(() => {
+      whenAdfitReady(() => renderAllAdfitUnitsInDom());
+    }, 3500);
+    return () => clearTimeout(timer);
+  }, [pathname]);
 
   useEffect(() => {
     if (pathname !== '/') return;
