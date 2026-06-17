@@ -63,8 +63,6 @@ export function HomeDeferredLower({
   const m = useUiLabels();
   const launchHeading = m?.['home.section.launch_heading'] ?? '';
   const allHeading = m?.['home.section.all_feed_heading'] ?? '';
-  const adRemountKey = homeAllFeed.feedKey;
-
   return (
     <div
       className={[
@@ -81,7 +79,7 @@ export function HomeDeferredLower({
           <TodaysBest />
           {recentAside}
           <div className={styles.sidebarAdWrap}>
-            <AdBanner variant="kakao-infeed" remountKey={adRemountKey} />
+            <AdBanner variant="kakao-infeed" />
           </div>
         </div>
       </div>
@@ -90,7 +88,7 @@ export function HomeDeferredLower({
         {fortuneCard}
         {!filterCategory ? (
           <div className={styles.mainStripAdWrap}>
-            <AdBanner variant="kakao-leaderboard" remountKey={adRemountKey} />
+            <AdBanner variant="kakao-leaderboard" />
           </div>
         ) : null}
         {!filterCategory ? (

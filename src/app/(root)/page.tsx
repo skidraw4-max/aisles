@@ -209,7 +209,7 @@ export default async function HomePage({ searchParams }: PageProps) {
 
         {filterCategory ? (
           <section className={`${styles.section} ${styles.corridorStripAdSection}`}>
-            <HomeCorridorStripBanner remountKey={cacheKey} />
+            <HomeCorridorStripBanner />
           </section>
         ) : null}
 

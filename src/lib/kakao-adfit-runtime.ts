@@ -1,10 +1,11 @@
-/** Kakao AdFit ba.min.js — ins 뒤에 주입 (KakaoAdFitLoader) */
+/** Kakao AdFit ba.min.js — ins 뒤에 1회 주입 (KakaoAdFitLoader) */
 
 export const KAKAO_ADFIT_SCRIPT_SRC = 'https://t1.kakaocdn.net/kas/static/ba.min.js';
 
 const SCRIPT_MARKER = 'data-aisle-kakao-adfit';
 const ADFIT_POLL_INTERVAL_MS = 50;
 const ADFIT_POLL_MAX_ATTEMPTS = 120;
+const NAV_RESCAN_DELAYS_MS = [0, 200, 500, 1000, 2000];
 
 export type AdfitApi = {
   destroy?: (unit: string) => void;
@@ -36,6 +37,7 @@ let readyPromise: Promise<void> | null = null;
 const readyListeners = new Set<() => void>();
 let pollTimer: ReturnType<typeof setTimeout> | null = null;
 let pollAttempts = 0;
+let rescanGeneration = 0;
 
 function resolveReady() {
   if (!isAdfitPresent()) return;
@@ -43,7 +45,6 @@ function resolveReady() {
   readyResolved = true;
   for (const listener of readyListeners) listener();
   readyListeners.clear();
-  renderAllAdfitUnitsInDom();
 }
 
 function stopPoll() {
@@ -110,28 +111,17 @@ export function getAdfitReadyPromise(): Promise<void> {
   return readyPromise;
 }
 
-export function renderAdUnit(unit: string): void {
-  const unitId = unit.trim();
-  if (!unitId) return;
+/** DOM 내 모든 ins.kakao_ad_area — render() 1회만 (per-unit 중복 호출 금지) */
+export function scanAllAdfitSlots(): void {
+  if (typeof document === 'undefined') return;
   const adfit = getAdfit();
   if (!adfit?.render) return;
-  safeAdfitCall(() => adfit.render!(unitId));
+  safeAdfitCall(() => adfit.render!());
 }
 
+/** @deprecated scanAllAdfitSlots 사용 */
 export function renderAllAdfitUnitsInDom(): void {
-  if (typeof document === 'undefined') return;
-  const units = new Set<string>();
-  for (const ins of document.querySelectorAll<HTMLElement>('ins.kakao_ad_area')) {
-    const unit = ins.getAttribute('data-ad-unit')?.trim();
-    if (unit) units.add(unit);
-  }
-  const adfit = getAdfit();
-  if (adfit?.render) {
-    safeAdfitCall(() => adfit.render!());
-  }
-  for (const unit of units) {
-    renderAdUnit(unit);
-  }
+  scanAllAdfitSlots();
 }
 
 function getAdfitScriptEl(): HTMLScriptElement | null {
@@ -139,17 +129,9 @@ function getAdfitScriptEl(): HTMLScriptElement | null {
   return document.querySelector<HTMLScriptElement>(`script[${SCRIPT_MARKER}]`);
 }
 
-function isScriptImmediatelyAfterIns(script: HTMLScriptElement, ins: HTMLElement): boolean {
-  let node: ChildNode | null = ins.nextSibling;
-  while (node && node.nodeType === Node.TEXT_NODE && !node.textContent?.trim()) {
-    node = node.nextSibling;
-  }
-  return node === script;
-}
-
 /**
- * ins가 DOM에 있을 때만 마지막 ins 바로 뒤에 ba.min.js 주입·재배치.
- * 탭 전환으로 ins가 remount되면 script를 새 ins 뒤로 옮김.
+ * ins가 DOM에 있을 때 마지막 ins 바로 뒤에 ba.min.js 1회 주입.
+ * 이미 주입됐으면 재배치하지 않음 — SPA 탭 전환마다 script 이동 시 SDK 상태가 깨짐.
  */
 export function ensureAdfitScriptAfterSlots(): boolean {
   if (typeof document === 'undefined') return false;
@@ -161,12 +143,6 @@ export function ensureAdfitScriptAfterSlots(): boolean {
   const existing = getAdfitScriptEl();
 
   if (existing) {
-    if (!isScriptImmediatelyAfterIns(existing, lastIns)) {
-      lastIns.after(existing);
-    }
-    if (isAdfitPresent()) {
-      whenAdfitReady(() => renderAllAdfitUnitsInDom());
-    }
     return true;
   }
 
@@ -178,8 +154,27 @@ export function ensureAdfitScriptAfterSlots(): boolean {
   script.setAttribute(SCRIPT_MARKER, '1');
   script.onload = () => {
     onAdfitScriptLoad();
-    whenAdfitReady(() => renderAllAdfitUnitsInDom());
+    whenAdfitReady(() => scanAllAdfitSlots());
   };
   lastIns.after(script);
   return true;
+}
+
+/**
+ * 홈 복도 탭 전환 후 DOM 갱신 뒤 1회 스캔 (연속 호출은 coalesce).
+ * destroy 없이 render()만 — SDK가 현재 ins에 재바인딩.
+ */
+export function scheduleAdfitRescanAfterNav(): () => void {
+  rescanGeneration += 1;
+  const generation = rescanGeneration;
+  const timers = NAV_RESCAN_DELAYS_MS.map((delay) =>
+    setTimeout(() => {
+      if (generation !== rescanGeneration) return;
+      ensureAdfitScriptAfterSlots();
+      whenAdfitReady(() => scanAllAdfitSlots());
+    }, delay)
+  );
+  return () => {
+    for (const timer of timers) clearTimeout(timer);
+  };
 }

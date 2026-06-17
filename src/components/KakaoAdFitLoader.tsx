@@ -5,23 +5,10 @@ import { usePathname, useSearchParams } from 'next/navigation';
 import { isCapacitorNative } from '@/lib/capacitor-oauth';
 import {
   ensureAdfitScriptAfterSlots,
-  renderAllAdfitUnitsInDom,
+  scheduleAdfitRescanAfterNav,
+  scanAllAdfitSlots,
   whenAdfitReady,
 } from '@/lib/kakao-adfit-runtime';
-
-const RESCAN_DELAYS_MS = [0, 150, 400, 800, 1500, 2500];
-
-function scheduleAdfitRescan(): () => void {
-  const timers = RESCAN_DELAYS_MS.map((delay) =>
-    setTimeout(() => {
-      ensureAdfitScriptAfterSlots();
-      whenAdfitReady(() => renderAllAdfitUnitsInDom());
-    }, delay)
-  );
-  return () => {
-    for (const timer of timers) clearTimeout(timer);
-  };
-}
 
 /** ins.kakao_ad_area가 DOM에 붙은 뒤 마지막 ins 바로 다음에 ba.min.js 1회 주입 */
 function KakaoAdFitLoaderInner() {
@@ -32,28 +19,9 @@ function KakaoAdFitLoaderInner() {
 
   useEffect(() => {
     if (isCapacitorNative()) return;
-
-    const cleanupRescan = scheduleAdfitRescan();
-
-    const observer = new MutationObserver(() => {
-      ensureAdfitScriptAfterSlots();
-      if (document.querySelector('script[data-aisle-kakao-adfit]')) {
-        whenAdfitReady(() => renderAllAdfitUnitsInDom());
-      }
-    });
-    observer.observe(document.body, { childList: true, subtree: true });
-
-    return () => {
-      cleanupRescan();
-      observer.disconnect();
-    };
+    ensureAdfitScriptAfterSlots();
+    whenAdfitReady(() => scanAllAdfitSlots());
   }, []);
-
-  useEffect(() => {
-    if (isCapacitorNative()) return;
-    if (pathname !== '/') return;
-    return scheduleAdfitRescan();
-  }, [pathname]);
 
   useEffect(() => {
     if (isCapacitorNative()) return;
@@ -64,7 +32,7 @@ function KakaoAdFitLoaderInner() {
     }
     if (prevCategoryRef.current === categoryKey) return;
     prevCategoryRef.current = categoryKey;
-    return scheduleAdfitRescan();
+    return scheduleAdfitRescanAfterNav();
   }, [pathname, categoryKey]);
 
   return null;
