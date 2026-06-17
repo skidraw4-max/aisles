@@ -4,7 +4,7 @@ import { SpeedInsights } from '@vercel/speed-insights/next';
 import { Syne, DM_Sans, Roboto_Mono } from 'next/font/google';
 import { AdFitProvider } from '@/components/AdFitProvider';
 import { AdMobCapacitorInit } from '@/components/AdMobCapacitorInit';
-import { KakaoAdFitScript } from '@/components/KakaoAdFitScript';
+import { KAKAO_ADFIT_SCRIPT_SRC } from '@/lib/kakao-adfit-runtime';
 import { CapacitorSafeArea } from '@/components/CapacitorSafeArea';
 import { HomeSupabaseRedirectHandler } from '@/components/HomeSupabaseRedirectHandler';
 import { getCanonicalSiteUrl } from '@/lib/canonical-site-url';
@@ -184,7 +184,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           />
           <HomeSupabaseRedirectHandler />
           {children}
-          <KakaoAdFitScript />
+          {/* Kakao AdFit 공식 순서: 모든 ins.kakao_ad_area 뒤, body 하단에서 ba.min.js 1회 로드 */}
+          <script async src={KAKAO_ADFIT_SCRIPT_SRC} charSet="utf-8" />
           <SpeedInsights />
         </AdFitProvider>
       </body>

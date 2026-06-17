@@ -1,15 +1,10 @@
 'use client';
 
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { isCapacitorNative } from '@/lib/capacitor-oauth';
 import { getKakaoAdfitMainBannerUnitId, getKakaoAdfitUnitId } from '@/lib/kakao-adfit';
-import {
-  bootstrapAdfitOnClient,
-  destroyAdUnit,
-  refreshAdUnitWithBackoff,
-  whenAdfitReady,
-} from '@/lib/kakao-adfit-runtime';
+import { requestAdfitRescan } from '@/lib/kakao-adfit-runtime';
 import styles from './AdBanner.module.css';
 
 export type AdBannerVariant = 'kakao-infeed' | 'kakao-leaderboard' | 'adsense';
@@ -50,8 +45,8 @@ function resolveKakaoSize(
 }
 
 /**
- * 웹 전용 배너 — Kakao AdFit(인피드·리더보드) 또는 추후 AdSense 교체용.
- * ba.min.js는 AdFitProvider(root layout)에서 1회 로드. Capacitor 네이티브는 NativeAdSlot.
+ * 웹 전용 배너 — Kakao AdFit(인피드·리더보드).
+ * ba.min.js는 root layout body 하단에서 정적 로드. Capacitor 네이티브는 NativeAdSlot.
  */
 export function AdBanner({
   variant = 'kakao-infeed',
@@ -62,7 +57,6 @@ export function AdBanner({
 }: Props) {
   const pathname = usePathname();
   const slotRemountKey = remountKey ?? pathname;
-  const insRef = useRef<HTMLModElement>(null);
   const scalerRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
   const isNative = isCapacitorNative();
@@ -75,54 +69,10 @@ export function AdBanner({
   const kakaoWidth = resolvedKakao?.w ?? 0;
   const kakaoHeight = resolvedKakao?.h ?? 0;
 
-  useLayoutEffect(() => {
-    if (!shouldActivate) return;
-    bootstrapAdfitOnClient();
-  }, [shouldActivate]);
-
-  useLayoutEffect(() => {
-    if (!shouldActivate) return;
-    const ins = insRef.current;
-    if (!ins) return;
-
-    let stopRefresh: (() => void) | undefined;
-
-    const activate = () => {
-      stopRefresh?.();
-      stopRefresh = refreshAdUnitWithBackoff(kakaoUnit);
-    };
-
-    whenAdfitReady(activate);
-
-    return () => {
-      stopRefresh?.();
-      destroyAdUnit(kakaoUnit);
-    };
-  }, [shouldActivate, kakaoUnit, kakaoWidth, kakaoHeight, slotRemountKey]);
-
   useEffect(() => {
     if (!shouldActivate) return;
-    const ins = insRef.current;
-    if (!ins || typeof IntersectionObserver === 'undefined') return;
-
-    let stopRefresh: (() => void) | undefined;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (!entries.some((e) => e.isIntersecting)) return;
-        whenAdfitReady(() => {
-          stopRefresh?.();
-          stopRefresh = refreshAdUnitWithBackoff(kakaoUnit);
-        });
-      },
-      { root: null, threshold: 0 }
-    );
-
-    observer.observe(ins);
-    return () => {
-      observer.disconnect();
-      stopRefresh?.();
-    };
+    const timer = window.setTimeout(requestAdfitRescan, 0);
+    return () => window.clearTimeout(timer);
   }, [shouldActivate, kakaoUnit, slotRemountKey]);
 
   useEffect(() => {
@@ -151,10 +101,9 @@ export function AdBanner({
 
   const insSlot = (
     <ins
-      ref={insRef}
       key={`${slotRemountKey}:${kakaoUnit}`}
       className="kakao_ad_area"
-      style={{ display: 'none', width: '100%' }}
+      style={{ display: 'none' }}
       data-ad-unit={kakaoUnit}
       data-ad-width={String(kakaoWidth)}
       data-ad-height={String(kakaoHeight)}
