@@ -1,29 +1,21 @@
-/** Kakao AdFit ba.min.js — layout body 하단에서 정적 1회 로드 */
+/** Kakao AdFit ba.min.js — KakaoAdFitScript(body 하단)에서 1회 로드 */
 
 export const KAKAO_ADFIT_SCRIPT_SRC = 'https://t1.kakaocdn.net/kas/static/ba.min.js';
 
 const ADFIT_POLL_INTERVAL_MS = 50;
 const ADFIT_POLL_MAX_ATTEMPTS = 120;
-const RENDER_MAX_ATTEMPTS = 5;
-const RENDER_BASE_DELAY_MS = 400;
+const RENDER_RETRY_DELAYS_MS = [0, 200, 500, 1000];
 
 export type AdfitApi = {
   destroy?: (unit: string) => void;
   render?: (unit?: string) => void;
-  /** 구 SDK·문서 예시 — 프로덕션 ba.min.js에는 없을 수 있음 */
-  display?: (unit?: string) => void;
-  refresh?: (unit?: string) => void;
 };
 
 type AdfitWindow = Window & { adfit?: AdfitApi };
 
-function getAdfitWindow(): AdfitWindow {
-  return window as AdfitWindow;
-}
-
 function getAdfit(): AdfitApi | undefined {
   if (typeof window === 'undefined') return undefined;
-  return getAdfitWindow().adfit;
+  return (window as AdfitWindow).adfit;
 }
 
 function safeAdfitCall(fn: () => void): void {
@@ -49,7 +41,6 @@ function resolveReady() {
   if (!isAdfitPresent()) return;
   if (readyResolved) return;
   readyResolved = true;
-  scanAllAdfitSlots();
   for (const listener of readyListeners) listener();
   readyListeners.clear();
 }
@@ -61,13 +52,12 @@ function stopPoll() {
   }
 }
 
-/** 클라이언트 hydration 직후 — 이미 로드된 ba.min.js ready 폴링 시작 */
-export function bootstrapAdfitOnClient() {
-  if (typeof window === 'undefined') return;
+/** Script onLoad 또는 이미 캐시된 ba.min.js */
+export function onAdfitScriptLoad() {
   startAdfitPoll();
 }
 
-/** window.adfit 폴링 — script 로드·캐시 모두 처리 */
+/** window.adfit 폴링 */
 export function startAdfitPoll() {
   if (isAdfitPresent()) {
     stopPoll();
@@ -121,122 +111,63 @@ export function getAdfitReadyPromise(): Promise<void> {
   return readyPromise;
 }
 
-/**
- * SPA 탭 전환 등으로 슬롯이 DOM에서 제거될 때 해당 단위 인스턴스 정리.
- */
-export function destroyAdUnit(unit: string): void {
+/** 단일 광고 단위 render — destroy 호출 금지 */
+export function renderAdUnit(unit: string): void {
   const unitId = unit.trim();
   if (!unitId) return;
   const adfit = getAdfit();
-  if (!adfit?.destroy) return;
-  safeAdfitCall(() => adfit.destroy!(unitId));
+  if (!adfit?.render) return;
+  safeAdfitCall(() => adfit.render!(unitId));
 }
 
-function invokeAdfitForUnit(adfit: AdfitApi, unit: string): boolean {
-  if (adfit.render) {
-    safeAdfitCall(() => adfit.render!(unit));
-    return true;
-  }
-  if (adfit.display) {
-    safeAdfitCall(() => adfit.display!(unit));
-    return true;
-  }
-  if (adfit.refresh) {
-    safeAdfitCall(() => adfit.refresh!(unit));
-    return true;
-  }
-  return false;
-}
-
-/** DOM 내 모든 ins.kakao_ad_area — unit별 render */
-export function scanAllAdfitSlots() {
+/** DOM에 있는 모든 ins.kakao_ad_area 단위별 render */
+export function renderAllAdfitUnitsInDom(): void {
   if (typeof document === 'undefined') return;
-  const adfit = getAdfit();
-  if (!adfit) return;
-
-  if (adfit.render) {
-    safeAdfitCall(() => adfit.render!());
-    return;
-  }
-
+  const units = new Set<string>();
   for (const ins of document.querySelectorAll<HTMLElement>('ins.kakao_ad_area')) {
     const unit = ins.getAttribute('data-ad-unit')?.trim();
-    if (unit) invokeAdfitForUnit(adfit, unit);
+    if (unit) units.add(unit);
   }
-}
-
-export function renderAdUnit(unit?: string): void {
-  const adfit = getAdfit();
-  if (!adfit) return;
-  const unitId = unit?.trim();
-  if (unitId) {
-    invokeAdfitForUnit(adfit, unitId);
-    return;
+  for (const unit of units) {
+    renderAdUnit(unit);
   }
-  scanAllAdfitSlots();
-}
-
-/** @deprecated renderAdUnit 사용 */
-export function refreshAdUnit(unit?: string): void {
-  renderAdUnit(unit);
-}
-
-/** @deprecated renderAdUnit 사용 */
-export function displayAdUnit(unit?: string): void {
-  renderAdUnit(unit);
 }
 
 /**
- * ins 마운트 후 unit render — 3~5회 백오프(~2.4s).
+ * ins 마운트·remountKey 변경 시 unit render — 몇 차례 재시도.
  * cleanup으로 unmount 시 재시도 중단.
  */
-export function renderAdUnitWithBackoff(unit: string): () => void {
+export function renderAdUnitWithRetry(unit: string): () => void {
+  const timers: ReturnType<typeof setTimeout>[] = [];
   let cancelled = false;
-  let attempt = 0;
 
-  const tick = () => {
-    if (cancelled) return;
-    const adfit = getAdfit();
-    if (adfit && invokeAdfitForUnit(adfit, unit)) {
-      attempt += 1;
-      if (attempt < RENDER_MAX_ATTEMPTS) {
-        setTimeout(tick, RENDER_BASE_DELAY_MS * attempt);
-      }
-      return;
-    }
-    attempt += 1;
-    if (attempt <= RENDER_MAX_ATTEMPTS) {
-      setTimeout(tick, RENDER_BASE_DELAY_MS * attempt);
-    }
-  };
+  for (const delay of RENDER_RETRY_DELAYS_MS) {
+    timers.push(
+      setTimeout(() => {
+        if (cancelled) return;
+        whenAdfitReady(() => {
+          if (cancelled) return;
+          renderAdUnit(unit);
+        });
+      }, delay)
+    );
+  }
 
-  requestAnimationFrame(tick);
   return () => {
     cancelled = true;
+    for (const t of timers) clearTimeout(t);
   };
 }
 
-/** @deprecated renderAdUnitWithBackoff 사용 */
-export function refreshAdUnitWithBackoff(unit: string): () => void {
-  return renderAdUnitWithBackoff(unit);
-}
+const NAV_RESCAN_DELAYS_MS = [0, 150, 400, 800];
 
-export function requestAdfitRescan(unit?: string): void {
-  renderAdUnit(unit);
-}
-
-const NAV_RESCAN_DELAYS_MS = [0, 100, 400, 800, 1600];
-
-/**
- * 홈 복도 탭 전환 후 DOM이 갱신된 뒤 전체 슬롯 재스캔.
- * destroy 없이 render()만 반복 호출 — SDK가 새 ins에 다시 바인딩한다.
- */
+/** 홈 복도 탭 전환 후 DOM 갱신 뒤 보이는 슬롯만 unit별 render */
 export function scheduleAdfitRescanAfterNav(): () => void {
   const timers: ReturnType<typeof setTimeout>[] = [];
   for (const delay of NAV_RESCAN_DELAYS_MS) {
     timers.push(
       setTimeout(() => {
-        whenAdfitReady(() => scanAllAdfitSlots());
+        whenAdfitReady(() => renderAllAdfitUnitsInDom());
       }, delay)
     );
   }

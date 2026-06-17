@@ -1,14 +1,10 @@
 'use client';
 
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { isCapacitorNative } from '@/lib/capacitor-oauth';
 import { getKakaoAdfitMainBannerUnitId, getKakaoAdfitUnitId } from '@/lib/kakao-adfit';
-import {
-  bootstrapAdfitOnClient,
-  renderAdUnitWithBackoff,
-  whenAdfitReady,
-} from '@/lib/kakao-adfit-runtime';
+import { renderAdUnitWithRetry } from '@/lib/kakao-adfit-runtime';
 import styles from './AdBanner.module.css';
 
 export type AdBannerVariant = 'kakao-infeed' | 'kakao-leaderboard' | 'adsense';
@@ -50,7 +46,7 @@ function resolveKakaoSize(
 
 /**
  * 웹 전용 배너 — Kakao AdFit(인피드·리더보드).
- * ba.min.js는 root layout body 하단에서 정적 로드. Capacitor 네이티브는 NativeAdSlot.
+ * ba.min.js는 KakaoAdFitScript로 body 하단 로드. Capacitor 네이티브는 NativeAdSlot.
  */
 export function AdBanner({
   variant = 'kakao-infeed',
@@ -61,7 +57,6 @@ export function AdBanner({
 }: Props) {
   const pathname = usePathname();
   const slotRemountKey = remountKey ?? pathname;
-  const insRef = useRef<HTMLModElement>(null);
   const scalerRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
   const isNative = isCapacitorNative();
@@ -74,53 +69,9 @@ export function AdBanner({
   const kakaoWidth = resolvedKakao?.w ?? 0;
   const kakaoHeight = resolvedKakao?.h ?? 0;
 
-  useLayoutEffect(() => {
-    if (!shouldActivate) return;
-    bootstrapAdfitOnClient();
-  }, [shouldActivate]);
-
-  useLayoutEffect(() => {
-    if (!shouldActivate || !kakaoUnit) return;
-    const ins = insRef.current;
-    if (!ins) return;
-
-    let stopRender: (() => void) | undefined;
-
-    const activate = () => {
-      stopRender?.();
-      stopRender = renderAdUnitWithBackoff(kakaoUnit);
-    };
-
-    whenAdfitReady(activate);
-
-    return () => {
-      stopRender?.();
-    };
-  }, [shouldActivate, kakaoUnit, kakaoWidth, kakaoHeight, slotRemountKey]);
-
   useEffect(() => {
     if (!shouldActivate || !kakaoUnit) return;
-    const ins = insRef.current;
-    if (!ins || typeof IntersectionObserver === 'undefined') return;
-
-    let stopRender: (() => void) | undefined;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (!entries.some((e) => e.isIntersecting)) return;
-        whenAdfitReady(() => {
-          stopRender?.();
-          stopRender = renderAdUnitWithBackoff(kakaoUnit);
-        });
-      },
-      { root: null, threshold: 0 }
-    );
-
-    observer.observe(ins);
-    return () => {
-      observer.disconnect();
-      stopRender?.();
-    };
+    return renderAdUnitWithRetry(kakaoUnit);
   }, [shouldActivate, kakaoUnit, slotRemountKey]);
 
   useEffect(() => {
@@ -149,9 +100,9 @@ export function AdBanner({
 
   const insSlot = (
     <ins
-      ref={insRef}
+      key={`${slotRemountKey}:${kakaoUnit}`}
       className="kakao_ad_area"
-      style={{ display: 'none', width: '100%' }}
+      style={{ display: 'none' }}
       data-ad-unit={kakaoUnit}
       data-ad-width={String(kakaoWidth)}
       data-ad-height={String(kakaoHeight)}
