@@ -43,6 +43,7 @@ function resolveReady() {
   readyResolved = true;
   for (const listener of readyListeners) listener();
   readyListeners.clear();
+  renderAllAdfitUnitsInDom();
 }
 
 function stopPoll() {

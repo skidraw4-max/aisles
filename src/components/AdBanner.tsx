@@ -102,7 +102,7 @@ export function AdBanner({
     <ins
       key={`${slotRemountKey}:${kakaoUnit}`}
       className="kakao_ad_area"
-      style={{ display: 'none' }}
+      style={{ display: 'none', width: '100%' }}
       data-ad-unit={kakaoUnit}
       data-ad-width={String(kakaoWidth)}
       data-ad-height={String(kakaoHeight)}
