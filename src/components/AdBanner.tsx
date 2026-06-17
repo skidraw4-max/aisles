@@ -7,6 +7,8 @@ import { getKakaoAdfitMainBannerUnitId, getKakaoAdfitUnitId } from '@/lib/kakao-
 import styles from './AdBanner.module.css';
 
 const KAKAO_SCRIPT_SRC = 'https://t1.kakaocdn.net/kas/static/ba.min.js';
+const ADFIT_POLL_INTERVAL_MS = 50;
+const ADFIT_POLL_MAX_ATTEMPTS = 40;
 
 export type AdBannerVariant = 'kakao-infeed' | 'kakao-leaderboard' | 'adsense';
 
@@ -19,10 +21,17 @@ type Props = {
   height?: number;
 };
 
+type AdfitWindow = Window & { adfit?: { refresh?: () => void } };
+
 let scriptReady = false;
 const scriptReadyListeners = new Set<() => void>();
 
+function getAdfitWindow(): AdfitWindow {
+  return window as AdfitWindow;
+}
+
 function notifyScriptReady() {
+  if (scriptReady) return;
   scriptReady = true;
   for (const listener of scriptReadyListeners) listener();
   scriptReadyListeners.clear();
@@ -31,6 +40,38 @@ function notifyScriptReady() {
 function whenScriptReady(listener: () => void) {
   if (scriptReady) listener();
   else scriptReadyListeners.add(listener);
+}
+
+/** ba.min.js onLoad 직후엔 window.adfit이 아직 없을 수 있어 폴링 후 ready 알림 */
+function waitForAdfitThenNotify() {
+  let attempts = 0;
+  const tick = () => {
+    if (getAdfitWindow().adfit) {
+      notifyScriptReady();
+      return;
+    }
+    if (attempts++ < ADFIT_POLL_MAX_ATTEMPTS) {
+      setTimeout(tick, ADFIT_POLL_INTERVAL_MS);
+      return;
+    }
+    notifyScriptReady();
+  };
+  tick();
+}
+
+function scheduleAdfitRefresh() {
+  let attempts = 0;
+  const tick = () => {
+    const refresh = getAdfitWindow().adfit?.refresh;
+    if (refresh) {
+      refresh();
+      return;
+    }
+    if (attempts++ < ADFIT_POLL_MAX_ATTEMPTS) {
+      setTimeout(tick, ADFIT_POLL_INTERVAL_MS);
+    }
+  };
+  requestAnimationFrame(tick);
 }
 
 function isKakaoVariant(variant: AdBannerVariant): variant is KakaoVariant {
@@ -69,8 +110,7 @@ function mountKakaoIns(container: HTMLElement, unit: string, width: number, heig
 
   requestAnimationFrame(() => {
     ins.style.display = 'block';
-    const w = window as Window & { adfit?: { refresh?: () => void } };
-    w.adfit?.refresh?.();
+    scheduleAdfitRefresh();
   });
 }
 
@@ -86,10 +126,10 @@ export function AdBanner({
 }: Props) {
   const slotRef = useRef<HTMLDivElement>(null);
   const scalerRef = useRef<HTMLDivElement>(null);
-  const [loadScript, setLoadScript] = useState(false);
   const [scale, setScale] = useState(1);
   const isNative = isCapacitorNative();
   const isLeaderboard = variant === 'kakao-leaderboard';
+  const shouldLoadScript = !isNative && isKakaoVariant(variant);
   const resolvedKakao = isKakaoVariant(variant)
     ? resolveKakaoSize(variant, adUnit, width, height)
     : null;
@@ -98,12 +138,23 @@ export function AdBanner({
   const kakaoHeight = resolvedKakao?.h ?? 0;
 
   useEffect(() => {
-    if (isNative || !isKakaoVariant(variant)) return;
-    setLoadScript(true);
-  }, [isNative, variant]);
+    if (!shouldLoadScript || scriptReady) return;
+
+    if (getAdfitWindow().adfit) {
+      notifyScriptReady();
+      return;
+    }
+
+    const existing = document.querySelector(`script[src="${KAKAO_SCRIPT_SRC}"]`);
+    if (!existing) return;
+
+    const onExistingLoad = () => waitForAdfitThenNotify();
+    existing.addEventListener('load', onExistingLoad);
+    return () => existing.removeEventListener('load', onExistingLoad);
+  }, [shouldLoadScript]);
 
   useEffect(() => {
-    if (isNative || !isKakaoVariant(variant)) return;
+    if (!shouldLoadScript) return;
     const container = slotRef.current;
     if (!container) return;
 
@@ -115,7 +166,7 @@ export function AdBanner({
     return () => {
       container.innerHTML = '';
     };
-  }, [isNative, variant, kakaoUnit, kakaoWidth, kakaoHeight]);
+  }, [shouldLoadScript, kakaoUnit, kakaoWidth, kakaoHeight]);
 
   useEffect(() => {
     if (isNative || !isLeaderboard) return;
@@ -145,8 +196,12 @@ export function AdBanner({
 
   return (
     <>
-      {loadScript ? (
-        <Script src={KAKAO_SCRIPT_SRC} strategy="afterInteractive" onLoad={notifyScriptReady} />
+      {shouldLoadScript ? (
+        <Script
+          src={KAKAO_SCRIPT_SRC}
+          strategy="afterInteractive"
+          onLoad={waitForAdfitThenNotify}
+        />
       ) : null}
       {isLeaderboard ? (
         <div className={styles.leaderboardWrap}>

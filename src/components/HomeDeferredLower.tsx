@@ -79,6 +79,9 @@ export function HomeDeferredLower({
         <div className={styles.feedAsideStack}>
           <TodaysBest />
           {recentAside}
+          <div className={styles.sidebarAdWrap}>
+            <AdBanner variant="kakao-infeed" />
+          </div>
         </div>
       </div>
       <div className={styles.feedLayoutMainFeed}>

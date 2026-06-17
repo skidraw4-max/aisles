@@ -18,12 +18,9 @@ import type { Category } from '@prisma/client';
 import { ALL_CARD_FEED_INITIAL_COUNT } from '@/lib/home-all-card-feed';
 import {
   interleaveFeedAdSlots,
-  interleaveWebKakaoInfeedAd,
   FEED_AD_INTERVAL,
   type FeedListItem,
 } from '@/lib/feed-ad-slots';
-import { isKakaoInfeedAdCategory } from '@/lib/kakao-adfit';
-import { AdBanner } from '@/components/AdBanner';
 import type { FeedPostJson } from '@/lib/home-feed';
 import { tryCreateBrowserClient } from '@/lib/supabase/client';
 import { isCapacitorNative } from '@/lib/capacitor-oauth';
@@ -480,12 +477,9 @@ export function HomeAllFeed({ category, excludeIds, initialPosts, initialHasMore
 
   const cardGridPosts = allCardFeed ? posts.slice(0, visibleCount) : posts;
   const includeFeedAds = isCapacitorNative();
-  const showWebKakaoInfeedAd = !isCapacitorNative() && isKakaoInfeedAdCategory(category);
   const cardGridWithAds =
     !boardList && !fortuneArchive
-      ? showWebKakaoInfeedAd
-        ? interleaveWebKakaoInfeedAd(cardGridPosts)
-        : interleaveFeedAdSlots(cardGridPosts, 'everyN', FEED_AD_INTERVAL, includeFeedAds)
+      ? interleaveFeedAdSlots(cardGridPosts, 'everyN', FEED_AD_INTERVAL, includeFeedAds)
       : null;
   const boardListWithAds =
     boardList && !fortuneArchive
@@ -542,10 +536,6 @@ export function HomeAllFeed({ category, excludeIds, initialPosts, initialHasMore
             item.type === 'post' ? (
               <li key={item.post.id}>
                 <FeedPostCard post={item.post} imagePriority={i < 4} />
-              </li>
-            ) : item.provider === 'kakao' ? (
-              <li key="feed-kakao-ad" className={styles.feedAdRow}>
-                <AdBanner variant="kakao-infeed" />
               </li>
             ) : (
               <li key={`feed-ad-${item.slotIndex}`} className={styles.feedAdRow}>
