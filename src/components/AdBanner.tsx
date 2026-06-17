@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { isCapacitorNative } from '@/lib/capacitor-oauth';
 import { getKakaoAdfitMainBannerUnitId, getKakaoAdfitUnitId } from '@/lib/kakao-adfit';
-import { destroyAdUnit, whenAdfitReady } from '@/lib/kakao-adfit-runtime';
 import { KakaoAdSlot } from '@/components/KakaoAdSlot';
 import styles from './AdBanner.module.css';
 
@@ -83,14 +82,6 @@ export function AdBanner({
     observer.observe(scaler.parentElement ?? scaler);
     return () => observer.disconnect();
   }, [isNative, isLeaderboard, kakaoWidth]);
-
-  useEffect(() => {
-    if (isNative || !isLeaderboard || !kakaoUnit) return;
-    const unit = kakaoUnit;
-    return () => {
-      whenAdfitReady(() => destroyAdUnit(unit));
-    };
-  }, [isNative, isLeaderboard, kakaoUnit]);
 
   if (isNative) return null;
 

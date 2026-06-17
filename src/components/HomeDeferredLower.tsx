@@ -87,11 +87,6 @@ export function HomeDeferredLower({
         {mainFeedPrefix}
         {fortuneCard}
         {!filterCategory ? (
-          <div className={styles.mainStripAdWrap}>
-            <AdBanner variant="kakao-leaderboard" />
-          </div>
-        ) : null}
-        {!filterCategory ? (
           <div className={styles.launchBlockWrap}>
             <h2 className={styles.launchSectionHeading}>{launchHeading}</h2>
             {launchSlides.length > 0 ? <LaunchFeedSlider slides={launchSlides} /> : null}

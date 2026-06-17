@@ -119,15 +119,6 @@ export function scanAllAdfitSlots(): void {
   safeAdfitCall(() => adfit.render!());
 }
 
-/** ins가 DOM에서 제거될 때 해당 unit만 정리 — 동일 unit ID 재마운트(ALL↔복도)에 필요 */
-export function destroyAdUnit(unit: string): void {
-  const unitId = unit.trim();
-  if (!unitId) return;
-  const adfit = getAdfit();
-  if (!adfit?.destroy) return;
-  safeAdfitCall(() => adfit.destroy!(unitId));
-}
-
 /** @deprecated scanAllAdfitSlots 사용 */
 export function renderAllAdfitUnitsInDom(): void {
   scanAllAdfitSlots();
