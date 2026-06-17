@@ -21,7 +21,7 @@ export function useAdFitReady(): AdFitContextValue {
 }
 
 /**
- * 웹 전용 AdFit ready 컨텍스트 — ba.min.js는 root layout(beforeInteractive)에서 1회 로드.
+ * 웹 전용 AdFit ready 컨텍스트 — ba.min.js는 layout body 하단(KakaoAdFitScript)에서 1회 로드.
  * Capacitor 네이티브는 스크립트·컨텍스트 모두 생략(AdMob 사용).
  */
 export function AdFitProvider({ children }: { children: ReactNode }) {

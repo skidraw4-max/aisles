@@ -8,6 +8,7 @@ const REFRESH_MAX_ATTEMPTS = 5;
 const REFRESH_BASE_DELAY_MS = 400;
 
 export type AdfitApi = {
+  display?: (unit: string) => void;
   refresh?: (unit?: string) => void;
   destroy?: (unit: string) => void;
   render?: (unit?: string) => void;
@@ -34,6 +35,7 @@ function resolveReady() {
   if (!isAdfitPresent()) return;
   if (readyResolved) return;
   readyResolved = true;
+  scanAllAdfitSlots();
   for (const listener of readyListeners) listener();
   readyListeners.clear();
 }
@@ -71,12 +73,12 @@ export function startAdfitPoll() {
   tick();
 }
 
-/** layout beforeInteractive Script·이미 캐시된 ba.min.js 모두 처리 */
+/** body 하단 Script onLoad·이미 캐시된 ba.min.js 모두 처리 */
 export function onAdfitScriptLoad() {
   startAdfitPoll();
 }
 
-/** 클라이언트 hydration 직후 — head에 선로드된 ba.min.js ready 폴링 시작 */
+/** 클라이언트 hydration 직후 — 이미 로드된 ba.min.js ready 폴링 시작 */
 export function bootstrapAdfitOnClient() {
   if (typeof window === 'undefined') return;
   startAdfitPoll();
@@ -120,7 +122,30 @@ export function destroyAdUnit(unit: string) {
   }
 }
 
+/** script onLoad 이후 DOM 내 모든 ins.kakao_ad_area 스캔 */
+export function scanAllAdfitSlots() {
+  if (typeof document === 'undefined') return;
+  const adfit = getAdfitWindow().adfit;
+  if (!adfit) return;
+  try {
+    if (adfit.refresh) {
+      adfit.refresh();
+      return;
+    }
+  } catch {
+    /* unit 없이 refresh 미지원 */
+  }
+  for (const ins of document.querySelectorAll<HTMLElement>('ins.kakao_ad_area')) {
+    const unit = ins.getAttribute('data-ad-unit')?.trim();
+    if (unit) invokeAdfitForUnit(adfit, unit);
+  }
+}
+
 function invokeAdfitForUnit(adfit: AdfitApi, unit: string) {
+  if (adfit.display) {
+    adfit.display(unit);
+    return true;
+  }
   if (adfit.render) {
     adfit.render(unit);
     return true;
