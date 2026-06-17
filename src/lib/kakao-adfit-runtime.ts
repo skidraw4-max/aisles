@@ -5,7 +5,7 @@ export const KAKAO_ADFIT_SCRIPT_SRC = 'https://t1.kakaocdn.net/kas/static/ba.min
 const SCRIPT_MARKER = 'data-aisle-kakao-adfit';
 const ADFIT_POLL_INTERVAL_MS = 50;
 const ADFIT_POLL_MAX_ATTEMPTS = 120;
-const NAV_RESCAN_DELAYS_MS = [0, 200, 500, 1000, 2000];
+const NAV_RESCAN_DELAYS_MS = [0, 200, 500, 1000, 2000, 3500, 5000];
 
 export type AdfitApi = {
   destroy?: (unit: string) => void;
