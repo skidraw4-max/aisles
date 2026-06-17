@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { isCapacitorNative } from '@/lib/capacitor-oauth';
 import { getKakaoAdfitMainBannerUnitId, getKakaoAdfitUnitId } from '@/lib/kakao-adfit';
-import { requestAdfitRescan } from '@/lib/kakao-adfit-runtime';
+import { destroyAdUnit, displayAdUnit, refreshAdUnit } from '@/lib/kakao-adfit-runtime';
 import styles from './AdBanner.module.css';
 
 export type AdBannerVariant = 'kakao-infeed' | 'kakao-leaderboard' | 'adsense';
@@ -69,10 +69,26 @@ export function AdBanner({
   const kakaoWidth = resolvedKakao?.w ?? 0;
   const kakaoHeight = resolvedKakao?.h ?? 0;
 
-  useEffect(() => {
-    if (!shouldActivate) return;
-    const timer = window.setTimeout(requestAdfitRescan, 0);
-    return () => window.clearTimeout(timer);
+  useLayoutEffect(() => {
+    if (!shouldActivate || !kakaoUnit) return;
+
+    let cancelled = false;
+    let raf2 = 0;
+
+    const raf1 = requestAnimationFrame(() => {
+      raf2 = requestAnimationFrame(() => {
+        if (cancelled) return;
+        refreshAdUnit(kakaoUnit);
+        displayAdUnit(kakaoUnit);
+      });
+    });
+
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(raf1);
+      cancelAnimationFrame(raf2);
+      destroyAdUnit(kakaoUnit);
+    };
   }, [shouldActivate, kakaoUnit, slotRemountKey]);
 
   useEffect(() => {
