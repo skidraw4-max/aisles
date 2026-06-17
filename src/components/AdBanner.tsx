@@ -8,7 +8,9 @@ import styles from './AdBanner.module.css';
 
 const KAKAO_SCRIPT_SRC = 'https://t1.kakaocdn.net/kas/static/ba.min.js';
 const ADFIT_POLL_INTERVAL_MS = 50;
-const ADFIT_POLL_MAX_ATTEMPTS = 40;
+/** 콜드 로드(캐시 없음)에서 ba.min.js + adfit 초기화까지 여유 */
+const ADFIT_POLL_MAX_ATTEMPTS = 240;
+const ADFIT_REFRESH_MAX_ATTEMPTS = 120;
 
 export type AdBannerVariant = 'kakao-infeed' | 'kakao-leaderboard' | 'adsense';
 
@@ -27,6 +29,8 @@ type AdfitWindow = Window & { adfit?: { refresh?: () => void } };
 
 let scriptReady = false;
 const scriptReadyListeners = new Set<() => void>();
+let adfitPollTimer: ReturnType<typeof setTimeout> | null = null;
+let adfitPollAttempts = 0;
 
 function getAdfitWindow(): AdfitWindow {
   return window as AdfitWindow;
@@ -44,6 +48,7 @@ function invalidateScriptReadyIfStale() {
 }
 
 function notifyScriptReady() {
+  if (!isAdfitPresent()) return;
   if (scriptReady) return;
   scriptReady = true;
   for (const listener of scriptReadyListeners) listener();
@@ -56,19 +61,36 @@ function whenScriptReady(listener: () => void) {
   else scriptReadyListeners.add(listener);
 }
 
-/** ba.min.js onLoad 직후엔 window.adfit이 아직 없을 수 있어 폴링 후 ready 알림 */
+function stopAdfitPoll() {
+  if (adfitPollTimer !== null) {
+    clearTimeout(adfitPollTimer);
+    adfitPollTimer = null;
+  }
+}
+
+/** 여러 AdBanner 인스턴스가 동시에 호출해도 폴링은 1개만 — adfit 확인 후에만 ready 알림 */
 function waitForAdfitThenNotify() {
-  let attempts = 0;
+  if (isAdfitPresent()) {
+    stopAdfitPoll();
+    adfitPollAttempts = 0;
+    notifyScriptReady();
+    return;
+  }
+  if (adfitPollTimer !== null) return;
+
   const tick = () => {
+    adfitPollTimer = null;
     if (isAdfitPresent()) {
+      adfitPollAttempts = 0;
       notifyScriptReady();
       return;
     }
-    if (attempts++ < ADFIT_POLL_MAX_ATTEMPTS) {
-      setTimeout(tick, ADFIT_POLL_INTERVAL_MS);
-      return;
-    }
-    notifyScriptReady();
+    adfitPollAttempts += 1;
+    const delay =
+      adfitPollAttempts <= ADFIT_POLL_MAX_ATTEMPTS
+        ? ADFIT_POLL_INTERVAL_MS
+        : Math.min(500, ADFIT_POLL_INTERVAL_MS * 2);
+    adfitPollTimer = setTimeout(tick, delay);
   };
   tick();
 }
@@ -81,8 +103,12 @@ function scheduleAdfitRefresh() {
       refresh();
       return;
     }
-    if (attempts++ < ADFIT_POLL_MAX_ATTEMPTS) {
-      setTimeout(tick, ADFIT_POLL_INTERVAL_MS);
+    if (attempts++ < ADFIT_REFRESH_MAX_ATTEMPTS) {
+      const delay =
+        attempts <= ADFIT_POLL_MAX_ATTEMPTS
+          ? ADFIT_POLL_INTERVAL_MS
+          : Math.min(500, ADFIT_POLL_INTERVAL_MS * 2);
+      setTimeout(tick, delay);
     }
   };
   requestAnimationFrame(tick);
@@ -90,14 +116,22 @@ function scheduleAdfitRefresh() {
 
 let scriptInjectRequested = false;
 
+function bindScriptLoadHandler(script: HTMLScriptElement) {
+  if (script.dataset.adfitLoadBound === '1') return;
+  script.dataset.adfitLoadBound = '1';
+  script.addEventListener('load', () => waitForAdfitThenNotify(), { once: true });
+  script.addEventListener('error', () => waitForAdfitThenNotify(), { once: true });
+}
+
 /** Next.js `<Script>`는 AdBanner 언마운트 시 태그가 사라져 adfit이 끊길 수 있어 DOM에 1회만 주입 */
 function ensureKakaoScriptLoaded() {
   if (isAdfitPresent()) {
     notifyScriptReady();
     return;
   }
-  const existing = document.querySelector(`script[src="${KAKAO_SCRIPT_SRC}"]`);
+  const existing = document.querySelector(`script[src="${KAKAO_SCRIPT_SRC}"]`) as HTMLScriptElement | null;
   if (existing) {
+    bindScriptLoadHandler(existing);
     waitForAdfitThenNotify();
     return;
   }
@@ -109,7 +143,7 @@ function ensureKakaoScriptLoaded() {
   const script = document.createElement('script');
   script.src = KAKAO_SCRIPT_SRC;
   script.async = true;
-  script.onload = () => waitForAdfitThenNotify();
+  bindScriptLoadHandler(script);
   document.head.appendChild(script);
 }
 
@@ -141,16 +175,11 @@ function mountKakaoIns(container: HTMLElement, unit: string, width: number, heig
   container.innerHTML = '';
   const ins = document.createElement('ins');
   ins.className = 'kakao_ad_area';
-  ins.style.display = 'none';
   ins.setAttribute('data-ad-unit', unit);
   ins.setAttribute('data-ad-width', String(width));
   ins.setAttribute('data-ad-height', String(height));
   container.appendChild(ins);
-
-  requestAnimationFrame(() => {
-    ins.style.display = 'block';
-    scheduleAdfitRefresh();
-  });
+  scheduleAdfitRefresh();
 }
 
 /**
