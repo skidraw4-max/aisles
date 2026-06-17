@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { fetchLatestForCategory } from '@/lib/home-composite';
 import { HOME_FEED_INCLUDE, type HomeFeedPost } from '@/lib/home-feed';
 import { MIN_POST_DESCRIPTION_LENGTH } from '@/lib/post-description-policy';
 import type { LaunchBannerAdminRow } from '@/lib/ugc-hub.shared';
@@ -23,6 +24,19 @@ export async function fetchLaunchBannerPosts(take = 3): Promise<HomeFeedPost[]> 
     console.error('[fetchLaunchBannerPosts]', err);
     return [];
   }
+}
+
+/**
+ * 메인 ALL 탭 LAUNCH 슬라이더 — 관리자 featured 우선, 없으면 최신 LAUNCH 글(구 동작).
+ */
+export async function fetchHomeLaunchBannerPosts(take = 3): Promise<HomeFeedPost[]> {
+  const featured = await fetchLaunchBannerPosts(take);
+  if (featured.length >= take) return featured.slice(0, take);
+
+  const featuredIds = new Set(featured.map((p) => p.id));
+  const recent = await fetchLatestForCategory('LAUNCH', take);
+  const extras = recent.filter((p) => !featuredIds.has(p.id));
+  return [...featured, ...extras].slice(0, take);
 }
 
 /** BUILD 허브: 최근 7일 좋아요 상위 */
