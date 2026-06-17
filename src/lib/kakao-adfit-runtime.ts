@@ -1,10 +1,10 @@
-/** Kakao AdFit ba.min.js — KakaoAdFitScript(body 하단)에서 1회 로드 */
+/** Kakao AdFit ba.min.js — ins 뒤에 1회 주입 (KakaoAdFitLoader) */
 
 export const KAKAO_ADFIT_SCRIPT_SRC = 'https://t1.kakaocdn.net/kas/static/ba.min.js';
 
+const SCRIPT_MARKER = 'data-aisle-kakao-adfit';
 const ADFIT_POLL_INTERVAL_MS = 50;
 const ADFIT_POLL_MAX_ATTEMPTS = 120;
-const RENDER_RETRY_DELAYS_MS = [0, 200, 500, 1000, 2000, 4000];
 
 export type AdfitApi = {
   destroy?: (unit: string) => void;
@@ -53,12 +53,10 @@ function stopPoll() {
   }
 }
 
-/** Script onLoad 또는 이미 캐시된 ba.min.js */
 export function onAdfitScriptLoad() {
   startAdfitPoll();
 }
 
-/** window.adfit 폴링 */
 export function startAdfitPoll() {
   if (isAdfitPresent()) {
     stopPoll();
@@ -112,7 +110,6 @@ export function getAdfitReadyPromise(): Promise<void> {
   return readyPromise;
 }
 
-/** 단일 광고 단위 render — destroy 호출 금지 */
 export function renderAdUnit(unit: string): void {
   const unitId = unit.trim();
   if (!unitId) return;
@@ -121,7 +118,6 @@ export function renderAdUnit(unit: string): void {
   safeAdfitCall(() => adfit.render!(unitId));
 }
 
-/** DOM에 있는 모든 ins.kakao_ad_area 단위별 render */
 export function renderAllAdfitUnitsInDom(): void {
   if (typeof document === 'undefined') return;
   const units = new Set<string>();
@@ -134,45 +130,38 @@ export function renderAllAdfitUnitsInDom(): void {
   }
 }
 
-/**
- * ins 마운트·remountKey 변경 시 unit render — 몇 차례 재시도.
- * cleanup으로 unmount 시 재시도 중단.
- */
-export function renderAdUnitWithRetry(unit: string): () => void {
-  const timers: ReturnType<typeof setTimeout>[] = [];
-  let cancelled = false;
-
-  for (const delay of RENDER_RETRY_DELAYS_MS) {
-    timers.push(
-      setTimeout(() => {
-        if (cancelled) return;
-        whenAdfitReady(() => {
-          if (cancelled) return;
-          renderAdUnit(unit);
-        });
-      }, delay)
-    );
-  }
-
-  return () => {
-    cancelled = true;
-    for (const t of timers) clearTimeout(t);
-  };
+function getAdfitScriptEl(): HTMLScriptElement | null {
+  if (typeof document === 'undefined') return null;
+  return document.querySelector<HTMLScriptElement>(`script[${SCRIPT_MARKER}]`);
 }
 
-const NAV_RESCAN_DELAYS_MS = [0, 150, 400, 800];
+/**
+ * 공식 설치 순서: ins가 DOM에 있을 때만, 마지막 ins 바로 뒤에 ba.min.js 1회 주입.
+ * body 맨 아래 선주입 시(HomeDeferredLower ssr:false) SDK가 슬롯을 등록하지 못함.
+ */
+export function ensureAdfitScriptAfterSlots(): boolean {
+  if (typeof document === 'undefined') return false;
 
-/** 홈 복도 탭 전환 후 DOM 갱신 뒤 보이는 슬롯만 unit별 render */
-export function scheduleAdfitRescanAfterNav(): () => void {
-  const timers: ReturnType<typeof setTimeout>[] = [];
-  for (const delay of NAV_RESCAN_DELAYS_MS) {
-    timers.push(
-      setTimeout(() => {
-        whenAdfitReady(() => renderAllAdfitUnitsInDom());
-      }, delay)
-    );
+  const insList = document.querySelectorAll<HTMLElement>('ins.kakao_ad_area');
+  if (insList.length === 0) return false;
+
+  const existing = getAdfitScriptEl();
+  if (existing) {
+    whenAdfitReady(() => renderAllAdfitUnitsInDom());
+    return true;
   }
-  return () => {
-    for (const t of timers) clearTimeout(t);
+
+  const lastIns = insList[insList.length - 1];
+  const script = document.createElement('script');
+  script.async = true;
+  script.type = 'text/javascript';
+  script.charset = 'utf-8';
+  script.src = KAKAO_ADFIT_SCRIPT_SRC;
+  script.setAttribute(SCRIPT_MARKER, '1');
+  script.onload = () => {
+    onAdfitScriptLoad();
+    whenAdfitReady(() => renderAllAdfitUnitsInDom());
   };
+  lastIns.after(script);
+  return true;
 }
