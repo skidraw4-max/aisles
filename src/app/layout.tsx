@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import Script from 'next/script';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import { Syne, DM_Sans, Roboto_Mono } from 'next/font/google';
+import { AdFitProvider } from '@/components/AdFitProvider';
 import { AdMobCapacitorInit } from '@/components/AdMobCapacitorInit';
 import { CapacitorSafeArea } from '@/components/CapacitorSafeArea';
 import { HomeSupabaseRedirectHandler } from '@/components/HomeSupabaseRedirectHandler';
@@ -152,36 +153,38 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="ko" className={`${display.variable} ${body.variable} ${mono.variable}`}>
       <body className={body.className}>
         <CapacitorSafeArea />
-        <AdMobCapacitorInit />
-        <script
-          type="application/ld+json"
-          // eslint-disable-next-line react/no-danger
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(siteJsonLd) }}
-        />
-        {GA_MEASUREMENT_ID ? (
-          <>
-            <Script
-              src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
-              strategy="afterInteractive"
-            />
-            <Script id="google-analytics-gtag" strategy="afterInteractive">
-              {`
+        <AdFitProvider>
+          <AdMobCapacitorInit />
+          <script
+            type="application/ld+json"
+            // eslint-disable-next-line react/no-danger
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(siteJsonLd) }}
+          />
+          {GA_MEASUREMENT_ID ? (
+            <>
+              <Script
+                src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
+                strategy="afterInteractive"
+              />
+              <Script id="google-analytics-gtag" strategy="afterInteractive">
+                {`
             window.dataLayer = window.dataLayer || [];
             function gtag(){dataLayer.push(arguments);}
             gtag('js', new Date());
             gtag('config', '${GA_MEASUREMENT_ID}');
           `}
-            </Script>
-          </>
-        ) : null}
-        <Script
-          src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT_ID}`}
-          strategy="lazyOnload"
-          crossOrigin="anonymous"
-        />
-        <HomeSupabaseRedirectHandler />
-        {children}
-        <SpeedInsights />
+              </Script>
+            </>
+          ) : null}
+          <Script
+            src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT_ID}`}
+            strategy="lazyOnload"
+            crossOrigin="anonymous"
+          />
+          <HomeSupabaseRedirectHandler />
+          {children}
+          <SpeedInsights />
+        </AdFitProvider>
       </body>
     </html>
   );
