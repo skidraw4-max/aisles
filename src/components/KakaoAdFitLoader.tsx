@@ -3,12 +3,28 @@
 import { Suspense, useEffect, useRef } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { isCapacitorNative } from '@/lib/capacitor-oauth';
-import { renderAllAdfitUnitsInDom, whenAdfitReady } from '@/lib/kakao-adfit-runtime';
+import {
+  ensureAdfitScriptAfterSlots,
+  renderAllAdfitUnitsInDom,
+  whenAdfitReady,
+} from '@/lib/kakao-adfit-runtime';
 
-const NAV_RESCAN_DELAYS_MS = [0, 150, 400, 800, 1500];
+const RESCAN_DELAYS_MS = [0, 150, 400, 800, 1500, 2500];
 
-/** 복도 탭 전환 등으로 ins가 갱신될 때 render만 재호출 (destroy 금지) */
-function KakaoAdFitTabRescan() {
+function scheduleAdfitRescan(): () => void {
+  const timers = RESCAN_DELAYS_MS.map((delay) =>
+    setTimeout(() => {
+      ensureAdfitScriptAfterSlots();
+      whenAdfitReady(() => renderAllAdfitUnitsInDom());
+    }, delay)
+  );
+  return () => {
+    for (const timer of timers) clearTimeout(timer);
+  };
+}
+
+/** ins.kakao_ad_area가 DOM에 붙은 뒤 마지막 ins 바로 다음에 ba.min.js 1회 주입 */
+function KakaoAdFitLoaderInner() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const categoryKey = searchParams.get('category')?.trim() || 'all';
@@ -16,16 +32,27 @@ function KakaoAdFitTabRescan() {
 
   useEffect(() => {
     if (isCapacitorNative()) return;
-    if (pathname !== '/') return;
 
-    const timers = NAV_RESCAN_DELAYS_MS.map((delay) =>
-      setTimeout(() => {
+    const cleanupRescan = scheduleAdfitRescan();
+
+    const observer = new MutationObserver(() => {
+      ensureAdfitScriptAfterSlots();
+      if (document.querySelector('script[data-aisle-kakao-adfit]')) {
         whenAdfitReady(() => renderAllAdfitUnitsInDom());
-      }, delay)
-    );
+      }
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+
     return () => {
-      for (const timer of timers) clearTimeout(timer);
+      cleanupRescan();
+      observer.disconnect();
     };
+  }, []);
+
+  useEffect(() => {
+    if (isCapacitorNative()) return;
+    if (pathname !== '/') return;
+    return scheduleAdfitRescan();
   }, [pathname]);
 
   useEffect(() => {
@@ -37,15 +64,7 @@ function KakaoAdFitTabRescan() {
     }
     if (prevCategoryRef.current === categoryKey) return;
     prevCategoryRef.current = categoryKey;
-
-    const timers = NAV_RESCAN_DELAYS_MS.map((delay) =>
-      setTimeout(() => {
-        whenAdfitReady(() => renderAllAdfitUnitsInDom());
-      }, delay)
-    );
-    return () => {
-      for (const timer of timers) clearTimeout(timer);
-    };
+    return scheduleAdfitRescan();
   }, [pathname, categoryKey]);
 
   return null;
@@ -54,7 +73,7 @@ function KakaoAdFitTabRescan() {
 export function KakaoAdFitLoader() {
   return (
     <Suspense fallback={null}>
-      <KakaoAdFitTabRescan />
+      <KakaoAdFitLoaderInner />
     </Suspense>
   );
 }
