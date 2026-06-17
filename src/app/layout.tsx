@@ -4,6 +4,7 @@ import { SpeedInsights } from '@vercel/speed-insights/next';
 import { Syne, DM_Sans, Roboto_Mono } from 'next/font/google';
 import { AdFitProvider } from '@/components/AdFitProvider';
 import { AdMobCapacitorInit } from '@/components/AdMobCapacitorInit';
+import { KAKAO_ADFIT_SCRIPT_SRC } from '@/lib/kakao-adfit-runtime';
 import { CapacitorSafeArea } from '@/components/CapacitorSafeArea';
 import { HomeSupabaseRedirectHandler } from '@/components/HomeSupabaseRedirectHandler';
 import { getCanonicalSiteUrl } from '@/lib/canonical-site-url';
@@ -151,6 +152,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
   return (
     <html lang="ko" className={`${display.variable} ${body.variable} ${mono.variable}`}>
+      <head>
+        {/* Kakao AdFit: ins가 hydration 전에 스캔되도록 root layout에서 1회 선로드 */}
+        <Script
+          id="kakao-adfit-ba"
+          src={KAKAO_ADFIT_SCRIPT_SRC}
+          strategy="beforeInteractive"
+        />
+      </head>
       <body className={body.className}>
         <CapacitorSafeArea />
         <AdFitProvider>

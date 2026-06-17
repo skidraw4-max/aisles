@@ -1,13 +1,12 @@
 'use client';
 
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import Script from 'next/script';
 import { isCapacitorNative } from '@/lib/capacitor-oauth';
 import {
-  KAKAO_ADFIT_SCRIPT_SRC,
   isAdfitPresent,
   onAdfitScriptLoad,
   startAdfitPoll,
+  whenAdfitReady,
 } from '@/lib/kakao-adfit-runtime';
 
 type AdFitContextValue = {
@@ -22,7 +21,7 @@ export function useAdFitReady(): AdFitContextValue {
 }
 
 /**
- * 웹 전용 Kakao AdFit ba.min.js — root layout에서 1회 로드.
+ * 웹 전용 AdFit ready 컨텍스트 — ba.min.js는 root layout(beforeInteractive)에서 1회 로드.
  * Capacitor 네이티브는 스크립트·컨텍스트 모두 생략(AdMob 사용).
  */
 export function AdFitProvider({ children }: { children: ReactNode }) {
@@ -32,22 +31,14 @@ export function AdFitProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (isCapacitorNative()) return;
     setIsWeb(true);
+    startAdfitPoll();
     if (isAdfitPresent()) {
       onAdfitScriptLoad();
       setScriptReady(true);
+      return;
     }
+    whenAdfitReady(() => setScriptReady(true));
   }, []);
-
-  useEffect(() => {
-    if (!isWeb || scriptReady) return;
-    const id = window.setInterval(() => {
-      if (isAdfitPresent()) {
-        setScriptReady(true);
-        window.clearInterval(id);
-      }
-    }, 100);
-    return () => window.clearInterval(id);
-  }, [isWeb, scriptReady]);
 
   const value = useMemo(() => ({ scriptReady }), [scriptReady]);
 
@@ -55,25 +46,5 @@ export function AdFitProvider({ children }: { children: ReactNode }) {
     return <>{children}</>;
   }
 
-  return (
-    <AdFitContext.Provider value={value}>
-      <Script
-        id="kakao-adfit-ba"
-        src={KAKAO_ADFIT_SCRIPT_SRC}
-        strategy="afterInteractive"
-        onLoad={() => {
-          onAdfitScriptLoad();
-          setScriptReady(true);
-        }}
-        onReady={() => {
-          onAdfitScriptLoad();
-          if (isAdfitPresent()) setScriptReady(true);
-        }}
-        onError={() => {
-          startAdfitPoll();
-        }}
-      />
-      {children}
-    </AdFitContext.Provider>
-  );
+  return <AdFitContext.Provider value={value}>{children}</AdFitContext.Provider>;
 }

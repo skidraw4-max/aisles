@@ -71,8 +71,14 @@ export function startAdfitPoll() {
   tick();
 }
 
-/** layout Script onLoad·이미 캐시된 ba.min.js 모두 처리 */
+/** layout beforeInteractive Script·이미 캐시된 ba.min.js 모두 처리 */
 export function onAdfitScriptLoad() {
+  startAdfitPoll();
+}
+
+/** 클라이언트 hydration 직후 — head에 선로드된 ba.min.js ready 폴링 시작 */
+export function bootstrapAdfitOnClient() {
+  if (typeof window === 'undefined') return;
   startAdfitPoll();
 }
 

@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { isCapacitorNative } from '@/lib/capacitor-oauth';
 import { getKakaoAdfitMainBannerUnitId, getKakaoAdfitUnitId } from '@/lib/kakao-adfit';
 import {
+  bootstrapAdfitOnClient,
   destroyAdUnit,
   refreshAdUnitWithBackoff,
   whenAdfitReady,
@@ -48,10 +49,6 @@ function resolveKakaoSize(
   };
 }
 
-function revealIns(ins: HTMLElement) {
-  ins.style.display = 'block';
-}
-
 /**
  * 웹 전용 배너 — Kakao AdFit(인피드·리더보드) 또는 추후 AdSense 교체용.
  * ba.min.js는 AdFitProvider(root layout)에서 1회 로드. Capacitor 네이티브는 NativeAdSlot.
@@ -80,13 +77,17 @@ export function AdBanner({
 
   useLayoutEffect(() => {
     if (!shouldActivate) return;
+    bootstrapAdfitOnClient();
+  }, [shouldActivate]);
+
+  useLayoutEffect(() => {
+    if (!shouldActivate) return;
     const ins = insRef.current;
     if (!ins) return;
 
     let stopRefresh: (() => void) | undefined;
 
     const activate = () => {
-      revealIns(ins);
       stopRefresh?.();
       stopRefresh = refreshAdUnitWithBackoff(kakaoUnit);
     };
@@ -96,9 +97,33 @@ export function AdBanner({
     return () => {
       stopRefresh?.();
       destroyAdUnit(kakaoUnit);
-      ins.style.display = 'none';
     };
   }, [shouldActivate, kakaoUnit, kakaoWidth, kakaoHeight, slotRemountKey]);
+
+  useEffect(() => {
+    if (!shouldActivate) return;
+    const ins = insRef.current;
+    if (!ins || typeof IntersectionObserver === 'undefined') return;
+
+    let stopRefresh: (() => void) | undefined;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (!entries.some((e) => e.isIntersecting)) return;
+        whenAdfitReady(() => {
+          stopRefresh?.();
+          stopRefresh = refreshAdUnitWithBackoff(kakaoUnit);
+        });
+      },
+      { root: null, threshold: 0 }
+    );
+
+    observer.observe(ins);
+    return () => {
+      observer.disconnect();
+      stopRefresh?.();
+    };
+  }, [shouldActivate, kakaoUnit, slotRemountKey]);
 
   useEffect(() => {
     if (isNative || !isLeaderboard) return;
@@ -129,7 +154,7 @@ export function AdBanner({
       ref={insRef}
       key={`${slotRemountKey}:${kakaoUnit}`}
       className="kakao_ad_area"
-      style={{ display: 'none' }}
+      style={{ display: 'none', width: '100%' }}
       data-ad-unit={kakaoUnit}
       data-ad-width={String(kakaoWidth)}
       data-ad-height={String(kakaoHeight)}
