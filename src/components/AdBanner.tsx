@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { isCapacitorNative } from '@/lib/capacitor-oauth';
 import { getKakaoAdfitMainBannerUnitId, getKakaoAdfitUnitId } from '@/lib/kakao-adfit';
@@ -25,7 +25,12 @@ type Props = {
   remountKey?: string;
 };
 
-type AdfitWindow = Window & { adfit?: { refresh?: () => void } };
+type AdfitApi = {
+  refresh?: (unit?: string) => void;
+  destroy?: (unit: string) => void;
+};
+
+type AdfitWindow = Window & { adfit?: AdfitApi };
 
 let scriptReady = false;
 const scriptReadyListeners = new Set<() => void>();
@@ -95,12 +100,16 @@ function waitForAdfitThenNotify() {
   tick();
 }
 
-function scheduleAdfitRefresh() {
+function scheduleAdfitRefresh(unit: string) {
   let attempts = 0;
   const tick = () => {
-    const refresh = getAdfitWindow().adfit?.refresh;
-    if (refresh) {
-      refresh();
+    const adfit = getAdfitWindow().adfit;
+    if (adfit?.refresh) {
+      try {
+        adfit.refresh(unit);
+      } catch {
+        adfit.refresh();
+      }
       return;
     }
     if (attempts++ < ADFIT_REFRESH_MAX_ATTEMPTS) {
@@ -123,7 +132,10 @@ function bindScriptLoadHandler(script: HTMLScriptElement) {
   script.addEventListener('error', () => waitForAdfitThenNotify(), { once: true });
 }
 
-/** Next.js `<Script>`는 AdBanner 언마운트 시 태그가 사라져 adfit이 끊길 수 있어 DOM에 1회만 주입 */
+/**
+ * Kakao 권장 순서: DOM에 ins가 먼저 존재한 뒤 ba.min.js 1회 로드.
+ * 스크립트가 초기화될 때 .kakao_ad_area를 스캔하므로, ins를 나중에 붙이면 콜드 로드에서 누락될 수 있음.
+ */
 function ensureKakaoScriptLoaded() {
   if (isAdfitPresent()) {
     notifyScriptReady();
@@ -171,15 +183,16 @@ function resolveKakaoSize(
   };
 }
 
-function mountKakaoIns(container: HTMLElement, unit: string, width: number, height: number) {
-  container.innerHTML = '';
-  const ins = document.createElement('ins');
-  ins.className = 'kakao_ad_area';
-  ins.setAttribute('data-ad-unit', unit);
-  ins.setAttribute('data-ad-width', String(width));
-  ins.setAttribute('data-ad-height', String(height));
-  container.appendChild(ins);
-  scheduleAdfitRefresh();
+function revealIns(ins: HTMLElement) {
+  ins.style.display = 'block';
+}
+
+function destroyAdUnit(unit: string) {
+  try {
+    getAdfitWindow().adfit?.destroy?.(unit);
+  } catch {
+    /* AdFit destroy 미지원·이미 해제된 슬롯 */
+  }
 }
 
 /**
@@ -195,7 +208,7 @@ export function AdBanner({
 }: Props) {
   const pathname = usePathname();
   const slotRemountKey = remountKey ?? pathname;
-  const slotRef = useRef<HTMLDivElement>(null);
+  const insRef = useRef<HTMLModElement>(null);
   const scalerRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
   const isNative = isCapacitorNative();
@@ -208,24 +221,24 @@ export function AdBanner({
   const kakaoWidth = resolvedKakao?.w ?? 0;
   const kakaoHeight = resolvedKakao?.h ?? 0;
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!shouldLoadScript) return;
+    const ins = insRef.current;
+    if (!ins) return;
+
     invalidateScriptReadyIfStale();
-    if (scriptReady && isAdfitPresent()) return;
     ensureKakaoScriptLoaded();
-  }, [shouldLoadScript]);
 
-  useEffect(() => {
-    if (!shouldLoadScript) return;
-    const container = slotRef.current;
-    if (!container) return;
+    const activate = () => {
+      revealIns(ins);
+      scheduleAdfitRefresh(kakaoUnit);
+    };
 
-    const mount = () => mountKakaoIns(container, kakaoUnit, kakaoWidth, kakaoHeight);
-
-    whenScriptReady(mount);
+    whenScriptReady(activate);
 
     return () => {
-      container.innerHTML = '';
+      destroyAdUnit(kakaoUnit);
+      ins.style.display = 'none';
     };
   }, [shouldLoadScript, kakaoUnit, kakaoWidth, kakaoHeight, slotRemountKey]);
 
@@ -253,7 +266,17 @@ export function AdBanner({
     return null;
   }
 
-  const slot = <div className={styles.slot} ref={slotRef} />;
+  const insSlot = (
+    <ins
+      ref={insRef}
+      key={`${slotRemountKey}:${kakaoUnit}`}
+      className="kakao_ad_area"
+      style={{ display: 'none' }}
+      data-ad-unit={kakaoUnit}
+      data-ad-width={String(kakaoWidth)}
+      data-ad-height={String(kakaoHeight)}
+    />
+  );
 
   return (
     <>
@@ -273,7 +296,7 @@ export function AdBanner({
               }}
             >
               <div className={styles.leaderboardCard} role="complementary" aria-label="광고">
-                {slot}
+                <div className={styles.slot}>{insSlot}</div>
               </div>
               <span className={styles.badge}>광고</span>
             </div>
@@ -282,7 +305,7 @@ export function AdBanner({
       ) : (
         <div className={styles.wrap}>
           <div className={styles.card} role="complementary" aria-label="광고">
-            {slot}
+            <div className={styles.slot}>{insSlot}</div>
           </div>
           <span className={styles.badge}>광고</span>
         </div>
