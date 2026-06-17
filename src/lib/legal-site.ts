@@ -1,5 +1,5 @@
 /** 법적 페이지 공통 — 애드센스·개인정보보호법 고지용 */
-export const LEGAL_LAST_REVISED = '2026년 6월 11일';
+export const LEGAL_LAST_REVISED = '2026년 6월 17일';
 
 /** 아동 안전(CSAE) 정책 공개 URL 경로 */
 export const CHILD_SAFETY_POLICY_PATH = '/legal/child-safety';

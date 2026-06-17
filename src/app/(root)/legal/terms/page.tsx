@@ -33,7 +33,7 @@ export default function TermsPage() {
             <p>
               AIsle(이하 &quot;서비스&quot;)는 AI 창작·실험 콘텐츠를 네 개의 복도(Lab, Gallery, Lounge·Gossip, Build·Launch)에서
               탐색·공유할 수 있도록 제공하는 커뮤니티 플랫폼입니다. 본 약관은 회원과 비회원의 서비스 이용 조건 및 절차, 권리·의무
-              및 책임 사항, <strong>제3자 광고(모바일 AdMob 등)</strong>에 관한 사항을 규정합니다. AIsle은{' '}
+              및 책임 사항, <strong>제3자 광고(웹 Kakao AdFit·모바일 AdMob 등)</strong>에 관한 사항을 규정합니다. AIsle은{' '}
               <strong>게시글·댓글·미디어 업로드</strong>를 중심으로 운영됩니다.
             </p>
 
@@ -69,7 +69,8 @@ export default function TermsPage() {
               <li>댓글, 좋아요 등 상호작용</li>
               <li>프로필·My Aisles 등 회원별 활동 관리</li>
               <li>
-                모바일 앱(Android 등)에서의 제3자 광고(Google AdMob 등) 노출 — 자세한 내용은 제10조
+                웹 브라우저에서의 제3자 광고(Kakao AdFit 등) 및 모바일 앱(Android 등)에서의 제3자 광고(Google AdMob 등) 노출
+                — 자세한 내용은 제10조
               </li>
             </ul>
 
@@ -134,43 +135,64 @@ export default function TermsPage() {
 
             <h2>제10조 (제3자 광고 서비스)</h2>
             <p>
-              운영자는 서비스 운영 비용 일부를 충당하기 위해, 특히 <strong>AIsle Android 모바일 앱</strong>에서 Google LLC가
-              제공하는 <strong>Google AdMob</strong> 등 제3자 광고 네트워크를 통해 배너·인피드 등 형태의 광고를 게재할 수
-              있습니다. 웹 브라우저에서는 Google 애드센스 등 별도 광고 프로그램이 적용될 수 있으며, 이용 환경에 따라 노출
-              방식·빈도는 달라질 수 있습니다.
+              운영자는 서비스 운영 비용 일부를 충당하기 위해 제3자 광고 네트워크를 통해 배너·인피드 등 형태의 광고를
+              게재할 수 있습니다. <strong>웹 브라우저</strong>에서는 주식회사 카카오가 제공하는 <strong>Kakao AdFit</strong>이
+              적용되며, Google 애드센스 등 별도 광고 프로그램이 함께 로드·적용될 수 있습니다.{' '}
+              <strong>AIsle Android 모바일 앱</strong>에서는 Google LLC가 제공하는 <strong>Google AdMob</strong>이 적용됩니다.
+              이용 환경(웹·앱)에 따라 노출 방식·빈도·광고 제공자는 달라질 수 있습니다.
             </p>
             <p>
-              <strong>제1항 (광고 제공 및 책임)</strong> AdMob을 통한 광고는 Google 및 그 제휴 광고주·광고 네트워크가
-              제공합니다. 운영자는 광고의 내용·적합성, 광고를 통해 연결되는 제3자 웹사이트·앱·상품·서비스에 대하여
-              책임을 지지 않습니다. 이용자가 광고를 클릭하거나 제3자와 거래·상호작용할 때 발생하는 사항은 해당 제3자의
-              약관·정책이 적용됩니다.
+              <strong>제1항 (광고 제공 및 책임)</strong> 제3자 광고는 각 광고 네트워크·광고주·제휴사가 제공합니다.
+              운영자는 광고의 내용·적합성, 광고를 통해 연결되는 제3자 웹사이트·앱·상품·서비스에 대하여 책임을 지지
+              않습니다. 이용자가 광고를 클릭하거나 제3자와 거래·상호작용할 때 발생하는 사항은 해당 제3자의 약관·정책이
+              적용됩니다.
             </p>
             <p>
-              <strong>제2항 (광고 관련 정보 처리)</strong> 광고 노출·맞춤형 광고·광고 성과 측정·사기 방지 등을 위해 Google
-              AdMob SDK 및 관련 서비스는 <strong>기기 광고 ID(Advertising ID)</strong>, 기기 모델·운영체제 버전, IP
-              주소(대략적 위치 추정), 앱·광고 상호작용 정보 등이 처리될 수 있습니다. 수집·이용·보관에 관한 상세 내용은{' '}
-              <Link href="/legal/privacy">개인정보처리방침</Link> 및 아래 Google 정책을 참고해 주세요.
-            </p>
-            <p>
-              <strong>제3항 (Google 정책)</strong> AdMob 및 Google 광고 서비스의 데이터 처리 방식은 Google의{' '}
-              <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">
+              <strong>제2항 (Kakao AdFit — 웹)</strong> 웹에서 게재되는 AdFit 광고는 카카오 및 그 제휴 광고주·광고
+              네트워크가 제공합니다. AdFit 스크립트 및 관련 서비스는 광고 게재·광고 품질 향상·성과 측정·사기 방지 등을
+              위해 이용자 브라우저에 <strong>쿠키 등 유사 기술</strong>을 사용하고, <strong>IP 주소</strong>, 방문·접속
+              기록, 광고 노출·클릭 등 <strong>익명화된 인터넷 사용 정보</strong>가 처리될 수 있습니다. 수집·이용에 관한
+              상세 내용은 <Link href="/legal/privacy">개인정보처리방침</Link> 및 카카오의{' '}
+              <a href="https://www.kakao.com/policy/privacy" target="_blank" rel="noopener noreferrer">
                 개인정보처리방침
               </a>
               ,{' '}
+              <a
+                href="https://biz.kakao.com/resources/html/business_privacy.html"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                카카오비즈니스 개인정보처리방침
+              </a>
+              을 참고해 주세요.
+            </p>
+            <p>
+              <strong>제3항 (Google AdMob — Android 앱)</strong> Android 앱에서 게재되는 AdMob 광고는 Google 및 그 제휴
+              광고주·광고 네트워크가 제공합니다. AdMob SDK 및 관련 서비스는 광고 게재·맞춤형 광고·광고 성과 측정·사기
+              방지 등을 위해 <strong>기기 광고 ID(Advertising ID)</strong>, 기기 모델·운영체제 버전, IP 주소(대략적
+              위치 추정), 앱·광고 상호작용 정보 등이 처리될 수 있습니다. Google의 데이터 처리 방식은{' '}
+              <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">
+                개인정보처리방침
+              </a>
+              및{' '}
               <a href="https://policies.google.com/technologies/ads" target="_blank" rel="noopener noreferrer">
                 광고 기술 정책
               </a>
-              등에 따릅니다.
+              을 참고해 주세요.
             </p>
             <p>
-              <strong>제4항 (맞춤형 광고 거부·설정)</strong> 이용자는 기기 설정을 통해 맞춤형 광고에 활용되는 광고 ID
-              사용을 제한하거나 재설정할 수 있습니다. Android의 경우 <strong>설정 → Google → 광고</strong>에서
-              &quot;광고 맞춤설정 선택 해제&quot; 또는 &quot;광고 ID 재설정&quot; 등을 이용할 수 있으며,{' '}
+              <strong>제4항 (맞춤형 광고 거부·설정)</strong> 이용자는 브라우저 쿠키 설정,{' '}
+              <a href="https://info.ad.daum.net/optoutko.do" target="_blank" rel="noopener noreferrer">
+                Kakao 맞춤형 광고 설정
+              </a>
+              ,{' '}
               <a href="https://www.google.com/settings/ads" target="_blank" rel="noopener noreferrer">
                 Google 광고 설정
               </a>
-              에서도 맞춤형 광고 관련 설정을 관리할 수 있습니다. 설정을 변경해도 일반(비맞춤형) 광고가 노출될 수
-              있으며, 서비스의 기본 기능 이용에는 지장이 없을 수 있습니다.
+              등을 통해 맞춤형 광고에 활용되는 정보 수집을 제한할 수 있습니다. Android 앱의 경우{' '}
+              <strong>설정 → Google → 광고</strong>에서 &quot;광고 맞춤설정 선택 해제&quot; 또는 &quot;광고 ID
+              재설정&quot; 등을 이용할 수 있습니다. 설정을 변경해도 일반(비맞춤형) 광고가 노출될 수 있으며, 서비스의
+              기본 기능 이용에는 지장이 없을 수 있습니다.
             </p>
 
             <h2 id="child-safety">제11조 (아동 안전·CSAE)</h2>

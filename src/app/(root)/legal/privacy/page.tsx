@@ -43,7 +43,7 @@ export default function PrivacyPage() {
             <p>
               AIsle(이하 &quot;서비스&quot;)는 「개인정보 보호법」 등 국내 법령을 준수하며, 이용자의 개인정보를 보호하고 권익을
               보호하기 위해 다음과 같이 개인정보처리방침을 수립·공개합니다. 본 방침은 서비스가 수집·이용하는 개인정보 항목, 목적,
-              보관·파기, 이용자 권리, 쿠키·광고 식별자(웹 애드센스·Android AdMob 등 맞춤형 광고 포함)에 관한 사항을 설명합니다.
+              보관·파기, 이용자 권리, 쿠키·광고 식별자(웹 Kakao AdFit·애드센스, Android AdMob 등 맞춤형 광고 포함)에 관한 사항을 설명합니다.
             </p>
 
             <h2>1. 수집하는 개인정보 항목</h2>
@@ -73,8 +73,8 @@ export default function PrivacyPage() {
               <li>법령 위반 행위 대응, 분쟁 해결, 법적 의무 이행</li>
               <li>고객 문의 응대 및 공지 전달</li>
               <li>
-                <strong>맞춤형·비개인 식별 광고</strong>: Google LLC 등 제휴 광고 네트워크(웹 애드센스, Android AdMob 등)를 통한
-                광고 노출·성과 측정(쿠키·기기 광고 ID 등, 아래 제6조)
+                <strong>맞춤형·비개인 식별 광고</strong>: 주식회사 카카오(Kakao AdFit, 웹), Google LLC 등 제휴 광고
+                네트워크(웹 애드센스, Android AdMob 등)를 통한 광고 노출·성과 측정(쿠키·기기 광고 ID 등, 아래 제6조)
               </li>
             </ul>
 
@@ -94,6 +94,11 @@ export default function PrivacyPage() {
               <li>인증·데이터베이스·파일 저장: Supabase, Cloudflare R2 등 배포 환경에 따른 제공자</li>
               <li>호스팅·배포: Vercel 등</li>
               <li>
+                <strong>광고</strong>: 주식회사 카카오(Kakao AdFit) — 웹 브라우저에서 배너·인피드 등 광고 게재. 광고
+                노출·클릭·성과 측정, 광고 품질 향상 등을 위해 쿠키 등 유사 기술이 사용될 수 있으며, 카카오의
+                개인정보처리방침이 별도로 적용됩니다.
+              </li>
+              <li>
                 <strong>광고</strong>: Google LLC — 웹에서는 Google 애드센스 등, AIsle Android 앱에서는 Google AdMob 등이
                 적용될 수 있습니다. 광고 노출·클릭·성과 측정, 사기 방지 등을 위해 쿠키·기기 광고 ID(Advertising ID) 등이
                 사용될 수 있으며, Google의 개인정보처리방침 및 광고 설정이 별도로 적용됩니다.
@@ -107,12 +112,32 @@ export default function PrivacyPage() {
               안내에 따른 브라우저·광고 플랫폼 설정을 병행할 수 있습니다.
             </p>
 
-            <h2>6. 쿠키, 유사 기술 및 맞춤형 광고(애드센스·AdMob)</h2>
+            <h2>6. 쿠키, 유사 기술 및 맞춤형 광고(AdFit·애드센스·AdMob)</h2>
             <p>
               서비스는 <strong>로그인 유지·보안·성능 측정·통계</strong>를 위해 쿠키 또는 로컬 스토리지 등과 유사한 기술을 사용할 수
-              있습니다. 또한 <strong>웹 브라우저</strong>에서는 <strong>Google 애드센스(또는 구글이 제공하는 광고 프로그램)</strong>
-              가, <strong>AIsle Android 모바일 앱</strong>에서는 <strong>Google AdMob</strong> 등 제3자 광고 네트워크가 적용될 수
-              있습니다. 이용 환경(웹·앱)에 따라 적용되는 광고 프로그램·처리되는 정보 유형이 다를 수 있습니다.
+              있습니다. 또한 <strong>웹 브라우저</strong>에서는 <strong>Kakao AdFit</strong> 및{' '}
+              <strong>Google 애드센스(또는 구글이 제공하는 광고 프로그램)</strong>이, <strong>AIsle Android 모바일 앱</strong>
+              에서는 <strong>Google AdMob</strong> 등 제3자 광고 네트워크가 적용될 수 있습니다. 이용 환경(웹·앱)에 따라
+              적용되는 광고 프로그램·처리되는 정보 유형이 다를 수 있습니다.
+            </p>
+            <p>
+              <strong>Kakao AdFit(웹)</strong>: 웹에서 게재되는 AdFit 광고는 주식회사 카카오가 제공합니다. AdFit 스크립트 및
+              관련 서비스는 광고 게재·광고 품질 향상·성과 측정·사기 방지 등을 위해 이용자 브라우저에{' '}
+              <strong>쿠키 등 유사 기술</strong>을 저장·사용할 수 있으며, <strong>IP 주소</strong>, 방문·접속 기록, 광고
+              노출·클릭 등 <strong>익명화된 인터넷 사용 정보</strong>가 처리될 수 있습니다. 카카오 및 운영자는 광고 품질
+              향상을 위해 이러한 정보를 수집·활용할 수 있습니다. 카카오의 데이터 처리 방식은{' '}
+              <a href="https://www.kakao.com/policy/privacy" target="_blank" rel="noopener noreferrer">
+                카카오 개인정보처리방침
+              </a>
+              및{' '}
+              <a
+                href="https://biz.kakao.com/resources/html/business_privacy.html"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                카카오비즈니스 개인정보처리방침
+              </a>
+              을 참고해 주세요.
             </p>
             <p>
               <strong>Google AdMob(Android 앱)</strong>: AdMob SDK 및 관련 서비스는 광고 게재·맞춤형 광고·광고 성과 측정·사기
@@ -152,6 +177,13 @@ export default function PrivacyPage() {
                 설정할 수 있습니다. 쿠키를 전면 차단하면 로그인 등 일부 기능이 제한될 수 있습니다.
               </li>
               <li>
+                <strong>Kakao 맞춤형 광고</strong>:{' '}
+                <a href="https://info.ad.daum.net/optoutko.do" target="_blank" rel="noopener noreferrer">
+                  Kakao 맞춤형 광고 설정 페이지
+                </a>
+                에서 웹 광고 쿠키 기반 맞춤형 광고 노출을 관리할 수 있습니다.
+              </li>
+              <li>
                 <strong>Google 광고 설정</strong>:{' '}
                 <a href="https://www.google.com/settings/ads" target="_blank" rel="noopener noreferrer">
                   Google 광고 설정 페이지
@@ -175,7 +207,7 @@ export default function PrivacyPage() {
               </li>
             </ul>
             <p>
-              애드센스·AdMob 등 광고 파트너의 최신 정책은 Google 고객센터 및 관련 정책 페이지를 참고하시기 바랍니다. 본 방침은 국내법 및
+              AdFit·애드센스·AdMob 등 광고 파트너의 최신 정책은 각 제공자의 고객센터 및 관련 정책 페이지를 참고하시기 바랍니다. 본
               정보통신망법·개인정보 보호법의 일반 원칙을 따르며, 행태정보의 수집·이용이 중대한 변경을 수반하는 경우 관련 법령이
               정하는 바에 따라 별도 동의 또는 고지를 할 수 있습니다.
             </p>
