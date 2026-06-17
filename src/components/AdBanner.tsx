@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Script from 'next/script';
+import { usePathname } from 'next/navigation';
 import { isCapacitorNative } from '@/lib/capacitor-oauth';
 import { getKakaoAdfitMainBannerUnitId, getKakaoAdfitUnitId } from '@/lib/kakao-adfit';
 import styles from './AdBanner.module.css';
@@ -30,6 +31,17 @@ function getAdfitWindow(): AdfitWindow {
   return window as AdfitWindow;
 }
 
+function isAdfitPresent(): boolean {
+  return Boolean(getAdfitWindow().adfit);
+}
+
+/** 홈 이탈 등으로 script/adfit이 사라졌는데 scriptReady만 true인 stale 상태 복구 */
+function invalidateScriptReadyIfStale() {
+  if (scriptReady && !isAdfitPresent()) {
+    scriptReady = false;
+  }
+}
+
 function notifyScriptReady() {
   if (scriptReady) return;
   scriptReady = true;
@@ -38,7 +50,8 @@ function notifyScriptReady() {
 }
 
 function whenScriptReady(listener: () => void) {
-  if (scriptReady) listener();
+  invalidateScriptReadyIfStale();
+  if (scriptReady && isAdfitPresent()) listener();
   else scriptReadyListeners.add(listener);
 }
 
@@ -46,7 +59,7 @@ function whenScriptReady(listener: () => void) {
 function waitForAdfitThenNotify() {
   let attempts = 0;
   const tick = () => {
-    if (getAdfitWindow().adfit) {
+    if (isAdfitPresent()) {
       notifyScriptReady();
       return;
     }
@@ -72,6 +85,17 @@ function scheduleAdfitRefresh() {
     }
   };
   requestAnimationFrame(tick);
+}
+
+function bootstrapExistingScript() {
+  if (isAdfitPresent()) {
+    notifyScriptReady();
+    return;
+  }
+  const existing = document.querySelector(`script[src="${KAKAO_SCRIPT_SRC}"]`);
+  if (existing) {
+    waitForAdfitThenNotify();
+  }
 }
 
 function isKakaoVariant(variant: AdBannerVariant): variant is KakaoVariant {
@@ -124,6 +148,7 @@ export function AdBanner({
   width,
   height,
 }: Props) {
+  const pathname = usePathname();
   const slotRef = useRef<HTMLDivElement>(null);
   const scalerRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
@@ -138,19 +163,10 @@ export function AdBanner({
   const kakaoHeight = resolvedKakao?.h ?? 0;
 
   useEffect(() => {
-    if (!shouldLoadScript || scriptReady) return;
-
-    if (getAdfitWindow().adfit) {
-      notifyScriptReady();
-      return;
-    }
-
-    const existing = document.querySelector(`script[src="${KAKAO_SCRIPT_SRC}"]`);
-    if (!existing) return;
-
-    const onExistingLoad = () => waitForAdfitThenNotify();
-    existing.addEventListener('load', onExistingLoad);
-    return () => existing.removeEventListener('load', onExistingLoad);
+    if (!shouldLoadScript) return;
+    invalidateScriptReadyIfStale();
+    if (scriptReady && isAdfitPresent()) return;
+    bootstrapExistingScript();
   }, [shouldLoadScript]);
 
   useEffect(() => {
@@ -160,13 +176,12 @@ export function AdBanner({
 
     const mount = () => mountKakaoIns(container, kakaoUnit, kakaoWidth, kakaoHeight);
 
-    if (scriptReady) mount();
-    else whenScriptReady(mount);
+    whenScriptReady(mount);
 
     return () => {
       container.innerHTML = '';
     };
-  }, [shouldLoadScript, kakaoUnit, kakaoWidth, kakaoHeight]);
+  }, [shouldLoadScript, kakaoUnit, kakaoWidth, kakaoHeight, pathname]);
 
   useEffect(() => {
     if (isNative || !isLeaderboard) return;
