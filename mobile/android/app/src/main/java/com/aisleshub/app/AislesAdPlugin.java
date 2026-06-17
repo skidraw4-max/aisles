@@ -4,8 +4,10 @@ import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
+import android.webkit.WebView;
 import android.widget.FrameLayout;
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
+import com.getcapacitor.Bridge;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
@@ -37,6 +39,12 @@ public class AislesAdPlugin extends Plugin {
     private String loadedUnitId;
 
     private ViewGroup getRootViewGroup() {
+        if (rootViewGroup == null) {
+            WebView webView = getWebView();
+            if (webView != null && webView.getParent() instanceof ViewGroup) {
+                rootViewGroup = (ViewGroup) webView.getParent();
+            }
+        }
         if (rootViewGroup == null && getActivity() != null) {
             View content = getActivity().findViewById(android.R.id.content);
             if (content instanceof ViewGroup contentGroup && contentGroup.getChildCount() > 0) {
@@ -44,6 +52,11 @@ public class AislesAdPlugin extends Plugin {
             }
         }
         return rootViewGroup;
+    }
+
+    private WebView getWebView() {
+        Bridge bridge = getBridge();
+        return bridge != null ? bridge.getWebView() : null;
     }
 
     @PluginMethod
@@ -70,8 +83,11 @@ public class AislesAdPlugin extends Plugin {
                 }
 
                 float density = getContext().getResources().getDisplayMetrics().density;
-                int topPx = Math.round(topDp * density);
-                int leftPx = Math.round(leftDp * density);
+                WebView webView = getWebView();
+                int webViewTop = webView != null ? webView.getTop() : 0;
+                int webViewLeft = webView != null ? webView.getLeft() : 0;
+                int topPx = webViewTop + Math.round(topDp * density);
+                int leftPx = webViewLeft + Math.round(leftDp * density);
                 int containerWidthPx = Math.round(widthDp * density);
                 int containerHeightPx = Math.round(heightDp * density);
 
@@ -86,6 +102,7 @@ public class AislesAdPlugin extends Plugin {
 
                 if (mrecContainer == null) {
                     mrecContainer = new FrameLayout(getContext());
+                    mrecContainer.setElevation(24f);
                     adView = new AdView(getContext());
                     adView.setAdSize(mrecSize);
                     adView.setAdUnitId(unitId);
@@ -105,6 +122,7 @@ public class AislesAdPlugin extends Plugin {
                     params.gravity = Gravity.TOP | Gravity.START;
                     params.setMargins(leftPx, topPx, 0, 0);
                     root.addView(mrecContainer, params);
+                    root.bringChildToFront(mrecContainer);
                     adView.loadAd(new AdRequest.Builder().build());
                 } else {
                     CoordinatorLayout.LayoutParams params = (CoordinatorLayout.LayoutParams) mrecContainer.getLayoutParams();
@@ -115,6 +133,7 @@ public class AislesAdPlugin extends Plugin {
                     mrecContainer.setLayoutParams(params);
                     mrecContainer.requestLayout();
                     mrecContainer.setVisibility(View.VISIBLE);
+                    root.bringChildToFront(mrecContainer);
 
                     if (!unitId.equals(loadedUnitId)) {
                         adView.setAdUnitId(unitId);

@@ -4,6 +4,7 @@ import { useEffect, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 import { isCapacitorNative } from '@/lib/capacitor-oauth';
 import {
+  FEED_SLOTS_MOUNT_DELAY_MS,
   hideBannerAd,
   hideInFeedMrec,
   initializeAdMob,
@@ -31,17 +32,38 @@ export function AdMobCapacitorInit() {
   useEffect(() => {
     if (!isCapacitorNative()) return;
 
+    let cancelled = false;
+
     const syncBanner = async () => {
-      await initializeAdMob();
-      if (shouldHideAdsForPath(pathname)) {
-        await hideInFeedMrec();
-        await hideBannerAd();
-        return;
+      try {
+        await initializeAdMob();
+        if (shouldHideAdsForPath(pathname)) {
+          await hideInFeedMrec();
+          await hideBannerAd();
+          return;
+        }
+        await showBannerAd();
+      } catch {
+        if (cancelled || shouldHideAdsForPath(pathname)) return;
+        try {
+          await showBannerAd();
+        } catch {
+          // AdMob 플러그인 오류 — 무시
+        }
       }
-      await showBannerAd();
     };
 
     void syncBanner();
+
+    const feedMountTimer = window.setTimeout(() => {
+      if (cancelled || shouldHideAdsForPath(pathname)) return;
+      void resumeBannerAd();
+    }, FEED_SLOTS_MOUNT_DELAY_MS);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(feedMountTimer);
+    };
   }, [pathname]);
 
   useEffect(() => {

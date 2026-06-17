@@ -34,6 +34,9 @@ export const INTERSTITIAL_NAVIGATION_THRESHOLD = 8;
 /** App Open: WebView 초기 로드 후 표시까지 대기 (ms) */
 const APP_OPEN_WEBVIEW_READY_DELAY_MS = 800;
 
+/** HomeAllFeed(dynamic import) 마운트 후 인피드 슬롯·배너 재동기화 대기 (ms) */
+export const FEED_SLOTS_MOUNT_DELAY_MS = 2000;
+
 /** 인피드 슬롯 앵커 크기 (문서 흐름 간격용) */
 export const MREC_WIDTH_CSS = 100;
 export const MREC_HEIGHT_CSS = 166;
@@ -456,15 +459,23 @@ async function removeCurrentBanner(): Promise<void> {
   bannerDisplayMode = 'none';
 }
 
+async function tryPreferInFeedMrec(): Promise<boolean> {
+  if (!pickBestInFeedSlot()) return false;
+  try {
+    await syncInFeedMrecDisplay();
+  } catch {
+    bannerDisplayMode = 'none';
+    await hideInFeedMrecNative().catch(() => {});
+  }
+  return isInFeedMrecActive();
+}
+
 /** 하단 고정 배너 표시 (BOTTOM_CENTER, Adaptive) */
 export async function showBannerAd(): Promise<void> {
   if (!isCapacitorNative()) return;
   bottomBannerDesired = true;
 
-  if (pickBestInFeedSlot()) {
-    await syncInFeedMrecDisplay();
-    if (isInFeedMrecActive()) return;
-  }
+  if (await tryPreferInFeedMrec()) return;
 
   if (isInFeedMrecActive()) {
     await hideInFeedMrec();
@@ -482,22 +493,31 @@ export async function showBannerAd(): Promise<void> {
     ) {
       updateBottomBannerReserve(getInitialBottomBannerHeightPx());
     }
-    await AdMob.resumeBanner();
-    return;
+    try {
+      await AdMob.resumeBanner();
+      return;
+    } catch {
+      bannerDisplayMode = 'none';
+    }
   }
 
   await removeCurrentBanner();
-
-  bannerDisplayMode = 'bottom';
   updateBottomBannerReserve(getInitialBottomBannerHeightPx());
 
-  await AdMob.showBanner({
-    adId: getBannerAdUnitId(),
-    adSize: BannerAdSize.ADAPTIVE_BANNER,
-    position: BannerAdPosition.BOTTOM_CENTER,
-    margin: getBottomBannerMarginDp(),
-    isTesting: shouldUseAdMobTestMode(),
-  });
+  try {
+    await AdMob.showBanner({
+      adId: getBannerAdUnitId(),
+      adSize: BannerAdSize.ADAPTIVE_BANNER,
+      position: BannerAdPosition.BOTTOM_CENTER,
+      margin: getBottomBannerMarginDp(),
+      isTesting: shouldUseAdMobTestMode(),
+    });
+    bannerDisplayMode = 'bottom';
+  } catch (err) {
+    bannerDisplayMode = 'none';
+    updateBottomBannerReserve(0);
+    throw err;
+  }
 }
 
 export async function hideBannerAd(): Promise<void> {
@@ -519,10 +539,7 @@ export async function hideBannerAd(): Promise<void> {
 
 export async function resumeBannerAd(): Promise<void> {
   if (!isCapacitorNative() || !bottomBannerDesired) return;
-  if (pickBestInFeedSlot()) {
-    await syncInFeedMrecDisplay();
-    if (isInFeedMrecActive()) return;
-  }
+  if (await tryPreferInFeedMrec()) return;
   await showBannerAd();
 }
 
@@ -610,13 +627,9 @@ async function showInFeedMrecAtRect(slotRect: DOMRect): Promise<void> {
   if (!isCapacitorNative()) return;
 
   const rect = computeMrecDisplayRect(slotRect);
+  const hadBottomBanner = bannerDisplayMode === 'bottom';
 
   await initializeAdMob();
-
-  if (bannerDisplayMode === 'bottom') {
-    await removeBottomBanner();
-    bannerDisplayMode = 'none';
-  }
 
   await AislesAd.showMrecAtRect({
     adId: getMrecAdUnitId(),
@@ -627,6 +640,9 @@ async function showInFeedMrecAtRect(slotRect: DOMRect): Promise<void> {
     isTesting: shouldUseAdMobTestMode(),
   });
 
+  if (hadBottomBanner) {
+    await removeBottomBanner();
+  }
   bannerDisplayMode = 'infeed';
 }
 
@@ -675,7 +691,13 @@ async function syncInFeedMrecDisplay(): Promise<void> {
     return;
   }
 
-  await showInFeedMrecAtRect(rect);
+  try {
+    await showInFeedMrecAtRect(rect);
+  } catch {
+    bannerDisplayMode = 'none';
+    await hideInFeedMrecNative().catch(() => {});
+    await restoreBottomBannerIfNeeded();
+  }
 }
 
 /**

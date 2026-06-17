@@ -28,7 +28,21 @@ export function NativeAdSlot({ slotIndex = 0, variant = 'fullWidthRow' }: Props)
     if (!isCapacitorNative()) return;
     const el = slotRef.current;
     if (!el) return;
-    return registerInFeedMrecSlot(slotIndex, el);
+
+    let unregister: (() => void) | undefined;
+    let raf2 = 0;
+
+    const raf1 = requestAnimationFrame(() => {
+      raf2 = requestAnimationFrame(() => {
+        unregister = registerInFeedMrecSlot(slotIndex, el);
+      });
+    });
+
+    return () => {
+      cancelAnimationFrame(raf1);
+      cancelAnimationFrame(raf2);
+      unregister?.();
+    };
   }, [slotIndex]);
 
   if (!isCapacitorNative()) return null;
