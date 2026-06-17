@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import Script from 'next/script';
 import { usePathname } from 'next/navigation';
 import { isCapacitorNative } from '@/lib/capacitor-oauth';
 import { getKakaoAdfitMainBannerUnitId, getKakaoAdfitUnitId } from '@/lib/kakao-adfit';
@@ -20,6 +19,8 @@ type Props = {
   adUnit?: string;
   width?: number;
   height?: number;
+  /** 홈 복도 탭 등 pathname은 같고 searchParams만 바뀔 때 슬롯 재마운트용 */
+  remountKey?: string;
 };
 
 type AdfitWindow = Window & { adfit?: { refresh?: () => void } };
@@ -87,7 +88,10 @@ function scheduleAdfitRefresh() {
   requestAnimationFrame(tick);
 }
 
-function bootstrapExistingScript() {
+let scriptInjectRequested = false;
+
+/** Next.js `<Script>`는 AdBanner 언마운트 시 태그가 사라져 adfit이 끊길 수 있어 DOM에 1회만 주입 */
+function ensureKakaoScriptLoaded() {
   if (isAdfitPresent()) {
     notifyScriptReady();
     return;
@@ -95,7 +99,18 @@ function bootstrapExistingScript() {
   const existing = document.querySelector(`script[src="${KAKAO_SCRIPT_SRC}"]`);
   if (existing) {
     waitForAdfitThenNotify();
+    return;
   }
+  if (scriptInjectRequested) {
+    waitForAdfitThenNotify();
+    return;
+  }
+  scriptInjectRequested = true;
+  const script = document.createElement('script');
+  script.src = KAKAO_SCRIPT_SRC;
+  script.async = true;
+  script.onload = () => waitForAdfitThenNotify();
+  document.head.appendChild(script);
 }
 
 function isKakaoVariant(variant: AdBannerVariant): variant is KakaoVariant {
@@ -147,8 +162,10 @@ export function AdBanner({
   adUnit,
   width,
   height,
+  remountKey,
 }: Props) {
   const pathname = usePathname();
+  const slotRemountKey = remountKey ?? pathname;
   const slotRef = useRef<HTMLDivElement>(null);
   const scalerRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
@@ -166,7 +183,7 @@ export function AdBanner({
     if (!shouldLoadScript) return;
     invalidateScriptReadyIfStale();
     if (scriptReady && isAdfitPresent()) return;
-    bootstrapExistingScript();
+    ensureKakaoScriptLoaded();
   }, [shouldLoadScript]);
 
   useEffect(() => {
@@ -181,7 +198,7 @@ export function AdBanner({
     return () => {
       container.innerHTML = '';
     };
-  }, [shouldLoadScript, kakaoUnit, kakaoWidth, kakaoHeight, pathname]);
+  }, [shouldLoadScript, kakaoUnit, kakaoWidth, kakaoHeight, slotRemountKey]);
 
   useEffect(() => {
     if (isNative || !isLeaderboard) return;
@@ -211,13 +228,6 @@ export function AdBanner({
 
   return (
     <>
-      {shouldLoadScript ? (
-        <Script
-          src={KAKAO_SCRIPT_SRC}
-          strategy="afterInteractive"
-          onLoad={waitForAdfitThenNotify}
-        />
-      ) : null}
       {isLeaderboard ? (
         <div className={styles.leaderboardWrap}>
           <div
