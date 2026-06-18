@@ -401,7 +401,7 @@ export function HomeAllFeed({ category, excludeIds, initialPosts, initialHasMore
 
   const fetchJson = useCallback(
     async (url: string, signal: AbortSignal) => {
-      const res = await fetch(url, { signal, cache: 'no-store' });
+      const res = await fetch(url, { signal });
       if (!res.ok) throw new Error('feed failed');
       return res.json() as Promise<{ posts: FeedPostJson[]; hasMore?: boolean }>;
     },

@@ -90,16 +90,21 @@ export function SessionProvider({ initialSession, children }: Props) {
     }
 
     const bootstrap = async () => {
-      const { data: { user: u } } = await supabase.auth.getUser();
-      setUser(u ?? null);
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const u = session?.user ?? null;
+      setUser(u);
       if (!u) {
         setDbUsername(null);
         setDbRole(null);
         setHydrated(true);
         return;
       }
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.access_token) {
+      const serverProfileReady =
+        initialSession?.userId === u.id &&
+        (initialSession.dbUsername != null || initialSession.dbRole != null);
+      if (!serverProfileReady && session?.access_token) {
         await applyProfile(session.access_token);
       }
       setHydrated(true);
@@ -119,15 +124,14 @@ export function SessionProvider({ initialSession, children }: Props) {
       }
       if (
         event === 'SIGNED_IN' ||
-        event === 'INITIAL_SESSION' ||
-        event === 'TOKEN_REFRESHED'
+        (event === 'TOKEN_REFRESHED' && !initialSession?.userId)
       ) {
         await applyProfile(session.access_token);
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [applyProfile]);
+  }, [applyProfile, initialSession]);
 
   const displayName = useMemo(() => {
     if (!hydrated && initialSession) {

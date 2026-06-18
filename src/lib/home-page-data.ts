@@ -17,6 +17,16 @@ function initialHomeFeedTake(filterCategory: Category | null): number {
   return FILTERED_FEED_INITIAL;
 }
 
+const RECENT_SIDEBAR_SELECT = {
+  id: true,
+  title: true,
+  thumbnail: true,
+  category: true,
+  createdAt: true,
+  author: { select: { username: true } },
+  metadata: { select: { params: true } },
+} as const;
+
 /**
  * 메인 페이지 DB 조회.
  * (과거 `unstable_cache`는 JSON 직렬화로 `Date`가 문자열이 되어 `serializeFeedPost` 등에서
@@ -29,10 +39,7 @@ export async function getHomePageQueries(categoryKey: string) {
     prisma.post.findMany({
       orderBy: { createdAt: 'desc' },
       take: 8,
-      include: {
-        author: { select: { username: true } },
-        metadata: { select: { params: true } },
-      },
+      select: RECENT_SIDEBAR_SELECT,
     }),
     fetchFeedPosts(0, initialHomeFeedTake(filterCategory), filterCategory, [], {
       excludeLoungeGossipFromAll: !filterCategory,

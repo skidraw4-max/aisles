@@ -7,9 +7,9 @@ import {
   serializeFeedPost,
 } from '@/lib/home-feed';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 60;
 
-const FEED_CACHE_CONTROL = 'public, s-maxage=60, stale-while-revalidate=120';
+const FEED_CACHE_CONTROL = 'public, max-age=60, s-maxage=60, stale-while-revalidate=120';
 
 export async function GET(req: NextRequest) {
   try {

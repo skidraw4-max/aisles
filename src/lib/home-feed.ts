@@ -2,21 +2,40 @@ import { Prisma } from '@prisma/client';
 import type { Category } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 
-export const HOME_FEED_INCLUDE = {
+/** 피드·쇼케이스에 필요한 Post 스칼라만 조회 (aiFortunePayload·원문 URL 등 대용량 컬럼 제외) */
+export const HOME_FEED_SELECT = {
+  id: true,
+  category: true,
+  title: true,
+  content: true,
+  thumbnail: true,
+  attachmentUrls: true,
+  views: true,
+  likeCount: true,
+  isFeatured: true,
+  featuredOnHome: true,
+  launchBannerUntil: true,
+  aiFortuneWeekKey: true,
+  tags: true,
+  createdAt: true,
   author: { select: { username: true } },
   launchInfo: { select: { serviceUrl: true, status: true } },
   _count: { select: { comments: true } },
-  /** LAB 썸네일 플레이스홀더(마케팅·비주얼 구분) */
   metadata: { select: { params: true } },
-} as const;
+} as const satisfies Prisma.PostSelect;
 
-export type HomeFeedPost = Prisma.PostGetPayload<{ include: typeof HOME_FEED_INCLUDE }>;
+/** @deprecated `select: HOME_FEED_SELECT` 사용 */
+export const HOME_FEED_INCLUDE = HOME_FEED_SELECT;
+
+export type HomeFeedPost = Prisma.PostGetPayload<{ select: typeof HOME_FEED_SELECT }>;
 
 /** 클라이언트·JSON으로 넘길 때 `_count` 등이 누락되지 않도록 댓글 수를 평문 필드로 둡니다. */
 export type FeedPostJson = Omit<HomeFeedPost, 'createdAt' | '_count'> & {
   createdAt: string;
   commentCount: number;
 };
+
+const FEED_CONTENT_SNIPPET_MAX = 200;
 
 /** Prisma `Date` 또는 JSON/캐시에서 복원된 ISO 문자열 모두 처리 */
 export function homeFeedCreatedAtToIso(createdAt: Date | string): string {
@@ -25,10 +44,19 @@ export function homeFeedCreatedAtToIso(createdAt: Date | string): string {
   return new Date(createdAt as unknown as string).toISOString();
 }
 
+function feedContentForClient(content: string | null | undefined): string | null {
+  if (!content) return null;
+  const trimmed = content.trim();
+  if (!trimmed) return null;
+  if (trimmed.length <= FEED_CONTENT_SNIPPET_MAX) return trimmed;
+  return `${trimmed.slice(0, FEED_CONTENT_SNIPPET_MAX)}…`;
+}
+
 export function serializeFeedPost(post: HomeFeedPost): FeedPostJson {
-  const { createdAt, _count, ...rest } = post;
+  const { createdAt, _count, content, ...rest } = post;
   return {
     ...rest,
+    content: feedContentForClient(content),
     createdAt: homeFeedCreatedAtToIso(createdAt as Date | string),
     commentCount: _count.comments,
   };
@@ -41,7 +69,7 @@ export async function fetchFeaturedForHome(category: Category | null): Promise<H
       where: { isFeatured: true, ...(category ? { category } : {}) },
       orderBy: { createdAt: 'desc' },
       take: 24,
-      include: HOME_FEED_INCLUDE,
+      select: HOME_FEED_SELECT,
     });
   } catch (err) {
     console.error('[fetchFeaturedForHome]', { category, err });
@@ -89,7 +117,7 @@ export async function fetchFeedPosts(
       orderBy,
       skip,
       take: take + 1,
-      include: HOME_FEED_INCLUDE,
+      select: HOME_FEED_SELECT,
     });
     const hasMore = posts.length > take;
     return { posts: hasMore ? posts.slice(0, take) : posts, hasMore };

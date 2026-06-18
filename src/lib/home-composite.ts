@@ -1,6 +1,6 @@
 import type { Category } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
-import { HOME_FEED_INCLUDE, type HomeFeedPost } from '@/lib/home-feed';
+import { HOME_FEED_SELECT, type HomeFeedPost } from '@/lib/home-feed';
 
 const HOT_VIEW_WEIGHT = 1;
 const HOT_LIKE_WEIGHT = 5;
@@ -25,7 +25,7 @@ export async function fetchHotTopForCategory(
 
     const posts = await prisma.post.findMany({
       where: { id: { in: ids } },
-      include: HOME_FEED_INCLUDE,
+      select: HOME_FEED_SELECT,
     });
     const rank = new Map(ids.map((id, i) => [id, i]));
     posts.sort((a, b) => (rank.get(a.id) ?? 0) - (rank.get(b.id) ?? 0));
@@ -46,7 +46,7 @@ export async function fetchLatestForCategory(
       where: { category },
       orderBy: { createdAt: 'desc' },
       take,
-      include: HOME_FEED_INCLUDE,
+      select: HOME_FEED_SELECT,
     });
   } catch (err) {
     console.error('[fetchLatestForCategory]', { category, err });

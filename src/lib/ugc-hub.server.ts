@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { fetchLatestForCategory } from '@/lib/home-composite';
-import { HOME_FEED_INCLUDE, type HomeFeedPost } from '@/lib/home-feed';
+import { HOME_FEED_SELECT, type HomeFeedPost } from '@/lib/home-feed';
 import { MIN_POST_DESCRIPTION_LENGTH } from '@/lib/post-description-policy';
 import type { LaunchBannerAdminRow } from '@/lib/ugc-hub.shared';
 
@@ -18,7 +18,7 @@ export async function fetchLaunchBannerPosts(take = 3): Promise<HomeFeedPost[]> 
       },
       orderBy: [{ launchBannerUntil: 'desc' }, { createdAt: 'desc' }],
       take,
-      include: HOME_FEED_INCLUDE,
+      select: HOME_FEED_SELECT,
     });
   } catch (err) {
     console.error('[fetchLaunchBannerPosts]', err);
@@ -47,7 +47,7 @@ export async function fetchBuildPopularWeekly(take = 5): Promise<HomeFeedPost[]>
       where: { category: 'BUILD', createdAt: { gte: since } },
       orderBy: [{ likeCount: 'desc' }, { createdAt: 'desc' }],
       take,
-      include: HOME_FEED_INCLUDE,
+      select: HOME_FEED_SELECT,
     });
   } catch (err) {
     console.error('[fetchBuildPopularWeekly]', err);
@@ -66,7 +66,7 @@ export async function fetchUgcWeeklyTop(
       where: { category, createdAt: { gte: since } },
       orderBy: [{ likeCount: 'desc' }, { createdAt: 'desc' }],
       take,
-      include: HOME_FEED_INCLUDE,
+      select: HOME_FEED_SELECT,
     });
   } catch (err) {
     console.error('[fetchUgcWeeklyTop]', { category, err });
@@ -86,7 +86,7 @@ export async function fetchLaunchBannerCandidates(take = 30): Promise<HomeFeedPo
       },
       orderBy: { createdAt: 'desc' },
       take: take * 2,
-      include: HOME_FEED_INCLUDE,
+      select: HOME_FEED_SELECT,
     });
     return rows
       .filter((p) => (p.content?.trim().length ?? 0) >= MIN_POST_DESCRIPTION_LENGTH)

@@ -1,6 +1,6 @@
 import type { Category } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
-import { HOME_FEED_INCLUDE, type HomeFeedPost } from '@/lib/home-feed';
+import { HOME_FEED_SELECT, type HomeFeedPost } from '@/lib/home-feed';
 
 export type HomeShowcaseOptions = {
   category: Category | null;
@@ -24,7 +24,7 @@ export async function fetchHomeShowcasePosts(
     where: { isFeatured: true, ...catWhere },
     orderBy: { createdAt: 'desc' },
     take: 4,
-    include: HOME_FEED_INCLUDE,
+    select: HOME_FEED_SELECT,
   });
 
   const used = new Set(featured.map((p) => p.id));
@@ -36,7 +36,7 @@ export async function fetchHomeShowcasePosts(
       where: { id: { notIn: [...used] }, ...catWhere },
       orderBy: { createdAt: 'desc' },
       take: need,
-      include: HOME_FEED_INCLUDE,
+      select: HOME_FEED_SELECT,
     });
     leftPosts = [...leftPosts, ...fill];
     fill.forEach((p) => used.add(p.id));
@@ -46,7 +46,7 @@ export async function fetchHomeShowcasePosts(
     where: { id: { notIn: [...used] }, ...catWhere },
     orderBy: { createdAt: 'desc' },
     take: 4,
-    include: HOME_FEED_INCLUDE,
+    select: HOME_FEED_SELECT,
   });
 
   const showcaseIds = [...leftPosts.map((p) => p.id), ...rightPosts.map((p) => p.id)];

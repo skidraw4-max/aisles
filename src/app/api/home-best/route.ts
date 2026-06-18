@@ -72,7 +72,9 @@ export async function GET(req: NextRequest) {
       rank: skip + i + 1,
     }));
 
-    return NextResponse.json({ page, totalPages, total, items });
+    return NextResponse.json({ page, totalPages, total, items }, {
+      headers: { 'Cache-Control': 'public, max-age=60, s-maxage=60, stale-while-revalidate=120' },
+    });
   } catch (err) {
     console.error('[api/home-best]', { categoryKey, err });
     return NextResponse.json({
