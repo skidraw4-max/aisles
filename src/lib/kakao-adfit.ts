@@ -3,6 +3,14 @@ import type { Category } from '@prisma/client';
 const DEFAULT_KAKAO_ADFIT_UNIT = 'DAN-hWgqfwr6VUfKXWm5';
 const DEFAULT_KAKAO_ADFIT_MAIN_BANNER_UNIT = 'DAN-hs7bUu3rwYN8Bmtx';
 
+/** 좁은 뷰포트 리더보드 — AdFit 728×90은 ~705px 미만 컨테이너에서 미게재 */
+export const KAKAO_LEADERBOARD_DESKTOP_WIDTH = 728;
+export const KAKAO_LEADERBOARD_DESKTOP_HEIGHT = 90;
+export const KAKAO_LEADERBOARD_MOBILE_WIDTH = 320;
+export const KAKAO_LEADERBOARD_MOBILE_HEIGHT = 100;
+/** AdFit 728×90이 실제로 채워지는 최소 슬롯 너비(프로덕션 검증 ~705px) */
+export const KAKAO_LEADERBOARD_MIN_FILL_WIDTH = 705;
+
 /** Kakao AdFit 광고 단위 ID (환경 변수로 오버라이드 가능) */
 export function getKakaoAdfitUnitId(override?: string): string {
   const trimmed = override?.trim();

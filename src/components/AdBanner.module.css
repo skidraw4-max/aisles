@@ -56,6 +56,10 @@
   margin-inline: auto;
 }
 
+.leaderboardWrapCompact {
+  max-width: 320px;
+}
+
 .leaderboardOuter {
   width: 100%;
   overflow: hidden;
@@ -79,6 +83,11 @@
 .leaderboardCard .slot {
   width: 728px;
   min-height: 90px;
+}
+
+.leaderboardWrapCompact .leaderboardCard .slot {
+  width: 320px;
+  min-height: 100px;
 }
 
 .leaderboardScaler .badge {
