@@ -7,8 +7,8 @@ import androidx.core.view.WindowInsetsControllerCompat;
 import com.getcapacitor.BridgeActivity;
 
 public class MainActivity extends BridgeActivity {
-    /** 시스템 내비게이션 바(멀티태스크·홈·뒤로) 영역 — 검정 30% (alpha 77 ≈ 0.3×255) */
-    private static final int NAV_BAR_COLOR = 0x4D000000;
+    /** 시스템 내비게이션 바(멀티태스크·홈·뒤로) 영역 — 불투명 검정 (alpha 255) */
+    private static final int NAV_BAR_COLOR = 0xFF000000;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
