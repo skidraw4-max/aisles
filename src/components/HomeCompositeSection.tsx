@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { FeedPostLink } from '@/components/FeedPostLink';
 import { PostThumbnail } from '@/components/post/PostThumbnail';
 import { homeHrefForCategory } from '@/lib/post-categories';
 import { corridorLabel, getAllUiLabels } from '@/lib/ui-config';
@@ -33,7 +34,13 @@ function MoreLink({ category, label }: { category: Category; label: string }) {
 function ShowcaseCard({ post, ui }: { post: HomeFeedPost; ui: Record<string, string> }) {
   return (
     <div className={styles.feedCardWrap}>
-      <Link href={`/post/${post.id}`} className={styles.feedCard}>
+      <FeedPostLink
+        href={`/post/${post.id}`}
+        className={styles.feedCard}
+        postId={post.id}
+        category={post.category}
+        surface="composite_section"
+      >
         <div className={styles.feedCardMedia}>
           <PostThumbnail
             thumbnail={post.thumbnail}
@@ -62,7 +69,7 @@ function ShowcaseCard({ post, ui }: { post: HomeFeedPost; ui: Record<string, str
             </span>
           </div>
         </div>
-      </Link>
+      </FeedPostLink>
     </div>
   );
 }
@@ -71,13 +78,19 @@ function CommunityListItem({ post }: { post: HomeFeedPost }) {
   const cc = post._count?.comments ?? 0;
   return (
     <li className={styles.communityListItem}>
-      <Link href={`/post/${post.id}`} className={styles.communityListLink}>
+      <FeedPostLink
+        href={`/post/${post.id}`}
+        className={styles.communityListLink}
+        postId={post.id}
+        category={post.category}
+        surface="composite_section"
+      >
         <span className={styles.communityListTitle}>{post.title}</span>
         <span className={styles.communityListMeta}>
           {post.author.username}
           {cc > 0 ? ` · 댓글 ${cc}` : ''} · {formatDate(post.createdAt)}
         </span>
-      </Link>
+      </FeedPostLink>
     </li>
   );
 }

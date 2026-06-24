@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { Plus } from 'lucide-react';
+import { FeedPostLink } from '@/components/FeedPostLink';
 import { PostThumbnail } from '@/components/post/PostThumbnail';
 import { HomeQuasarAsideListsLoader } from '@/components/HomeQuasarAsideListsLoader';
 import { homeHrefForCategory } from '@/lib/post-categories';
@@ -68,7 +69,13 @@ function ShowcaseCard({
 }) {
   return (
     <div className={styles.feedCardWrap}>
-      <Link href={`/post/${post.id}`} className={styles.feedCard}>
+      <FeedPostLink
+        href={`/post/${post.id}`}
+        className={styles.feedCard}
+        postId={post.id}
+        category={post.category}
+        surface="quasar_main"
+      >
         <div className={styles.feedCardMedia}>
           <PostThumbnail
             thumbnail={post.thumbnail}
@@ -99,7 +106,7 @@ function ShowcaseCard({
             </span>
           </div>
         </div>
-      </Link>
+      </FeedPostLink>
     </div>
   );
 }

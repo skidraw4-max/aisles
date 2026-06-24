@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ChevronLeft, ChevronRight, MessageCircle } from 'lucide-react';
+import { FeedPostLink } from '@/components/FeedPostLink';
 import { useUiLabels } from '@/components/UiLabelsProvider';
 import styles from '@/app/(root)/page.module.css';
 
@@ -134,7 +135,13 @@ export function TodaysBest() {
         ) : (
           data.items.map((item) => (
             <li key={item.id}>
-              <Link href={`/post/${item.id}`} className={styles.todaysBestRow}>
+              <FeedPostLink
+                href={`/post/${item.id}`}
+                className={styles.todaysBestRow}
+                postId={item.id}
+                category={category}
+                surface="todays_best"
+              >
                 <span
                   className={item.rank <= 3 ? styles.todaysBestRankTop : styles.todaysBestRank}
                   aria-hidden
@@ -146,7 +153,7 @@ export function TodaysBest() {
                   <MessageCircle className={styles.todaysBestCommentIcon} aria-hidden size={14} strokeWidth={2} />
                   <span className={styles.todaysBestCommentNum}>{item.commentCount}</span>
                 </span>
-              </Link>
+              </FeedPostLink>
             </li>
           ))
         )}

@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import type { ContentTabId } from '@/lib/content-tab';
 import { getContentTabFromSearchParams } from '@/lib/content-tab';
 import { HOME_ALL_HREF, useNavigateHomeAll } from '@/lib/home-corridor-nav';
+import { trackCorridorTabSelect } from '@/lib/ga4';
 import { useUiLabels } from '@/components/UiLabelsProvider';
 import styles from '@/app/(root)/page.module.css';
 
@@ -19,6 +20,17 @@ const TABS: { id: ContentTabId; labelKey: string; href: string }[] = [
   { id: 'launch', labelKey: 'corridor.launch', href: '/?category=LAUNCH' },
   { id: 'ai_fortune', labelKey: 'corridor.ai_fortune', href: '/?category=AI_FORTUNE' },
 ];
+
+const TAB_CATEGORY: Record<ContentTabId, string> = {
+  latest: 'ALL',
+  lab: 'LAB',
+  gallery: 'GALLERY',
+  lounge: 'LOUNGE',
+  gossip: 'GOSSIP',
+  build: 'BUILD',
+  launch: 'LAUNCH',
+  ai_fortune: 'AI_FORTUNE',
+};
 
 export function HomeContentTabs() {
   const searchParams = useSearchParams();
@@ -40,7 +52,10 @@ export function HomeContentTabs() {
                 prefetch
                 className={isActive ? `${styles.contentTabPill} ${styles.contentTabPillActive}` : styles.contentTabPill}
                 aria-current={isActive ? 'page' : undefined}
-                onClick={tab.id === 'latest' ? navigateHomeAll : undefined}
+                onClick={(e) => {
+                  trackCorridorTabSelect(TAB_CATEGORY[tab.id]);
+                  if (tab.id === 'latest') navigateHomeAll(e);
+                }}
               >
                 {label}
               </Link>

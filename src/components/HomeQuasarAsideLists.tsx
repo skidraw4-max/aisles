@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { homeHrefForCategory } from '@/lib/post-categories';
+import { FeedPostLink } from '@/components/FeedPostLink';
 import type { Category } from '@prisma/client';
 import styles from '@/app/(root)/page.module.css';
 
@@ -33,17 +34,23 @@ function formatDate(iso: string) {
   }
 }
 
-function AsideListItem({ post }: { post: QuasarAsidePost }) {
+function AsideListItem({ post, category }: { post: QuasarAsidePost; category: Category }) {
   const cc = post.commentCount;
   return (
     <li className={styles.quasarAsideListItem}>
-      <Link href={`/post/${post.id}`} className={styles.quasarAsideListLink}>
+      <FeedPostLink
+        href={`/post/${post.id}`}
+        className={styles.quasarAsideListLink}
+        postId={post.id}
+        category={category}
+        surface="quasar_sidebar"
+      >
         <span className={styles.quasarAsideListTitle}>{post.title}</span>
         <span className={styles.quasarAsideListMeta}>
           {post.authorUsername}
           {cc > 0 ? ` · 댓글 ${cc}` : ''} · {formatDate(post.createdAtIso)}
         </span>
-      </Link>
+      </FeedPostLink>
     </li>
   );
 }
@@ -78,7 +85,7 @@ export function HomeQuasarAsideLists({
         ) : (
           <ul className={styles.quasarAsideList}>
             {lounge.map((post) => (
-              <AsideListItem key={post.id} post={post} />
+              <AsideListItem key={post.id} post={post} category="LOUNGE" />
             ))}
           </ul>
         )}
@@ -93,7 +100,7 @@ export function HomeQuasarAsideLists({
         ) : (
           <ul className={styles.quasarAsideList}>
             {gossip.map((post) => (
-              <AsideListItem key={post.id} post={post} />
+              <AsideListItem key={post.id} post={post} category="GOSSIP" />
             ))}
           </ul>
         )}

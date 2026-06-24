@@ -28,3 +28,14 @@ export function sendGAEvent(
   }
   gtag('event', eventName, cleaned);
 }
+
+/** 복도 탭·네비 클릭 */
+export function trackCorridorTabSelect(category: string): void {
+  sendGAEvent('corridor_tab_select', { category });
+}
+
+/** 홈 피드 `category` 쿼리 → `feed_post_click` surface */
+export function homeFeedSurface(category: string | null): string {
+  if (category === null) return 'home_all_feed';
+  return `home_${category.toLowerCase()}_feed`;
+}

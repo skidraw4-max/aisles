@@ -52,6 +52,7 @@ import { AiFortunePostView } from './AiFortunePostView';
 import { AiFortunePromoBanner } from './AiFortunePromoBanner';
 import { PostRelatedPosts } from './PostRelatedPosts';
 import { PostScrollSubscribeModal } from './PostScrollSubscribeModalLoader';
+import { PostContentGroupAnalytics } from './PostContentGroupAnalytics';
 import { ContentReportLink } from '@/components/ContentReportLink';
 import { getKstParts, weekOfMonthKst } from '@/lib/ai-fortune/kst-week';
 import { aiFortunePayloadFromDb } from '@/lib/ai-fortune/payload';
@@ -283,6 +284,7 @@ export default async function PostPage({ params }: Props) {
     });
     return (
       <>
+        <PostContentGroupAnalytics category={post.category} />
         {fortuneJsonLd ? (
           <script
             type="application/ld+json"
@@ -528,6 +530,7 @@ export default async function PostPage({ params }: Props) {
 
   return (
     <>
+      <PostContentGroupAnalytics category={post.category} />
       {articleJsonLd ? (
         <script
           type="application/ld+json"

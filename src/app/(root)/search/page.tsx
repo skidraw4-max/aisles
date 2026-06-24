@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import { SiteFooter } from '@/components/SiteFooter';
+import { SearchPageAnalytics, SearchResultList } from '@/components/SearchPageClient';
 import { searchPosts } from '@/lib/search-posts';
 import { SEO_ROBOTS_PUBLIC } from '@/lib/seo-robots';
 import styles from './search.module.css';
@@ -43,18 +44,6 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
   return { title: `「${q}」 검색 · AIsle`, robots };
 }
 
-function formatDate(d: Date) {
-  try {
-    return d.toLocaleDateString('ko-KR', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
-  } catch {
-    return '';
-  }
-}
-
 export default async function SearchPage({ searchParams }: PageProps) {
   const sp = await searchParams;
   const q = firstParam(sp.q);
@@ -65,9 +54,13 @@ export default async function SearchPage({ searchParams }: PageProps) {
   const results = hasQuery
     ? await searchPosts({ q, tag: tag || undefined, corridor })
     : [];
+  const searchTerm = q || (tag ? `#${tag}` : corridor ? `corridor:${corridor}` : '');
 
   return (
     <>
+      {hasQuery && searchTerm ? (
+        <SearchPageAnalytics searchTerm={searchTerm} resultsCount={results.length} />
+      ) : null}
       <main className={styles.shell}>
         <Link href="/" className={styles.back}>
           ← 홈으로
@@ -113,19 +106,17 @@ export default async function SearchPage({ searchParams }: PageProps) {
             .
           </p>
         ) : (
-          <ul className={styles.list}>
-            {results.map((post) => (
-              <li key={post.id} className={styles.row}>
-                <Link href={`/post/${post.id}`} className={styles.link}>
-                  <h2 className={styles.rowTitle}>{post.title}</h2>
-                  <p className={styles.rowMeta}>
-                    {post.categoryLabel} · {post.authorUsername} · {formatDate(post.createdAt)}
-                  </p>
-                  {post.snippet ? <p className={styles.snippet}>{post.snippet}</p> : null}
-                </Link>
-              </li>
-            ))}
-          </ul>
+          <SearchResultList
+            results={results.map((post) => ({
+              id: post.id,
+              title: post.title,
+              category: post.category,
+              categoryLabel: post.categoryLabel,
+              authorUsername: post.authorUsername,
+              createdAtIso: post.createdAt.toISOString(),
+              snippet: post.snippet,
+            }))}
+          />
         )}
       </main>
       <SiteFooter />

@@ -25,6 +25,8 @@ import type { FeedPostJson } from '@/lib/home-feed';
 import { tryCreateBrowserClient } from '@/lib/supabase/client';
 import { isCapacitorNative } from '@/lib/capacitor-oauth';
 import { NativeAdSlot } from '@/components/NativeAdSlot';
+import { FeedPostLink } from '@/components/FeedPostLink';
+import { homeFeedSurface } from '@/lib/ga4';
 import styles from '@/app/(root)/page.module.css';
 
 const PAGE_SIZE = 12;
@@ -68,11 +70,25 @@ function CardFooter({ username, likeCount }: { username: string; likeCount: numb
   );
 }
 
-function FeedPostCard({ post, imagePriority }: { post: FeedPostJson; imagePriority?: boolean }) {
+function FeedPostCard({
+  post,
+  imagePriority,
+  surface,
+}: {
+  post: FeedPostJson;
+  imagePriority?: boolean;
+  surface: string;
+}) {
   const badge = useCorridorLabel(post.category);
   return (
     <div className={styles.feedCardWrap}>
-      <Link href={`/post/${post.id}`} className={styles.feedCard}>
+      <FeedPostLink
+        href={`/post/${post.id}`}
+        className={styles.feedCard}
+        postId={post.id}
+        category={post.category}
+        surface={surface}
+      >
         <div className={styles.feedCardMedia}>
           <PostThumbnail
             thumbnail={post.thumbnail}
@@ -95,7 +111,7 @@ function FeedPostCard({ post, imagePriority }: { post: FeedPostJson; imagePriori
           <p className={styles.feedCardDate}>{formatDate(post.createdAt)}</p>
           <CardFooter username={post.author.username} likeCount={post.likeCount} />
         </div>
-      </Link>
+      </FeedPostLink>
     </div>
   );
 }
@@ -117,12 +133,14 @@ function FeedBoardRow({
   showDateInMeta,
   hideAuthor,
   showFortuneWeek,
+  surface,
 }: {
   post: FeedPostJson;
   gossipReportStyle: boolean;
   showDateInMeta: boolean;
   hideAuthor: boolean;
   showFortuneWeek?: boolean;
+  surface: string;
 }) {
   const cc = commentCount(post);
   const hasMedia = Boolean(post.thumbnail?.trim());
@@ -130,7 +148,14 @@ function FeedBoardRow({
 
   return (
     <li className={styles.feedBoardRow}>
-      <Link href={`/post/${post.id}`} prefetch={showDateInMeta} className={styles.feedBoardFreeLink}>
+      <FeedPostLink
+        href={`/post/${post.id}`}
+        prefetch={showDateInMeta}
+        className={styles.feedBoardFreeLink}
+        postId={post.id}
+        category={post.category}
+        surface={surface}
+      >
         <span className={styles.feedBoardFreeMain}>
           {gossipReportStyle ? (
             <span className={styles.feedBoardGossipThumb} aria-hidden>
@@ -174,7 +199,7 @@ function FeedBoardRow({
             {post.views.toLocaleString('ko-KR')}
           </span>
         </span>
-      </Link>
+      </FeedPostLink>
     </li>
   );
 }
@@ -312,12 +337,14 @@ function FeedBoardTable({
   showDateInMeta,
   hideAuthor,
   showFortuneWeek,
+  surface,
 }: {
   items: FeedListItem<FeedPostJson>[];
   gossipReportStyle: boolean;
   showDateInMeta: boolean;
   hideAuthor: boolean;
   showFortuneWeek?: boolean;
+  surface: string;
 }) {
   return (
     <>
@@ -346,6 +373,7 @@ function FeedBoardTable({
                   showDateInMeta={showDateInMeta}
                   hideAuthor={hideAuthor}
                   showFortuneWeek={showFortuneWeek}
+                  surface={surface}
                 />
               ) : (
                 <li key={`board-ad-${item.slotIndex}`} className={styles.feedBoardAdRow}>
@@ -491,6 +519,7 @@ export function HomeAllFeed({ category, excludeIds, initialPosts, initialHasMore
     (visibleCount < posts.length || hasMore);
 
   const showLoungeSubscribeBar = category === 'LOUNGE' && boardList;
+  const feedSurface = homeFeedSurface(category);
 
   return (
     <>
@@ -509,6 +538,7 @@ export function HomeAllFeed({ category, excludeIds, initialPosts, initialHasMore
             showDateInMeta={loungeDateMeta}
             hideAuthor={hideAuthor}
             showFortuneWeek
+            surface={feedSurface}
           />
           {posts.length > 1 ? (
             <>
@@ -519,6 +549,7 @@ export function HomeAllFeed({ category, excludeIds, initialPosts, initialHasMore
                 showDateInMeta={loungeDateMeta}
                 hideAuthor={hideAuthor}
                 showFortuneWeek
+                surface={feedSurface}
               />
             </>
           ) : null}
@@ -529,13 +560,14 @@ export function HomeAllFeed({ category, excludeIds, initialPosts, initialHasMore
           gossipReportStyle={gossipReportStyle}
           showDateInMeta={loungeDateMeta}
           hideAuthor={hideAuthor}
+          surface={feedSurface}
         />
       ) : (
         <ul className={styles.allFeed}>
           {cardGridWithAds!.map((item, i) =>
             item.type === 'post' ? (
               <li key={item.post.id}>
-                <FeedPostCard post={item.post} imagePriority={i < 4} />
+                <FeedPostCard post={item.post} imagePriority={i < 4} surface={feedSurface} />
               </li>
             ) : (
               <li key={`feed-ad-${item.slotIndex}`} className={styles.feedAdRow}>

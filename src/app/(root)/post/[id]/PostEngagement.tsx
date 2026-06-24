@@ -10,6 +10,7 @@ import { usePostBookmark } from './PostBookmarkContext';
 import { usePostViewerOptional } from './PostViewerContext';
 import { PostSignupPromptModal } from './PostSignupPromptModalLoader';
 import { copyTextToClipboard } from '@/lib/clipboard-copy';
+import { sendGAEvent } from '@/lib/ga4';
 import styles from './post.module.css';
 
 const SIGNUP_PROMPT_COUNT_KEY = 'aisle.signupPrompt.articleViews';
@@ -130,9 +131,11 @@ export function PostEngagement({
     try {
       if (navigator.share) {
         await navigator.share({ title: document.title, url });
+        sendGAEvent('share_click', { post_id: postId, method: 'web_share' });
         return;
       }
       await copyTextToClipboard(url);
+      sendGAEvent('share_click', { post_id: postId, method: 'clipboard' });
       setShareHint('링크가 클립보드에 복사되었습니다.');
       window.setTimeout(() => setShareHint(null), 2200);
     } catch {

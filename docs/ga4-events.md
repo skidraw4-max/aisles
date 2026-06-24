@@ -20,6 +20,26 @@
 | `launch_banner_click` | LAUNCH 배너 슬라이드 클릭 | `post_id`, `slide_index` |
 | `build_hub_cta_upload` | BUILD 허브 「레시피 등록하기」 CTA | — |
 | `build_popular_click` | BUILD 허브 인기 레시피 행 클릭 | `post_id`, `rank` |
+| `feed_post_click` | 피드·목록에서 게시글 링크 클릭 | `post_id`, `category`, `surface` |
+| `site_search` | `/search` 결과 페이지 로드 (검색 실행 후) | `search_term`, `results_count` |
+| `corridor_tab_select` | 홈 복도 탭·헤더 네비 클릭 | `category` (`ALL`, `LOUNGE`, `LAB`, …) |
+| `share_click` | 상세 공유 버튼 클릭 | `post_id`, `method` (`web_share` \| `clipboard`) |
+
+### `feed_post_click` surface 값
+
+| surface | 위치 |
+|---------|------|
+| `home_all_feed` | 홈 전체 피드 (카드 그리드, `category` 없음) |
+| `home_lounge_feed` 등 | 홈 복도별 피드 (`home_{category소문자}_feed`) |
+| `quasar_main` | 퀘이사 메인 LAB·GALLERY 카드 |
+| `quasar_sidebar` | 퀘이사 LOUNGE·GOSSIP 사이드 리스트 |
+| `todays_best` | 오늘의 베스트 위젯 |
+| `search_result` | 검색 결과 목록 |
+| `composite_section` | 홈 composite AI Work·커뮤니티 섹션 |
+
+### 상세 페이지 `content_group`
+
+`/post/[id]` 진입 시 `gtag('config', …)`로 `content_group`·`post_category`를 게시글 `category`로 설정한다. 별도 커스텀 이벤트는 없다.
 
 ## 뉴스레터(다이제스트 메일) UTM
 
@@ -47,4 +67,10 @@ LOUNGE 다이제스트(Resend) 본문 링크는 URL 쿼리로 GA4에 유입을 �
 - `BuildHubSection.tsx` — `build_hub_cta_upload`, `build_popular_click`
 - `PostBookmarkContext.tsx` / `GuestBookmarkSnackbar.tsx` — `guest_bookmark_*`
 - `PostRelatedPosts.tsx` — `related_post_click`
+- `FeedPostLink.tsx` — `feed_post_click` (공용 링크 래퍼)
+- `HomeAllFeed.tsx`, `TodaysBest.tsx`, `HomeQuasarBoard.tsx`, `HomeQuasarAsideLists.tsx`, `HomeCompositeSection.tsx` — `feed_post_click`
+- `SearchPageClient.tsx` / `search/page.tsx` — `site_search`, 검색 결과 `feed_post_click`
+- `HomeContentTabs.tsx`, `MainNav.tsx` — `corridor_tab_select`
+- `PostEngagement.tsx` — `share_click`
+- `PostContentGroupAnalytics.tsx` — 상세 `content_group` / `post_category`
 - `src/app/api/cron/news-digest/route.ts` — 메일 UTM (`fortune_week` 포함)
