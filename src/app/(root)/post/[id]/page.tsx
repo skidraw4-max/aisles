@@ -52,6 +52,7 @@ import { AiFortunePostView } from './AiFortunePostView';
 import { AiFortunePromoBanner } from './AiFortunePromoBanner';
 import { PostRelatedPosts } from './PostRelatedPosts';
 import { PostScrollSubscribeModal } from './PostScrollSubscribeModalLoader';
+import { PostBodyAdBanner } from './PostBodyAdBanner';
 import { PostContentGroupAnalytics } from './PostContentGroupAnalytics';
 import { ContentReportLink } from '@/components/ContentReportLink';
 import { getKstParts, weekOfMonthKst } from '@/lib/ai-fortune/kst-week';
@@ -710,6 +711,8 @@ export default async function PostPage({ params }: Props) {
                 {!String(post.content ?? '').trim() ? (
                   <PostDescriptionEmptyCallout category={post.category} />
                 ) : null}
+
+                <PostBodyAdBanner postId={post.id} />
 
                 <PostTags tags={post.tags} />
 
