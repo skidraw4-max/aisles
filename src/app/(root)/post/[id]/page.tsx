@@ -52,7 +52,7 @@ import { AiFortunePostView } from './AiFortunePostView';
 import { AiFortunePromoBanner } from './AiFortunePromoBanner';
 import { PostRelatedPosts } from './PostRelatedPosts';
 import { PostScrollSubscribeModal } from './PostScrollSubscribeModalLoader';
-import { PostBodyAdBanner } from './PostBodyAdBanner';
+import { PostLeaderboardAd } from './PostLeaderboardAd';
 import { PostContentGroupAnalytics } from './PostContentGroupAnalytics';
 import { ContentReportLink } from '@/components/ContentReportLink';
 import { getKstParts, weekOfMonthKst } from '@/lib/ai-fortune/kst-week';
@@ -401,6 +401,9 @@ export default async function PostPage({ params }: Props) {
     post.mitNewsOriginalUrl ??
     (ytId ? `https://www.youtube.com/watch?v=${ytId}` : '')
   ).trim();
+  /** 하단 ExternalServiceCta(LAUNCH 제외) 또는 LaunchVisitProjectCta(footer) 직전에 광고 배치 */
+  const showFooterVisitCta =
+    Boolean(externalHref) && (post.category === 'LAUNCH' || post.category !== 'BUILD');
   const extraAttachments = (post.attachmentUrls ?? []).filter((u) => u.trim().length > 0);
   const catLabel = corridorLabel(ui, post.category);
   const heroCaption = post.metadata?.modelName
@@ -700,6 +703,8 @@ export default async function PostPage({ params }: Props) {
                   </div>
                 ) : null}
 
+                {showFooterVisitCta ? <PostLeaderboardAd postId={post.id} /> : null}
+
                 {externalHref && post.category !== 'LAUNCH' && post.category !== 'BUILD' ? (
                   <ExternalServiceCta href={externalHref} variant="buildBand" />
                 ) : null}
@@ -712,7 +717,7 @@ export default async function PostPage({ params }: Props) {
                   <PostDescriptionEmptyCallout category={post.category} />
                 ) : null}
 
-                <PostBodyAdBanner postId={post.id} />
+                {!showFooterVisitCta ? <PostLeaderboardAd postId={post.id} /> : null}
 
                 <PostTags tags={post.tags} />
 

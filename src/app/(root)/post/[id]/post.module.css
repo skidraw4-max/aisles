@@ -1853,19 +1853,10 @@
   inset: 0;
 }
 
-/* 게시글 본문 하단 Kakao 인피드(300×250) — AdFit 슬롯 직사각형 유지 */
-.postBodyAdWrap {
+/* 게시글 본문-방문 CTA 사이 리더보드 — 홈 상단 배너와 동일 슬롯·스케일 */
+.postLeaderboardAdWrap {
   width: 100%;
-  margin: 2rem auto 0;
-  display: flex;
-  justify-content: center;
-  min-width: 0;
-}
-
-.postBodyAdWrap :global(.kakao_ad_area),
-.postBodyAdWrap :global(.kakao_ad_area iframe),
-.postBodyAdWrap :global(.kakao_ad_area img) {
-  border-radius: 0 !important;
+  margin: 2rem 0;
 }
 
 .galleryStageMagazine {
