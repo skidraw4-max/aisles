@@ -7,7 +7,6 @@ import { HomeMainHero } from '@/components/HomeMainHero';
 import { HomeHeroCarousel } from '@/components/HomeHeroCarouselLoader';
 import { HomeContentTabs } from '@/components/HomeContentTabs';
 import { HomeLeaderboardBanner } from '@/components/HomeLeaderboardBanner';
-import { KakaoAdFitLoader } from '@/components/KakaoAdFitLoader';
 import { HomeQuasarBoard } from '@/components/HomeQuasarBoard';
 import { HomeDeferredLower } from '@/components/HomeDeferredLower';
 import { SHOW_HOME_MAIN_HERO } from '@/lib/home-flags';
@@ -319,7 +318,6 @@ export default async function HomePage({ searchParams }: PageProps) {
             }}
           />
         </section>
-        <KakaoAdFitLoader />
       </main>
       <SiteFooter />
     </>

@@ -8,6 +8,7 @@ import { defaultUiLabelMap } from '@/lib/ui-config-defaults';
 import { getInitialSession } from '@/lib/auth-initial-session';
 import { fetchLatestAiFortunePost } from '@/lib/ai-fortune/latest-fortune.server';
 import { RetentionWelcomeToast } from '@/components/RetentionWelcomeToast';
+import { KakaoAdFitLoader } from '@/components/KakaoAdFitLoader';
 
 async function safeUiLabels(): Promise<Record<string, string>> {
   try {
@@ -41,6 +42,7 @@ export default async function RootShellLayout({ children }: { children: React.Re
         <SiteHeader />
         <NoticeBar notices={notices} />
         {children}
+        <KakaoAdFitLoader />
         <RetentionWelcomeToast latestFortunePostId={latestFortune?.id ?? null} />
       </UiLabelsProvider>
     </SessionProvider>

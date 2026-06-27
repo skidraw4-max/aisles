@@ -27,6 +27,15 @@ export function getKakaoAdfitMainBannerUnitId(override?: string): string {
   return fromEnv || DEFAULT_KAKAO_ADFIT_MAIN_BANNER_UNIT;
 }
 
+/** 게시글 상세 리더보드(728×90) — 미설정 시 메인 배너 단위와 동일 */
+export function getKakaoAdfitPostBannerUnitId(override?: string): string {
+  const trimmed = override?.trim();
+  if (trimmed) return trimmed;
+  const fromEnv = process.env.NEXT_PUBLIC_KAKAO_ADFIT_POST_BANNER_UNIT?.trim();
+  if (fromEnv) return fromEnv;
+  return getKakaoAdfitMainBannerUnitId();
+}
+
 /** 복도 탭(LAB·GALLERY 등) 탭 아래 띠배너(728×90) — 미설정 시 메인 배너 단위와 동일 */
 export function getKakaoAdfitCorridorBannerUnitId(override?: string): string {
   const trimmed = override?.trim();

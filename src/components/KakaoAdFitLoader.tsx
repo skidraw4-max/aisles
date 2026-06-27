@@ -22,8 +22,8 @@ function nodeAddsKakaoIns(node: Node): boolean {
 function KakaoAdFitLoaderInner() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const categoryKey = searchParams.get('category')?.trim() || 'all';
-  const prevCategoryRef = useRef<string | null>(null);
+  const navKey = `${pathname}?${searchParams.toString()}`;
+  const prevNavKeyRef = useRef<string | null>(null);
   const insObserverDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -53,15 +53,14 @@ function KakaoAdFitLoaderInner() {
 
   useEffect(() => {
     if (isCapacitorNative()) return;
-    if (pathname !== '/') return;
-    if (prevCategoryRef.current === null) {
-      prevCategoryRef.current = categoryKey;
+    if (prevNavKeyRef.current === null) {
+      prevNavKeyRef.current = navKey;
       return;
     }
-    if (prevCategoryRef.current === categoryKey) return;
-    prevCategoryRef.current = categoryKey;
+    if (prevNavKeyRef.current === navKey) return;
+    prevNavKeyRef.current = navKey;
     return scheduleAdfitRescanAfterNav();
-  }, [pathname, categoryKey]);
+  }, [navKey]);
 
   return null;
 }

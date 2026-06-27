@@ -1,7 +1,7 @@
 'use client';
 
 import { AdBanner } from '@/components/AdBanner';
-import { getKakaoAdfitMainBannerUnitId } from '@/lib/kakao-adfit';
+import { getKakaoAdfitPostBannerUnitId } from '@/lib/kakao-adfit';
 import styles from './post.module.css';
 
 type Props = {
@@ -14,7 +14,7 @@ export function PostLeaderboardAd({ postId }: Props) {
     <aside className={styles.postLeaderboardAdWrap} aria-label="광고">
       <AdBanner
         variant="kakao-leaderboard"
-        adUnit={getKakaoAdfitMainBannerUnitId()}
+        adUnit={getKakaoAdfitPostBannerUnitId()}
         remountKey={postId}
       />
     </aside>
