@@ -64,6 +64,43 @@
   font-style: italic;
 }
 
+.bodyHtml {
+  white-space: normal;
+}
+
+.bodyHtml :where(p) {
+  margin: 0 0 0.85rem;
+}
+
+.bodyHtml :where(p:last-child) {
+  margin-bottom: 0;
+}
+
+.bodyHtml :where(a) {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.bodyHtml :where(img) {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0.75rem auto;
+  border-radius: 8px;
+}
+
+.bodyHtml :where(ul, ol) {
+  margin: 0 0 0.85rem;
+  padding-left: 1.35rem;
+}
+
+.bodyHtml :where(h2, h3) {
+  margin: 1rem 0 0.5rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
 .extraLinkWrap {
   margin-top: 1.5rem;
   padding-top: 1.25rem;

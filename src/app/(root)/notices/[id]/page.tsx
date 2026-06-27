@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { SiteFooter } from '@/components/SiteFooter';
 import { NoticeAdminLink } from '@/components/NoticeAdminLink';
+import { NoticeContent } from '@/components/NoticeContent';
 import { prisma } from '@/lib/prisma';
 import { isPrismaNoticeTableMissing } from '@/lib/prisma-notice';
 import { getCanonicalSiteUrl } from '@/lib/canonical-site-url';
@@ -99,11 +100,7 @@ export default async function NoticeDetailPage({ params }: PageProps) {
             <time className={styles.time} dateTime={notice.createdAt.toISOString()}>
               {dateStr}
             </time>
-            {notice.content.trim() ? (
-              <div className={styles.body}>{notice.content}</div>
-            ) : (
-              <p className={`${styles.body} ${styles.bodyEmpty}`}>등록된 본문이 없습니다.</p>
-            )}
+            <NoticeContent content={notice.content} />
             {linkTrim ? (
               <div className={styles.extraLinkWrap}>
                 <p className={styles.extraLabel}>관련 링크</p>

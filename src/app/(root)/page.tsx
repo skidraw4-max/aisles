@@ -26,6 +26,7 @@ import { buildHomeWebApplicationJsonLd } from '@/lib/home-web-application-json-l
 import { fetchLatestAiFortunePost } from '@/lib/ai-fortune/latest-fortune.server';
 import { AiFortuneCategoryIntro } from '@/components/AiFortuneCategoryIntro';
 import { HomeFortuneCard } from '@/components/HomeFortuneCard';
+import { AppLaunchBanner } from '@/components/AppLaunchBanner';
 import { BuildHubSection } from '@/components/BuildHubSection';
 import { UgcWeeklyBest } from '@/components/UgcWeeklyBest';
 import { fetchBuildPopularWeekly, fetchUgcWeeklyTop } from '@/lib/ugc-hub.server';
@@ -200,6 +201,12 @@ export default async function HomePage({ searchParams }: PageProps) {
             <p className={styles.heroLead}>{heroLead}</p>
           </section>
         )}
+
+        {!filterCategory ? (
+          <section className={styles.section} style={{ paddingTop: 12, paddingBottom: 0 }}>
+            <AppLaunchBanner />
+          </section>
+        ) : null}
 
         <section className={styles.section} style={{ paddingTop: 12, paddingBottom: 8 }}>
           <Suspense fallback={<div className={styles.contentTabBarFallback} aria-hidden />}>
