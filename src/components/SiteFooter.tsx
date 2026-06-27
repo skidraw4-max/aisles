@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { FooterPlayStoreBadge } from '@/components/FooterPlayStoreBadge';
 import { CHILD_SAFETY_POLICY_PATH, getLegalContactEmail } from '@/lib/legal-site';
 import styles from './site-footer.module.css';
 /** SNS 링크는 필요 시 수정 */
@@ -65,6 +66,7 @@ export function SiteFooter() {
             >
               <IconX className={styles.socialIcon} />
             </a>
+            <FooterPlayStoreBadge />
           </div>
         </div>
       </div>
