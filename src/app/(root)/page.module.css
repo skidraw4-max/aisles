@@ -214,10 +214,9 @@
 }
 
 .heroCarouselSlideAppLaunch .heroCarouselSlideInner {
-  border-color: rgba(167, 139, 250, 0.35);
-  background: linear-gradient(145deg, rgba(30, 18, 52, 0.72) 0%, rgba(12, 10, 24, 0.55) 55%, transparent 100%);
-  box-shadow: 0 0 32px rgba(124, 58, 237, 0.1);
-  padding: 0.85rem 1rem 1rem;
+  border-color: rgba(167, 139, 250, 0.28);
+  background: linear-gradient(145deg, rgba(26, 15, 40, 0.55) 0%, rgba(12, 8, 20, 0.35) 55%, transparent 100%);
+  box-shadow: 0 0 32px rgba(167, 139, 250, 0.06);
 }
 
 .heroCarouselSlideInner .heroTitle {
@@ -247,6 +246,10 @@
 
 .heroCarouselEyebrowPrompt {
   color: var(--accent);
+}
+
+.heroCarouselEyebrowAppLaunch {
+  color: #e9d5ff;
 }
 
 .heroCarouselCtaRow {

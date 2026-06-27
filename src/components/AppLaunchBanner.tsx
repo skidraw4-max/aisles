@@ -2,12 +2,13 @@
 
 import { QRCodeSVG } from 'qrcode.react';
 import { PLAY_STORE_URL } from '@/lib/mobile-app';
+import carouselStyles from '@/app/(root)/page.module.css';
 import styles from './AppLaunchBanner.module.css';
 
 const QR_SIZE = 112;
-const QR_SIZE_HERO = 96;
+const QR_SIZE_HERO = 72;
 
-function AppLaunchBannerContent({ qrSize }: { qrSize: number }) {
+function AppLaunchBarContent({ qrSize }: { qrSize: number }) {
   return (
     <>
       <div className={styles.textCol}>
@@ -45,8 +46,51 @@ function AppLaunchBannerContent({ qrSize }: { qrSize: number }) {
 /** 홈 히어로 캐러셀 첫 슬라이드 (Banner A) */
 export function AppLaunchHeroSlide() {
   return (
-    <div className={styles.heroSlide} aria-label="Android 앱 출시 안내">
-      <AppLaunchBannerContent qrSize={QR_SIZE_HERO} />
+    <div className={styles.heroSlideLayout} aria-label="Android 앱 출시 안내">
+      <div className={styles.heroSlideMain}>
+        <p
+          className={`${carouselStyles.heroCarouselEyebrow} ${carouselStyles.heroCarouselEyebrowAppLaunch}`}
+        >
+          NEW · Android 앱 출시
+        </p>
+        <h1 className={`${carouselStyles.heroTitle} ${carouselStyles.heroTitleHome}`}>
+          <span className={carouselStyles.heroTitleLine}>AIsle 앱으로</span>
+          <span className={carouselStyles.heroTitleLine}>
+            <span className={carouselStyles.heroTitleAccent}>AI 트렌드</span>
+            <span className={carouselStyles.heroTitleRest}>를 더 편하게</span>
+          </span>
+        </h1>
+        <p className={`${carouselStyles.heroLead} ${carouselStyles.heroLeadHome}`}>
+          웹과 동일한 피드·복도·AI FORTUNE을 앱에서 바로 이용하세요. Google Play에서 AIsle 검색
+          또는 QR 코드로 설치하세요.
+        </p>
+        <div
+          className={`${carouselStyles.heroCtaRow} ${carouselStyles.heroCarouselCtaRow} ${carouselStyles.heroCarouselCtaRowStack}`}
+          data-cta-count="1"
+        >
+          <a
+            href={PLAY_STORE_URL}
+            className={carouselStyles.heroCtaPrimary}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Google Play에서 받기
+          </a>
+          <span className={carouselStyles.heroCarouselCtaSpacer} aria-hidden="true" />
+        </div>
+      </div>
+      <div className={styles.heroQrCol}>
+        <a
+          href={PLAY_STORE_URL}
+          className={styles.heroQrLink}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Google Play에서 AIsle 앱 설치 (새 탭)"
+        >
+          <QRCodeSVG value={PLAY_STORE_URL} size={QR_SIZE_HERO} level="M" />
+        </a>
+        <p className={styles.heroQrCaption}>스캔</p>
+      </div>
     </div>
   );
 }
@@ -55,7 +99,7 @@ export function AppLaunchHeroSlide() {
 export function AppLaunchBarSlide() {
   return (
     <aside className={styles.banner} aria-label="Android 앱 출시 안내">
-      <AppLaunchBannerContent qrSize={QR_SIZE} />
+      <AppLaunchBarContent qrSize={QR_SIZE} />
     </aside>
   );
 }
