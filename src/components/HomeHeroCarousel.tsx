@@ -1,11 +1,12 @@
 'use client';
 
 import Link from 'next/link';
-import { useCallback, useEffect, useId, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
+import { AppLaunchHeroSlide } from '@/components/AppLaunchBanner';
+import { isCapacitorNative } from '@/lib/capacitor-oauth';
 import styles from '@/app/(root)/page.module.css';
 
 const INTERVAL_MS = 6000;
-const SLIDE_COUNT = 2;
 
 export type HomeHeroFortuneSlide = {
   eyebrow: string;
@@ -28,6 +29,12 @@ export type HomeHeroPromptSlide = {
   ctaLabel: string;
 };
 
+type SlideMeta = {
+  key: string;
+  label: string;
+  variant: 'app-launch' | 'fortune' | 'prompt';
+};
+
 type HomeHeroCarouselProps = {
   fortune: HomeHeroFortuneSlide;
   prompt: HomeHeroPromptSlide;
@@ -35,13 +42,40 @@ type HomeHeroCarouselProps = {
 
 export function HomeHeroCarousel({ fortune, prompt }: HomeHeroCarouselProps) {
   const carouselId = useId();
+  const [hideAppLaunch, setHideAppLaunch] = useState(true);
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
   const intervalRef = useRef<number | null>(null);
 
-  const go = useCallback((i: number) => {
-    setIndex(((i % SLIDE_COUNT) + SLIDE_COUNT) % SLIDE_COUNT);
+  useEffect(() => {
+    setHideAppLaunch(isCapacitorNative());
   }, []);
+
+  const slides = useMemo<SlideMeta[]>(() => {
+    const items: SlideMeta[] = [];
+    if (!hideAppLaunch) {
+      items.push({ key: 'app-launch', label: 'Android 앱 출시', variant: 'app-launch' });
+    }
+    items.push({ key: 'fortune', label: 'AI Fortune', variant: 'fortune' });
+    items.push({ key: 'prompt', label: '프롬프트 역설계', variant: 'prompt' });
+    return items;
+  }, [hideAppLaunch]);
+
+  const slideCount = slides.length;
+  const appLaunchIndex = slides.findIndex((s) => s.variant === 'app-launch');
+  const fortuneIndex = slides.findIndex((s) => s.variant === 'fortune');
+  const promptIndex = slides.findIndex((s) => s.variant === 'prompt');
+
+  useEffect(() => {
+    setIndex(0);
+  }, [hideAppLaunch, slideCount]);
+
+  const go = useCallback(
+    (i: number) => {
+      setIndex(((i % slideCount) + slideCount) % slideCount);
+    },
+    [slideCount],
+  );
 
   const clearTimer = useCallback(() => {
     if (intervalRef.current) {
@@ -53,18 +87,16 @@ export function HomeHeroCarousel({ fortune, prompt }: HomeHeroCarouselProps) {
   const startTimer = useCallback(() => {
     clearTimer();
     const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
-    if (mq.matches || paused) return;
+    if (mq.matches || paused || slideCount <= 1) return;
     intervalRef.current = window.setInterval(() => {
-      setIndex((i) => (i + 1) % SLIDE_COUNT);
+      setIndex((i) => (i + 1) % slideCount);
     }, INTERVAL_MS);
-  }, [clearTimer, paused]);
+  }, [clearTimer, paused, slideCount]);
 
   useEffect(() => {
     startTimer();
     return clearTimer;
   }, [startTimer, clearTimer]);
-
-  const slideLabels = ['AI Fortune', '프롬프트 역설계'];
 
   return (
     <section
@@ -81,11 +113,24 @@ export function HomeHeroCarousel({ fortune, prompt }: HomeHeroCarouselProps) {
       }}
     >
       <div className={styles.heroCarouselTrack}>
+        {appLaunchIndex >= 0 ? (
+          <article
+            id={`${carouselId}-slide-${appLaunchIndex}`}
+            className={`${styles.heroCarouselSlide} ${styles.heroCarouselSlideAppLaunch}`}
+            data-active={index === appLaunchIndex}
+            aria-hidden={index !== appLaunchIndex}
+          >
+            <div className={styles.heroCarouselSlideInner}>
+              <AppLaunchHeroSlide />
+            </div>
+          </article>
+        ) : null}
+
         <article
-          id={`${carouselId}-slide-0`}
+          id={`${carouselId}-slide-${fortuneIndex}`}
           className={`${styles.heroCarouselSlide} ${styles.heroCarouselSlideFortune}`}
-          data-active={index === 0}
-          aria-hidden={index !== 0}
+          data-active={index === fortuneIndex}
+          aria-hidden={index !== fortuneIndex}
         >
           <div className={styles.heroCarouselSlideInner}>
             <p className={`${styles.heroCarouselEyebrow} ${styles.heroCarouselEyebrowFortune}`}>
@@ -115,10 +160,10 @@ export function HomeHeroCarousel({ fortune, prompt }: HomeHeroCarouselProps) {
         </article>
 
         <article
-          id={`${carouselId}-slide-1`}
+          id={`${carouselId}-slide-${promptIndex}`}
           className={`${styles.heroCarouselSlide} ${styles.heroCarouselSlidePrompt}`}
-          data-active={index === 1}
-          aria-hidden={index !== 1}
+          data-active={index === promptIndex}
+          aria-hidden={index !== promptIndex}
         >
           <div className={styles.heroCarouselSlideInner}>
             <p className={`${styles.heroCarouselEyebrow} ${styles.heroCarouselEyebrowPrompt}`}>
@@ -156,21 +201,21 @@ export function HomeHeroCarousel({ fortune, prompt }: HomeHeroCarouselProps) {
             ‹
           </button>
           <div className={styles.heroCarouselDots} role="tablist" aria-label="히어로 슬라이드">
-            {slideLabels.map((label, i) => (
+            {slides.map((slide, i) => (
               <button
-                key={label}
+                key={slide.key}
                 type="button"
                 role="tab"
                 id={`${carouselId}-tab-${i}`}
                 aria-controls={`${carouselId}-slide-${i}`}
                 aria-selected={i === index}
-                aria-label={`${label} 보기`}
+                aria-label={`${slide.label} 보기`}
                 className={
                   i === index
                     ? `${styles.heroCarouselDot} ${styles.heroCarouselDotActive}`
                     : styles.heroCarouselDot
                 }
-                data-variant={i === 0 ? 'fortune' : 'prompt'}
+                data-variant={slide.variant}
                 onClick={() => go(i)}
               />
             ))}

@@ -5,11 +5,11 @@ import { PLAY_STORE_URL } from '@/lib/mobile-app';
 import styles from './AppLaunchBanner.module.css';
 
 const QR_SIZE = 112;
+const QR_SIZE_HERO = 96;
 
-/** NoticeBar 첫 슬라이드용 앱 출시 배너 (Banner A) */
-export function AppLaunchBarSlide() {
+function AppLaunchBannerContent({ qrSize }: { qrSize: number }) {
   return (
-    <aside className={styles.banner} aria-label="Android 앱 출시 안내">
+    <>
       <div className={styles.textCol}>
         <p className={styles.badge}>NEW · Android 앱 출시</p>
         <h2 className={styles.headline}>AIsle 앱으로 AI 트렌드를 더 편하게</h2>
@@ -34,10 +34,28 @@ export function AppLaunchBarSlide() {
           rel="noopener noreferrer"
           aria-label="Google Play에서 AIsle 앱 설치 (새 탭)"
         >
-          <QRCodeSVG value={PLAY_STORE_URL} size={QR_SIZE} level="M" />
+          <QRCodeSVG value={PLAY_STORE_URL} size={qrSize} level="M" />
         </a>
         <p className={styles.qrCaption}>스마트폰으로 스캔</p>
       </div>
+    </>
+  );
+}
+
+/** 홈 히어로 캐러셀 첫 슬라이드 (Banner A) */
+export function AppLaunchHeroSlide() {
+  return (
+    <div className={styles.heroSlide} aria-label="Android 앱 출시 안내">
+      <AppLaunchBannerContent qrSize={QR_SIZE_HERO} />
+    </div>
+  );
+}
+
+/** NoticeBar 등 좁은 영역용 앱 출시 배너 (Banner A) */
+export function AppLaunchBarSlide() {
+  return (
+    <aside className={styles.banner} aria-label="Android 앱 출시 안내">
+      <AppLaunchBannerContent qrSize={QR_SIZE} />
     </aside>
   );
 }

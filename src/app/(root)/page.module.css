@@ -213,6 +213,13 @@
   box-shadow: 0 0 32px rgba(167, 139, 250, 0.06);
 }
 
+.heroCarouselSlideAppLaunch .heroCarouselSlideInner {
+  border-color: rgba(167, 139, 250, 0.35);
+  background: linear-gradient(145deg, rgba(30, 18, 52, 0.72) 0%, rgba(12, 10, 24, 0.55) 55%, transparent 100%);
+  box-shadow: 0 0 32px rgba(124, 58, 237, 0.1);
+  padding: 0.85rem 1rem 1rem;
+}
+
 .heroCarouselSlideInner .heroTitle {
   flex-shrink: 0;
   margin-bottom: 0.75rem;
@@ -436,7 +443,8 @@
   background: #39ff14;
 }
 
-.heroCarouselDot[data-variant='prompt'].heroCarouselDotActive {
+.heroCarouselDot[data-variant='prompt'].heroCarouselDotActive,
+.heroCarouselDot[data-variant='app-launch'].heroCarouselDotActive {
   width: 1.35rem;
   background: linear-gradient(135deg, #c4b5fd, #7c3aed);
 }

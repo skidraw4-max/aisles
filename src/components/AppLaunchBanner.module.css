@@ -1,3 +1,47 @@
+.heroSlide {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  height: 100%;
+  min-height: 0;
+}
+
+@media (min-width: 768px) {
+  .heroSlide {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.25rem;
+  }
+}
+
+.heroSlide .headline {
+  font-size: var(--type-16);
+}
+
+@media (min-width: 640px) {
+  .heroSlide .headline {
+    font-size: var(--type-18);
+  }
+}
+
+.heroSlide .body,
+.heroSlide .sub {
+  display: none;
+}
+
+@media (min-width: 640px) {
+  .heroSlide .body {
+    display: block;
+  }
+}
+
+@media (min-width: 768px) {
+  .heroSlide .sub {
+    display: block;
+  }
+}
+
 .banner {
   display: flex;
   flex-direction: column;

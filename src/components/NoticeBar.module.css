@@ -2,11 +2,6 @@
   border-bottom: 1px solid rgba(255, 255, 255, 0.12);
 }
 
-.barAppLaunch {
-  border-bottom: 1px solid rgba(167, 139, 250, 0.25);
-  background: linear-gradient(135deg, rgba(30, 18, 52, 0.98) 0%, rgba(12, 10, 24, 1) 100%);
-}
-
 .inner {
   display: flex;
   align-items: center;
@@ -18,30 +13,10 @@
   min-width: 0;
 }
 
-.innerAppLaunch {
-  max-width: var(--aisle-max);
-  margin: 0 auto;
-  padding: 0.85rem var(--aisle-gutter-sm);
-  min-width: 0;
-}
-
-@media (min-width: 640px) {
-  .innerAppLaunch {
-    padding-left: var(--aisle-gutter);
-    padding-right: var(--aisle-gutter);
-  }
-}
-
 .track {
   flex: 1;
   min-width: 0;
   height: 1.5rem;
-  position: relative;
-  overflow: hidden;
-}
-
-.trackAppLaunch {
-  min-width: 0;
   position: relative;
   overflow: hidden;
 }
@@ -53,11 +28,6 @@
   align-items: center;
   justify-content: center;
   text-align: center;
-}
-
-.slideAppLaunch {
-  position: relative;
-  width: 100%;
 }
 
 @media (min-width: 640px) {
