@@ -1,25 +1,11 @@
-.wrap {
-  max-width: var(--aisle-max);
-  margin: 0 auto;
-  padding: 0 var(--aisle-gutter-sm);
-}
-
-@media (min-width: 640px) {
-  .wrap {
-    padding-left: var(--aisle-gutter);
-    padding-right: var(--aisle-gutter);
-  }
-}
-
 .banner {
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
-  padding: 1.15rem 1.25rem;
-  border-radius: 12px;
-  border: 1px solid rgba(167, 139, 250, 0.35);
-  background: linear-gradient(135deg, rgba(30, 18, 52, 0.95) 0%, rgba(12, 10, 24, 0.98) 100%);
-  box-shadow: 0 0 28px rgba(124, 58, 237, 0.12);
+  padding: 0;
+  border: none;
+  background: transparent;
+  box-shadow: none;
 }
 
 @media (min-width: 768px) {
