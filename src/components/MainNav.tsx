@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { X } from 'lucide-react';
 import { useUiLabels } from '@/components/UiLabelsProvider';
-import { HOME_ALL_HREF, useNavigateHomeAll } from '@/lib/home-corridor-nav';
+import { HOME_ALL_HREF, useHomeAllHref, useNavigateHomeAll } from '@/lib/home-corridor-nav';
 import { trackCorridorTabSelect } from '@/lib/ga4';
 import styles from './SiteHeader.module.css';
 
@@ -36,6 +36,7 @@ export function MainNav() {
   const m = useUiLabels();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const homeAllHref = useHomeAllHref();
   const navigateHomeAll = useNavigateHomeAll();
   const raw = searchParams.get('category');
   const current = raw?.trim() ? raw.trim().toUpperCase() : null;
@@ -46,10 +47,11 @@ export function MainNav() {
     <nav className={`${styles.nav} ${styles.navQuasi}`} aria-label="주요 메뉴">
       {HOME_NAV_ITEMS.map((item) => {
         const active = item.queryKey === null ? current === null : current === item.queryKey;
+        const href = item.queryKey === null ? homeAllHref : item.href;
         return (
           <Link
             key={item.href}
-            href={item.href}
+            href={href}
             className={navClassName(active)}
             aria-current={active ? 'page' : undefined}
             scroll={false}
@@ -157,6 +159,7 @@ export function MobileMainNavPanel({ onClose }: { onClose: () => void }) {
   const m = useUiLabels();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const homeAllHref = useHomeAllHref();
   const navigateHomeAll = useNavigateHomeAll();
   const raw = searchParams.get('category');
   const current = raw?.trim() ? raw.trim().toUpperCase() : null;
@@ -167,10 +170,11 @@ export function MobileMainNavPanel({ onClose }: { onClose: () => void }) {
     <MobileNavShell onClose={onClose}>
       {HOME_NAV_ITEMS.map((item) => {
         const active = item.queryKey === null ? current === null : current === item.queryKey;
+        const href = item.queryKey === null ? homeAllHref : item.href;
         return (
           <li key={item.href}>
             <Link
-              href={item.href}
+              href={href}
               className={mobileNavLinkClass(active)}
               aria-current={active ? 'page' : undefined}
               scroll={false}

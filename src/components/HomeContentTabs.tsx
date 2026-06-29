@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import type { ContentTabId } from '@/lib/content-tab';
 import { getContentTabFromSearchParams } from '@/lib/content-tab';
-import { HOME_ALL_HREF, useNavigateHomeAll } from '@/lib/home-corridor-nav';
+import { HOME_ALL_HREF, useHomeAllHref, useNavigateHomeAll } from '@/lib/home-corridor-nav';
 import { trackCorridorTabSelect } from '@/lib/ga4';
 import { useUiLabels } from '@/components/UiLabelsProvider';
 import styles from '@/app/(root)/page.module.css';
@@ -35,6 +35,7 @@ const TAB_CATEGORY: Record<ContentTabId, string> = {
 export function HomeContentTabs() {
   const searchParams = useSearchParams();
   const active = getContentTabFromSearchParams(searchParams);
+  const homeAllHref = useHomeAllHref();
   const navigateHomeAll = useNavigateHomeAll();
   const m = useUiLabels();
 
@@ -44,10 +45,11 @@ export function HomeContentTabs() {
         {TABS.map((tab) => {
           const isActive = tab.id === active;
           const label = m?.[tab.labelKey] ?? '';
+          const href = tab.id === 'latest' ? homeAllHref : tab.href;
           return (
             <li key={tab.id}>
               <Link
-                href={tab.href}
+                href={href}
                 scroll={false}
                 prefetch
                 className={isActive ? `${styles.contentTabPill} ${styles.contentTabPillActive}` : styles.contentTabPill}

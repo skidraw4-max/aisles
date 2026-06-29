@@ -387,16 +387,15 @@ export function UploadForm({ editInitial = null, initialCategory }: Props) {
         setSubmitSuccess(
           '등록되었습니다. 메인 LAUNCH 배너는 운영팀 검토 후 노출됩니다. 썸네일·서비스 URL·피치가 있으면 후보 목록에 올라갑니다.'
         );
-        router.push('/?category=LAUNCH&posted=launch');
+        router.replace('/?category=LAUNCH&posted=launch');
       } else if (isBuild) {
         setSubmitSuccess(
           '등록되었습니다. 이번 주 인기 레시피 후보로 집계됩니다. 좋아요가 많을수록 BUILD 허브 상단에 노출됩니다.'
         );
-        router.push('/?category=BUILD&posted=build');
+        router.replace('/?category=BUILD&posted=build');
       } else {
-        router.push('/');
+        router.replace('/');
       }
-      router.refresh();
     } catch (err: unknown) {
       setFormError(err instanceof Error ? err.message : '저장에 실패했습니다.');
     } finally {
