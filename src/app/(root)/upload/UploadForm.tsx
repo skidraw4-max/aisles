@@ -393,6 +393,8 @@ export function UploadForm({ editInitial = null, initialCategory }: Props) {
           '등록되었습니다. 이번 주 인기 레시피 후보로 집계됩니다. 좋아요가 많을수록 BUILD 허브 상단에 노출됩니다.'
         );
         router.replace('/?category=BUILD&posted=build');
+      } else if (category === 'GOSSIP' || category === 'LOUNGE') {
+        router.replace(`/?category=${category}`);
       } else {
         router.replace('/');
       }
