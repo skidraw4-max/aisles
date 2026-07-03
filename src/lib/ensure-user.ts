@@ -5,6 +5,22 @@ import { sanitizeUsername } from '@/lib/username';
 /** 게시글 등 작성 전 Prisma `User` 행이 있도록 보장 */
 export async function ensurePrismaUser(user: SupabaseUser) {
   if (!user.email) return;
+
+  const existing = await prisma.user.findUnique({
+    where: { id: user.id },
+    select: { id: true, email: true },
+  });
+
+  if (existing) {
+    if (existing.email !== user.email) {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { email: user.email },
+      });
+    }
+    return;
+  }
+
   const emailLocal = user.email.split('@')[0] ?? 'user';
   const metaName = user.user_metadata?.username as string | undefined;
   let username = sanitizeUsername(metaName ?? '', emailLocal);
@@ -15,14 +31,12 @@ export async function ensurePrismaUser(user: SupabaseUser) {
   if (taken) {
     username = sanitizeUsername(`${metaName ?? emailLocal}_${user.id.slice(0, 8)}`, user.id.slice(0, 8));
   }
-  await prisma.user.upsert({
-    where: { id: user.id },
-    create: {
+  await prisma.user.create({
+    data: {
       id: user.id,
       email: user.email,
       username,
       role: 'USER',
     },
-    update: { email: user.email },
   });
 }

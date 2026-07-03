@@ -1,7 +1,6 @@
 import { randomUUID } from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { ensurePrismaUser } from '@/lib/ensure-user';
 import { MEDIA_STORAGE_NOT_CONFIGURED, uploadPublicObject } from '@/lib/r2';
 import { UPLOAD_IMAGE_MAX_BYTES, formatUploadMaxSizeLabel } from '@/lib/upload-limits';
 import { resolveUploadMimeType } from '@/lib/upload-media-types';
@@ -82,12 +81,6 @@ export async function POST(req: NextRequest) {
       },
       { status: 503 }
     );
-  }
-
-  try {
-    await ensurePrismaUser(user);
-  } catch {
-    /* 글 등록 단계에서 재시도 */
   }
 
   return NextResponse.json({ ok: true, url: uploaded.publicUrl });

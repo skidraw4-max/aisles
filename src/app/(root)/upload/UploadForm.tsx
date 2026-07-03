@@ -197,22 +197,28 @@ export function UploadForm({ editInitial = null, initialCategory }: Props) {
     }
     setFormError(null);
     const toAdd = Array.from(fileList).slice(0, room);
-    for (const file of toAdd) {
-      const id = crypto.randomUUID();
+
+    const slots = toAdd.map((file) => ({ id: crypto.randomUUID(), file }));
+    for (const { id, file } of slots) {
       setMediaSlots((s) => [...s, { id, name: file.name, url: '' }]);
       beginUpload();
-      try {
-        const url = await uploadFileToR2(file);
-        setMediaSlots((s) => s.map((x) => (x.id === id ? { ...x, url } : x)));
-      } catch (e) {
-        setMediaSlots((s) => s.filter((x) => x.id !== id));
-        if (!(e instanceof CompressedTooLargeError)) {
-          setFormError(e instanceof Error ? e.message : '업로드에 실패했습니다.');
-        }
-      } finally {
-        endUpload();
-      }
     }
+
+    await Promise.allSettled(
+      slots.map(async ({ id, file }) => {
+        try {
+          const url = await uploadFileToR2(file);
+          setMediaSlots((s) => s.map((x) => (x.id === id ? { ...x, url } : x)));
+        } catch (e) {
+          setMediaSlots((s) => s.filter((x) => x.id !== id));
+          if (!(e instanceof CompressedTooLargeError)) {
+            setFormError(e instanceof Error ? e.message : '업로드에 실패했습니다.');
+          }
+        } finally {
+          endUpload();
+        }
+      }),
+    );
   }
 
   function removeSlot(id: string) {
