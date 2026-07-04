@@ -7,7 +7,7 @@ import { NoticeContent } from '@/components/NoticeContent';
 import { prisma } from '@/lib/prisma';
 import { isPrismaNoticeTableMissing } from '@/lib/prisma-notice';
 import { getCanonicalSiteUrl } from '@/lib/canonical-site-url';
-import { SEO_ROBOTS_PUBLIC } from '@/lib/seo-robots';
+import { SEO_ROBOTS_PUBLIC, SEO_ROBOTS_PRIVATE } from '@/lib/seo-robots';
 import styles from './notice-detail.module.css';
 
 type PageProps = {
@@ -26,7 +26,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       select: { title: true },
     });
     if (!n) {
-      return { title: '공지 — AIsle' };
+      return { title: '공지 — AIsle', robots: SEO_ROBOTS_PRIVATE };
     }
     const base = getCanonicalSiteUrl().replace(/\/$/, '');
     const url = `${base}/notices/${id}`;
@@ -43,7 +43,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       },
     };
   } catch {
-    return { title: '공지 — AIsle' };
+    return { title: '공지 — AIsle', robots: SEO_ROBOTS_PRIVATE };
   }
 }
 

@@ -46,7 +46,7 @@ import { PostRichContent } from '@/lib/PostRichContent';
 import { getCanonicalSiteUrl } from '@/lib/canonical-site-url';
 import { categoryUsesDynamicPostOg } from '@/lib/post-dynamic-og';
 import { buildPostMetaDescription } from '@/lib/post-meta-description';
-import { SEO_ROBOTS_PUBLIC } from '@/lib/seo-robots';
+import { SEO_ROBOTS_PUBLIC, SEO_ROBOTS_PRIVATE } from '@/lib/seo-robots';
 import { PostDescriptionEmptyCallout } from './PostDescriptionEmptyCallout';
 import { AiFortunePostView } from './AiFortunePostView';
 import { AiFortunePromoBanner } from './AiFortunePromoBanner';
@@ -153,7 +153,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
   try {
     const post = await getPostMetadataFields(id);
-    if (!post) return { title: '게시글 — AIsle' };
+    if (!post) return { title: '게시글 — AIsle', robots: SEO_ROBOTS_PRIVATE };
     const catLabel = corridorLabel(ui, post.category);
     const description = buildPostMetaDescription({
       title: post.title,
@@ -202,7 +202,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       },
     };
   } catch {
-    return { title: '게시글 — AIsle' };
+    return { title: '게시글 — AIsle', robots: SEO_ROBOTS_PRIVATE };
   }
 }
 

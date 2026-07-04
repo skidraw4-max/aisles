@@ -115,14 +115,23 @@ export default async function HomePage({ searchParams }: PageProps) {
   const ugcWeekly =
     filterCategory === 'BUILD' || filterCategory === 'LAUNCH' ? filterCategory : null;
 
-  const [ui, { recentAll, firstHomeFeed, launchBannerPosts }, latestFortune, buildPopular, weeklyTop] =
-    await Promise.all([
+  const [uiResult, homeResult, fortuneResult, buildResult, weeklyResult] =
+    await Promise.allSettled([
       getAllUiLabels(),
       getHomePageQueries(cacheKey),
       showFortuneCard ? fetchLatestAiFortunePost() : Promise.resolve(null),
       buildHub ? fetchBuildPopularWeekly(5) : Promise.resolve([]),
       ugcWeekly ? fetchUgcWeeklyTop(ugcWeekly, 5) : Promise.resolve([]),
     ]);
+
+  const ui = uiResult.status === 'fulfilled' ? uiResult.value : ({} as Record<string, string>);
+  const { recentAll, firstHomeFeed, launchBannerPosts } =
+    homeResult.status === 'fulfilled'
+      ? homeResult.value
+      : { recentAll: [] as Awaited<ReturnType<typeof getHomePageQueries>>['recentAll'], firstHomeFeed: { posts: [] as HomeFeedPost[], hasMore: false }, launchBannerPosts: [] as HomeFeedPost[] };
+  const latestFortune = fortuneResult.status === 'fulfilled' ? fortuneResult.value : null;
+  const buildPopular = buildResult.status === 'fulfilled' ? buildResult.value : [];
+  const weeklyTop = weeklyResult.status === 'fulfilled' ? weeklyResult.value : [];
 
   const launchSlides = launchBannerPosts.map((p) => ({
     id: p.id,
