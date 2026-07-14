@@ -4,5 +4,6 @@ import { revalidatePath, revalidateTag } from 'next/cache';
 export function revalidatePostCaches(postId: string) {
   revalidateTag(`post-${postId}`);
   revalidateTag('post-sidebar');
+  revalidateTag('ai-fortune-latest');
   revalidatePath(`/post/${postId}`);
 }

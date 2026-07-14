@@ -2,6 +2,7 @@
  * AI FORTUNE — 영어 trendBullets(「이번 주 AI 흐름」)를 한국어로 재번역·DB 갱신
  *
  * 필요 env: DATABASE_URL 또는 DIRECT_URL, GOOGLE_GENERATIVE_AI_API_KEY (또는 GEMINI_*)
+ * 캐시 무효화(권장): CRON_SECRET + CRON_SITE_URL(기본 https://www.aisleshub.com)
  *
  * 실행:
  *   npx tsx scripts/retranslate-ai-fortune-trends-ko.ts
@@ -42,6 +43,31 @@ function parseArgs(argv: string[]) {
     else if (a.startsWith('--week=')) week = a.slice('--week='.length).trim() || null;
   }
   return { week, dryRun };
+}
+
+async function revalidateProductionPost(postId: string): Promise<{ ok: boolean; detail: string }> {
+  const secret = process.env.CRON_SECRET?.trim();
+  if (!secret) {
+    return { ok: false, detail: 'CRON_SECRET missing — skip remote revalidate' };
+  }
+  const base = (
+    process.env.CRON_SITE_URL ||
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    'https://www.aisleshub.com'
+  ).replace(/\/$/, '');
+  try {
+    const res = await fetch(`${base}/api/revalidate/post/${postId}`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${secret}` },
+    });
+    const body = await res.text();
+    if (!res.ok) {
+      return { ok: false, detail: `HTTP ${res.status} ${body.slice(0, 200)}` };
+    }
+    return { ok: true, detail: body.slice(0, 200) };
+  } catch (e) {
+    return { ok: false, detail: e instanceof Error ? e.message : String(e) };
+  }
 }
 
 async function translateTrends(
@@ -121,6 +147,7 @@ async function main() {
 
   let updated = 0;
   let skipped = 0;
+  let revalidated = 0;
 
   for (const post of posts) {
     const payload = aiFortunePayloadFromDb(post.aiFortunePayload);
@@ -136,6 +163,12 @@ async function main() {
 
     if (englishIdx.length === 0) {
       console.log('[ok] already Korean', post.aiFortuneWeekKey, post.id);
+      // 이미 KO여도 Data Cache가 EN을 담을 수 있음 — 원격 재검증만 시도
+      if (!dryRun) {
+        const rv = await revalidateProductionPost(post.id);
+        console.log(rv.ok ? '[revalidated]' : '[revalidate-skip]', post.id, rv.detail);
+        if (rv.ok) revalidated++;
+      }
       skipped++;
       continue;
     }
@@ -181,9 +214,13 @@ async function main() {
     });
     console.log('[updated]', post.aiFortuneWeekKey, post.id);
     updated++;
+
+    const rv = await revalidateProductionPost(post.id);
+    console.log(rv.ok ? '[revalidated]' : '[revalidate-skip]', post.id, rv.detail);
+    if (rv.ok) revalidated++;
   }
 
-  console.log(JSON.stringify({ updated, skipped, dryRun, week }, null, 2));
+  console.log(JSON.stringify({ updated, skipped, revalidated, dryRun, week }, null, 2));
   await prisma.$disconnect();
 }
 
