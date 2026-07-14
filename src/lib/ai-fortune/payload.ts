@@ -1,3 +1,4 @@
+import { looksPrimarilyEnglish } from '@/lib/ai-fortune/korean-text';
 import { MBTI_TYPES, type MbtiType, parseMbtiType } from '@/lib/ai-fortune/mbti';
 
 export type AiFortuneMbtiEntry = {
@@ -88,6 +89,14 @@ export function describeAiFortuneWeeklyPayloadIssues(value: unknown): string[] {
     const valid = trends.filter((t) => typeof t === 'string' && t.trim().length > 15);
     if (valid.length < 3) {
       issues.push(`trendBullets: need 3–5 items (≥16 chars), got ${valid.length}/${trends.length}`);
+    }
+    const englishHeavy = valid.filter(
+      (t): t is string => typeof t === 'string' && looksPrimarilyEnglish(t),
+    );
+    if (englishHeavy.length > 0) {
+      issues.push(
+        `trendBullets: ${englishHeavy.length} item(s) look English-only — must be Korean prose`,
+      );
     }
   }
 

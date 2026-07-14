@@ -7,48 +7,24 @@ import {
 } from '@/lib/gemini-prompt-analysis-engine';
 import type { AiFortuneAggregateContext } from '@/lib/ai-fortune/aggregate-context';
 import { formatAggregateForPrompt } from '@/lib/ai-fortune/aggregate-context';
+import { AI_FORTUNE_SYSTEM_PROMPT } from '@/lib/ai-fortune/fortune-system-prompt';
+import { looksPrimarilyEnglish } from '@/lib/ai-fortune/korean-text';
 import { aiFortunePostTitle } from '@/lib/ai-fortune/kst-week';
 import type { AiFortuneNewsContext } from '@/lib/ai-fortune/load-news-context';
-import { MBTI_TYPES } from '@/lib/ai-fortune/mbti';
 import {
   describeAiFortuneWeeklyPayloadIssues,
   parseAiFortuneWeeklyPayload,
   type AiFortuneWeeklyPayload,
 } from '@/lib/ai-fortune/payload';
-import { GEO_FACTUAL_WRITING_CONSTRAINTS, GEO_FORTUNE_FACT_CONSTRAINTS } from '@/lib/geo-prompt-constraints';
+import { MBTI_TYPES } from '@/lib/ai-fortune/mbti';
 
 export type { AiFortuneWeeklyPayload, AiFortuneMbtiEntry } from '@/lib/ai-fortune/payload';
+export { AI_FORTUNE_SYSTEM_PROMPT } from '@/lib/ai-fortune/fortune-system-prompt';
 
 const MBTI_LIST = MBTI_TYPES.join(', ');
 
-const FORTUNE_SYSTEM = `너는 AI 시대의 유머러스한 커리어 점술가이자 글로벌 AI 트렌드 애널리스트다.
-
-입력: (1) 지난 7일 Techmeme·Hacker News·AIsle 게시 헤드라인 (2) AIsle 커뮤니티 북마크 집계(개인 식별 없음)
-
-작업:
-1. 헤드라인·집계를 바탕으로 지난주 글로벌 AI 핵심 트렌드 3~5개를 분석한다. 각 트렌드는 2~3문장(각 16자 이상), 구체적 제품·연구·이슈를 포함한다.
-2. 그 트렌드를 바탕으로 MBTI 16유형(${MBTI_LIST}) 각각에 대해 이번 주:
-   - strategy: AI 활용 전략 (한국어 2~4문장, 20자 이상, 재치 있으나 실질적)
-   - luckyKeyword: 행운의 AI 도구·키워드 (3자 이상)
-   - avoidHabit: 피해야 할 습관·행동 (한국어 1~3문장, 15자 이상)
-
-반드시 아래 JSON 스키마만 출력한다. 마크다운 코드펜스(\`\`\`), 설명 문장, 주석, 추가 키 금지.
-- weekLabel: string
-- trendBullets: string[] (길이 3~5)
-- mbti: object[] (정확히 16개, 각 원소는 type·strategy·luckyKeyword·avoidHabit만)
-- closingNote: string (선택)
-
-type 필드는 반드시 영문 4글자 대문자 MBTI 코드만 사용 (예: INTJ). 한글 유형명·별칭 금지.
-mbti 배열은 ${MBTI_LIST} 각 유형이 정확히 1회씩 포함되어야 한다.
-
-예시 형태:
-{"weekLabel":"2026년 5월 3주차","trendBullets":["...","...","..."],"mbti":[{"type":"INTJ","strategy":"...","luckyKeyword":"...","avoidHabit":"..."}],"closingNote":"..."}
-
-${GEO_FACTUAL_WRITING_CONSTRAINTS}
-${GEO_FORTUNE_FACT_CONSTRAINTS}`;
-
 const VALIDATION_ERROR_MESSAGE =
-  'AI FORTUNE JSON 형식이 올바르지 않습니다 (트렌드 3~5개, MBTI 16유형).';
+  'AI FORTUNE JSON 형식이 올바르지 않습니다 (트렌드 3~5개, MBTI 16유형, 한국어).';
 
 const MAX_VALIDATION_ATTEMPTS = 3;
 
@@ -63,7 +39,7 @@ function buildFixUserPrompt(
 검증 오류:
 ${issues.map((i) => `- ${i}`).join('\n')}
 
-필수: trendBullets 3~5개(각 16자 이상), mbti 정확히 16개, type은 ${MBTI_LIST} 각 1회(영문 대문자 4글자).
+필수: trendBullets 3~5개(각 16자 이상, **한국어 본문** — 영어 문장 금지), mbti 정확히 16개, type은 ${MBTI_LIST} 각 1회(영문 대문자 4글자).
 weekLabel은 "${weekLabel}" 그대로 사용.`;
 }
 
@@ -145,7 +121,7 @@ weekLabel 필드에는 "${weekLabel}" 을 그대로 넣으세요.`;
   let lastIssues: string[] = [];
 
   for (let attempt = 1; attempt <= MAX_VALIDATION_ATTEMPTS; attempt++) {
-    const res = await geminiJsonPrompt(apiKey, FORTUNE_SYSTEM, userPrompt);
+    const res = await geminiJsonPrompt(apiKey, AI_FORTUNE_SYSTEM_PROMPT, userPrompt);
     if (!res.ok) {
       console.error('[ai-fortune] Gemini 생성 실패', { attempt, error: res.error });
       return { ok: false, error: res.error };
@@ -158,7 +134,7 @@ weekLabel 필드에는 "${weekLabel}" 을 그대로 넣으세요.`;
     if (!raw.weekLabel) raw.weekLabel = weekLabel;
 
     const data = parseAiFortuneWeeklyPayload(raw);
-    if (data) {
+    if (data && !data.trendBullets.some((t) => looksPrimarilyEnglish(t))) {
       if (attempt > 1) {
         console.log('[ai-fortune] 검증 재시도 성공', { attempt });
       }
@@ -170,6 +146,12 @@ weekLabel 필드에는 "${weekLabel}" 을 그대로 넣으세요.`;
     }
 
     lastIssues = describeAiFortuneWeeklyPayloadIssues(raw);
+    if (data && data.trendBullets.some((t) => looksPrimarilyEnglish(t))) {
+      lastIssues = [
+        ...lastIssues,
+        'trendBullets: English-only items detected — rewrite in Korean',
+      ];
+    }
     const topKeys =
       typeof raw === 'object' && raw !== null ? Object.keys(raw).slice(0, 12) : [];
     console.warn('[ai-fortune] 페이로드 검증 실패', {

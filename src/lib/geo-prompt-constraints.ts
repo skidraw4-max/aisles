@@ -19,6 +19,7 @@ export const GEO_NEWS_INTRO_THREE_LINE_CONSTRAINT = `
 /** AI FORTUNE trendBullets·MBTI strategy 등 사실 앵커 강화. */
 export const GEO_FORTUNE_FACT_CONSTRAINTS = `
 GEO 제약 — 트렌드·전략 문장에도 적용:
+- trendBullets는 **한국어 문장**으로 작성한다(영어 헤드라인을 그대로 붙여 쓰지 말 것). 고유명사·제품명·회사명·모델명만 원문 유지.
 - trendBullets 각 항목에 구체적 제품명·회사명·모델명·수치·발표 시점 중 2가지 이상을 포함한다.
 - 추상적 미래 예언("AI가 모든 것을 바꿀 것") 대신 지난주 헤드라인에 등장한 실명·사건을 근거로 쓴다.
 - strategy 문장도 재치는 유지하되, 행운 키워드·피할 습관과 함께 실존 AI 도구·서비스명을 1개 이상 넣는다.
