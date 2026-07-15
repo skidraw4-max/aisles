@@ -42,7 +42,6 @@ export default async function GameDetailPage({ params }: Props) {
         <Link className={styles.back} href="/games">
           ← 게임 허브
         </Link>
-        <span className={styles.pill}>메뉴 미노출 · URL 전용</span>
       </header>
 
       <main>

@@ -31,7 +31,6 @@ export default async function GamesHubPage() {
         <Link className={styles.brand} href="/">
           AIsle
         </Link>
-        <span className={styles.pill}>메뉴에 없음 · URL 전용 접근</span>
       </header>
 
       <main>
