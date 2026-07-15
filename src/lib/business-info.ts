@@ -16,7 +16,7 @@ export const BUSINESS_INFO = {
   /** 통신판매업 신고번호 (통신판매업신고증) */
   mailOrderRegistrationNumber: '제2026-충남공주-0146호',
   /** 사업장 소재지 */
-  address: '충청남도 공주시 신금2길 47-1, 104동 602호(신관동, 곰나루아파트)',
+  address: '충청남도 공주시 신금2길 47-1',
 } as const;
 
 /** 사업자번호 숫자만 (공정위 조회 wrkr_no) */
