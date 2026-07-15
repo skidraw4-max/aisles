@@ -143,8 +143,18 @@
 }
 
 .cover {
-  min-height: 55px;
+  /* Full-bleed width:100% made min-height-only tweaks invisible; cap at half column. */
+  width: 50%;
+  max-width: 50%;
+  min-height: 0;
   margin-bottom: 20px;
+}
+
+.coverImg {
+  width: 100%;
+  height: auto;
+  min-height: 0;
+  object-fit: cover;
 }
 
 .coverBadge {
