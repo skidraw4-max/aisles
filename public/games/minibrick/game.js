@@ -319,6 +319,13 @@ async function renderRanking(m){
   }
 }
 function escapeHtml(value){return String(value).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
+function notifyAisleParent(m,s){
+  try{
+    if(!window.parent||window.parent===window)return;
+    const safeScore=Math.max(0,Math.floor(Number(s)||0));
+    window.parent.postMessage({type:'aisle-game-score',mode:m,score:safeScore},window.location.origin);
+  }catch(err){/* standalone open */}
+}
 async function endGame(cleared=false){
   if(!running)return;
   playSfx('gameover');
@@ -326,6 +333,7 @@ async function endGame(cleared=false){
   stopGameLoop();
   running=false;
   const localRank=recordScoreLocal();
+  notifyAisleParent(mode,score);
   $('resultTitle').textContent=cleared?'스테이지 클리어':'게임 종료';
   $('resultScore').textContent=score.toLocaleString();
   $('resultLines').textContent=lines;

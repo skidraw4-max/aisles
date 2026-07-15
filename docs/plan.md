@@ -10,7 +10,7 @@
 - **Detail `/games/[slug]`**: **Weekly | Overall** tabs; BrickBreaking + minibrick also **mode** tabs (`stage|infinite` / `normal|endless`). TOP list + MY row when logged in.
 - **Data**: Prisma `GameScore` (`userId`, `gameSlug`, `mode`, `score`, `weekKey`, timestamps). `weekKey` = ISO week (`2026-W29`) for weekly rows, `"all"` for overall PBs. Upsert on submit only if new score is higher.
 - **API**: `GET/POST /api/games/[slug]/scores` — GET public rankings; POST requires Bearer auth + `ensurePrismaUser`.
-- Games currently store local/`localStorage` (Brick) or Google Apps Script (minibrick). Parent postMessage bridge is **later**; UI shows empty MY until scores are posted to our API.
+- Games still keep local/`localStorage` (Brick) or Google Apps Script (minibrick). **Bridge:** iframe `postMessage({ type: 'aisle-game-score', mode, score })` → `GamePlayShell` POSTs Bearer `/api/games/[slug]/scores`. Modes: brick `stage|infinite`, mini `normal|endless`.
 
 ### B. Login required to play
 
@@ -20,7 +20,6 @@
 
 ## Out of scope
 
-- Wiring iframe games to POST scores / postMessage.
 - Main nav exposure, rewarded ads SDK.
 
 ## Verify

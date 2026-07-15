@@ -2615,6 +2615,19 @@
       return normalizeRankings(await response.json());
     }
 
+    function notifyAisleParent(mode, score) {
+      try {
+        if (!window.parent || window.parent === window) return;
+        const safeScore = Math.max(0, Math.floor(Number(score) || 0));
+        window.parent.postMessage(
+          { type: "aisle-game-score", mode: getScoreMode(mode), score: safeScore },
+          window.location.origin
+        );
+      } catch (error) {
+        // parent may be cross-origin (standalone); ignore
+      }
+    }
+
     function postScore(name, score, stage, mode = "stage") {
       const scoreMode = getScoreMode(mode);
       const payload = {
@@ -2628,6 +2641,8 @@
         payload.sheetId = INFINITE_SHEET_ID;
         payload.gid = INFINITE_SHEET_GID;
       }
+
+      notifyAisleParent(scoreMode, payload.score);
 
       return fetch(SCORE_API_URL, {
         method: "POST",

@@ -146,12 +146,6 @@ export function GameRankingBoard({ gameSlug, compact = false }: Props) {
               </span>
             </li>
           </ol>
-          {!compact ? (
-            <p className={styles.hookNote}>
-              점수는 API(<code>POST /api/games/{gameSlug}/scores</code>)로 제출됩니다. 게임
-              iframe이 아직 연동되기 전이면 MY는 비어 있을 수 있습니다.
-            </p>
-          ) : null}
         </>
       )}
     </section>

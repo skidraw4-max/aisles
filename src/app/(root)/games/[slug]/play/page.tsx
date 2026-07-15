@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { GamePlayAds } from '@/components/GamePlayAds';
 import { GAME_LIST, getGame } from '@/lib/games/catalog';
 import { SEO_ROBOTS_PRIVATE } from '@/lib/seo-robots';
+import { GamePlayShell } from '../../GamePlayShell';
 import styles from '../../games.module.css';
 
 type Props = { params: Promise<{ slug: string }> };
@@ -42,13 +43,10 @@ export default async function GamePlayPage({ params }: Props) {
 
       <main>
         <div className={styles.embedWrap}>
-          <iframe
-            className={styles.embedFrame}
-            src={game.embedPath}
+          <GamePlayShell
+            gameSlug={game.slug}
+            embedPath={game.embedPath}
             title={`${game.title} 플레이`}
-            allow="autoplay; fullscreen"
-            loading="eager"
-            referrerPolicy="no-referrer-when-downgrade"
           />
         </div>
 
