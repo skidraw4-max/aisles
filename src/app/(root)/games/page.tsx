@@ -34,11 +34,26 @@ export default function GamesHubPage() {
             <article key={game.slug} className={styles.gameCard}>
               <div
                 className={`${styles.thumb} ${
-                  game.thumbVariant === 'brick' ? styles.thumbBrick : styles.thumbMini
+                  game.thumbnail
+                    ? styles.thumbImage
+                    : game.thumbVariant === 'brick'
+                      ? styles.thumbBrick
+                      : styles.thumbMini
                 }`}
                 aria-hidden="true"
               >
-                <span className={styles.thumbLabel}>썸네일</span>
+                {game.thumbnail ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    className={styles.thumbImg}
+                    src={game.thumbnail}
+                    alt=""
+                    width={526}
+                    height={254}
+                  />
+                ) : (
+                  <span className={styles.thumbLabel}>썸네일</span>
+                )}
               </div>
               <h2>{game.title}</h2>
               <p>{game.shortDescription}</p>

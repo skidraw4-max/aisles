@@ -29,8 +29,11 @@ export default async function GameDetailPage({ params }: Props) {
   const game = getGame(slug);
   if (!game) notFound();
 
-  const coverClass =
-    game.thumbVariant === 'brick' ? styles.coverBrick : styles.coverMini;
+  const coverClass = game.thumbnail
+    ? styles.coverImage
+    : game.thumbVariant === 'brick'
+      ? styles.coverBrick
+      : styles.coverMini;
 
   return (
     <div className={styles.page}>
@@ -43,6 +46,16 @@ export default async function GameDetailPage({ params }: Props) {
 
       <main>
         <div className={`${styles.cover} ${coverClass}`} role="img" aria-label={`${game.title} 커버`}>
+          {game.thumbnail ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              className={styles.coverImg}
+              src={game.thumbnail}
+              alt=""
+              width={526}
+              height={254}
+            />
+          ) : null}
           <span className={styles.coverBadge}>공식 제공</span>
         </div>
 

@@ -19,6 +19,11 @@ describe('games catalog embed paths', () => {
     assert.equal(getGame('brickbreaking')?.embedPath, '/games/brickbreaking/index.html');
   });
 
+  it('exposes brickbreaking thumbnail URL', () => {
+    assert.equal(getGame('brickbreaking')?.thumbnail, '/games/brickbreaking/thumbnail.png');
+    assert.equal(getGame('minibrick')?.thumbnail, null);
+  });
+
   it('returns null for unknown slug', () => {
     assert.equal(getGameEmbedPath('unknown'), null);
   });
