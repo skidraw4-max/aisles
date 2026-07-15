@@ -1,7 +1,9 @@
 import Link from 'next/link';
 import { FooterPlayStoreBadge } from '@/components/FooterPlayStoreBadge';
+import { BUSINESS_INFO, getFtcBizCommPopUrl } from '@/lib/business-info';
 import { CHILD_SAFETY_POLICY_PATH, getLegalContactEmail } from '@/lib/legal-site';
 import styles from './site-footer.module.css';
+
 /** SNS 링크는 필요 시 수정 */
 const SOCIAL_GITHUB = 'https://github.com/skidraw4-max/aisles';
 const SOCIAL_X = 'https://x.com/skidraw4';
@@ -24,6 +26,7 @@ function IconX({ className }: { className?: string }) {
 
 export function SiteFooter() {
   const contactEmail = getLegalContactEmail();
+  const ftcBizUrl = getFtcBizCommPopUrl();
 
   return (
     <footer className={styles.footer}>
@@ -68,6 +71,33 @@ export function SiteFooter() {
             </a>
             <FooterPlayStoreBadge />
           </div>
+        </div>
+
+        <div className={styles.bizBlock} aria-label="사업자 정보">
+          <p>
+            상호명 : {BUSINESS_INFO.tradeName}
+            <span className={styles.bizSep} aria-hidden>
+              |
+            </span>
+            대표자명 : {BUSINESS_INFO.representativeName}
+          </p>
+          <p>
+            사업자등록번호 : {BUSINESS_INFO.businessRegistrationNumber}{' '}
+            <a href={ftcBizUrl} target="_blank" rel="noopener noreferrer" className={styles.bizLink}>
+              사업자정보확인
+            </a>
+            <span className={styles.bizSep} aria-hidden>
+              |
+            </span>
+            통신판매업 신고번호 : {BUSINESS_INFO.mailOrderRegistrationNumber}
+          </p>
+          <p>주소 : {BUSINESS_INFO.address}</p>
+          <p>
+            이메일 :{' '}
+            <a className={styles.bizLink} href={`mailto:${contactEmail}`}>
+              {contactEmail}
+            </a>
+          </p>
         </div>
       </div>
     </footer>

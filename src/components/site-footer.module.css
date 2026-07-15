@@ -177,3 +177,37 @@
     height: 2.75rem;
   }
 }
+
+.bizBlock {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding-top: 1.25rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: var(--type-11);
+  line-height: 1.65;
+  color: #6b7280;
+}
+
+.bizBlock p {
+  margin: 0;
+}
+
+.bizBlock p + p {
+  margin-top: 0.15rem;
+}
+
+.bizSep {
+  margin: 0 0.45rem;
+  color: #4b5563;
+}
+
+.bizLink {
+  color: #6b7280;
+  text-decoration: underline;
+  text-underline-offset: 0.12em;
+  transition: color 0.15s ease;
+}
+
+.bizLink:hover {
+  color: #9ca3af;
+}
