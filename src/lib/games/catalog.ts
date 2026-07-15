@@ -30,7 +30,7 @@ export const GAMES: Record<GameSlug, GameInfo> = {
     description:
       '짧은 세션에 맞춘 미니 블록 퍼즐. 한 판만 빠르게 즐기고 싶을 때. 앱이 제공하는 공식 게임이며, 현재 UGC 제작은 지원하지 않습니다. PC는 키보드·마우스, 모바일은 터치 스와이프로 플레이합니다.',
     thumbVariant: 'mini',
-    thumbnail: null,
+    thumbnail: '/games/minibrick/thumbnail.png',
     embedPath: '/games/minibrick/index.html',
   },
 };
