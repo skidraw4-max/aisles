@@ -50,8 +50,13 @@ export async function middleware(request: NextRequest) {
     return applyIndexingPolicy(NextResponse.redirect(u));
   }
 
-  /** 공개 경로·업로드 외 페이지는 세션 검사 생략 → 홈 등 첫 로딩 시 Supabase 왕복 제거 */
-  if (isPublicPath(pathname) || !pathname.startsWith('/upload')) {
+  /** `/upload` · `/games/[slug]/play` 만 세션 검사 (그 외는 Supabase 왕복 생략) */
+  function needsAuth(path: string): boolean {
+    if (path.startsWith('/upload')) return true;
+    return /^\/games\/[^/]+\/play\/?$/.test(path);
+  }
+
+  if (isPublicPath(pathname) || !needsAuth(pathname)) {
     return nextWithRequest(request);
   }
 
@@ -83,7 +88,7 @@ export async function middleware(request: NextRequest) {
   if (!user) {
     const url = request.nextUrl.clone();
     url.pathname = '/login';
-    url.searchParams.set('next', '/upload');
+    url.searchParams.set('next', pathname);
     return applyIndexingPolicy(NextResponse.redirect(url));
   }
 

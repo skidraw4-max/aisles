@@ -46,16 +46,3 @@ export function getGame(slug: string): GameInfo | null {
 export function getGameEmbedPath(slug: string): string | null {
   return getGame(slug)?.embedPath ?? null;
 }
-
-export const RANKING_STUBS = {
-  weekly: [
-    { rank: 1, name: '픽셀브레이커', score: '128,400' },
-    { rank: 2, name: '아치슬유저', score: '97,220' },
-    { rank: 3, name: '나이트스와이프', score: '81,050' },
-  ],
-  overall: [
-    { rank: 1, name: '아치슬유저', score: '412,900' },
-    { rank: 2, name: '픽셀브레이커', score: '388,120' },
-    { rank: 3, name: '레이스클리어', score: '301,770' },
-  ],
-} as const;

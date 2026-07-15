@@ -1,8 +1,9 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { GAME_LIST, getGame, RANKING_STUBS } from '@/lib/games/catalog';
+import { GAME_LIST, getGame } from '@/lib/games/catalog';
 import { SEO_ROBOTS_PRIVATE } from '@/lib/seo-robots';
+import { GameRankingBoard } from '../GameRankingBoard';
 import styles from '../games.module.css';
 
 type Props = { params: Promise<{ slug: string }> };
@@ -63,26 +64,13 @@ export default async function GameDetailPage({ params }: Props) {
           <div className={styles.detailMain}>
             <h1>{game.title}</h1>
             <p className={styles.lede}>{game.description}</p>
+            <p className={styles.rankMutedInline}>플레이는 로그인 후 이용할 수 있습니다.</p>
             <Link className={styles.ctaLg} href={`/games/${game.slug}/play`}>
               플레이 시작
             </Link>
           </div>
 
-          <aside className={styles.snippet}>
-            <h2>이번 주 TOP 3</h2>
-            <ol className={`${styles.rankList} ${styles.rankCompact}`}>
-              {RANKING_STUBS.weekly.map((row) => (
-                <li key={row.rank}>
-                  <span>{row.rank}</span>
-                  <span>{row.name}</span>
-                  <span>{row.score}</span>
-                </li>
-              ))}
-            </ol>
-            <Link className={styles.textLink} href="/games#rank">
-              전체 랭킹 보기
-            </Link>
-          </aside>
+          <GameRankingBoard gameSlug={game.slug} />
         </div>
       </main>
 

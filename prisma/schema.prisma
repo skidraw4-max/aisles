@@ -27,7 +27,27 @@ model User {
   bookmarks  Bookmark[]
   comments   Comment[]
   passwordResetTokens PasswordResetToken[]
+  gameScores GameScore[]
   createdAt  DateTime @default(now())
+}
+
+/// 게임별 최고 점수 (주간 weekKey / 전체 "all")
+model GameScore {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// catalog GameSlug: brickbreaking | minibrick
+  gameSlug  String   @db.VarChar(64)
+  /// brick: stage|infinite · mini: normal|endless
+  mode      String   @db.VarChar(32)
+  score     Int
+  /// ISO week e.g. 2026-W29, or "all" for overall PB
+  weekKey   String   @db.VarChar(16)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, gameSlug, mode, weekKey])
+  @@index([gameSlug, mode, weekKey, score(sort: Desc)])
 }
 
 /// 비밀번호 찾기 메일의 `?token=` 검증용 (Supabase 메일의 redirect_to 에 포함)
