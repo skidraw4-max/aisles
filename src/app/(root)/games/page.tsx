@@ -61,8 +61,8 @@ export default async function GamesHubPage() {
                     className={styles.thumbImg}
                     src={game.thumbnail}
                     alt=""
-                    width={263}
-                    height={127}
+                    width={184}
+                    height={89}
                   />
                 ) : (
                   <span className={styles.thumbLabel}>썸네일</span>

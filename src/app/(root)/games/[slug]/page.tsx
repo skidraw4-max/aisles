@@ -54,8 +54,8 @@ export default async function GameDetailPage({ params }: Props) {
               className={styles.coverImg}
               src={game.thumbnail}
               alt=""
-              width={263}
-              height={127}
+              width={132}
+              height={64}
             />
           ) : null}
           <span className={styles.coverBadge}>공식 제공</span>
