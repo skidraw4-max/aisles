@@ -94,7 +94,7 @@
 .thumb,
 .cover {
   border-radius: 12px;
-  min-height: 140px;
+  min-height: 70px;
   display: grid;
   place-items: center;
   position: relative;
@@ -143,7 +143,7 @@
 }
 
 .cover {
-  min-height: 220px;
+  min-height: 110px;
   margin-bottom: 20px;
 }
 
