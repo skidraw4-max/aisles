@@ -1,29 +1,27 @@
-# Plan: Games per-game rankings + play login gate
+# Plan: Fix game score bridge + ranking (empty MY/TOP)
 
-**Status:** Approved (user: proceed with ranking proposal + login gate).
+**Status:** Implementing (parent mandate: investigate + fix + commit/push).
 
-## Scope
+## Prod findings
 
-### A. Per-game ranking (no cross-game board)
+1. **GameScore table exists** — `GET /api/games/brickbreaking/scores` returns 200 `{ entries: [], me: null }` (not 500). Migration is live. `run-build.cjs` runs `prisma migrate deploy` when `DIRECT_URL` is set.
+2. **Path collision (critical)** — `public/games/{slug}/index.html` is served at `/games/{slug}` and **shadows** App Router detail pages. Hard load of `/games/brickbreaking` = Phaser HTML, not RankingBoard. Soft SPA nav from `/games` still shows React rankings.
+3. **Play login gate ineffective** — Guests get full `/games/.../play` (no `NEXT_REDIRECT`); `/upload` soft-redirects. Guests can play → `GamePlayShell` drops POST when no Bearer → empty rankings. MY copy always says 「로그인 후 기록 표시」 when `me === null` (also when logged-in with no score).
+4. **Bridge wiring** — Deployed shell listens for `aisle-game-score`; brick `postScore`/`endGame` and minibrick `endGame` call `notifyAisleParent`. Same-origin iframe OK; scores only fire on game over (not stage clear).
 
-- **Hub `/games`**: each game card shows short **weekly top** highlights (e.g. Brick: stage 1st + infinite 1st). Remove unified hub scoreboard.
-- **Detail `/games/[slug]`**: **Weekly | Overall** tabs; BrickBreaking + minibrick also **mode** tabs (`stage|infinite` / `normal|endless`). TOP list + MY row when logged in.
-- **Data**: Prisma `GameScore` (`userId`, `gameSlug`, `mode`, `score`, `weekKey`, timestamps). `weekKey` = ISO week (`2026-W29`) for weekly rows, `"all"` for overall PBs. Upsert on submit only if new score is higher.
-- **API**: `GET/POST /api/games/[slug]/scores` — GET public rankings; POST requires Bearer auth + `ensurePrismaUser`.
-- Games still keep local/`localStorage` (Brick) or Google Apps Script (minibrick). **Bridge:** iframe `postMessage({ type: 'aisle-game-score', mode, score })` → `GamePlayShell` POSTs Bearer `/api/games/[slug]/scores`. Modes: brick `stage|infinite`, mini `normal|endless`.
+## Fixes
 
-### B. Login required to play
-
-- Protect `/games/[slug]/play` in **middleware** → redirect `/login?next=…`.
-- Hub/detail remain browsable; Play CTA goes to play URL (gate applies there).
-- Menu stays hidden; robots already disallow `/games`.
+| # | Change |
+|---|--------|
+| A | Move embeds `public/games/{slug}/**` → `public/embeds/{slug}/**`; update `catalog.embedPath` (+ thumbnail paths). Restores `/games/[slug]` detail. |
+| B | Play page: `force-dynamic` + server `getUser` → redirect `/login?next=…` (reliable vs middleware-only). |
+| C | `GamePlayShell`: session via `getSession`+`refreshSession` fallback; warn on missing auth; keep origin check. |
+| D | `GameRankingBoard`: `useAuth` for MY labels (guest vs logged-in no score); reload on `visibilitychange` / focus after return. |
+| E | Brick: also `notifyAisleParent` on stage clear (current score). |
+| F | Hardening: detail back link `router.refresh` optional via client wrapper; keep migrate in build. |
+| G | TDD: extend score-bridge / ranking tests; `tsc`; commit+push. |
 
 ## Out of scope
 
-- Main nav exposure, rewarded ads SDK.
-
-## Verify
-
-- Unit tests: weekKey, mode validation, ranking helpers.
-- `npx tsc --noEmit`
-- Manual: `/games`, `/games/brickbreaking`, `/games/brickbreaking/play` (logged out → login).
+- Replacing Google Sheets in-game boards.
+- Middleware rewrite beyond play page server guard.

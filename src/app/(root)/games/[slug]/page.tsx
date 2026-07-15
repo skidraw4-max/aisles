@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { GAME_LIST, getGame } from '@/lib/games/catalog';
 import { SEO_ROBOTS_PRIVATE } from '@/lib/seo-robots';
+import { GameDetailRefresh } from '../GameDetailRefresh';
 import { GameRankingBoard } from '../GameRankingBoard';
 import styles from '../games.module.css';
 
@@ -38,6 +39,7 @@ export default async function GameDetailPage({ params }: Props) {
 
   return (
     <div className={styles.page}>
+      <GameDetailRefresh />
       <header className={styles.top}>
         <Link className={styles.back} href="/games">
           ← 게임 허브

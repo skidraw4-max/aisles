@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { useAuth } from '@/components/SessionProvider';
 import { tryCreateBrowserClient } from '@/lib/supabase/client';
 import type { GameSlug } from '@/lib/games/catalog';
 import {
@@ -26,6 +27,7 @@ type ApiPayload = {
 };
 
 export function GameRankingBoard({ gameSlug, compact = false }: Props) {
+  const { isAuthenticated, displayName } = useAuth();
   const modes = modesForGame(gameSlug);
   const [period, setPeriod] = useState<RankingPeriod>('weekly');
   const [mode, setMode] = useState<GameMode>(defaultMode(gameSlug));
@@ -41,7 +43,11 @@ export function GameRankingBoard({ gameSlug, compact = false }: Props) {
       const supabase = tryCreateBrowserClient();
       if (supabase) {
         const { data: session } = await supabase.auth.getSession();
-        const token = session.session?.access_token;
+        let token = session.session?.access_token;
+        if (!token) {
+          const { data: refreshed } = await supabase.auth.refreshSession();
+          token = refreshed.session?.access_token;
+        }
         if (token) headers.Authorization = `Bearer ${token}`;
       }
       const qs = new URLSearchParams({
@@ -49,7 +55,10 @@ export function GameRankingBoard({ gameSlug, compact = false }: Props) {
         mode,
         limit: compact ? '3' : '10',
       });
-      const res = await fetch(`/api/games/${gameSlug}/scores?${qs}`, { headers });
+      const res = await fetch(`/api/games/${gameSlug}/scores?${qs}`, {
+        headers,
+        cache: 'no-store',
+      });
       if (!res.ok) {
         throw new Error('랭킹을 불러오지 못했습니다.');
       }
@@ -66,6 +75,32 @@ export function GameRankingBoard({ gameSlug, compact = false }: Props) {
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') void load();
+    };
+    const onFocus = () => {
+      void load();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    window.addEventListener('focus', onFocus);
+    return () => {
+      document.removeEventListener('visibilitychange', onVisible);
+      window.removeEventListener('focus', onFocus);
+    };
+  }, [load]);
+
+  const myLabel = data?.me
+    ? data.me.username
+    : isAuthenticated
+      ? displayName || '나'
+      : '로그인 후 기록 표시';
+  const myScoreLabel = data?.me
+    ? `${data.me.rank}위 · ${formatScore(data.me.score)}`
+    : isAuthenticated
+      ? '기록 없음'
+      : '—';
 
   return (
     <section
@@ -138,12 +173,8 @@ export function GameRankingBoard({ gameSlug, compact = false }: Props) {
             )}
             <li className={`${styles.rankMuted} ${styles.rankMine}`}>
               <span>MY</span>
-              <span>{data?.me ? data.me.username : '로그인 후 기록 표시'}</span>
-              <span>
-                {data?.me
-                  ? `${data.me.rank}위 · ${formatScore(data.me.score)}`
-                  : '—'}
-              </span>
+              <span>{myLabel}</span>
+              <span>{myScoreLabel}</span>
             </li>
           </ol>
         </>

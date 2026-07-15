@@ -28,3 +28,21 @@ export function parseAisleGameScoreMessage(data: unknown): AisleGameScoreMessage
   if (score > 1_000_000_000) return null;
   return { type: AISLE_GAME_SCORE_TYPE, mode, score };
 }
+
+/** Same-origin check for iframe postMessage (www vs apex allowed when site is either). */
+export function isTrustedGameMessageOrigin(
+  eventOrigin: string,
+  pageOrigin: string
+): boolean {
+  if (!eventOrigin || !pageOrigin) return false;
+  if (eventOrigin === pageOrigin) return true;
+  try {
+    const a = new URL(eventOrigin);
+    const b = new URL(pageOrigin);
+    if (a.protocol !== b.protocol) return false;
+    const stripWww = (h: string) => (h.startsWith('www.') ? h.slice(4) : h);
+    return stripWww(a.hostname) === stripWww(b.hostname);
+  } catch {
+    return false;
+  }
+}

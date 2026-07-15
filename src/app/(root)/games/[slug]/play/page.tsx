@@ -1,17 +1,17 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { GamePlayAds } from '@/components/GamePlayAds';
-import { GAME_LIST, getGame } from '@/lib/games/catalog';
+import { getGame } from '@/lib/games/catalog';
 import { SEO_ROBOTS_PRIVATE } from '@/lib/seo-robots';
+import { createClient } from '@/lib/supabase/server';
 import { GamePlayShell } from '../../GamePlayShell';
 import styles from '../../games.module.css';
 
 type Props = { params: Promise<{ slug: string }> };
 
-export function generateStaticParams() {
-  return GAME_LIST.map((g) => ({ slug: g.slug }));
-}
+/** Auth must run per-request (static prerender bypassed middleware soft-redirect). */
+export const dynamic = 'force-dynamic';
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
@@ -30,6 +30,14 @@ export default async function GamePlayPage({ params }: Props) {
   const { slug } = await params;
   const game = getGame(slug);
   if (!game) notFound();
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    redirect(`/login?next=/games/${game.slug}/play`);
+  }
 
   return (
     <div className={styles.playPage}>

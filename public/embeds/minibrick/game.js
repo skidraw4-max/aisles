@@ -323,8 +323,12 @@ function notifyAisleParent(m,s){
   try{
     if(!window.parent||window.parent===window)return;
     const safeScore=Math.max(0,Math.floor(Number(s)||0));
-    window.parent.postMessage({type:'aisle-game-score',mode:m,score:safeScore},window.location.origin);
-  }catch(err){/* standalone open */}
+    const payload={type:'aisle-game-score',mode:m,score:safeScore};
+    window.parent.postMessage(payload,window.location.origin);
+    if(window.top&&window.top!==window.parent){window.top.postMessage(payload,window.location.origin)}
+  }catch(err){
+    try{window.parent.postMessage({type:'aisle-game-score',mode:m,score:Math.max(0,Math.floor(Number(s)||0))},'*')}catch(e){/* standalone */}
+  }
 }
 async function endGame(cleared=false){
   if(!running)return;

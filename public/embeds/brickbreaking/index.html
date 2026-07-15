@@ -2619,12 +2619,21 @@
       try {
         if (!window.parent || window.parent === window) return;
         const safeScore = Math.max(0, Math.floor(Number(score) || 0));
-        window.parent.postMessage(
-          { type: "aisle-game-score", mode: getScoreMode(mode), score: safeScore },
-          window.location.origin
-        );
+        const payload = { type: "aisle-game-score", mode: getScoreMode(mode), score: safeScore };
+        // Prefer exact origin; fall back so www/apex embed mismatches still deliver.
+        window.parent.postMessage(payload, window.location.origin);
+        if (window.top && window.top !== window.parent) {
+          window.top.postMessage(payload, window.location.origin);
+        }
       } catch (error) {
-        // parent may be cross-origin (standalone); ignore
+        try {
+          window.parent.postMessage(
+            { type: "aisle-game-score", mode: getScoreMode(mode), score: Math.max(0, Math.floor(Number(score) || 0)) },
+            "*"
+          );
+        } catch {
+          // standalone / blocked
+        }
       }
     }
 
@@ -7185,6 +7194,7 @@
           this.stageText.setText(this.getStageLabel());
           this.best = saveBestStats(this.getRecordStage(), this.score, this.scoreMode);
           this.bestText.setText(this.getBestLabel());
+          notifyAisleParent(this.scoreMode, this.score);
           this.applyRandomBackground();
           this.createBricks();
           this.resetBallAndPaddle();

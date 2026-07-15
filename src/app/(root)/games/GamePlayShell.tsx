@@ -3,7 +3,10 @@
 import { useEffect, useRef } from 'react';
 import type { GameSlug } from '@/lib/games/catalog';
 import { isValidMode } from '@/lib/games/ranking';
-import { parseAisleGameScoreMessage } from '@/lib/games/score-bridge';
+import {
+  isTrustedGameMessageOrigin,
+  parseAisleGameScoreMessage,
+} from '@/lib/games/score-bridge';
 import { tryCreateBrowserClient } from '@/lib/supabase/client';
 import styles from './games.module.css';
 
@@ -13,6 +16,19 @@ type Props = {
   title: string;
 };
 
+async function resolveAccessToken(): Promise<string | null> {
+  const supabase = tryCreateBrowserClient();
+  if (!supabase) return null;
+
+  const { data: first } = await supabase.auth.getSession();
+  let token = first.session?.access_token ?? null;
+  if (token) return token;
+
+  const { data: refreshed } = await supabase.auth.refreshSession();
+  token = refreshed.session?.access_token ?? null;
+  return token;
+}
+
 /**
  * Same-origin game iframe + postMessage score bridge → POST /api/games/[slug]/scores.
  */
@@ -21,7 +37,7 @@ export function GamePlayShell({ gameSlug, embedPath, title }: Props) {
 
   useEffect(() => {
     const onMessage = (event: MessageEvent) => {
-      if (event.origin !== window.location.origin) return;
+      if (!isTrustedGameMessageOrigin(event.origin, window.location.origin)) return;
       const parsed = parseAisleGameScoreMessage(event.data);
       if (!parsed) return;
       if (!isValidMode(gameSlug, parsed.mode)) return;
@@ -32,21 +48,24 @@ export function GamePlayShell({ gameSlug, embedPath, title }: Props) {
 
       void (async () => {
         try {
-          const headers: HeadersInit = { 'Content-Type': 'application/json' };
-          const supabase = tryCreateBrowserClient();
-          if (supabase) {
-            const { data: session } = await supabase.auth.getSession();
-            const token = session.session?.access_token;
-            if (token) headers.Authorization = `Bearer ${token}`;
+          const token = await resolveAccessToken();
+          if (!token) {
+            console.warn('[games] score skipped: no auth session');
+            return;
           }
-          if (!headers.Authorization) return;
 
-          await fetch(`/api/games/${gameSlug}/scores`, {
+          const res = await fetch(`/api/games/${gameSlug}/scores`, {
             method: 'POST',
-            headers,
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
             body: JSON.stringify({ mode: parsed.mode, score: parsed.score }),
             keepalive: true,
           });
+          if (!res.ok) {
+            console.warn('[games] score POST failed', res.status);
+          }
         } catch {
           // Soft-fail: local game PB still saved; ranking updates on next successful submit.
         }
