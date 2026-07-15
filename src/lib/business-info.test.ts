@@ -22,7 +22,7 @@ describe('business-info', () => {
     );
   });
 
-  it('keeps mail-order number as explicit placeholder until real registration is filled', () => {
-    assert.match(BUSINESS_INFO.mailOrderRegistrationNumber, /O{4}/);
+  it('exposes filled mail-order registration number from certificate', () => {
+    assert.equal(BUSINESS_INFO.mailOrderRegistrationNumber, '제2026-충남공주-0146호');
   });
 });

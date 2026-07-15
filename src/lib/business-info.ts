@@ -3,7 +3,7 @@
  * 값 변경 시 이 파일만 수정하면 Footer 등이 갱신된다.
  *
  * 출처: 사업자등록증(간이과세자) — 상호·대표·사업자번호·주소.
- * 통신판매업 신고번호는 등록증에 없음 → 신고 후 실제 번호로 교체 필요.
+ * 통신판매업 신고번호: 통신판매업신고증 (2026-07-10, 공주시장).
  */
 
 export const BUSINESS_INFO = {
@@ -13,12 +13,8 @@ export const BUSINESS_INFO = {
   representativeName: '함종두',
   /** 사업자등록번호 (표시용, 하이픈 포함) */
   businessRegistrationNumber: '238-52-01108',
-  /**
-   * 통신판매업 신고번호 — PLACEHOLDER.
-   * 사업자등록증에 없음. 통신판매업 신고 완료 후 실제 번호로 교체할 것.
-   * 예: 제2026-충남공주-0000호
-   */
-  mailOrderRegistrationNumber: '제OOOO-OOOO-OOOO호',
+  /** 통신판매업 신고번호 (통신판매업신고증) */
+  mailOrderRegistrationNumber: '제2026-충남공주-0146호',
   /** 사업장 소재지 */
   address: '충청남도 공주시 신금2길 47-1, 104동 602호(신관동, 곰나루아파트)',
 } as const;
