@@ -12,6 +12,7 @@ const PRIVATE_DISALLOW = [
   '/write',
   '/notices/admin',
   '/admin/',
+  '/games',
 ] as const;
 
 /**
