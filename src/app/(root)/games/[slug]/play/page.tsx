@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { GamePlayAds } from '@/components/GamePlayAds';
 import { GAME_LIST, getGame } from '@/lib/games/catalog';
 import { SEO_ROBOTS_PRIVATE } from '@/lib/seo-robots';
 import styles from '../../games.module.css';
@@ -51,17 +52,10 @@ export default async function GamePlayPage({ params }: Props) {
           />
         </div>
 
-        <div className={styles.adSlot} role="note">
-          <span className={styles.adTag}>Ad</span>
-          <strong>중간 광고 슬롯 (인터스티셜)</strong>
-          <p>플레이 중 전환 시 노출 예정 · 현재 플레이스홀더</p>
-        </div>
+        <GamePlayAds />
 
-        <button type="button" className={styles.rewarded} disabled>
-          광고 보고 이어하기 / 보너스
-        </button>
         <p className={styles.note}>
-          실제 게임 임베드 · 메뉴 숨김 · URL로만 진입 · 광고는 추후 연동
+          실제 게임 임베드 · 메뉴 숨김 · URL로만 진입 · 웹 AdFit(네이티브 제외)
         </p>
       </main>
 

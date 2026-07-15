@@ -2,6 +2,10 @@ import type { Category } from '@prisma/client';
 
 const DEFAULT_KAKAO_ADFIT_UNIT = 'DAN-hWgqfwr6VUfKXWm5';
 const DEFAULT_KAKAO_ADFIT_MAIN_BANNER_UNIT = 'DAN-hs7bUu3rwYN8Bmtx';
+/** 게임 플레이 하단 띠배너 (320×50) — 게임메뉴 띠배너 */
+const DEFAULT_KAKAO_ADFIT_GAME_STRIP_UNIT = 'DAN-cH8wBucZnkY8FAwq';
+/** 게임 일시정지·스테이지 클리어 오버레이 (320×100) — 게임메뉴 상시노출광고 */
+const DEFAULT_KAKAO_ADFIT_GAME_BANNER_UNIT = 'DAN-M1mJWELRJTphSTeL';
 
 /** 좁은 뷰포트 리더보드 — AdFit 728×90은 ~705px 미만 컨테이너에서 미게재 */
 export const KAKAO_LEADERBOARD_DESKTOP_WIDTH = 728;
@@ -10,6 +14,13 @@ export const KAKAO_LEADERBOARD_MOBILE_WIDTH = 320;
 export const KAKAO_LEADERBOARD_MOBILE_HEIGHT = 100;
 /** AdFit 728×90이 실제로 채워지는 최소 슬롯 너비(프로덕션 검증 ~705px) */
 export const KAKAO_LEADERBOARD_MIN_FILL_WIDTH = 705;
+
+/** 게임 플레이 하단 연속 띠배너 */
+export const KAKAO_GAME_STRIP_WIDTH = 320;
+export const KAKAO_GAME_STRIP_HEIGHT = 50;
+/** 게임 일시정지·오버레이 배너 */
+export const KAKAO_GAME_BANNER_WIDTH = 320;
+export const KAKAO_GAME_BANNER_HEIGHT = 100;
 
 /** Kakao AdFit 광고 단위 ID (환경 변수로 오버라이드 가능) */
 export function getKakaoAdfitUnitId(override?: string): string {
@@ -43,6 +54,22 @@ export function getKakaoAdfitCorridorBannerUnitId(override?: string): string {
   const fromEnv = process.env.NEXT_PUBLIC_KAKAO_ADFIT_CORRIDOR_UNIT?.trim();
   if (fromEnv) return fromEnv;
   return getKakaoAdfitMainBannerUnitId();
+}
+
+/** 게임 플레이 하단 띠배너(320×50) — Kakao AdFit 단위 ID */
+export function getKakaoAdfitGameStripUnitId(override?: string): string {
+  const trimmed = override?.trim();
+  if (trimmed) return trimmed;
+  const fromEnv = process.env.NEXT_PUBLIC_KAKAO_ADFIT_GAME_STRIP_UNIT?.trim();
+  return fromEnv || DEFAULT_KAKAO_ADFIT_GAME_STRIP_UNIT;
+}
+
+/** 게임 일시정지·스테이지 클리어 오버레이(320×100) — Kakao AdFit 단위 ID */
+export function getKakaoAdfitGameBannerUnitId(override?: string): string {
+  const trimmed = override?.trim();
+  if (trimmed) return trimmed;
+  const fromEnv = process.env.NEXT_PUBLIC_KAKAO_ADFIT_GAME_BANNER_UNIT?.trim();
+  return fromEnv || DEFAULT_KAKAO_ADFIT_GAME_BANNER_UNIT;
 }
 
 /** 웹 인피드 Kakao 광고 — AI LAB(RECIPE)·GALLERY 복도만 */
