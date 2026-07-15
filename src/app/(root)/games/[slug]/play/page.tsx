@@ -53,10 +53,6 @@ export default async function GamePlayPage({ params }: Props) {
         </div>
 
         <GamePlayAds />
-
-        <p className={styles.note}>
-          실제 게임 임베드 · 메뉴 숨김 · URL로만 진입 · 웹 AdFit(네이티브 제외)
-        </p>
       </main>
 
       <footer className={styles.foot}>

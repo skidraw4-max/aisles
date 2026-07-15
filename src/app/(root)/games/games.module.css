@@ -423,13 +423,6 @@
   margin: 0;
 }
 
-.note {
-  margin: 10px 0 0;
-  color: var(--games-muted);
-  font-size: 0.8rem;
-  text-align: center;
-}
-
 .foot {
   margin-top: 36px;
   padding-top: 16px;
