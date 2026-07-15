@@ -1,20 +1,21 @@
-# Plan: Games mock hub (approved)
+# Plan: Games host (BrickBreaking + minibrick)
 
-**Status:** Approved for mockup-only scope (user: 진행해줘).
+**Status:** Approved (user: 2번부터 진행해줘 + PC 마우스/키보드·모바일 터치).
 
 ## Scope
 
-- Hidden games hub UI mock — **not** linked from MainNav, HomeContentTabs, or footer.
-- Initial games: **BrickBreaking**, **minibrick**.
-- Routes (URL-only access):
-  - `/games` — hub + weekly/overall ranking stubs
-  - `/games/brickbreaking`, `/games/minibrick` — detail + Play CTA
-  - `/games/brickbreaking/play`, `/games/minibrick/play` — canvas placeholder, mid-ad + rewarded CTA stubs
-- Soft mock: keep existing `(root)` site chrome; no nav menu items.
-- Discovery: omit from sitemap; disallow `/games` in robots; `SEO_ROBOTS_PRIVATE` on pages.
-- Visual: match `tmp-games-ui-mock/` (hub / detail / play). Play = placeholder (“게임 영역 (목업)”).
-- Out of scope: real game embeds, ads SDK, live rankings, Nav exposure.
+- Host static builds under `public/games/brickbreaking`, `public/games/minibrick`.
+- Play pages iframe same-origin HTML (`/games/.../index.html`).
+- PC: BrickBreaking mouse follow + ←→/AD + Space; minibrick already has keyboard + pointer.
+- Mobile: keep existing touch controls.
+- Menu stays hidden; URL-only; robots/sitemap unchanged.
+- Ad slots remain placeholders.
 
-## Tests
+## Out of scope
 
-- No page-level UI test pattern in repo → skip TDD; verify with `tsc --noEmit`.
+- Rewarded/interstitial SDK wiring, live rankings, nav exposure, UGC.
+
+## Verify
+
+- `tsc --noEmit`
+- Manual: `/games/brickbreaking/play`, `/games/minibrick/play`

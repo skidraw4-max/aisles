@@ -19,7 +19,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
   return {
     title: `플레이 · ${game.title} · AIsle`,
-    description: `${game.title} 플레이 (목업)`,
+    description: `${game.title} 플레이`,
     robots: SEO_ROBOTS_PRIVATE,
   };
 }
@@ -36,17 +36,19 @@ export default async function GamePlayPage({ params }: Props) {
           ← 나가기
         </Link>
         <strong>{game.title}</strong>
-        <div className={styles.hud}>
-          점수 <b>12,480</b> · 생명 ❤❤
-        </div>
+        <div className={styles.hud}>PC · 마우스/키보드 · 모바일 · 터치</div>
       </header>
 
       <main>
-        <div className={styles.canvas} aria-label="게임 캔버스">
-          <div className={styles.bricks} aria-hidden="true" />
-          <div className={styles.ball} aria-hidden="true" />
-          <div className={styles.paddle} aria-hidden="true" />
-          <p className={styles.canvasHint}>게임 영역 (목업)</p>
+        <div className={styles.embedWrap}>
+          <iframe
+            className={styles.embedFrame}
+            src={game.embedPath}
+            title={`${game.title} 플레이`}
+            allow="autoplay; fullscreen"
+            loading="eager"
+            referrerPolicy="no-referrer-when-downgrade"
+          />
         </div>
 
         <div className={styles.adSlot} role="note">
@@ -59,7 +61,7 @@ export default async function GamePlayPage({ params }: Props) {
           광고 보고 이어하기 / 보너스
         </button>
         <p className={styles.note}>
-          보상형 · 중간 광고 자리 (플레이스홀더) · 메뉴 숨김 · URL로만 진입
+          실제 게임 임베드 · 메뉴 숨김 · URL로만 진입 · 광고는 추후 연동
         </p>
       </main>
 
