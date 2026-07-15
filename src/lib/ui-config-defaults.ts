@@ -51,6 +51,7 @@ export const UI_CONFIG_SEED: readonly UiConfigSeedRow[] = [
     value: '이전 분류 (TREND)',
     description: '구 TREND 게시글 뱃지용 — 메뉴 비노출',
   },
+  { key: 'corridor.games', value: '게임', description: '상단 /games 링크' },
   { key: 'corridor.guide', value: '가이드', description: '상단 /about 링크' },
   { key: 'header.upload', value: '레시피 등록', description: '헤더 업로드 버튼 라벨' },
 

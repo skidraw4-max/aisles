@@ -1,6 +1,6 @@
-# Games hub (hidden) — hosted play
+# Games hub — hosted play
 
-메뉴에 노출하지 않습니다. URL로만 접근합니다.
+상단 메인 네비·모바일 드로어에 **게임** (`/games`)으로 노출합니다.
 
 | URL | 화면 |
 | --- | --- |

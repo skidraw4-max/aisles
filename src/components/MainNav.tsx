@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { X } from 'lucide-react';
 import { useUiLabels } from '@/components/UiLabelsProvider';
+import { GAMES_NAV_HREF, GAMES_NAV_LABEL_KEY } from '@/lib/games-nav';
 import { HOME_ALL_HREF, useHomeAllHref, useNavigateHomeAll } from '@/lib/home-corridor-nav';
 import { trackCorridorTabSelect } from '@/lib/ga4';
 import styles from './SiteHeader.module.css';
@@ -40,7 +41,9 @@ export function MainNav() {
   const navigateHomeAll = useNavigateHomeAll();
   const raw = searchParams.get('category');
   const current = raw?.trim() ? raw.trim().toUpperCase() : null;
+  const gamesActive = pathname === GAMES_NAV_HREF || pathname.startsWith(`${GAMES_NAV_HREF}/`);
   const aboutActive = pathname === '/about';
+  const gamesLabel = pick(m, GAMES_NAV_LABEL_KEY);
   const guideLabel = pick(m, 'corridor.guide');
 
   return (
@@ -65,6 +68,13 @@ export function MainNav() {
         );
       })}
       <Link
+        href={GAMES_NAV_HREF}
+        className={navClassName(gamesActive)}
+        aria-current={gamesActive ? 'page' : undefined}
+      >
+        {gamesLabel}
+      </Link>
+      <Link
         href="/about"
         className={navClassName(aboutActive)}
         aria-current={aboutActive ? 'page' : undefined}
@@ -78,6 +88,7 @@ export function MainNav() {
 /** Suspense fallback: 동일 링크, 활성 표시 없음 */
 export function MainNavFallback() {
   const m = useUiLabels();
+  const gamesLabel = pick(m, GAMES_NAV_LABEL_KEY);
   const guideLabel = pick(m, 'corridor.guide');
   return (
     <nav className={`${styles.nav} ${styles.navQuasi}`} aria-label="주요 메뉴">
@@ -86,6 +97,9 @@ export function MainNavFallback() {
           {pick(m, item.labelKey)}
         </Link>
       ))}
+      <Link href={GAMES_NAV_HREF} className={`${styles.navLink} ${styles.navLinkQuasi}`}>
+        {gamesLabel}
+      </Link>
       <Link href="/about" className={`${styles.navLink} ${styles.navLinkQuasi}`}>
         {guideLabel}
       </Link>
@@ -135,6 +149,7 @@ function MobileNavShell({
 /** Suspense 폴백: 활성 표시 없이 동일 링크 */
 export function MobileMainNavPanelFallback({ onClose }: { onClose: () => void }) {
   const m = useUiLabels();
+  const gamesLabel = pick(m, GAMES_NAV_LABEL_KEY);
   const guideLabel = pick(m, 'corridor.guide');
   return (
     <MobileNavShell onClose={onClose}>
@@ -145,6 +160,11 @@ export function MobileMainNavPanelFallback({ onClose }: { onClose: () => void })
           </Link>
         </li>
       ))}
+      <li>
+        <Link href={GAMES_NAV_HREF} className={styles.mobileNavLink} onClick={onClose}>
+          {gamesLabel}
+        </Link>
+      </li>
       <li>
         <Link href="/about" className={styles.mobileNavLink} onClick={onClose}>
           {guideLabel}
@@ -163,7 +183,9 @@ export function MobileMainNavPanel({ onClose }: { onClose: () => void }) {
   const navigateHomeAll = useNavigateHomeAll();
   const raw = searchParams.get('category');
   const current = raw?.trim() ? raw.trim().toUpperCase() : null;
+  const gamesActive = pathname === GAMES_NAV_HREF || pathname.startsWith(`${GAMES_NAV_HREF}/`);
   const aboutActive = pathname === '/about';
+  const gamesLabel = pick(m, GAMES_NAV_LABEL_KEY);
   const guideLabel = pick(m, 'corridor.guide');
 
   return (
@@ -189,6 +211,16 @@ export function MobileMainNavPanel({ onClose }: { onClose: () => void }) {
           </li>
         );
       })}
+      <li>
+        <Link
+          href={GAMES_NAV_HREF}
+          className={mobileNavLinkClass(gamesActive)}
+          aria-current={gamesActive ? 'page' : undefined}
+          onClick={onClose}
+        >
+          {gamesLabel}
+        </Link>
+      </li>
       <li>
         <Link
           href="/about"

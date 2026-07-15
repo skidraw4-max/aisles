@@ -9,7 +9,7 @@ import styles from './games.module.css';
 
 export const metadata: Metadata = {
   title: '게임 허브 · AIsle',
-  description: 'AIsle 공식 미니게임 허브. URL 전용 접근.',
+  description: 'AIsle 공식 미니게임 허브.',
   robots: SEO_ROBOTS_PRIVATE,
 };
 
