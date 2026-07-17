@@ -49,7 +49,19 @@ function bind(){
   $('homeBtn').onclick=()=>{playSfx('button');running=false;stopGameLoop();stopMusic();show('screen-main');renderRanking(mode);renderStageSelect()};
   setupBoardPointerControls();
   setupAudioUnlock();
-  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('settingsPopup')&&$('settingsPopup').classList.contains('show')){setSettingsPopupVisible(false);return;}if(e.key==='Escape'&&$('stageSelectPanel')&&$('stageSelectPanel').classList.contains('show')){setStageSelectVisible(false);return;}if(!running||stageTransitioning)return; if(e.key==='ArrowLeft')move(-1); if(e.key==='ArrowRight')move(1); if(e.key==='ArrowUp')rotate(); if(e.key==='ArrowDown')softDrop(); if(e.code==='Space')hardDrop()});
+  document.addEventListener('keydown',e=>{
+    if(e.key==='Escape'&&$('settingsPopup')&&$('settingsPopup').classList.contains('show')){setSettingsPopupVisible(false);return;}
+    if(e.key==='Escape'&&$('stageSelectPanel')&&$('stageSelectPanel').classList.contains('show')){setStageSelectVisible(false);return;}
+    if(!running||stageTransitioning)return;
+    const tag=e.target&&e.target.tagName;
+    if(tag==='INPUT'||tag==='TEXTAREA')return;
+    // Block browser scroll / Space page-jump so gameplay keeps focus & input.
+    if(e.key==='ArrowLeft'){e.preventDefault();move(-1);return;}
+    if(e.key==='ArrowRight'){e.preventDefault();move(1);return;}
+    if(e.key==='ArrowUp'){e.preventDefault();rotate();return;}
+    if(e.key==='ArrowDown'){e.preventDefault();softDrop();return;}
+    if(e.code==='Space'){e.preventDefault();hardDrop();}
+  });
   if(window.matchMedia){const media=window.matchMedia('(prefers-reduced-motion: reduce)');media.addEventListener&&media.addEventListener('change',e=>{bgReduceMotion=e.matches;e.matches?stopMainBackground():startMainBackground()})}
 }
 

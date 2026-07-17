@@ -35,6 +35,8 @@ async function resolveAccessToken(): Promise<string | null> {
 export function GamePlayShell({ gameSlug, embedPath, title }: Props) {
   const lastKeyRef = useRef<string>('');
 
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+
   useEffect(() => {
     const onMessage = (event: MessageEvent) => {
       if (!isTrustedGameMessageOrigin(event.origin, window.location.origin)) return;
@@ -76,14 +78,44 @@ export function GamePlayShell({ gameSlug, embedPath, title }: Props) {
     return () => window.removeEventListener('message', onMessage);
   }, [gameSlug]);
 
+  // Parent-page arrow scroll when focus is outside the iframe (ads, play bar).
+  useEffect(() => {
+    const scrollKeys = new Set(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']);
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (!scrollKeys.has(event.key)) return;
+      const tag = (event.target as HTMLElement | null)?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+      event.preventDefault();
+    };
+    window.addEventListener('keydown', onKeyDown, { passive: false });
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, []);
+
+  useEffect(() => {
+    const frame = iframeRef.current;
+    if (!frame) return;
+    const focusFrame = () => {
+      try {
+        frame.focus({ preventScroll: true });
+      } catch {
+        frame.focus();
+      }
+    };
+    focusFrame();
+    frame.addEventListener('load', focusFrame);
+    return () => frame.removeEventListener('load', focusFrame);
+  }, [embedPath]);
+
   return (
     <iframe
+      ref={iframeRef}
       className={styles.embedFrame}
       src={embedPath}
       title={title}
       allow="autoplay; fullscreen"
       loading="eager"
       referrerPolicy="no-referrer-when-downgrade"
+      tabIndex={0}
     />
   );
 }
