@@ -1,6 +1,6 @@
 'use server';
 
-import { revalidatePath } from 'next/cache';
+import { revalidatePath, revalidateTag } from 'next/cache';
 import { prisma } from '@/lib/prisma';
 import { requireAdminAction } from '@/lib/auth/require-admin';
 
@@ -9,6 +9,7 @@ export type LaunchBannerAdminResult =
   | { ok: false; error: string; code?: 'UNAUTHORIZED' | 'FORBIDDEN' | 'VALIDATION' | 'NOT_FOUND' };
 
 function revalidateLaunchViews() {
+  revalidateTag('home-page');
   revalidatePath('/');
   revalidatePath('/admin/launch-banners');
 }

@@ -1,36 +1,14 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import nextDynamic from 'next/dynamic';
 import type { Category } from '@prisma/client';
 import type { FeedPostJson } from '@/lib/home-feed';
 import { AdBanner } from '@/components/AdBanner';
 import { LaunchFeedSlider, type LaunchFeedSlide } from '@/components/LaunchFeedSlider';
+import { TodaysBest } from '@/components/TodaysBest';
+import { HomeAllFeed } from '@/components/HomeAllFeed';
 import { useUiLabels } from '@/components/UiLabelsProvider';
 import styles from '@/app/(root)/page.module.css';
-
-const TodaysBest = nextDynamic(
-  () => import('@/components/TodaysBest').then((m) => ({ default: m.TodaysBest })),
-  {
-    ssr: false,
-    loading: () => <div className={styles.dynamicClientTodaysBestFallback} aria-hidden />,
-  }
-);
-
-const HomeAllFeed = nextDynamic(
-  () => import('@/components/HomeAllFeed').then((m) => ({ default: m.HomeAllFeed })),
-  {
-    ssr: false,
-    loading: () => (
-      <div
-        className={styles.dynamicClientFeedFallback}
-        aria-busy="true"
-        role="status"
-        aria-label="피드 로딩"
-      />
-    ),
-  }
-);
 
 export type HomeDeferredLowerProps = {
   heroColumn?: ReactNode;
@@ -49,7 +27,7 @@ export type HomeDeferredLowerProps = {
   };
 };
 
-/** 메인 하단: TodaysBest·LAUNCH·ALL 피드 등 무거운 클라 번들을 ssr:false로 분리 */
+/** 메인 하단: 서버가 보낸 initialPosts 16건을 HTML에 포함 (ssr:false 제거) */
 export function HomeDeferredLower({
   heroColumn,
   fortuneCard,

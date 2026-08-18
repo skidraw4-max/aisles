@@ -5,5 +5,7 @@ export function revalidatePostCaches(postId: string) {
   revalidateTag(`post-${postId}`);
   revalidateTag('post-sidebar');
   revalidateTag('ai-fortune-latest');
+  revalidateTag('home-page');
+  revalidateTag('home-quasar');
   revalidatePath(`/post/${postId}`);
 }

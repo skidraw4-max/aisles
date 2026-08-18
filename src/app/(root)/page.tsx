@@ -4,10 +4,10 @@ import { Suspense } from 'react';
 import { SiteFooter } from '@/components/SiteFooter';
 import { RecentPostListThumb } from '@/components/RecentPostListThumb';
 import { HomeMainHero } from '@/components/HomeMainHero';
-import { HomeHeroCarousel } from '@/components/HomeHeroCarouselLoader';
+import { HomeHeroCarousel } from '@/components/HomeHeroCarousel';
 import { HomeContentTabs } from '@/components/HomeContentTabs';
 import { HomeLeaderboardBanner } from '@/components/HomeLeaderboardBanner';
-import { HomeQuasarBoard } from '@/components/HomeQuasarBoard';
+import { HomeQuasarBoard, HomeQuasarBoardSkeleton } from '@/components/HomeQuasarBoard';
 import { HomeDeferredLower } from '@/components/HomeDeferredLower';
 import { SHOW_HOME_MAIN_HERO } from '@/lib/home-flags';
 import { homeViewFromSearchParams } from '@/lib/content-tab';
@@ -232,7 +232,9 @@ export default async function HomePage({ searchParams }: PageProps) {
             className={`${styles.section} ${styles.sectionQuasarBeforeFeed}`}
             style={{ paddingTop: 8 }}
           >
-            <HomeQuasarBoard fortune={!filterCategory && latestFortune ? latestFortune : null} />
+            <Suspense fallback={<HomeQuasarBoardSkeleton />}>
+              <HomeQuasarBoard fortune={!filterCategory && latestFortune ? latestFortune : null} />
+            </Suspense>
           </section>
         ) : null}
 

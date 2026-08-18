@@ -16,7 +16,7 @@ export function SiteHeader() {
   const m = useUiLabels();
   const uploadLabel = m?.['header.upload'] ?? '';
   const router = useRouter();
-  const { isAuthenticated, displayName } = useAuth();
+  const { isAuthenticated, displayName, authReady } = useAuth();
   const [modalOpen, setModalOpen] = useState(false);
   const [authModalMode, setAuthModalMode] = useState<'login' | 'signup'>('login');
   const [menuOpen, setMenuOpen] = useState(false);
@@ -72,7 +72,9 @@ export function SiteHeader() {
             <Suspense fallback={<div className={styles.searchFallback} aria-hidden />}>
               <HeaderSearch />
             </Suspense>
-            {isAuthenticated ? (
+            {!authReady ? (
+              <div className={styles.authSlotSkeleton} aria-hidden />
+            ) : isAuthenticated ? (
               <div className={styles.userRow}>
                 <Link href="/upload" className={styles.uploadLink} aria-label={uploadLabel || '레시피 등록'}>
                   <Plus className={styles.uploadLinkIcon} strokeWidth={2.25} size={18} aria-hidden />

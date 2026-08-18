@@ -13,7 +13,7 @@ export const metadata: Metadata = {
   robots: SEO_ROBOTS_PRIVATE,
 };
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 60;
 
 export default async function GamesHubPage() {
   const highlightMap = Object.fromEntries(

@@ -342,6 +342,14 @@
   }
 }
 
+.authSlotSkeleton {
+  width: 9.5rem;
+  height: 2.25rem;
+  border-radius: 10px;
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.06);
+}
+
 .guestAuth {
   display: flex;
   align-items: center;

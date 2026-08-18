@@ -1,4 +1,5 @@
 import { cache } from 'react';
+import { unstable_cache } from 'next/cache';
 import { prisma } from '@/lib/prisma';
 import { withDbRetry } from '@/lib/db-retry';
 import {
@@ -28,8 +29,9 @@ export async function getLabel(key: string): Promise<string> {
 /**
  * 전체 UI 라벨 맵 (DB 우선, 누락 키는 시드 기본값).
  * 동일 요청에서 layout·page·자식 서버 컴포넌트가 각각 호출해도 DB는 1회만 조회한다.
+ * unstable_cache: 레이아웃의 비캐시 Prisma가 라우트 전체를 dynamic으로 만들지 않게 한다.
  */
-export const getAllUiLabels = cache(async (): Promise<Record<string, string>> => {
+async function fetchAllUiLabelsUncached(): Promise<Record<string, string>> {
   const merged = { ...FALLBACK };
   try {
     const rows = await withDbRetry(() => prisma.uiConfig.findMany());
@@ -42,6 +44,15 @@ export const getAllUiLabels = cache(async (): Promise<Record<string, string>> =>
     }
   }
   return merged;
+}
+
+const getCachedAllUiLabels = unstable_cache(fetchAllUiLabelsUncached, ['ui-labels-v1'], {
+  revalidate: 300,
+  tags: ['ui-labels'],
+});
+
+export const getAllUiLabels = cache(async (): Promise<Record<string, string>> => {
+  return getCachedAllUiLabels();
 });
 
 /** `home.hero.lead_filtered` 등 `{{category}}` 치환 */

@@ -35,6 +35,8 @@ type AuthContextValue = {
   isAuthenticated: boolean;
   role: Role | null;
   isAdmin: boolean;
+  /** false until client session bootstrap finishes (avoids Login flash) */
+  authReady: boolean;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -48,11 +50,11 @@ export function useAuth(): AuthContextValue {
 }
 
 type Props = {
-  initialSession: InitialSession;
+  initialSession?: InitialSession;
   children: React.ReactNode;
 };
 
-export function SessionProvider({ initialSession, children }: Props) {
+export function SessionProvider({ initialSession = null, children }: Props) {
   const [user, setUser] = useState<User | null>(null);
   const [dbUsername, setDbUsername] = useState<string | null>(
     initialSession?.dbUsername ?? null
@@ -163,8 +165,9 @@ export function SessionProvider({ initialSession, children }: Props) {
       isAuthenticated,
       role,
       isAdmin,
+      authReady: hydrated,
     }),
-    [user, displayName, isAuthenticated, role, isAdmin]
+    [user, displayName, isAuthenticated, role, isAdmin, hydrated]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

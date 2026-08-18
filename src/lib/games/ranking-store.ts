@@ -1,3 +1,4 @@
+import { unstable_cache, revalidateTag } from 'next/cache';
 import { prisma } from '@/lib/prisma';
 import type { GameSlug } from './catalog';
 import {
@@ -129,8 +130,13 @@ export async function submitGameScore(options: {
     }),
   ]);
 
+  const updated = weekly.changed || overall.changed;
+  if (updated) {
+    revalidateTag('game-hub-highlights');
+  }
+
   return {
-    updated: weekly.changed || overall.changed,
+    updated,
     weeklyScore: weekly.score,
     overallScore: overall.score,
   };
@@ -193,25 +199,41 @@ export type HubHighlight = {
   score: number | null;
 };
 
-/** Top-1 weekly per mode for hub cards. */
-export async function fetchHubWeeklyHighlights(
+const HUB_HIGHLIGHTS_REVALIDATE_SEC = 60;
+
+async function fetchHubWeeklyHighlightsUncached(
   gameSlug: GameSlug,
   modes: readonly GameMode[]
 ): Promise<HubHighlight[]> {
   const weekKey = isoWeekKey();
-  const out: HubHighlight[] = [];
-  for (const mode of modes) {
-    const top = await prisma.gameScore.findFirst({
-      where: { gameSlug, mode, weekKey },
-      orderBy: [{ score: 'desc' }, { updatedAt: 'asc' }],
-      include: { user: { select: { username: true } } },
-    });
-    out.push({
-      gameSlug,
-      mode,
-      username: top?.user.username ?? null,
-      score: top?.score ?? null,
-    });
-  }
-  return out;
+  return Promise.all(
+    modes.map(async (mode) => {
+      const top = await prisma.gameScore.findFirst({
+        where: { gameSlug, mode, weekKey },
+        orderBy: [{ score: 'desc' }, { updatedAt: 'asc' }],
+        include: { user: { select: { username: true } } },
+      });
+      return {
+        gameSlug,
+        mode,
+        username: top?.user.username ?? null,
+        score: top?.score ?? null,
+      };
+    })
+  );
+}
+
+/** Top-1 weekly per mode for hub cards. Parallel per mode + 60s Data Cache. */
+export async function fetchHubWeeklyHighlights(
+  gameSlug: GameSlug,
+  modes: readonly GameMode[]
+): Promise<HubHighlight[]> {
+  return unstable_cache(
+    () => fetchHubWeeklyHighlightsUncached(gameSlug, modes),
+    ['hub-weekly-highlights-v1', gameSlug, modes.join(',')],
+    {
+      revalidate: HUB_HIGHLIGHTS_REVALIDATE_SEC,
+      tags: ['game-hub-highlights', `game-hub-${gameSlug}`],
+    }
+  )();
 }

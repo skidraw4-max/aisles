@@ -1,6 +1,6 @@
 'use server';
 
-import { revalidatePath } from 'next/cache';
+import { revalidatePath, revalidateTag } from 'next/cache';
 import { prisma } from '@/lib/prisma';
 import { requireAdminAction } from '@/lib/auth/require-admin';
 import { UI_CONFIG_SEED } from '@/lib/ui-config-defaults';
@@ -27,6 +27,7 @@ export async function saveUiConfigAction(updates: { key: string; value: string }
     return { ok: false, error: '저장에 실패했습니다.' };
   }
 
+  revalidateTag('ui-labels');
   revalidatePath('/');
   revalidatePath('/admin/ui-settings');
   return { ok: true };

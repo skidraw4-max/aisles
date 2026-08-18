@@ -1,9 +1,11 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
+import { cookies } from 'next/headers';
 import { GamePlayAds } from '@/components/GamePlayAds';
 import { getGame } from '@/lib/games/catalog';
 import { SEO_ROBOTS_PRIVATE } from '@/lib/seo-robots';
+import { hasSupabaseAuthCookie } from '@/lib/auth-cookie';
 import { createClient } from '@/lib/supabase/server';
 import { GamePlayShell } from '../../GamePlayShell';
 import styles from '../../games.module.css';
@@ -30,6 +32,11 @@ export default async function GamePlayPage({ params }: Props) {
   const { slug } = await params;
   const game = getGame(slug);
   if (!game) notFound();
+
+  const cookieStore = await cookies();
+  if (!hasSupabaseAuthCookie(cookieStore.getAll())) {
+    redirect(`/login?next=/games/${game.slug}/play`);
+  }
 
   const supabase = await createClient();
   const {

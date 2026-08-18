@@ -746,6 +746,14 @@
 }
 
 /* 퀘이사존식 메인: 상단 배너 아래 — 좌 LAB·GALLERY 그리드 / 우 LOUNGE·GOSSIP 리스트 */
+.quasarBoardFallback {
+  width: 100%;
+  min-height: 22rem;
+  border-radius: 16px;
+  background: rgba(18, 20, 28, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
 .quasarBoardOuter {
   width: 100%;
 }

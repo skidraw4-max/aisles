@@ -11,6 +11,8 @@ import {
   fetchCommunityPreviewPosts,
   fetchLatestLabGalleryEight,
 } from '@/lib/home-composite';
+import { reviveCachedFeedPost, serializeCachedFeedPost } from '@/lib/home-page-cache';
+import { unstable_cache } from 'next/cache';
 import type { QuasarAsidePost } from '@/components/HomeQuasarAsideLists';
 import { HomeFortuneCard } from '@/components/HomeFortuneCard';
 import type { LatestAiFortuneSummary } from '@/lib/ai-fortune/latest-fortune.shared';
@@ -30,12 +32,34 @@ function serializeAsidePost(post: HomeFeedPost): QuasarAsidePost {
   };
 }
 
-async function loadQuasarPayload() {
+async function loadQuasarPayloadUncached() {
   const [labGallery, community] = await Promise.all([
     fetchLatestLabGalleryEight(),
     fetchCommunityPreviewPosts(),
   ]);
-  return { labGallery, community };
+  return {
+    labGallery: labGallery.map(serializeCachedFeedPost),
+    community: {
+      lounge: community.lounge.map(serializeCachedFeedPost),
+      gossip: community.gossip.map(serializeCachedFeedPost),
+    },
+  };
+}
+
+const getCachedQuasarPayload = unstable_cache(loadQuasarPayloadUncached, ['home-quasar-payload-v1'], {
+  revalidate: 60,
+  tags: ['home-page', 'home-quasar'],
+});
+
+async function loadQuasarPayload() {
+  const cached = await getCachedQuasarPayload();
+  return {
+    labGallery: cached.labGallery.map((p) => reviveCachedFeedPost(p)) as unknown as HomeFeedPost[],
+    community: {
+      lounge: cached.community.lounge.map((p) => reviveCachedFeedPost(p)) as unknown as HomeFeedPost[],
+      gossip: cached.community.gossip.map((p) => reviveCachedFeedPost(p)) as unknown as HomeFeedPost[],
+    },
+  };
 }
 
 function formatDate(iso: Date) {
@@ -112,6 +136,12 @@ function ShowcaseCard({
 }
 
 /** 퀘이사존식 메인: 좌측 LAB·GALLERY 최신 8칸(4×2), 우측 LOUNGE·GOSSIP 최신 리스트 */
+export function HomeQuasarBoardSkeleton() {
+  return (
+    <div className={styles.quasarBoardFallback} aria-busy="true" aria-label="AI Work 불러오는 중" />
+  );
+}
+
 export async function HomeQuasarBoard({ fortune }: HomeQuasarBoardProps = {}) {
   const [ui, { labGallery, community }] = await Promise.all([getAllUiLabels(), loadQuasarPayload()]);
 

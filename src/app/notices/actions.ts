@@ -1,6 +1,6 @@
 'use server';
 
-import { revalidatePath } from 'next/cache';
+import { revalidatePath, revalidateTag, unstable_cache } from 'next/cache';
 import { prisma } from '@/lib/prisma';
 import { requireAdminAction } from '@/lib/auth/require-admin';
 import { isPrismaNoticeTableMissing } from '@/lib/prisma-notice';
@@ -19,10 +19,7 @@ export type NoticeAdminResult<T = unknown> =
       code?: 'UNAUTHORIZED' | 'FORBIDDEN' | 'VALIDATION' | 'NOT_FOUND';
     };
 
-/**
- * 상단 롤링 바용: isRolling === true 만, 우선순위 내림차순 → 등록 최신순.
- */
-export async function getRollingNoticesForBar(): Promise<RollingNoticeDTO[]> {
+async function fetchRollingNoticesUncached(): Promise<RollingNoticeDTO[]> {
   try {
     return await prisma.notice.findMany({
       where: { isRolling: true },
@@ -38,7 +35,18 @@ export async function getRollingNoticesForBar(): Promise<RollingNoticeDTO[]> {
   }
 }
 
+/**
+ * 상단 롤링 바용: isRolling === true 만, 우선순위 내림차순 → 등록 최신순.
+ */
+export async function getRollingNoticesForBar(): Promise<RollingNoticeDTO[]> {
+  return unstable_cache(fetchRollingNoticesUncached, ['rolling-notices-v1'], {
+    revalidate: 60,
+    tags: ['rolling-notices'],
+  })();
+}
+
 function revalidateNoticeViews(noticeId?: string) {
+  revalidateTag('rolling-notices');
   revalidatePath('/');
   revalidatePath('/notices');
   revalidatePath('/notices/admin');
@@ -144,6 +152,7 @@ export async function deleteNoticeAdminAction(id: string): Promise<NoticeAdminRe
     return { ok: false, error: '해당 공지를 찾을 수 없습니다.', code: 'NOT_FOUND' };
   }
 
+  revalidateTag('rolling-notices');
   revalidatePath('/');
   revalidatePath('/notices');
   revalidatePath('/notices/admin');
