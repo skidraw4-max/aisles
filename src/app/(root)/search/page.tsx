@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import { SiteFooter } from '@/components/SiteFooter';
 import { SearchPageAnalytics, SearchResultList } from '@/components/SearchPageClient';
 import { searchPosts } from '@/lib/search-posts';
-import { SEO_ROBOTS_PUBLIC } from '@/lib/seo-robots';
+import { SEO_ROBOTS_NOINDEX_FOLLOW } from '@/lib/seo-robots';
 import styles from './search.module.css';
 
 export const dynamic = 'force-dynamic';
@@ -31,7 +31,7 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
   const sp = await searchParams;
   const q = firstParam(sp.q);
   const tag = firstParam(sp.tag);
-  const robots = SEO_ROBOTS_PUBLIC;
+  const robots = SEO_ROBOTS_NOINDEX_FOLLOW;
   if (!q && !tag) {
     return { title: '검색 · AIsle', robots };
   }

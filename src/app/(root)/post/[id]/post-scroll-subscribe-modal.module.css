@@ -3,13 +3,13 @@
   z-index: 90;
   right: 1rem;
   bottom: 1rem;
-  width: min(100% - 2rem, 380px);
+  width: min(100% - 2rem, 400px);
   padding: 1.35rem 1.35rem 1.15rem;
   border-radius: 16px;
-  background: linear-gradient(145deg, #161b22 0%, #12161d 100%);
-  border: 1px solid rgba(167, 139, 250, 0.28);
+  background: linear-gradient(145deg, #1a1528 0%, #12161d 100%);
+  border: 1px solid rgba(167, 139, 250, 0.38);
   box-shadow:
-    0 20px 40px rgba(0, 0, 0, 0.5),
+    0 20px 44px rgba(0, 0, 0, 0.55),
     0 0 0 1px rgba(255, 255, 255, 0.04) inset;
   transform: translateY(110%);
   opacity: 0;

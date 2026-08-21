@@ -22,18 +22,16 @@ import {
 } from '@/lib/post-categories';
 import { getCanonicalSiteUrl } from '@/lib/canonical-site-url';
 import { buildHomeWebApplicationJsonLd } from '@/lib/home-web-application-json-ld';
+import { getCorridorSeoMeta } from '@/lib/corridor-seo-meta';
 import { fetchLatestAiFortunePost } from '@/lib/ai-fortune/latest-fortune.server';
 import { AiFortuneCategoryIntro } from '@/components/AiFortuneCategoryIntro';
 import { HomeFortuneCard } from '@/components/HomeFortuneCard';
 import { BuildHubSection } from '@/components/BuildHubSection';
 import { UgcWeeklyBest } from '@/components/UgcWeeklyBest';
+import { UgcCorridorCrossPromo } from '@/components/UgcCorridorCrossPromo';
 import { fetchBuildPopularWeekly, fetchUgcWeeklyTop } from '@/lib/ugc-hub.server';
 import type { Category } from '@prisma/client';
 import styles from './page.module.css';
-
-const AI_FORTUNE_SEO_TITLE = 'AI FORTUNE — AI로 보는 주간 운세 및 커리어 가이드';
-const AI_FORTUNE_SEO_DESCRIPTION =
-  '지난주 글로벌 AI 트렌드와 MBTI 16유형별 AI 활용 전략·행운의 키워드·피할 습관을 담은 AIsle 주간 운세 리포트입니다. 별도 가입 없이 전체 유형을 한눈에 볼 수 있습니다.';
 
 type PageProps = {
   searchParams: Promise<{
@@ -57,21 +55,28 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
     return { alternates: { canonical: siteUrl } };
   }
   const pageUrl = `${siteUrl}/?category=${categoryToHomeQuery(category)}`;
-  if (category === 'AI_FORTUNE') {
+  const unique = getCorridorSeoMeta(category);
+  if (unique) {
     return {
-      title: AI_FORTUNE_SEO_TITLE,
-      description: AI_FORTUNE_SEO_DESCRIPTION,
+      title: unique.title,
+      description: unique.description,
       alternates: { canonical: pageUrl },
       openGraph: {
-        title: AI_FORTUNE_SEO_TITLE,
-        description: AI_FORTUNE_SEO_DESCRIPTION,
+        title: unique.title,
+        description: unique.description,
         url: pageUrl,
+      },
+      twitter: {
+        card: 'summary_large_image',
+        title: unique.title,
+        description: unique.description,
       },
     };
   }
   const ui = await getAllUiLabels();
   const label = corridorLabel(ui, category);
   return {
+    title: `${label} — AIsle`,
     alternates: { canonical: pageUrl },
     openGraph: { url: pageUrl, title: `${label} — AIsle` },
   };
@@ -111,17 +116,19 @@ export default async function HomePage({ searchParams }: PageProps) {
 
   const cacheKey = categoryKeyForCache(filterCategory);
   const showFortuneCard = !filterCategory || filterCategory === 'LOUNGE';
-  const buildHub = filterCategory === 'BUILD';
+  const buildHub = !filterCategory || filterCategory === 'BUILD';
+  const ugcWeeklyHome = !filterCategory;
   const ugcWeekly =
     filterCategory === 'BUILD' || filterCategory === 'LAUNCH' ? filterCategory : null;
 
-  const [uiResult, homeResult, fortuneResult, buildResult, weeklyResult] =
+  const [uiResult, homeResult, fortuneResult, buildResult, weeklyResult, weeklyLaunchResult] =
     await Promise.allSettled([
       getAllUiLabels(),
       getHomePageQueries(cacheKey),
       showFortuneCard ? fetchLatestAiFortunePost() : Promise.resolve(null),
       buildHub ? fetchBuildPopularWeekly(5) : Promise.resolve([]),
       ugcWeekly ? fetchUgcWeeklyTop(ugcWeekly, 5) : Promise.resolve([]),
+      ugcWeeklyHome ? fetchUgcWeeklyTop('LAUNCH', 3) : Promise.resolve([]),
     ]);
 
   const ui = uiResult.status === 'fulfilled' ? uiResult.value : ({} as Record<string, string>);
@@ -132,6 +139,8 @@ export default async function HomePage({ searchParams }: PageProps) {
   const latestFortune = fortuneResult.status === 'fulfilled' ? fortuneResult.value : null;
   const buildPopular = buildResult.status === 'fulfilled' ? buildResult.value : [];
   const weeklyTop = weeklyResult.status === 'fulfilled' ? weeklyResult.value : [];
+  const weeklyLaunchHome =
+    weeklyLaunchResult.status === 'fulfilled' ? weeklyLaunchResult.value : [];
 
   const launchSlides = launchBannerPosts.map((p) => ({
     id: p.id,
@@ -243,26 +252,48 @@ export default async function HomePage({ searchParams }: PageProps) {
         >
           <HomeDeferredLower
             mainFeedPrefix={
-              filterCategory ? (
-                <>
-                  <div className={styles.feedBadgeRow}>
-                    <span className={styles.badge}>{corridorLabel(ui, filterCategory)}</span>
-                  </div>
-                  {filterCategory === 'BUILD' && buildPopular.length > 0 ? (
-                    <BuildHubSection
-                      posts={buildPopular.map(serializeFeedPost)}
-                      uploadHref="/upload?category=BUILD"
-                    />
-                  ) : null}
-                  {ugcWeekly && weeklyTop.length > 0 ? (
-                    <UgcWeeklyBest
-                      categoryLabel={corridorLabel(ui, ugcWeekly)}
-                      posts={weeklyTop}
-                    />
-                  ) : null}
-                  {filterCategory === 'AI_FORTUNE' ? <AiFortuneCategoryIntro /> : null}
-                </>
-              ) : null
+              <>
+                {!filterCategory ? (
+                  <UgcCorridorCrossPromo variant="homeAll" />
+                ) : null}
+                {filterCategory ? (
+                  <>
+                    <div className={styles.feedBadgeRow}>
+                      <span className={styles.badge}>{corridorLabel(ui, filterCategory)}</span>
+                    </div>
+                    {filterCategory === 'BUILD' || filterCategory === 'LAUNCH' ? (
+                      <UgcCorridorCrossPromo
+                        variant={filterCategory === 'BUILD' ? 'build' : 'launch'}
+                      />
+                    ) : null}
+                    {filterCategory === 'BUILD' && buildPopular.length > 0 ? (
+                      <BuildHubSection
+                        posts={buildPopular.map(serializeFeedPost)}
+                        uploadHref="/upload?category=BUILD"
+                      />
+                    ) : null}
+                    {ugcWeekly && weeklyTop.length > 0 ? (
+                      <UgcWeeklyBest
+                        categoryLabel={corridorLabel(ui, ugcWeekly)}
+                        posts={weeklyTop}
+                      />
+                    ) : null}
+                    {filterCategory === 'AI_FORTUNE' ? <AiFortuneCategoryIntro /> : null}
+                  </>
+                ) : null}
+                {!filterCategory && buildPopular.length > 0 ? (
+                  <BuildHubSection
+                    posts={buildPopular.map(serializeFeedPost)}
+                    uploadHref="/upload?category=BUILD"
+                  />
+                ) : null}
+                {!filterCategory && weeklyLaunchHome.length > 0 ? (
+                  <UgcWeeklyBest
+                    categoryLabel={corridorLabel(ui, 'LAUNCH')}
+                    posts={weeklyLaunchHome}
+                  />
+                ) : null}
+              </>
             }
             fortuneCard={
               filterCategory === 'LOUNGE' && latestFortune ? (

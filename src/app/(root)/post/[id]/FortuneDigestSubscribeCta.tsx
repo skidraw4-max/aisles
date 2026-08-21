@@ -107,12 +107,13 @@ export function FortuneDigestSubscribeCta({ postId, isLoggedIn, newsletterSubscr
 
   return (
     <section className={styles.wrap} aria-labelledby="fortune-digest-cta-title">
+      <p className={styles.kicker}>매주 메일로</p>
       <h2 id="fortune-digest-cta-title" className={styles.title}>
-        📬 AI 트렌드 다이제스트 구독
+        AI FORTUNE + 트렌드 다이제스트
       </h2>
       <p className={styles.body}>
-        LOUNGE 핵심 요약과 함께, 매주 AI FORTUNE 주간 리포트 소식도 메일로 받아보세요. Google 계정으로
-        3초 만에 구독할 수 있습니다.
+        주간 운세 리포트와 LOUNGE 핵심 요약을 한 번에 받아보세요. Google 계정으로 바로 구독할 수
+        있습니다.
       </p>
       <button
         type="button"
@@ -121,7 +122,7 @@ export function FortuneDigestSubscribeCta({ postId, isLoggedIn, newsletterSubscr
         disabled={loading}
       >
         <GoogleIcon />
-        {loading ? '이동 중…' : '구글 아이디로 3초 만에 구독하기'}
+        {loading ? '이동 중…' : 'Google로 무료 구독하기'}
       </button>
       {error ? (
         <p className={styles.msgErr} role="alert">

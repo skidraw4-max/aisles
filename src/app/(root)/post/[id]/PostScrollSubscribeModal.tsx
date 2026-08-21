@@ -11,7 +11,8 @@ import styles from './post-scroll-subscribe-modal.module.css';
 
 const SESSION_SHOWN_KEY = 'aisle:post-scroll-subscribe-shown';
 const PENDING_SUBSCRIBE_KEY = 'aisle:pending-news-subscribe';
-const SCROLL_THRESHOLD = 0.6;
+/** 스크롤 60% → 45%: 본문 중반에 노출해 구독 전환 기회 확대 */
+const SCROLL_THRESHOLD = 0.45;
 
 type Props = {
   postId: string;
@@ -164,15 +165,15 @@ export function PostScrollSubscribeModal({ postId }: Props) {
     >
       <div className={styles.head}>
         <h2 id="post-scroll-subscribe-title" className={styles.title}>
-          AI 트렌드 다이제스트
+          매일 AI 핵심만, 3분 컷
         </h2>
         <button type="button" className={styles.close} onClick={dismiss} aria-label="닫기">
           ×
         </button>
       </div>
       <p className={styles.body}>
-        바쁜 일상 속 최신 AI 핵심 요약, 놓치지 마세요! 📬 매주 전달되는 AI 트렌드 다이제스트를
-        메일로 받아보세요.
+        LOUNGE 트렌드 요약을 메일로 받아보세요. Google로 로그인하면 바로 구독됩니다 — 광고성
+        메일은 보내지 않습니다.
       </p>
       <button
         type="button"
@@ -181,7 +182,7 @@ export function PostScrollSubscribeModal({ postId }: Props) {
         disabled={loading}
       >
         <GoogleIcon />
-        {loading ? '이동 중…' : '구글 아이디로 3초 만에 구독하기'}
+        {loading ? '이동 중…' : 'Google로 무료 구독'}
       </button>
       {error ? (
         <p className={styles.msgErr} role="alert">

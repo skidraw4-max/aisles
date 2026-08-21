@@ -55,6 +55,7 @@ import { PostScrollSubscribeModal } from './PostScrollSubscribeModalLoader';
 import { PostLeaderboardAd } from './PostLeaderboardAd';
 import { PostContentGroupAnalytics } from './PostContentGroupAnalytics';
 import { ContentReportLink } from '@/components/ContentReportLink';
+import { UgcCorridorCrossPromo } from '@/components/UgcCorridorCrossPromo';
 import { getKstParts, weekOfMonthKst } from '@/lib/ai-fortune/kst-week';
 import { aiFortunePayloadFromDb } from '@/lib/ai-fortune/payload';
 import { buildPostArticleJsonLd } from '@/lib/post-json-ld';
@@ -726,6 +727,13 @@ export default async function PostPage({ params }: Props) {
                   postId={post.id}
                   category={post.category}
                 />
+
+                {post.category === 'BUILD' ? (
+                  <UgcCorridorCrossPromo variant="postBuild" />
+                ) : null}
+                {post.category === 'LAUNCH' ? (
+                  <UgcCorridorCrossPromo variant="postLaunch" />
+                ) : null}
 
                 <PostRelatedPosts fromPostId={post.id} posts={relatedPostsInline} />
 

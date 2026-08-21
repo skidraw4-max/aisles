@@ -1,15 +1,24 @@
 .wrap {
-  margin: 2rem 0 0;
+  margin: 1.5rem 0 0;
   padding: 1.35rem 1.25rem;
   border-radius: 0.75rem;
-  border: 1px solid rgba(167, 139, 250, 0.35);
-  background: linear-gradient(145deg, rgba(22, 27, 34, 0.95) 0%, rgba(8, 12, 18, 0.98) 100%);
-  box-shadow: 0 0 32px rgba(167, 139, 250, 0.08);
+  border: 1px solid rgba(167, 139, 250, 0.45);
+  background: linear-gradient(145deg, rgba(32, 28, 48, 0.98) 0%, rgba(12, 14, 22, 0.98) 100%);
+  box-shadow: 0 0 36px rgba(167, 139, 250, 0.12);
+}
+
+.kicker {
+  margin: 0 0 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #c4b5fd;
 }
 
 .title {
   margin: 0 0 0.5rem;
-  font-size: 1.05rem;
+  font-size: 1.08rem;
   font-weight: 700;
   color: #f4f4f5;
 }
@@ -27,8 +36,8 @@
   justify-content: center;
   gap: 0.5rem;
   width: 100%;
-  max-width: 320px;
-  padding: 0.75rem 1rem;
+  max-width: 340px;
+  padding: 0.8rem 1rem;
   border-radius: 10px;
   border: 1px solid rgba(255, 255, 255, 0.12);
   background: #fff;

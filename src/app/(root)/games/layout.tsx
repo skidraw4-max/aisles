@@ -1,9 +1,8 @@
 import type { Metadata } from 'next';
-import { SEO_ROBOTS_PRIVATE } from '@/lib/seo-robots';
 
+/** 자식 페이지(hub/detail/play)가 robots를  individually 설정 */
 export const metadata: Metadata = {
   title: '게임 · AIsle',
-  robots: SEO_ROBOTS_PRIVATE,
 };
 
 export default function GamesLayout({ children }: { children: React.ReactNode }) {

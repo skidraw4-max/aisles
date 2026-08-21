@@ -3,15 +3,31 @@ import Link from 'next/link';
 import { GAME_LIST } from '@/lib/games/catalog';
 import { modesForGame } from '@/lib/games/ranking';
 import { fetchHubWeeklyHighlights } from '@/lib/games/ranking-store';
-import { SEO_ROBOTS_PRIVATE } from '@/lib/seo-robots';
+import { getCanonicalSiteUrl } from '@/lib/canonical-site-url';
+import { SEO_ROBOTS_PUBLIC } from '@/lib/seo-robots';
 import { HubCardHighlights } from './HubCardHighlights';
 import styles from './games.module.css';
 
-export const metadata: Metadata = {
-  title: '게임 허브 · AIsle',
-  description: 'AIsle 공식 미니게임 허브.',
-  robots: SEO_ROBOTS_PRIVATE,
-};
+const HUB_TITLE = '게임 허브 · AIsle 미니게임';
+const HUB_DESCRIPTION =
+  'AIsle 공식 미니게임 허브. BrickBreaking·minibrick 등 짧은 게임으로 쉬어가고 주간 랭킹에 도전하세요. 플레이는 로그인 후 이용할 수 있습니다.';
+
+export async function generateMetadata(): Promise<Metadata> {
+  const base = getCanonicalSiteUrl().replace(/\/$/, '');
+  const url = `${base}/games`;
+  return {
+    title: HUB_TITLE,
+    description: HUB_DESCRIPTION,
+    alternates: { canonical: url },
+    robots: SEO_ROBOTS_PUBLIC,
+    openGraph: {
+      title: HUB_TITLE,
+      description: HUB_DESCRIPTION,
+      url,
+      type: 'website',
+    },
+  };
+}
 
 export const revalidate = 60;
 

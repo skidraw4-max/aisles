@@ -29,6 +29,16 @@ export const SEO_ROBOTS_PRIVATE: NonNullable<Metadata['robots']> = {
   follow: false,
 };
 
+/** 검색 결과 등 thin/중복 URL — 색인 제외하되 링크는 따라감 */
+export const SEO_ROBOTS_NOINDEX_FOLLOW: NonNullable<Metadata['robots']> = {
+  index: false,
+  follow: true,
+  googleBot: {
+    index: false,
+    follow: true,
+  },
+};
+
 export function rootLayoutRobots(): Metadata['robots'] {
   return shouldAllowSearchIndexing() ? SEO_ROBOTS_PUBLIC : SEO_ROBOTS_PRIVATE;
 }

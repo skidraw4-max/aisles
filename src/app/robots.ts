@@ -1,7 +1,9 @@
 import type { MetadataRoute } from 'next';
 import { getCanonicalSiteUrl } from '@/lib/canonical-site-url';
 
-/** 비공개·관리 라우트 — 모든 user-agent 공통 disallow */
+import { GAMES_PLAY_ROBOTS_DISALLOW } from '@/lib/games-seo';
+
+/** 비공개·관리 라우트 — 모든 user-agent 공통 disallow. 게임은 hub/detail 허용, play만 차단. */
 const PRIVATE_DISALLOW = [
   '/api/',
   '/auth/',
@@ -12,7 +14,7 @@ const PRIVATE_DISALLOW = [
   '/write',
   '/notices/admin',
   '/admin/',
-  '/games',
+  GAMES_PLAY_ROBOTS_DISALLOW,
 ] as const;
 
 /**

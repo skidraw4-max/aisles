@@ -2,9 +2,11 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { GAME_LIST, getGame } from '@/lib/games/catalog';
-import { SEO_ROBOTS_PRIVATE } from '@/lib/seo-robots';
+import { getCanonicalSiteUrl } from '@/lib/canonical-site-url';
+import { SEO_ROBOTS_PRIVATE, SEO_ROBOTS_PUBLIC } from '@/lib/seo-robots';
 import { GameDetailRefresh } from '../GameDetailRefresh';
 import { GameRankingBoard } from '../GameRankingBoard';
+import { GameShareButton } from '../GameShareButton';
 import styles from '../games.module.css';
 
 type Props = { params: Promise<{ slug: string }> };
@@ -19,10 +21,31 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!game) {
     return { title: '게임 · AIsle', robots: SEO_ROBOTS_PRIVATE };
   }
+  const base = getCanonicalSiteUrl().replace(/\/$/, '');
+  const url = `${base}/games/${game.slug}`;
+  const title = `${game.title} · AIsle 게임`;
+  const description = game.description;
+  const ogImage = game.thumbnail
+    ? [{ url: new URL(game.thumbnail, `${base}/`).href, alt: game.title }]
+    : undefined;
   return {
-    title: `${game.title} · AIsle 게임`,
-    description: game.shortDescription,
-    robots: SEO_ROBOTS_PRIVATE,
+    title,
+    description,
+    alternates: { canonical: url },
+    robots: SEO_ROBOTS_PUBLIC,
+    openGraph: {
+      title,
+      description,
+      url,
+      type: 'website',
+      images: ogImage,
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: ogImage?.map((i) => i.url),
+    },
   };
 }
 
@@ -66,9 +89,12 @@ export default async function GameDetailPage({ params }: Props) {
             <h1>{game.title}</h1>
             <p className={styles.lede}>{game.description}</p>
             <p className={styles.rankMutedInline}>플레이는 로그인 후 이용할 수 있습니다.</p>
-            <Link className={styles.ctaLg} href={`/games/${game.slug}/play`}>
-              플레이 시작
-            </Link>
+            <div className={styles.detailCtaRow}>
+              <Link className={styles.ctaLg} href={`/games/${game.slug}/play`}>
+                플레이 시작
+              </Link>
+              <GameShareButton slug={game.slug} title={game.title} />
+            </div>
           </div>
 
           <GameRankingBoard gameSlug={game.slug} />

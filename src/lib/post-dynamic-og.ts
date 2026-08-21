@@ -1,8 +1,18 @@
 import type { Category } from '@prisma/client';
 
-/** LAB(RECIPE) + UI 「AI 트렌드」 복도(LOUNGE). 레거시 Prisma `TREND`는 메인 복도와 별도이므로 기존 OG 유지 */
+/**
+ * 동적 OG 공유 카드 — LAB·LOUNGE + BUILD·LAUNCH·AI_FORTUNE·GALLERY.
+ * GOSSIP·TREND는 썸네일/기본 OG 유지.
+ */
 export function categoryUsesDynamicPostOg(category: Category): boolean {
-  return category === 'RECIPE' || category === 'LOUNGE';
+  return (
+    category === 'RECIPE' ||
+    category === 'LOUNGE' ||
+    category === 'BUILD' ||
+    category === 'LAUNCH' ||
+    category === 'AI_FORTUNE' ||
+    category === 'GALLERY'
+  );
 }
 
 export function dynamicOgBoardSubtitle(category: Category): string {
@@ -11,6 +21,14 @@ export function dynamicOgBoardSubtitle(category: Category): string {
       return 'AIsle · AI 연구소 (LAB)';
     case 'LOUNGE':
       return 'AIsle · AI 트렌드';
+    case 'BUILD':
+      return 'AIsle · BUILD 제작기';
+    case 'LAUNCH':
+      return 'AIsle · LAUNCH 출시';
+    case 'AI_FORTUNE':
+      return 'AIsle · AI FORTUNE 주간 운세';
+    case 'GALLERY':
+      return 'AIsle · GALLERY 쇼케이스';
     default:
       return 'AIsle';
   }
