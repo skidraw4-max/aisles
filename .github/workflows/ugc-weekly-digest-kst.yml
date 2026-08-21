@@ -1,0 +1,38 @@
+# UGC weekly digest — 매주 월요일 06:00 KST (일요일 21:00 UTC)
+# Secrets: CRON_SITE_URL, CRON_SECRET
+name: UGC weekly digest (Mon 06:00 KST)
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 21 * * 0'
+
+jobs:
+  ugc-weekly:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: POST /api/cron/ugc-weekly
+        env:
+          CRON_SITE_URL: ${{ secrets.CRON_SITE_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          set -euo pipefail
+          curl -fsS -X POST "${CRON_SITE_URL}/api/cron/ugc-weekly" \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            -H "Content-Type: application/json" \
+            -w "\nHTTP %{http_code}\n"
+
+      - name: Notify cron failure
+        if: failure()
+        env:
+          CRON_ALERT_WEBHOOK_URL: ${{ secrets.CRON_ALERT_WEBHOOK_URL }}
+        run: |
+          MSG="[AIsle cron] UGC weekly digest failed: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          if [ -z "${CRON_ALERT_WEBHOOK_URL:-}" ]; then
+            echo "[cron-alert] CRON_ALERT_WEBHOOK_URL unset — $MSG"
+            exit 0
+          fi
+          curl -fsS -X POST "$CRON_ALERT_WEBHOOK_URL" \
+            -H "Content-Type: application/json" \
+            -d "{\"text\":$(printf '%s' "$MSG" | jq -Rs .)}" || echo "[cron-alert] webhook POST failed"

@@ -19,7 +19,7 @@ export const HOME_NAV_ITEMS: { href: string; queryKey: string | null; labelKey: 
   { href: '/?category=GOSSIP', queryKey: 'GOSSIP', labelKey: 'corridor.gossip' },
   { href: '/?category=BUILD', queryKey: 'BUILD', labelKey: 'corridor.build' },
   { href: '/?category=LAUNCH', queryKey: 'LAUNCH', labelKey: 'corridor.launch' },
-  { href: '/?category=AI_FORTUNE', queryKey: 'AI_FORTUNE', labelKey: 'corridor.ai_fortune' },
+  { href: '/fortune', queryKey: 'AI_FORTUNE', labelKey: 'corridor.ai_fortune' },
 ];
 
 function navClassName(active: boolean) {
@@ -49,7 +49,11 @@ export function MainNav() {
   return (
     <nav className={`${styles.nav} ${styles.navQuasi}`} aria-label="주요 메뉴">
       {HOME_NAV_ITEMS.map((item) => {
-        const active = item.queryKey === null ? current === null : current === item.queryKey;
+        const fortuneActive = item.queryKey === 'AI_FORTUNE' && pathname.startsWith('/fortune');
+        const active =
+          item.queryKey === null
+            ? current === null && pathname === '/'
+            : fortuneActive || current === item.queryKey;
         const href = item.queryKey === null ? homeAllHref : item.href;
         return (
           <Link

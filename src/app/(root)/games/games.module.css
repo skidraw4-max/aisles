@@ -221,6 +221,24 @@
   border-color: var(--games-accent);
 }
 
+.shareWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  align-items: flex-start;
+}
+
+.shareReshare {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--games-muted);
+}
+
+.shareReshare a {
+  color: #c4b5fd;
+  font-weight: 600;
+}
+
 .rank {
   background: var(--games-surface);
   border: 1px solid var(--games-border);

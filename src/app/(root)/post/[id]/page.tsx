@@ -229,7 +229,7 @@ export default async function PostPage({ params }: Props) {
 
   const [commentsResult, sidebarResult] = await Promise.allSettled([
     getPostComments(id),
-    getPostSidebarData(post.id, post.category, post.createdAt),
+    getPostSidebarData(post.id, post.category, post.createdAt, post.tags ?? []),
   ]);
 
   const comments = commentsResult.status === 'fulfilled' ? commentsResult.value : [];

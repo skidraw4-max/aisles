@@ -280,3 +280,37 @@ Create a modern PM/service-planning portfolio PowerPoint for 함종두 using:
 ## Out of scope
 
 - Asset recompression; commit/push; native Capacitor packaging.
+
+# Plan: 내부 성장 중기 레버 (1–6)
+
+**Status:** Implemented 2026-08-21 — A(중기만), 위클리 자동 발행, 임베드 제외. 배포 진행.
+
+## Goal
+
+중기 제안만 적용: Fortune 고정 랜딩, BUILD/LAUNCH 주간 베스트 자동 글, 공유 UX, 게임 스코어 OG, 관련글 품질, 검색 복도·태그 허브.
+
+## Scope
+
+1. **`/fortune`** — 최신 AI_FORTUNE + 아카이브 링크, sitemap, 네비/인트로에서 허브 연결. `/post/[id]`는 글 canonical 유지.
+2. **주간 UGC 위클리 자동 발행** — cron이 BUILD·LAUNCH 각각 `fetchUgcWeeklyTop` 스냅샷을 Post로 생성. 멱등 태그 `ugc-weekly:{CAT}:{ISO_WEEK}`. GitHub Actions 주간 스케줄 + `CRON_SECRET`.
+3. **공유 UX** — 클립보드 성공 후 X/카카오 재공유 링크 노출 (`share_click` 유지).
+4. **게임 주간 TOP 스코어 OG** — `/og/games/[slug]?mode=&period=weekly`, 상세 메타·공유에 연결.
+5. **관련글** — 태그 교집합 우선, 부족 시 동일 카테고리 최신으로 채움.
+6. **검색·태그** — corridor를 LAB/LOUNGE/GALLERY/AI_FORTUNE/BUILD/LAUNCH 등으로 확대. `/tags` 인기 태그 허브(index), `/tags/[tag]`는 검색으로 연결하되 thin URL은 noindex 유지 가능 — 허브만 public index.
+
+## Out of scope
+
+- PWA, 임베드 위젯, Android 스토어, GEO FAQ 심화(장기)
+- thin AI 양산, AdFit/perf 되돌리기
+
+## TDD
+
+- ugc weekly idempotency tag helper
+- related-posts ranking by tag overlap
+- search corridor parse
+- games score OG query params validation
+- fortune archive list shape (unit where pure)
+
+## Deploy
+
+커밋 후 `origin/main` 푸시 → Vercel.

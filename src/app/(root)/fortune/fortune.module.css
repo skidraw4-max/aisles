@@ -1,0 +1,129 @@
+.shell {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 2rem 1.25rem 3.5rem;
+}
+
+.eyebrow {
+  margin: 0 0 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted, #64748b);
+}
+
+.title {
+  margin: 0 0 0.75rem;
+  font-size: clamp(1.6rem, 4vw, 2.1rem);
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.lede {
+  margin: 0 0 2rem;
+  color: var(--muted, #64748b);
+  line-height: 1.55;
+  font-size: 0.98rem;
+}
+
+.sectionTitle {
+  margin: 0 0 0.75rem;
+  font-size: 1.05rem;
+}
+
+.latest {
+  margin-bottom: 2.25rem;
+}
+
+.latestCard {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  padding: 1.15rem 1.2rem;
+  border: 1px solid color-mix(in srgb, var(--border, #e2e8f0) 100%, transparent);
+  border-radius: 12px;
+  text-decoration: none;
+  color: inherit;
+  background: color-mix(in srgb, var(--card, #fff) 92%, #0ea5e9 8%);
+}
+
+.latestCard:hover {
+  border-color: color-mix(in srgb, #0ea5e9 45%, transparent);
+}
+
+.week {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #0284c7;
+  letter-spacing: 0.04em;
+}
+
+.latestTitle {
+  font-size: 1.15rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.sub {
+  font-size: 0.9rem;
+  color: var(--muted, #64748b);
+  line-height: 1.45;
+}
+
+.cta {
+  margin-top: 0.35rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #0369a1;
+}
+
+.archive {
+  margin-bottom: 2rem;
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.75rem 0.85rem;
+  border-radius: 8px;
+  text-decoration: none;
+  color: inherit;
+  border: 1px solid transparent;
+}
+
+.row:hover {
+  background: color-mix(in srgb, var(--card, #f8fafc) 100%, transparent);
+  border-color: var(--border, #e2e8f0);
+}
+
+.rowTitle {
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.empty {
+  color: var(--muted, #64748b);
+  font-size: 0.95rem;
+}
+
+.more {
+  font-size: 0.9rem;
+  color: var(--muted, #64748b);
+}
+
+.more a {
+  color: inherit;
+  font-weight: 600;
+}

@@ -39,6 +39,8 @@ const STATIC_PATHS: MetadataRoute.Sitemap = [
   { url: '/legal/child-safety', changeFrequency: 'yearly', priority: 0.3 },
   { url: '/notices', changeFrequency: 'weekly', priority: 0.5 },
   { url: '/games', changeFrequency: 'weekly', priority: 0.7 },
+  { url: '/fortune', changeFrequency: 'weekly', priority: 0.85 },
+  { url: '/tags', changeFrequency: 'daily', priority: 0.7 },
 ];
 
 function postEntry(

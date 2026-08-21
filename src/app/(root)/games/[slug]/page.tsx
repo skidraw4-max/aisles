@@ -25,9 +25,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const url = `${base}/games/${game.slug}`;
   const title = `${game.title} · AIsle 게임`;
   const description = game.description;
-  const ogImage = game.thumbnail
-    ? [{ url: new URL(game.thumbnail, `${base}/`).href, alt: game.title }]
-    : undefined;
+  const scoreOg = `${base}/og/games/${game.slug}?period=weekly`;
+  const ogImage = [
+    { url: scoreOg, alt: `${game.title} 주간 랭킹` },
+    ...(game.thumbnail
+      ? [{ url: new URL(game.thumbnail, `${base}/`).href, alt: game.title }]
+      : []),
+  ];
   return {
     title,
     description,
@@ -44,7 +48,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       card: 'summary_large_image',
       title,
       description,
-      images: ogImage?.map((i) => i.url),
+      images: ogImage.map((i) => i.url),
     },
   };
 }

@@ -10,6 +10,7 @@ import { usePostBookmark } from './PostBookmarkContext';
 import { usePostViewerOptional } from './PostViewerContext';
 import { PostSignupPromptModal } from './PostSignupPromptModalLoader';
 import { copyTextToClipboard } from '@/lib/clipboard-copy';
+import { buildKakaoShareUrl, buildXShareUrl } from '@/lib/share-social';
 import { sendGAEvent } from '@/lib/ga4';
 import styles from './post.module.css';
 
@@ -66,7 +67,8 @@ export function PostEngagement({
   const [body, setBody] = useState('');
   const [commentLoading, setCommentLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [shareHint, setShareHint] = useState<string | null>(null);
+  const [shareHint, setShareHint] = useState<'copied' | 'error' | null>(null);
+  const [shareUrl, setShareUrl] = useState('');
   const [showSignupPrompt, setShowSignupPrompt] = useState(false);
   const [effectiveUserId, setEffectiveUserId] = useState<string | null>(currentUserId);
 
@@ -136,10 +138,11 @@ export function PostEngagement({
       }
       await copyTextToClipboard(url);
       sendGAEvent('share_click', { post_id: postId, method: 'clipboard' });
-      setShareHint('링크가 클립보드에 복사되었습니다.');
-      window.setTimeout(() => setShareHint(null), 2200);
+      setShareUrl(url);
+      setShareHint('copied');
+      window.setTimeout(() => setShareHint(null), 6000);
     } catch {
-      setShareHint('공유를 완료할 수 없습니다.');
+      setShareHint('error');
       window.setTimeout(() => setShareHint(null), 2200);
     }
   }
@@ -294,9 +297,30 @@ export function PostEngagement({
         </Link>
       </div>
 
-      {shareHint ? (
+      {shareHint === 'copied' && shareUrl ? (
         <p className={styles.shareHint} role="status">
-          {shareHint}
+          링크 복사됨 ·{' '}
+          <a
+            href={buildXShareUrl(shareUrl, typeof document !== 'undefined' ? document.title : 'AIsle')}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={styles.shareHintLink}
+          >
+            X에 공유
+          </a>
+          {' · '}
+          <a
+            href={buildKakaoShareUrl(shareUrl)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={styles.shareHintLink}
+          >
+            카카오 공유
+          </a>
+        </p>
+      ) : shareHint === 'error' ? (
+        <p className={styles.shareHint} role="status">
+          공유를 완료할 수 없습니다.
         </p>
       ) : null}
 

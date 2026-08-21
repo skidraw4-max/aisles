@@ -4,6 +4,7 @@ import type { Category, Prisma } from '@prisma/client';
 import { fetchLatestAiFortunePost } from '@/lib/ai-fortune/latest-fortune.server';
 import { prisma } from '@/lib/prisma';
 import { withDbRetry } from '@/lib/db-retry';
+import { rankRelatedCandidates } from '@/lib/related-posts';
 
 const POST_SIDEBAR_REVALIDATE_SEC = 60;
 const POST_DETAIL_REVALIDATE_SEC = 3600;
@@ -142,10 +143,53 @@ export const getPostMetadataFields = cache(
   }
 );
 
+async function fetchRelatedPostsForSidebar(
+  postId: string,
+  category: Category,
+  sourceTags: string[]
+): Promise<PostRelatedRow[]> {
+  const relatedSelectWithTags = {
+    ...relatedSelect,
+    tags: true,
+    createdAt: true,
+  } satisfies Prisma.PostSelect;
+
+  const pool = await withDbRetry(() =>
+    prisma.post.findMany({
+      where: {
+        id: { not: postId },
+        OR: [
+          { category },
+          ...(sourceTags.length > 0 ? [{ tags: { hasSome: sourceTags } }] : []),
+        ],
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 40,
+      select: relatedSelectWithTags,
+    })
+  );
+
+  const ranked = rankRelatedCandidates(
+    sourceTags,
+    pool.map((p) => ({
+      id: p.id,
+      tags: p.tags ?? [],
+      createdAt: p.createdAt,
+    })),
+    5
+  );
+  const byId = new Map(pool.map((p) => [p.id, p]));
+  return ranked
+    .map((r) => byId.get(r.id))
+    .filter((p): p is NonNullable<typeof p> => Boolean(p))
+    .map(({ tags: _t, createdAt: _c, ...rest }) => rest);
+}
+
 async function fetchPostSidebarUncached(
   postId: string,
   category: Category,
-  createdAtIso: string
+  createdAtIso: string,
+  sourceTags: string[] = []
 ): Promise<PostSidebarData> {
   const createdAt = new Date(createdAtIso);
   const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
@@ -154,52 +198,49 @@ async function fetchPostSidebarUncached(
     [relatedPosts, weekPopular, prevPost, nextPost, categoryBoardPosts],
     latestFortune,
   ] = await Promise.all([
-    withDbRetry(() =>
-      Promise.all([
-        prisma.post.findMany({
-          where: { category, id: { not: postId } },
-          orderBy: { createdAt: 'desc' },
-          take: 5,
-          select: relatedSelect,
-        }),
-        prisma.post.findMany({
-          where: { id: { not: postId }, createdAt: { gte: weekAgo } },
-          orderBy: { likeCount: 'desc' },
-          take: 3,
-          select: popularSelect,
-        }),
-        prisma.post.findFirst({
-          where: {
-            category,
-            id: { not: postId },
-            OR: [
-              { createdAt: { lt: createdAt } },
-              { AND: [{ createdAt }, { id: { lt: postId } }] },
-            ],
-          },
-          orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
-          select: { id: true, title: true },
-        }),
-        prisma.post.findFirst({
-          where: {
-            category,
-            id: { not: postId },
-            OR: [
-              { createdAt: { gt: createdAt } },
-              { AND: [{ createdAt }, { id: { gt: postId } }] },
-            ],
-          },
-          orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
-          select: { id: true, title: true },
-        }),
-        prisma.post.findMany({
-          where: { category },
-          orderBy: { createdAt: 'desc' },
-          take: 50,
-          select: categoryBoardSelect,
-        }),
-      ])
-    ),
+    withDbRetry(async () => {
+      const related = await fetchRelatedPostsForSidebar(postId, category, sourceTags);
+      const [weekPopularInner, prevPostInner, nextPostInner, categoryBoardPostsInner] =
+        await Promise.all([
+          prisma.post.findMany({
+            where: { id: { not: postId }, createdAt: { gte: weekAgo } },
+            orderBy: { likeCount: 'desc' },
+            take: 3,
+            select: popularSelect,
+          }),
+          prisma.post.findFirst({
+            where: {
+              category,
+              id: { not: postId },
+              OR: [
+                { createdAt: { lt: createdAt } },
+                { AND: [{ createdAt }, { id: { lt: postId } }] },
+              ],
+            },
+            orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+            select: { id: true, title: true },
+          }),
+          prisma.post.findFirst({
+            where: {
+              category,
+              id: { not: postId },
+              OR: [
+                { createdAt: { gt: createdAt } },
+                { AND: [{ createdAt }, { id: { gt: postId } }] },
+              ],
+            },
+            orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+            select: { id: true, title: true },
+          }),
+          prisma.post.findMany({
+            where: { category },
+            orderBy: { createdAt: 'desc' },
+            take: 50,
+            select: categoryBoardSelect,
+          }),
+        ]);
+      return [related, weekPopularInner, prevPostInner, nextPostInner, categoryBoardPostsInner] as const;
+    }),
     fetchLatestAiFortunePost(),
   ]);
 
@@ -231,12 +272,14 @@ async function fetchPostSidebarUncached(
 export function getPostSidebarData(
   postId: string,
   category: Category,
-  createdAt: Date | string
+  createdAt: Date | string,
+  sourceTags: string[] = []
 ): Promise<PostSidebarData> {
   const createdAtIso = coerceToDate(createdAt).toISOString();
+  const tagsKey = [...sourceTags].sort().join('|');
   return unstable_cache(
-    () => fetchPostSidebarUncached(postId, category, createdAtIso),
-    ['post-sidebar-v1', postId, category, createdAtIso],
+    () => fetchPostSidebarUncached(postId, category, createdAtIso, sourceTags),
+    ['post-sidebar-v2', postId, category, createdAtIso, tagsKey],
     {
       revalidate: POST_SIDEBAR_REVALIDATE_SEC,
       tags: [`post-${postId}`, 'post-sidebar'],

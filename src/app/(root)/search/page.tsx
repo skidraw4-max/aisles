@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { SiteFooter } from '@/components/SiteFooter';
 import { SearchPageAnalytics, SearchResultList } from '@/components/SearchPageClient';
 import { searchPosts } from '@/lib/search-posts';
+import { parseSearchCorridor } from '@/lib/search-corridor';
 import { SEO_ROBOTS_NOINDEX_FOLLOW } from '@/lib/seo-robots';
 import styles from './search.module.css';
 
@@ -15,12 +16,6 @@ type PageProps = {
     corridor?: string | string[];
   }>;
 };
-
-function parseCorridor(raw: string): 'BUILD' | 'LAUNCH' | undefined {
-  const k = raw.trim().toUpperCase();
-  if (k === 'BUILD' || k === 'LAUNCH') return k;
-  return undefined;
-}
 
 function firstParam(v: string | string[] | undefined): string {
   if (Array.isArray(v)) return (v[0] ?? '').trim();
@@ -48,7 +43,7 @@ export default async function SearchPage({ searchParams }: PageProps) {
   const sp = await searchParams;
   const q = firstParam(sp.q);
   const tag = firstParam(sp.tag);
-  const corridor = parseCorridor(firstParam(sp.corridor));
+  const corridor = parseSearchCorridor(firstParam(sp.corridor));
 
   const hasQuery = q.length > 0 || tag.length > 0 || Boolean(corridor);
   const results = hasQuery

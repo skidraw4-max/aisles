@@ -2498,6 +2498,13 @@
   margin: 0.5rem 0 0;
   font-size: var(--type-12);
   color: #a5b4fc;
+  pointer-events: auto;
+}
+
+.shareHintLink {
+  color: #c7d2fe;
+  font-weight: 600;
+  text-decoration: underline;
 }
 
 .signupPromptBackdrop {
