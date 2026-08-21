@@ -15,11 +15,13 @@ import {
 } from './ranking';
 
 describe('games ranking helpers', () => {
-  it('exposes stage/infinite for brickbreaking and normal/endless for minibrick', () => {
+  it('exposes modes per registered game', () => {
     assert.deepEqual([...modesForGame('brickbreaking')], ['stage', 'infinite']);
     assert.deepEqual([...modesForGame('minibrick')], ['normal', 'endless']);
+    assert.deepEqual([...modesForGame('bricks-match')], ['stage', 'endless']);
     assert.equal(defaultMode('brickbreaking'), 'stage');
     assert.equal(defaultMode('minibrick'), 'normal');
+    assert.equal(defaultMode('bricks-match'), 'stage');
   });
 
   it('validates modes per game', () => {
@@ -27,6 +29,9 @@ describe('games ranking helpers', () => {
     assert.equal(isValidMode('brickbreaking', 'endless'), false);
     assert.equal(isValidMode('minibrick', 'endless'), true);
     assert.equal(isValidMode('minibrick', 'infinite'), false);
+    assert.equal(isValidMode('bricks-match', 'stage'), true);
+    assert.equal(isValidMode('bricks-match', 'endless'), true);
+    assert.equal(isValidMode('bricks-match', 'infinite'), false);
   });
 
   it('builds ISO week keys and overall sentinel', () => {

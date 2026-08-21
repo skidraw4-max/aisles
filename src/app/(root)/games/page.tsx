@@ -10,7 +10,7 @@ import styles from './games.module.css';
 
 const HUB_TITLE = '게임 허브 · AIsle 미니게임';
 const HUB_DESCRIPTION =
-  'AIsle 공식 미니게임 허브. BrickBreaking·minibrick 등 짧은 게임으로 쉬어가고 주간 랭킹에 도전하세요. 플레이는 로그인 후 이용할 수 있습니다.';
+  'AIsle 공식 미니게임 허브. BrickBreaking·minibrick·Bricks Match 등 짧은 게임으로 쉬어가고 주간 랭킹에 도전하세요. 플레이는 로그인 후 이용할 수 있습니다.';
 
 export async function generateMetadata(): Promise<Metadata> {
   const base = getCanonicalSiteUrl().replace(/\/$/, '');

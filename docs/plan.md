@@ -257,3 +257,26 @@ Create a modern PM/service-planning portfolio PowerPoint for 함종두 using:
 1. URL 검사: `/?category=LAB|BUILD|…`, `/search?q=test` (noindex), `/games`, `/games/brickbreaking`, `/games/.../play` (noindex)
 2. 사이트맵 재제출 후 Coverage에서 games hub/detail 발견 확인
 3. 공유 미리보기: BUILD/LAUNCH/AI_FORTUNE/GALLERY 글 OG 카드
+
+# Plan: Add Bricks Match to games hub
+
+**Status:** Implemented (local; commit deferred).
+
+## Source Finding
+
+- Source game: `c:\dev\Game\Bricks_match` (Capacitor web: `www/` = `index.html` + `css/` + `js/` + `assets/`).
+- AIsle catalog today: `brickbreaking`, `minibrick` → `public/embeds/{slug}/`, hub `/games`, detail `/games/[slug]`, play iframe + login gate.
+- Bricks Match modes: stage clear + endless run. No `aisle-game-score` postMessage yet (other embeds have `notifyAisleParent`).
+- Slug: `bricks-match` (title: Bricks Match). Thumbnail: copy `assets/icon-512.png` → `thumbnail.png`.
+
+## Implementation
+
+1. TDD: extend `catalog.test.ts` / `ranking.test.ts` for slug + modes `stage` | `endless`.
+2. Copy `www/` → `public/embeds/bricks-match/`; add score bridge in embed `js/app.js` (stage clear → `stage`, endless fail → `endless`).
+3. Register in `catalog.ts`; update `ranking.ts` `isGameSlug` / `modesForGame` (no longer assume non-brick = mini).
+4. Hub copy mentions third game lightly. SEO via existing `GAME_LIST` sitemap + detail index policy — no play gate change.
+5. Verify: unit tests; hub shows 3 cards; `/games/bricks-match`, `/play` load embed.
+
+## Out of scope
+
+- Asset recompression; commit/push; native Capacitor packaging.

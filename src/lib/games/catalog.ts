@@ -1,4 +1,4 @@
-export type GameSlug = 'brickbreaking' | 'minibrick';
+export type GameSlug = 'brickbreaking' | 'minibrick' | 'bricks-match';
 
 export type GameInfo = {
   slug: GameSlug;
@@ -35,6 +35,16 @@ export const GAMES: Record<GameSlug, GameInfo> = {
     thumbVariant: 'mini',
     thumbnail: '/embeds/minibrick/thumbnail.png',
     embedPath: '/embeds/minibrick/index.html',
+  },
+  'bricks-match': {
+    slug: 'bricks-match',
+    title: 'Bricks Match',
+    shortDescription: '색깔 벽돌로 무너진 모자이크를 복구하는 매치 퍼즐',
+    description:
+      '색깔 벽돌을 맞춰 모자이크 왕국을 복구하세요. 스테이지 모험과 끝없는 복구 모드를 지원합니다. 앱이 제공하는 공식 게임이며, 현재 UGC 제작은 지원하지 않습니다. PC는 마우스, 모바일은 터치로 플레이합니다.',
+    thumbVariant: 'brick',
+    thumbnail: '/embeds/bricks-match/thumbnail.png',
+    embedPath: '/embeds/bricks-match/index.html',
   },
 };
 

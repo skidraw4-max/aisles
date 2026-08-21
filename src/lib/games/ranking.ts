@@ -1,4 +1,4 @@
-import type { GameSlug } from './catalog';
+import { GAMES, type GameSlug } from './catalog';
 
 /** Overall personal-best row uses this sentinel weekKey. */
 export const OVERALL_WEEK_KEY = 'all';
@@ -7,17 +7,25 @@ export type RankingPeriod = 'weekly' | 'overall';
 
 export type BrickMode = 'stage' | 'infinite';
 export type MiniMode = 'normal' | 'endless';
-export type GameMode = BrickMode | MiniMode;
+export type MatchMode = 'stage' | 'endless';
+export type GameMode = BrickMode | MiniMode | MatchMode;
 
 const BRICK_MODES: readonly BrickMode[] = ['stage', 'infinite'];
 const MINI_MODES: readonly MiniMode[] = ['normal', 'endless'];
+const MATCH_MODES: readonly MatchMode[] = ['stage', 'endless'];
+
+const MODES_BY_GAME: Record<GameSlug, readonly GameMode[]> = {
+  brickbreaking: BRICK_MODES,
+  minibrick: MINI_MODES,
+  'bricks-match': MATCH_MODES,
+};
 
 export function isGameSlug(slug: string): slug is GameSlug {
-  return slug === 'brickbreaking' || slug === 'minibrick';
+  return Object.prototype.hasOwnProperty.call(GAMES, slug);
 }
 
 export function modesForGame(slug: GameSlug): readonly GameMode[] {
-  return slug === 'brickbreaking' ? BRICK_MODES : MINI_MODES;
+  return MODES_BY_GAME[slug];
 }
 
 export function isValidMode(slug: GameSlug, mode: string): mode is GameMode {

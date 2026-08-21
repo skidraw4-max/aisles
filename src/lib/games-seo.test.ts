@@ -15,6 +15,7 @@ describe('isGamesPathIndexable', () => {
     assert.equal(isGamesPathIndexable('/games/'), true);
     assert.equal(isGamesPathIndexable('/games/brickbreaking'), true);
     assert.equal(isGamesPathIndexable('/games/minibrick'), true);
+    assert.equal(isGamesPathIndexable('/games/bricks-match'), true);
   });
 
   it('blocks play routes', () => {
