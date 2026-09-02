@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Lock } from 'lucide-react';
 import { AuthModal } from '@/components/AuthModal';
+import { trackGalleryReverseLoginClick } from '@/lib/ga4';
 
 export type MemberAiExtrasLoginGateProps = {
   loginNextPath: string;
@@ -12,6 +13,9 @@ export type MemberAiExtrasLoginGateProps = {
   eyebrow: string;
   title: string;
   description: string;
+  /** GA4 `gallery_reverse_login_click` 등 */
+  postId?: string;
+  analyticsEvent?: 'gallery_reverse_login_click';
 };
 
 /**
@@ -24,10 +28,18 @@ export function MemberAiExtrasLoginGate({
   eyebrow,
   title,
   description,
+  postId,
+  analyticsEvent,
 }: MemberAiExtrasLoginGateProps) {
   const router = useRouter();
   const [modalOpen, setModalOpen] = useState(false);
   const loginHref = `/login?next=${encodeURIComponent(loginNextPath)}`;
+
+  const trackLoginIntent = () => {
+    if (analyticsEvent === 'gallery_reverse_login_click' && postId) {
+      trackGalleryReverseLoginClick(postId);
+    }
+  };
 
   return (
     <>
@@ -57,7 +69,10 @@ export function MemberAiExtrasLoginGate({
           <div className="flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center sm:justify-center">
             <button
               type="button"
-              onClick={() => setModalOpen(true)}
+              onClick={() => {
+                trackLoginIntent();
+                setModalOpen(true);
+              }}
               className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-2xl px-8 font-semibold text-white shadow-lg transition hover:opacity-95"
               style={{
                 background:
@@ -69,6 +84,7 @@ export function MemberAiExtrasLoginGate({
             </button>
             <Link
               href={loginHref}
+              onClick={() => trackLoginIntent()}
               className="inline-flex min-h-[48px] items-center justify-center rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-6 font-semibold text-[var(--text)] transition hover:bg-[var(--surface-2)]"
             >
               로그인 페이지

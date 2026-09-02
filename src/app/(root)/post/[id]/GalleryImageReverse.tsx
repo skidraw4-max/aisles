@@ -13,6 +13,7 @@ import { analyzeImageForGalleryPost } from '@/app/actions/gemini';
 import { pickEstimatedPromptFromAnalysis } from '@/lib/gallery-image-analysis';
 import { computePromptSyncPercent, promptSyncFunLabel } from '@/lib/prompt-sync-score';
 import { GalleryEstimatedPromptCopyButton } from './GalleryEstimatedPromptCopyButton';
+import { GalleryReverseViewTracker } from './GalleryReverseViewTracker';
 
 type SectionProps = {
   postId: string;
@@ -380,10 +381,12 @@ function GalleryImageReverseCompareBlock({
 
 /** DB에 캐시된 역분석 — Gemini 호출 없음 */
 export function GalleryImageReverseFromDb({
+  postId,
   authorOriginalPrompt,
   aiReversePrompt,
   aiImageAnalysis,
 }: {
+  postId: string;
   authorOriginalPrompt: string;
   aiReversePrompt: string;
   aiImageAnalysis: Record<string, unknown> | null;
@@ -398,6 +401,7 @@ export function GalleryImageReverseFromDb({
       className="mt-8 rounded-3xl border border-[var(--border)] bg-[var(--surface)]/75 p-5 shadow-xl shadow-black/20 backdrop-blur-sm sm:p-8"
       aria-labelledby="gallery-reverse-heading"
     >
+      <GalleryReverseViewTracker postId={postId} fromCache={true} />
       <header className="mb-6">
         <p className="mb-1 font-medium text-[var(--accent)]" style={{ fontSize: 'var(--type-13)' }}>
           Image intelligence

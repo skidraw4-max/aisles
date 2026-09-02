@@ -5,6 +5,7 @@ import { fetchPopularTags } from '@/lib/popular-tags.server';
 import { getCanonicalSiteUrl } from '@/lib/canonical-site-url';
 import { SEO_ROBOTS_PUBLIC } from '@/lib/seo-robots';
 import { SEARCH_CORRIDORS } from '@/lib/search-corridor';
+import { TagsHubGalleryBanner } from './TagsHubGalleryBanner';
 import styles from './tags.module.css';
 
 export const revalidate = 300;
@@ -33,6 +34,8 @@ export default async function TagsHubPage() {
         <p className={styles.lede}>
           큐레이션된 태그 허브입니다. 태그를 누르면 관련 글을 모아서 볼 수 있습니다.
         </p>
+
+        <TagsHubGalleryBanner />
 
         <section aria-labelledby="corridors">
           <h2 id="corridors" className={styles.sectionTitle}>

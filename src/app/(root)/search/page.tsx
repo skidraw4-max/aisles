@@ -61,6 +61,23 @@ export default async function SearchPage({ searchParams }: PageProps) {
           ← 홈으로
         </Link>
         <h1 className={styles.title}>검색</h1>
+        <nav className={styles.corridorQuick} aria-label="복도 필터">
+          <Link href="/?category=GALLERY" className={styles.corridorChipHighlight}>
+            GALLERY 역분석
+          </Link>
+          <Link href="/search?corridor=GALLERY" className={styles.corridorChip}>
+            GALLERY 검색
+          </Link>
+          <Link href="/search?corridor=BUILD" className={styles.corridorChip}>
+            BUILD
+          </Link>
+          <Link href="/search?corridor=LAUNCH" className={styles.corridorChip}>
+            LAUNCH
+          </Link>
+          <Link href="/tags" className={styles.corridorChip}>
+            인기 태그
+          </Link>
+        </nav>
         {!hasQuery ? (
           <p className={styles.meta}>헤더 검색창에 키워드를 입력하거나, 게시글의 태그를 눌러 모아 보세요.</p>
         ) : (

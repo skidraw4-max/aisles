@@ -314,3 +314,23 @@ Create a modern PM/service-planning portfolio PowerPoint for 함종두 using:
 ## Deploy
 
 커밋 후 `origin/main` 푸시 → Vercel.
+
+# Plan: 역분석 허브 (API 비로그인 체험 제외)
+
+**Status:** Implemented 2026-09-02.
+
+## Goal
+
+문서 전략 중 **비용 없는** 항목만: Hero CTA, 공유·캐시 역분석 공개 읽기, GA4, LOUNGE/tags 브릿지. 비로그인 Gemini 호출(무료 체험)은 제외.
+
+## Scope
+
+1. Hero → GALLERY / 업로드(로그인) CTA + `hero_analysis_cta_click`
+2. DB 캐시된 역분석 비로그인 읽기; 새 분석은 로그인 유지
+3. GALLERY 상세 하단 CTA, `gallery_reverse_*` 이벤트
+4. LOUNGE 상세 → GALLERY 역분석 예시 블록
+5. `/tags` GALLERY 허브 링크, 검색 GALLERY 칩
+
+## Out of scope
+
+- 비로그인 무료 분석 API, `/analysis` URL, 메인에서 Game/Fortune 축소

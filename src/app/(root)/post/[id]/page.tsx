@@ -25,6 +25,8 @@ import { PostAuthorAvatar } from './PostAuthorAvatar';
 import { PostOwnerActionsGate } from './PostOwnerActionsGate';
 import { PostAiAnalysisWithViewer } from './PostAiAnalysisWithViewer';
 import { GalleryAiExtrasGate } from './GalleryAiExtrasGate';
+import { GalleryReversePromoCta } from './GalleryReversePromoCta';
+import { LoungeGalleryBridge } from './LoungeGalleryBridge';
 import { RecipePromptSection } from './RecipePromptSection';
 import { GalleryPostMedia } from './GalleryPostMedia';
 import { BuildLaunchDoc } from './BuildLaunchDoc';
@@ -597,9 +599,28 @@ export default async function PostPage({ params }: Props) {
                 {isGallery && galleryAnalysisUrl ? (
                   <GalleryAiExtrasGate
                     postId={post.id}
+                    publicCachedContent={
+                      post.aiReversePrompt?.trim()
+                        ? (
+                          <GalleryImageReverseFromDb
+                            postId={post.id}
+                            authorOriginalPrompt={galleryAuthorPromptText}
+                            aiReversePrompt={post.aiReversePrompt}
+                            aiImageAnalysis={
+                              post.aiImageAnalysis != null &&
+                              typeof post.aiImageAnalysis === 'object' &&
+                              !Array.isArray(post.aiImageAnalysis)
+                                ? (post.aiImageAnalysis as Record<string, unknown>)
+                                : null
+                            }
+                          />
+                        )
+                        : undefined
+                    }
                     loggedInContent={
                       post.aiReversePrompt?.trim() ? (
                         <GalleryImageReverseFromDb
+                          postId={post.id}
                           authorOriginalPrompt={galleryAuthorPromptText}
                           aiReversePrompt={post.aiReversePrompt}
                           aiImageAnalysis={
@@ -622,6 +643,8 @@ export default async function PostPage({ params }: Props) {
                     }
                   />
                 ) : null}
+
+                {isGallery ? <GalleryReversePromoCta postId={post.id} /> : null}
 
                 {isGallery && post.category === 'BUILD' && externalHref ? (
                   <ExternalServiceCta href={externalHref} variant="buildBand" />
@@ -734,6 +757,8 @@ export default async function PostPage({ params }: Props) {
                 {post.category === 'LAUNCH' ? (
                   <UgcCorridorCrossPromo variant="postLaunch" />
                 ) : null}
+
+                {post.category === 'LOUNGE' ? <LoungeGalleryBridge /> : null}
 
                 <PostRelatedPosts fromPostId={post.id} posts={relatedPostsInline} />
 

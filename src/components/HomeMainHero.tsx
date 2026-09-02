@@ -1,12 +1,17 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import Link from 'next/link';
 import { useUiLabels } from '@/components/UiLabelsProvider';
+import { trackHeroAnalysisCtaClick } from '@/lib/ga4';
 import styles from '@/app/(root)/page.module.css';
 
 const CAROUSEL_INDICES = [0, 1, 2] as const;
 
 const INTERVAL_MS = 5500;
+
+const GALLERY_HREF = '/?category=GALLERY';
+const UPLOAD_LOGIN_HREF = '/login?next=%2Fupload%3Fcategory%3DGALLERY';
 
 export function HomeMainHero() {
   const m = useUiLabels();
@@ -36,7 +41,8 @@ export function HomeMainHero() {
   const slide = slides[index] ?? slides[0];
   const headingEn = m?.['home.main_hero.heading_en'] ?? '';
   const subKo = m?.['home.main_hero.sub_ko'] ?? '';
-  const cta = m?.['home.main_hero.cta'] ?? '';
+  const ctaGallery = m?.['home.main_hero.cta_gallery'] ?? 'AI 이미지 역분석 예시 보기';
+  const ctaUpload = m?.['home.main_hero.cta_upload'] ?? '내 이미지 분석하기';
 
   return (
     <section className={styles.homeMainHero} aria-labelledby="home-main-hero-title">
@@ -87,9 +93,22 @@ export function HomeMainHero() {
           ))}
         </div>
 
-        <a href="#content-showcase-heading" className={styles.homeMainHeroCta}>
-          {cta}
-        </a>
+        <div className={styles.homeMainHeroCtaRow}>
+          <Link
+            href={GALLERY_HREF}
+            className={styles.homeMainHeroCta}
+            onClick={() => trackHeroAnalysisCtaClick('gallery')}
+          >
+            {ctaGallery}
+          </Link>
+          <Link
+            href={UPLOAD_LOGIN_HREF}
+            className={styles.homeMainHeroCtaSecondary}
+            onClick={() => trackHeroAnalysisCtaClick('upload_login')}
+          >
+            {ctaUpload}
+          </Link>
+        </div>
       </div>
     </section>
   );

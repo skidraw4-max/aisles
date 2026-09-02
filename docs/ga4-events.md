@@ -23,7 +23,11 @@
 | `feed_post_click` | 피드·목록에서 게시글 링크 클릭 | `post_id`, `category`, `surface` |
 | `site_search` | `/search` 결과 페이지 로드 (검색 실행 후) | `search_term`, `results_count` |
 | `corridor_tab_select` | 홈 복도 탭·헤더 네비 클릭 | `category` (`ALL`, `LOUNGE`, `LAB`, …) |
-| `share_click` | 상세 공유 버튼 클릭 | `post_id`, `method` (`web_share` \| `clipboard`) |
+| `share_click` | 상세·게임 공유 버튼 클릭 | `post_id`, `method` (`web_share` \| `clipboard`), `game_slug` (게임) |
+| `hero_analysis_cta_click` | 메인 Hero 역분석 CTA | `destination` (`gallery` \| `upload_login`) |
+| `gallery_reverse_login_click` | 갤러리 역분석 로그인 게이트 | `post_id` |
+| `gallery_reverse_view` | 갤러리 역분석 UI 노출 (1회) | `post_id`, `from_cache` |
+| `tags_hub_gallery_click` | `/tags` 갤러리 배너 클릭 | — |
 
 ### `feed_post_click` surface 값
 
@@ -35,6 +39,7 @@
 | `quasar_sidebar` | 퀘이사 LOUNGE·GOSSIP 사이드 리스트 |
 | `todays_best` | 오늘의 베스트 위젯 |
 | `search_result` | 검색 결과 목록 |
+| `lounge_gallery_bridge` | LOUNGE 상세 → GALLERY 역분석 브릿지 |
 | `composite_section` | 홈 composite AI Work·커뮤니티 섹션 |
 
 ### 상세 페이지 `content_group`
@@ -72,5 +77,9 @@ LOUNGE 다이제스트(Resend) 본문 링크는 URL 쿼리로 GA4에 유입을 �
 - `SearchPageClient.tsx` / `search/page.tsx` — `site_search`, 검색 결과 `feed_post_click`
 - `HomeContentTabs.tsx`, `MainNav.tsx` — `corridor_tab_select`
 - `PostEngagement.tsx` — `share_click`
+- `HomeMainHero.tsx` — `hero_analysis_cta_click`
+- `MemberAiExtrasLoginGate.tsx` — `gallery_reverse_login_click`
+- `GalleryReverseViewTracker.tsx` — `gallery_reverse_view`
+- `TagsHubGalleryBanner.tsx` — `tags_hub_gallery_click`
 - `PostContentGroupAnalytics.tsx` — 상세 `content_group` / `post_category`
 - `src/app/api/cron/news-digest/route.ts` — 메일 UTM (`fortune_week` 포함)

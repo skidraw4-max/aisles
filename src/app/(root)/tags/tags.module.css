@@ -21,6 +21,38 @@
   font-size: 1rem;
 }
 
+.galleryBanner {
+  margin-bottom: 1.75rem;
+  padding: 1rem 1.1rem;
+  border-radius: 12px;
+  border: 1px solid var(--border, #e2e8f0);
+  background: color-mix(in srgb, #fff 92%, #a78bfa 8%);
+}
+
+.galleryBannerTitle {
+  margin: 0 0 0.35rem;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.galleryBannerMeta {
+  margin: 0 0 0.65rem;
+  font-size: 0.9rem;
+  color: var(--muted, #64748b);
+  line-height: 1.45;
+}
+
+.galleryBannerCta {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #6d28d9;
+  text-decoration: none;
+}
+
+.galleryBannerCta:hover {
+  text-decoration: underline;
+}
+
 .corridorList,
 .tagList {
   list-style: none;

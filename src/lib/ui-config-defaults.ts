@@ -107,7 +107,7 @@ export const UI_CONFIG_SEED: readonly UiConfigSeedRow[] = [
   },
   {
     key: 'home.main_hero.sub_ko',
-    value: '실험부터 출시까지, AI 프로젝트의 모든 복도(Aisles)가 모이는 곳.',
+    value: 'AI 이미지를 이해하고, 프롬프트를 다시 만들어 보세요. 갤러리 역분석이 시작점입니다.',
     description: '메인 히어로 한글 서브',
   },
   {
@@ -140,7 +140,17 @@ export const UI_CONFIG_SEED: readonly UiConfigSeedRow[] = [
     value: 'Gallery에서 비주얼 트렌드와 아이디어 스파크를 수집하세요.',
     description: '캐러셀 3 부제',
   },
-  { key: 'home.main_hero.cta', value: 'Explore Now', description: '메인 히어로 하단 CTA' },
+  { key: 'home.main_hero.cta', value: 'Explore Now', description: '메인 히어로 하단 CTA (레거시)' },
+  {
+    key: 'home.main_hero.cta_gallery',
+    value: 'AI 이미지 역분석 예시 보기',
+    description: '메인 히어로 — 갤러리 CTA',
+  },
+  {
+    key: 'home.main_hero.cta_upload',
+    value: '내 이미지 분석하기',
+    description: '메인 히어로 — 업로드(로그인) CTA',
+  },
 
   // 오늘의 베스트
   { key: 'home.todays_best.title', value: '오늘의 베스트', description: '사이드 위젯 제목' },

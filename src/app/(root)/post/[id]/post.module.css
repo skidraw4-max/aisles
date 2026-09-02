@@ -3760,3 +3760,103 @@
 .galleryReverseDot:nth-child(3) {
   animation-delay: 0.3s;
 }
+
+.galleryReversePromo {
+  margin: 1.5rem 0 0;
+  padding: 1rem 1.1rem;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface) 92%, var(--accent) 8%);
+}
+
+.galleryReversePromoLead {
+  margin: 0 0 0.75rem;
+  font-size: var(--type-14);
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.galleryReversePromoActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.galleryReversePromoPrimary,
+.galleryReversePromoSecondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.55rem 1rem;
+  border-radius: 10px;
+  font-size: var(--type-13);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.galleryReversePromoPrimary {
+  color: #0b0d17;
+  background: linear-gradient(135deg, #f5f3ff 0%, #a78bfa 45%, #c4b5fd 100%);
+}
+
+.galleryReversePromoSecondary {
+  color: var(--text);
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.galleryReversePromoHint {
+  margin: 0.65rem 0 0;
+  font-size: var(--type-12);
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.loungeGalleryBridge {
+  margin: 1.25rem 0 0;
+  padding: 1rem 1.1rem;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.loungeGalleryBridgeTitle {
+  margin: 0 0 0.35rem;
+  font-size: var(--type-16);
+  font-weight: 700;
+}
+
+.loungeGalleryBridgeMeta {
+  margin: 0 0 0.75rem;
+  font-size: var(--type-13);
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.loungeGalleryBridgeList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.loungeGalleryBridgeLink {
+  font-size: var(--type-14);
+  font-weight: 600;
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.loungeGalleryBridgeLink:hover {
+  text-decoration: underline;
+}
+
+.loungeGalleryBridgeMore {
+  display: inline-block;
+  margin-top: 0.65rem;
+  font-size: var(--type-13);
+  font-weight: 600;
+  color: var(--muted);
+}
