@@ -334,3 +334,7 @@ Create a modern PM/service-planning portfolio PowerPoint for 함종두 using:
 ## Out of scope
 
 - 비로그인 무료 분석 API, `/analysis` URL, 메인에서 Game/Fortune 축소
+
+## Follow-up (2026-09-03)
+
+로그인 사용자는 `내 이미지 분석하기`가 `/upload?category=GALLERY`로 가고, 게스트만 `/login?next=`를 탄다. 업로드 페이지 비로그인 리다이렉트도 `category`를 유지한다.

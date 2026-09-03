@@ -37,11 +37,14 @@ export default async function UploadPage({ searchParams }: PageProps) {
 
   const sp = await searchParams;
   const editId = typeof sp.edit === 'string' ? sp.edit.trim() : '';
+  const category = typeof sp.category === 'string' ? sp.category.trim() : '';
 
   if (!user?.email) {
-    const nextPath = editId
-      ? `/upload?edit=${encodeURIComponent(editId)}`
-      : '/upload';
+    const params = new URLSearchParams();
+    if (editId) params.set('edit', editId);
+    if (category && !editId) params.set('category', category);
+    const qs = params.toString();
+    const nextPath = qs ? `/upload?${qs}` : '/upload';
     redirect(`/login?next=${encodeURIComponent(nextPath)}`);
   }
   let editInitial: UploadEditInitial | null = null;

@@ -3,7 +3,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useUiLabels } from '@/components/UiLabelsProvider';
+import { useAuth } from '@/components/SessionProvider';
 import { trackHeroAnalysisCtaClick } from '@/lib/ga4';
+import { galleryUploadHref } from '@/lib/gallery-upload-href';
 import styles from '@/app/(root)/page.module.css';
 
 const CAROUSEL_INDICES = [0, 1, 2] as const;
@@ -11,11 +13,13 @@ const CAROUSEL_INDICES = [0, 1, 2] as const;
 const INTERVAL_MS = 5500;
 
 const GALLERY_HREF = '/?category=GALLERY';
-const UPLOAD_LOGIN_HREF = '/login?next=%2Fupload%3Fcategory%3DGALLERY';
 
 export function HomeMainHero() {
   const m = useUiLabels();
+  const { isAuthenticated, authReady } = useAuth();
   const [index, setIndex] = useState(0);
+  const loggedIn = authReady && isAuthenticated;
+  const uploadHref = galleryUploadHref(loggedIn);
 
   const slides = CAROUSEL_INDICES.map((i) => ({
     title: m?.[`home.main_hero.carousel.${i}.title`] ?? '',
@@ -102,9 +106,11 @@ export function HomeMainHero() {
             {ctaGallery}
           </Link>
           <Link
-            href={UPLOAD_LOGIN_HREF}
+            href={uploadHref}
             className={styles.homeMainHeroCtaSecondary}
-            onClick={() => trackHeroAnalysisCtaClick('upload_login')}
+            onClick={() =>
+              trackHeroAnalysisCtaClick(loggedIn ? 'upload' : 'upload_login')
+            }
           >
             {ctaUpload}
           </Link>

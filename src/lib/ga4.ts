@@ -41,7 +41,9 @@ export function homeFeedSurface(category: string | null): string {
 }
 
 /** 메인 Hero 역분석 CTA */
-export function trackHeroAnalysisCtaClick(destination: 'gallery' | 'upload_login'): void {
+export function trackHeroAnalysisCtaClick(
+  destination: 'gallery' | 'upload' | 'upload_login'
+): void {
   sendGAEvent('hero_analysis_cta_click', { destination });
 }
 

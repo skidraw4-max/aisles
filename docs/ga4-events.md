@@ -24,7 +24,7 @@
 | `site_search` | `/search` 결과 페이지 로드 (검색 실행 후) | `search_term`, `results_count` |
 | `corridor_tab_select` | 홈 복도 탭·헤더 네비 클릭 | `category` (`ALL`, `LOUNGE`, `LAB`, …) |
 | `share_click` | 상세·게임 공유 버튼 클릭 | `post_id`, `method` (`web_share` \| `clipboard`), `game_slug` (게임) |
-| `hero_analysis_cta_click` | 메인 Hero 역분석 CTA | `destination` (`gallery` \| `upload_login`) |
+| `hero_analysis_cta_click` | 메인 Hero 역분석 CTA | `destination` (`gallery` \| `upload` \| `upload_login`) |
 | `gallery_reverse_login_click` | 갤러리 역분석 로그인 게이트 | `post_id` |
 | `gallery_reverse_view` | 갤러리 역분석 UI 노출 (1회) | `post_id`, `from_cache` |
 | `tags_hub_gallery_click` | `/tags` 갤러리 배너 클릭 | — |
