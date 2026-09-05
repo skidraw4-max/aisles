@@ -18,6 +18,8 @@ const MODES_BY_GAME: Record<GameSlug, readonly GameMode[]> = {
   brickbreaking: BRICK_MODES,
   minibrick: MINI_MODES,
   'bricks-match': MATCH_MODES,
+  'brick-invasion': MATCH_MODES,
+  ricorail: MATCH_MODES,
 };
 
 export function isGameSlug(slug: string): slug is GameSlug {

@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" fill="none">
+  <defs>
+    <radialGradient id="hiveCute" cx="50%" cy="42%" r="55%">
+      <stop offset="0%" stop-color="#ffe4ec"/>
+      <stop offset="40%" stop-color="#ff6b8a"/>
+      <stop offset="100%" stop-color="#d1224a"/>
+    </radialGradient>
+  </defs>
+  <!-- soft shadow -->
+  <ellipse cx="48" cy="86" rx="26" ry="5" fill="#000" opacity=".18"/>
+  <!-- body -->
+  <path d="M48 10 C72 14 86 32 86 50 C86 72 68 88 48 90 C28 88 10 72 10 50 C10 32 24 14 48 10Z" fill="#3d1522" stroke="#ff4d6a" stroke-width="3"/>
+  <path d="M48 20 C66 24 74 36 74 50 C74 66 64 78 48 80 C32 78 22 66 22 50 C22 36 30 24 48 20Z" fill="#5a1d2c"/>
+  <!-- cute horns -->
+  <path d="M28 22 L20 6 L34 18 Z" fill="#ff6b8a" stroke="#d1224a" stroke-width="2"/>
+  <path d="M68 22 L76 6 L62 18 Z" fill="#ff6b8a" stroke="#d1224a" stroke-width="2"/>
+  <!-- big eye -->
+  <circle cx="48" cy="48" r="20" fill="url(#hiveCute)" stroke="#d1224a" stroke-width="3"/>
+  <ellipse cx="48" cy="48" rx="8" ry="14" fill="#2a0a12"/>
+  <circle cx="44" cy="40" r="4" fill="#fff"/>
+  <circle cx="52" cy="52" r="1.6" fill="#fff" opacity=".7"/>
+  <!-- blush -->
+  <ellipse cx="26" cy="58" rx="5" ry="2.5" fill="#ff8fab" opacity=".55"/>
+  <ellipse cx="70" cy="58" rx="5" ry="2.5" fill="#ff8fab" opacity=".55"/>
+  <!-- tiny smile under eye -->
+  <path d="M40 70 Q48 76 56 70" stroke="#ff8fab" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+</svg>

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <rect x="6" y="8" width="52" height="48" rx="14" fill="#9aabbe" stroke="#5b6b82" stroke-width="3"/>
+  <rect x="12" y="14" width="40" height="36" rx="10" fill="#c5d0de"/>
+  <!-- cute bolt faces -->
+  <circle cx="24" cy="28" r="7" fill="#7e8fa5" stroke="#5b6b82" stroke-width="2"/>
+  <circle cx="40" cy="28" r="7" fill="#7e8fa5" stroke="#5b6b82" stroke-width="2"/>
+  <circle cx="22.5" cy="26.5" r="1.5" fill="#fff" opacity=".8"/>
+  <circle cx="38.5" cy="26.5" r="1.5" fill="#fff" opacity=".8"/>
+  <path d="M21 42 H43" stroke="#5b6b82" stroke-width="3" stroke-linecap="round"/>
+  <path d="M16 48 H48" stroke="#5b6b82" stroke-width="2" stroke-linecap="round" opacity=".5"/>
+  <!-- tiny smile on wall -->
+  <path d="M28 36 Q32 39 36 36" stroke="#5b6b82" stroke-width="2" stroke-linecap="round" fill="none"/>
+</svg>

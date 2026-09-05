@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>BrickInvasion — UI & Character Design</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;800;900&family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./tokens.css" />
+  <link rel="stylesheet" href="./ui/gallery.css" />
+</head>
+<body>
+  <header class="site-header">
+    <p class="eyebrow">BrickInvasion Design System</p>
+    <h1>외계 침공 방어 UI · 캐릭터</h1>
+    <p class="lede">만화스럽고 귀여운 치비 스타일 리뉴얼. 포대 마스코트와 통통 외계 블록으로 Voidswarm을 막아보세요.</p>
+  </header>
+
+  <section class="palette">
+    <h2>컬러 시스템</h2>
+    <div class="swatches">
+      <div class="swatch" style="--c:var(--bg-orbit)"><span>Orbit</span></div>
+      <div class="swatch" style="--c:var(--plasma)"><span>Plasma</span></div>
+      <div class="swatch" style="--c:var(--cannon-gold)"><span>Cannon</span></div>
+      <div class="swatch" style="--c:var(--swarm-1)"><span>Scout</span></div>
+      <div class="swatch" style="--c:var(--swarm-2)"><span>Armor</span></div>
+      <div class="swatch" style="--c:var(--swarm-3)"><span>Elite</span></div>
+      <div class="swatch" style="--c:var(--hive-core)"><span>Hive</span></div>
+      <div class="swatch" style="--c:var(--wall)"><span>Debris</span></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>캐릭터 / 타일 스프라이트</h2>
+    <div class="sprite-grid">
+      <figure class="sprite-card">
+        <img src="./sprites/cannon.svg" alt="궤도 방어 포대" />
+                <figcaption><strong>궤도 방어 포대</strong>통통 마스코트 · 금색 + 웃는 플라즈마 얼굴</figcaption>
+      </figure>
+      <figure class="sprite-card">
+        <img src="./sprites/plasma-ball.svg" alt="플라즈마 탄" />
+        <figcaption><strong>플라즈마 탄</strong>귀여운 에너지 구슬</figcaption>
+      </figure>
+      <figure class="sprite-card">
+        <img src="./sprites/swarm-1.svg" alt="척후병" />
+        <figcaption><strong>척후병 HP1</strong>통통 초록 외계이 · 큰 눈</figcaption>
+      </figure>
+      <figure class="sprite-card">
+        <img src="./sprites/swarm-2.svg" alt="장갑충" />
+        <figcaption><strong>장갑충 HP2</strong>분홍 가시 친구</figcaption>
+      </figure>
+      <figure class="sprite-card">
+        <img src="./sprites/swarm-3.svg" alt="중장갑" />
+        <figcaption><strong>중장갑 HP3</strong>호박 갑옷 친구</figcaption>
+      </figure>
+      <figure class="sprite-card">
+        <img src="./sprites/wall.svg" alt="잔해 차폐" />
+        <figcaption><strong>잔해 / 차폐</strong>볼트 얼굴 벽 · 튕김용</figcaption>
+      </figure>
+      <figure class="sprite-card wide">
+        <img src="./sprites/hive-node.svg" alt="Hive Node" />
+        <figcaption><strong>Hive Node</strong>귀여운 보스 · 큰 외눈</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section>
+    <h2>화면 목업</h2>
+    <div class="phones">
+      <!-- TITLE -->
+      <article class="phone" aria-label="타이틀 화면">
+        <div class="phone-screen title-screen">
+          <div class="stars" aria-hidden="true"></div>
+          <div class="earth-glow" aria-hidden="true"></div>
+          <img class="title-cannon" src="./sprites/cannon.svg" alt="" />
+          <p class="title-kicker">CUTE ORBITAL DEFENSE</p>
+          <h3 class="game-title">BRICK<br />INVASION</h3>
+          <p class="title-sub">지구를 지키는 통통 포대</p>
+          <button class="btn-primary" type="button">지구를 지켜라!</button>
+          <button class="btn-ghost" type="button">구역 선택</button>
+          <p class="title-flavor">귀여운 Voidswarm이 몰려온다… 그래도 막자!</p>
+        </div>
+        <p class="phone-label">타이틀</p>
+      </article>
+
+      <!-- GAMEPLAY -->
+      <article class="phone" aria-label="인게임 HUD">
+        <div class="phone-screen play-screen">
+          <header class="hud">
+            <button class="icon-btn" type="button" aria-label="메뉴">☰</button>
+            <div class="hud-center">
+              <div class="hud-meta">
+                <span>SECTOR 03</span>
+                <span>탄 8</span>
+              </div>
+              <div class="progress">
+                <i class="pip on"></i><i class="pip on"></i><i class="pip"></i><i class="pip"></i><i class="pip boss"></i>
+              </div>
+            </div>
+            <button class="icon-btn" type="button" aria-label="홈">⌂</button>
+          </header>
+
+          <div class="board" id="board"></div>
+
+          <footer class="launcher">
+            <div class="aim-line" aria-hidden="true"></div>
+            <img class="cannon" src="./sprites/cannon.svg" alt="포대" />
+            <div class="loadout">
+              <button class="slot active" type="button"><img src="./sprites/plasma-ball.svg" alt="플라즈마" /></button>
+              <button class="slot locked" type="button" disabled>🔒</button>
+              <button class="slot locked" type="button" disabled>🔒</button>
+              <button class="slot locked" type="button" disabled>🔒</button>
+            </div>
+          </footer>
+        </div>
+        <p class="phone-label">인게임 HUD</p>
+      </article>
+
+      <!-- CLEAR -->
+      <article class="phone" aria-label="클리어 화면">
+        <div class="phone-screen result-screen">
+          <div class="stars" aria-hidden="true"></div>
+          <img src="./sprites/hive-node.svg" alt="" class="result-boss dim" />
+          <p class="result-kicker">SECTOR CLEARED ★</p>
+          <h3 class="result-title">구역 탈환!</h3>
+          <p class="result-sub">Hive가 잠들었다. 다음 구역으로 출동!</p>
+          <div class="stat-row">
+            <div><em>파괴</em><strong>42</strong></div>
+            <div><em>남은 탄</em><strong>3</strong></div>
+          </div>
+          <button class="btn-primary" type="button">다음 전선</button>
+          <button class="btn-ghost" type="button">타이틀</button>
+        </div>
+        <p class="phone-label">클리어</p>
+      </article>
+    </div>
+  </section>
+
+  <section>
+    <h2>컨셉 렌더 (참고)</h2>
+    <div class="concept-row">
+      <figure>
+        <img src="../assets/brickinvasion-characters.png" alt="캐릭터 시트 컨셉" />
+        <figcaption>캐릭터 시트</figcaption>
+      </figure>
+      <figure>
+        <img src="../assets/brickinvasion-ui-title.png" alt="타이틀 컨셉" />
+        <figcaption>타이틀 컨셉</figcaption>
+      </figure>
+      <figure>
+        <img src="../assets/brickinvasion-ui-gameplay.png" alt="인게임 컨셉" />
+        <figcaption>인게임 컨셉</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="notes">
+    <h2>디자인 가이드 (요약)</h2>
+    <ul>
+      <li><strong>스타일</strong> = 치비·카와이, 큰 눈, 볼터치, 두꺼운 아웃라인</li>
+      <li><strong>플레이어</strong> = 통통 금색 포대 마스코트 + 웃는 플라즈마 탄</li>
+      <li><strong>적</strong> = 둥근 외계 블록, HP↑일수록 뿔/갑옷만 늘어나고 귀여움 유지</li>
+      <li><strong>보스</strong> = 큰 외눈 + 작은 뿔, 무섭지 않은 귀여운 위협</li>
+      <li><strong>UI</strong> = 말랑한 라운드 버튼, 알약형 HUD, 부드러운 파스텔 네온</li>
+    </ul>
+  </section>
+
+  <script src="./ui/board-preview.js"></script>
+</body>
+</html>

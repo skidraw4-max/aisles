@@ -19,9 +19,13 @@ describe('games ranking helpers', () => {
     assert.deepEqual([...modesForGame('brickbreaking')], ['stage', 'infinite']);
     assert.deepEqual([...modesForGame('minibrick')], ['normal', 'endless']);
     assert.deepEqual([...modesForGame('bricks-match')], ['stage', 'endless']);
+    assert.deepEqual([...modesForGame('brick-invasion')], ['stage', 'endless']);
+    assert.deepEqual([...modesForGame('ricorail')], ['stage', 'endless']);
     assert.equal(defaultMode('brickbreaking'), 'stage');
     assert.equal(defaultMode('minibrick'), 'normal');
     assert.equal(defaultMode('bricks-match'), 'stage');
+    assert.equal(defaultMode('brick-invasion'), 'stage');
+    assert.equal(defaultMode('ricorail'), 'stage');
   });
 
   it('validates modes per game', () => {
@@ -32,6 +36,11 @@ describe('games ranking helpers', () => {
     assert.equal(isValidMode('bricks-match', 'stage'), true);
     assert.equal(isValidMode('bricks-match', 'endless'), true);
     assert.equal(isValidMode('bricks-match', 'infinite'), false);
+    assert.equal(isValidMode('brick-invasion', 'stage'), true);
+    assert.equal(isValidMode('brick-invasion', 'endless'), true);
+    assert.equal(isValidMode('ricorail', 'stage'), true);
+    assert.equal(isValidMode('ricorail', 'endless'), true);
+    assert.equal(isValidMode('ricorail', 'infinite'), false);
   });
 
   it('builds ISO week keys and overall sentinel', () => {

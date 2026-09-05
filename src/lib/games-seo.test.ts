@@ -16,12 +16,16 @@ describe('isGamesPathIndexable', () => {
     assert.equal(isGamesPathIndexable('/games/brickbreaking'), true);
     assert.equal(isGamesPathIndexable('/games/minibrick'), true);
     assert.equal(isGamesPathIndexable('/games/bricks-match'), true);
+    assert.equal(isGamesPathIndexable('/games/brick-invasion'), true);
+    assert.equal(isGamesPathIndexable('/games/ricorail'), true);
   });
 
   it('blocks play routes', () => {
     assert.equal(isGamesPathIndexable('/games/brickbreaking/play'), false);
     assert.equal(isGamesPathIndexable('/games/minibrick/play'), false);
     assert.equal(isGamesPathIndexable('/games/brickbreaking/play/'), false);
+    assert.equal(isGamesPathIndexable('/games/brick-invasion/play'), false);
+    assert.equal(isGamesPathIndexable('/games/ricorail/play'), false);
   });
 });
 

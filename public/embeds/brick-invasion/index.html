@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>BrickInvasion</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./design/tokens.css" />
+  <link rel="stylesheet" href="./css/game.css" />
+</head>
+<body>
+  <div id="app">
+    <div id="frame">
+      <canvas id="game" width="720" height="1280" aria-label="BrickInvasion 게임 화면"></canvas>
+
+      <section id="screen-title" class="overlay screen active">
+        <div class="title-hero-wrap">
+          <img class="title-hero" src="./assets/title-hero.png" alt="BrickInvasion 키 아트" />
+          <div class="title-hero-fade" aria-hidden="true"></div>
+        </div>
+        <div class="title-content">
+          <div id="energy-panel" class="energy-panel" aria-live="polite">
+            <div class="energy-row">
+              <span class="energy-label">⚡ 출격 가능</span>
+              <div id="energy-dots" class="energy-dots" aria-hidden="true"></div>
+              <strong id="energy-count" class="energy-count">5/5</strong>
+            </div>
+            <p id="energy-timer" class="energy-timer">에너지 가득</p>
+          </div>
+          <p class="kicker">CUTE ORBITAL DEFENSE</p>
+          <h1>BRICK<br />INVASION</h1>
+          <p class="sub">지구를 지키는 통통 포대</p>
+          <button id="btn-play" class="btn primary" type="button">지구를 지켜라!</button>
+          <button id="btn-continue" class="btn ghost" type="button">이어서 하기</button>
+          <button id="btn-mute" class="btn mute" type="button" aria-pressed="false">🔊 소리</button>
+          <p id="title-record" class="record"></p>
+          <p class="flavor">귀여운 Voidswarm이 몰려온다… 그래도 막자!</p>
+        </div>
+      </section>
+
+      <section id="screen-clear" class="overlay screen">
+        <p class="kicker ok">SECTOR CLEARED ★</p>
+        <h2 id="clear-title">구역 탈환!</h2>
+        <p id="clear-sub" class="sub">Hive가 잠들었다. 다음 구역으로 출동!</p>
+        <p id="clear-run" class="run-progress"></p>
+        <div id="clear-energy" class="energy-inline"></div>
+        <div class="stats">
+          <div><em>파괴</em><strong id="stat-kills">0</strong></div>
+          <div><em id="stat-ammo-label">보유 공</em><strong id="stat-ammo">0</strong></div>
+        </div>
+        <button id="btn-next" class="btn primary" type="button">다음 전선</button>
+        <p id="clear-run-limit" class="run-limit" hidden>이번 출격 한도(5구역)에 도달했습니다</p>
+        <button id="btn-clear-home" class="btn ghost" type="button">타이틀</button>
+      </section>
+
+      <section id="screen-fail" class="overlay screen">
+        <p class="kicker bad">SECTOR LOST</p>
+        <h2>전선이 밀렸다…</h2>
+        <p class="sub">발사 횟수를 모두 썼어요. 다시 조준해 봐요!</p>
+        <div id="fail-energy" class="energy-inline"></div>
+        <button id="btn-retry" class="btn primary" type="button">다시 도전</button>
+        <button id="btn-fail-home" class="btn ghost" type="button">타이틀</button>
+      </section>
+
+      <div id="modal-energy" class="modal" hidden role="dialog" aria-labelledby="modal-energy-title">
+        <div class="modal-card">
+          <p class="kicker bad">ENERGY</p>
+          <h3 id="modal-energy-title">출격 에너지 부족</h3>
+          <div id="modal-energy-dots" class="energy-dots energy-dots--lg"></div>
+          <p id="modal-energy-count" class="energy-count modal-count">0/5</p>
+          <p id="modal-energy-timer" class="energy-timer">5:00 후 +1</p>
+          <p class="modal-hint">5분마다 1회 충전 · 최대 5회</p>
+          <button id="btn-modal-energy" class="btn primary" type="button">확인</button>
+        </div>
+      </div>
+
+      <div id="toast" class="toast" hidden></div>
+    </div>
+  </div>
+
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>

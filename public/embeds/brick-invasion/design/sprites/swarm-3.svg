@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="s3" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffc878"/>
+      <stop offset="100%" stop-color="#ff9a3c"/>
+    </linearGradient>
+  </defs>
+  <rect x="6" y="12" width="52" height="46" rx="14" fill="url(#s3)" stroke="#c45e10" stroke-width="3"/>
+  <!-- armor plate -->
+  <path d="M14 20 H50 V30 L44 38 H20 L14 30 Z" fill="#ffe0b0" stroke="#c45e10" stroke-width="2"/>
+  <rect x="26" y="24" width="12" height="8" rx="3" fill="#ffb35a"/>
+  <!-- eyes under helmet -->
+  <ellipse cx="24" cy="44" rx="6" ry="6.5" fill="#fff"/>
+  <ellipse cx="40" cy="44" rx="6" ry="6.5" fill="#fff"/>
+  <ellipse cx="25" cy="45" rx="2.8" ry="3.5" fill="#5a2a00"/>
+  <ellipse cx="41" cy="45" rx="2.8" ry="3.5" fill="#5a2a00"/>
+  <circle cx="23.8" cy="43" r="1.1" fill="#fff"/>
+  <circle cx="39.8" cy="43" r="1.1" fill="#fff"/>
+  <path d="M29 52 Q32 54.5 35 52" stroke="#5a2a00" stroke-width="2" stroke-linecap="round" fill="none"/>
+  <circle cx="52" cy="14" r="9" fill="#fff" stroke="#c45e10" stroke-width="2"/>
+  <text x="52" y="18" text-anchor="middle" font-size="11" font-family="Arial Black, sans-serif" fill="#c45e10">3</text>
+</svg>

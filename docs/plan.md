@@ -338,3 +338,21 @@ Create a modern PM/service-planning portfolio PowerPoint for 함종두 using:
 ## Follow-up (2026-09-03)
 
 로그인 사용자는 `내 이미지 분석하기`가 `/upload?category=GALLERY`로 가고, 게스트만 `/login?next=`를 탄다. 업로드 페이지 비로그인 리다이렉트도 `category`를 유지한다.
+
+# Plan: Add BrickInvasion + Ricorail to games hub
+
+**Status:** Approved by user (“다른 게임과 같은 조건”). Implementing.
+
+## Sources
+- BrickInvasion: `c:\dev\Game\BrickInvasion\www` → slug `brick-invasion`
+- Ricorail: `c:\dev\Game\Puzzle_bricks` (package `ricorail`, webDir `dist`) → slug `ricorail`
+
+## Same conditions as existing games
+1. Catalog + hub/detail/play routes via `GAME_LIST`
+2. Embed under `public/embeds/{slug}/` (not `public/games/`)
+3. Score bridge `aisle-game-score` postMessage; modes `stage` | `endless`
+4. Login gate on play; hub/detail SEO indexable via existing games-seo
+5. Thumbnail + hub copy update
+
+## Out of scope
+Asset recompression; Capacitor packaging of these games.

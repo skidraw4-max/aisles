@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="s2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ff8fb8"/>
+      <stop offset="100%" stop-color="#ff4d8d"/>
+    </linearGradient>
+  </defs>
+  <rect x="6" y="12" width="52" height="46" rx="16" fill="url(#s2)" stroke="#d12a66" stroke-width="3"/>
+  <ellipse cx="32" cy="42" rx="15" ry="11" fill="#ffd0e2" opacity=".5"/>
+  <!-- soft spikes -->
+  <path d="M16 14 L20 4 L26 14 Z" fill="#ffb0cb" stroke="#d12a66" stroke-width="2"/>
+  <path d="M38 14 L44 4 L48 14 Z" fill="#ffb0cb" stroke="#d12a66" stroke-width="2"/>
+  <path d="M28 12 L32 5 L36 12 Z" fill="#ffc4d8" stroke="#d12a66" stroke-width="2"/>
+  <!-- eyes -->
+  <ellipse cx="23" cy="34" rx="7" ry="8" fill="#fff"/>
+  <ellipse cx="41" cy="34" rx="7" ry="8" fill="#fff"/>
+  <ellipse cx="24" cy="35" rx="3.4" ry="4.4" fill="#4a1028"/>
+  <ellipse cx="42" cy="35" rx="3.4" ry="4.4" fill="#4a1028"/>
+  <circle cx="22.6" cy="32.6" r="1.3" fill="#fff"/>
+  <circle cx="40.6" cy="32.6" r="1.3" fill="#fff"/>
+  <!-- mouth -->
+  <path d="M28 46 Q32 50 36 46" stroke="#4a1028" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+  <ellipse cx="14" cy="42" rx="4" ry="2" fill="#ffd0e2" opacity=".8"/>
+  <ellipse cx="50" cy="42" rx="4" ry="2" fill="#ffd0e2" opacity=".8"/>
+  <circle cx="52" cy="14" r="9" fill="#fff" stroke="#d12a66" stroke-width="2"/>
+  <text x="52" y="18" text-anchor="middle" font-size="11" font-family="Arial Black, sans-serif" fill="#d12a66">2</text>
+</svg>

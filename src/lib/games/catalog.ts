@@ -1,4 +1,9 @@
-export type GameSlug = 'brickbreaking' | 'minibrick' | 'bricks-match';
+export type GameSlug =
+  | 'brickbreaking'
+  | 'minibrick'
+  | 'bricks-match'
+  | 'brick-invasion'
+  | 'ricorail';
 
 export type GameInfo = {
   slug: GameSlug;
@@ -45,6 +50,26 @@ export const GAMES: Record<GameSlug, GameInfo> = {
     thumbVariant: 'brick',
     thumbnail: '/embeds/bricks-match/thumbnail.png',
     embedPath: '/embeds/bricks-match/index.html',
+  },
+  'brick-invasion': {
+    slug: 'brick-invasion',
+    title: 'BrickInvasion',
+    shortDescription: '귀여운 보이드스웜을 막는 궤도 디펜스 벽돌깨기',
+    description:
+      '지구를 지키는 통통 포대. 구역을 클리어하며 탄약을 키우고 보스에 도전하세요. 앱이 제공하는 공식 게임이며, 현재 UGC 제작은 지원하지 않습니다. PC는 마우스, 모바일은 터치로 조준·발사합니다.',
+    thumbVariant: 'brick',
+    thumbnail: '/embeds/brick-invasion/thumbnail.png',
+    embedPath: '/embeds/brick-invasion/index.html',
+  },
+  ricorail: {
+    slug: 'ricorail',
+    title: '리코레일',
+    shortDescription: '브릭을 맞춰 별빛 길을 쏘는 스테이지 퍼즐',
+    description:
+      '리코레일(Ricorail). 매치로 별을 모으며 월드를 탐험하는 퍼즐입니다. 앱이 제공하는 공식 게임이며, 현재 UGC 제작은 지원하지 않습니다. PC는 마우스, 모바일은 터치로 플레이합니다.',
+    thumbVariant: 'mini',
+    thumbnail: '/embeds/ricorail/thumbnail.png',
+    embedPath: '/embeds/ricorail/index.html',
   },
 };
 
