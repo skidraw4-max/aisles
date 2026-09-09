@@ -3,6 +3,8 @@ import Link from 'next/link';
 import { SiteFooter } from '@/components/SiteFooter';
 import { fetchLatestAiFortunePost } from '@/lib/ai-fortune/latest-fortune.server';
 import { fetchFortuneArchive } from '@/lib/ai-fortune/fortune-archive.server';
+import { formatFortuneHubTitle } from '@/lib/ai-fortune/fortune-display';
+import { formatAiFortuneWeekKeyLabel } from '@/lib/ai-fortune/kst-week';
 import { getCanonicalSiteUrl } from '@/lib/canonical-site-url';
 import { SEO_ROBOTS_PUBLIC } from '@/lib/seo-robots';
 import styles from './fortune.module.css';
@@ -23,6 +25,12 @@ export async function generateMetadata(): Promise<Metadata> {
     openGraph: { title, description, url, type: 'website' },
     twitter: { card: 'summary_large_image', title, description },
   };
+}
+
+function weekLabel(weekKey: string | null | undefined, fallback?: string | null): string {
+  if (weekKey) return formatAiFortuneWeekKeyLabel(weekKey);
+  if (fallback?.trim()) return fallback.trim();
+  return '—';
 }
 
 export default async function FortuneHubPage() {
@@ -48,8 +56,8 @@ export default async function FortuneHubPage() {
               이번 주 리포트
             </h2>
             <Link href={`/post/${latest.id}`} className={styles.latestCard}>
-              <span className={styles.week}>{latest.weekKey ?? 'LATEST'}</span>
-              <span className={styles.latestTitle}>{latest.title}</span>
+              <span className={styles.week}>{weekLabel(latest.weekKey, latest.subtitle)}</span>
+              <span className={styles.latestTitle}>{formatFortuneHubTitle(latest.title)}</span>
               {latest.subtitle ? <span className={styles.sub}>{latest.subtitle}</span> : null}
               <span className={styles.cta}>리포트 읽기 →</span>
             </Link>
@@ -69,8 +77,8 @@ export default async function FortuneHubPage() {
               {older.map((item) => (
                 <li key={item.id}>
                   <Link href={`/post/${item.id}`} className={styles.row}>
-                    <span className={styles.week}>{item.weekKey ?? '—'}</span>
-                    <span className={styles.rowTitle}>{item.title}</span>
+                    <span className={styles.week}>{weekLabel(item.weekKey)}</span>
+                    <span className={styles.rowTitle}>{formatFortuneHubTitle(item.title)}</span>
                   </Link>
                 </li>
               ))}

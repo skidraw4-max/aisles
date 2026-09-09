@@ -386,3 +386,15 @@ Asset recompression; Capacitor packaging of these games.
 - Changing LOUNGE take count unless needed after clip
 
 
+
+# Plan: Fortune hub + report readability
+
+**Status:** Approved by user (3 proposals + deploy). Implementing.
+
+## Scope
+1. Hub dark-theme contrast fix (latest card light bg + light text)
+2. Hub scanability: human week labels, strip [AI FORTUNE] prefix, archive spacing/hierarchy
+3. Report body: softer neon, higher body contrast, more section/card spacing, quieter scanline
+
+## Out of scope
+Content generation / Gemini copy changes

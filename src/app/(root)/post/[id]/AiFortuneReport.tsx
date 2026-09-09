@@ -38,7 +38,7 @@ export function AiFortuneReport({
     <article className={styles.report}>
       <AiFortuneMbtiHashScroll />
       <nav className={styles.breadcrumb} aria-label="경로">
-        <Link href="/?category=AI_FORTUNE">AI FORTUNE</Link>
+        <Link href="/fortune">AI FORTUNE</Link>
         <span aria-hidden> / </span>
         <span>주간 리포트</span>
       </nav>
