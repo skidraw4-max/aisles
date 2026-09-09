@@ -61,11 +61,12 @@ async function fetchHomePageQueriesUncached(categoryKey: string): Promise<HomePa
 /**
  * 메인 페이지 DB 조회.
  * `unstable_cache` JSON 직렬화로 Date가 문자열이 되므로 ISO로 저장한 뒤 Date로 복원한다.
+ * 조회 실패 시 throw — 빈 `{ posts:[] }`를 캐시에 심지 않는다 (클라이언트 1회 재시도로 복구).
  */
 export async function getHomePageQueries(categoryKey: string): Promise<HomePageQueries> {
   const cached = await unstable_cache(
     async () => serializeHomePageCache(await fetchHomePageQueriesUncached(categoryKey)),
-    ['home-page-queries-v1', categoryKey],
+    ['home-page-queries-v2-clip', categoryKey],
     {
       revalidate: HOME_PAGE_REVALIDATE_SEC,
       tags: ['home-page', `home-page-${categoryKey}`],

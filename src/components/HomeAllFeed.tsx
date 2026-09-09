@@ -27,6 +27,7 @@ import { isCapacitorNative } from '@/lib/capacitor-oauth';
 import { NativeAdSlot } from '@/components/NativeAdSlot';
 import { FeedPostLink } from '@/components/FeedPostLink';
 import { homeFeedSurface } from '@/lib/ga4';
+import { shouldClientRetryEmptyFeed } from '@/lib/home-feed-resilience';
 import styles from '@/app/(root)/page.module.css';
 
 const PAGE_SIZE = 12;
@@ -398,9 +399,11 @@ type Props = {
 export function HomeAllFeed({ category, excludeIds, initialPosts, initialHasMore }: Props) {
   const [posts, setPosts] = useState<FeedPostJson[]>(initialPosts);
   const [hasMore, setHasMore] = useState(initialHasMore);
-  const [loading, setLoading] = useState(false);
+  /** 빈 SSR이면 첫 페인트부터 로딩 표시 (잘못된 empty 메시지 깜빡임 방지) */
+  const [loading, setLoading] = useState(() => initialPosts.length === 0);
   const abortRef = useRef<AbortController | null>(null);
   const wasLoadingRef = useRef(false);
+  const emptyRetryRef = useRef(false);
   const excludeQs =
     excludeIds.length > 0 ? `&exclude=${excludeIds.map(encodeURIComponent).join('%2C')}` : '';
   const catQs = category
@@ -421,10 +424,11 @@ export function HomeAllFeed({ category, excludeIds, initialPosts, initialHasMore
 
   useEffect(() => {
     abortRef.current?.abort();
+    emptyRetryRef.current = false;
     setPosts(initialPosts);
     setHasMore(initialHasMore);
     setVisibleCount(Math.min(ALL_CARD_FEED_INITIAL_COUNT, initialPosts.length));
-    setLoading(false);
+    setLoading(initialPosts.length === 0);
   }, [category, initialPosts, initialHasMore]);
 
   const fetchJson = useCallback(
@@ -470,6 +474,21 @@ export function HomeAllFeed({ category, excludeIds, initialPosts, initialHasMore
     },
     [fetchJson, excludeQs, catQs, excludeCommunityQs]
   );
+
+  /** SSR/캐시가 빈 피드를 내려줘도 /api/feed로 1회 복구 */
+  useEffect(() => {
+    if (
+      !shouldClientRetryEmptyFeed({
+        postsLength: posts.length,
+        alreadyRetried: emptyRetryRef.current,
+      })
+    ) {
+      return;
+    }
+    emptyRetryRef.current = true;
+    setLoading(true);
+    void loadPage(0, true);
+  }, [posts.length, loadPage]);
 
   useEffect(() => {
     if (!allCardFeed || !wasLoadingRef.current || loading) {
@@ -525,10 +544,16 @@ export function HomeAllFeed({ category, excludeIds, initialPosts, initialHasMore
     <>
       {showLoungeSubscribeBar ? <LoungeSubscribeNoticeBar /> : null}
       {posts.length === 0 ? (
-        <p className={styles.emptySection}>
-          아직 게시글이 없습니다. 첫 번째 주인공이 되어보세요!{' '}
-          <Link href="/upload">업로드 페이지로 이동</Link>
-        </p>
+        loading ? (
+          <p className={styles.emptySection} aria-live="polite">
+            게시글을 불러오는 중…
+          </p>
+        ) : (
+          <p className={styles.emptySection}>
+            아직 게시글이 없습니다. 첫 번째 주인공이 되어보세요!{' '}
+            <Link href="/upload">업로드 페이지로 이동</Link>
+          </p>
+        )
       ) : fortuneArchive ? (
         <>
           <h3 className={styles.fortuneArchiveHeading}>이번 주</h3>

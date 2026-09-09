@@ -1,6 +1,7 @@
 import { Prisma } from '@prisma/client';
 import type { Category } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
+import { clipHomeFeedContent } from '@/lib/home-feed-resilience';
 
 /** 피드·쇼케이스에 필요한 Post 스칼라만 조회 (aiFortunePayload·원문 URL 등 대용량 컬럼 제외) */
 export const HOME_FEED_SELECT = {
@@ -35,8 +36,6 @@ export type FeedPostJson = Omit<HomeFeedPost, 'createdAt' | '_count'> & {
   commentCount: number;
 };
 
-const FEED_CONTENT_SNIPPET_MAX = 200;
-
 /** Prisma `Date` 또는 JSON/캐시에서 복원된 ISO 문자열 모두 처리 */
 export function homeFeedCreatedAtToIso(createdAt: Date | string): string {
   if (createdAt instanceof Date) return createdAt.toISOString();
@@ -44,19 +43,15 @@ export function homeFeedCreatedAtToIso(createdAt: Date | string): string {
   return new Date(createdAt as unknown as string).toISOString();
 }
 
-function feedContentForClient(content: string | null | undefined): string | null {
-  if (!content) return null;
-  const trimmed = content.trim();
-  if (!trimmed) return null;
-  if (trimmed.length <= FEED_CONTENT_SNIPPET_MAX) return trimmed;
-  return `${trimmed.slice(0, FEED_CONTENT_SNIPPET_MAX)}…`;
+function clipFeedPostContent<T extends { content: string | null }>(post: T): T {
+  return { ...post, content: clipHomeFeedContent(post.content) };
 }
 
 export function serializeFeedPost(post: HomeFeedPost): FeedPostJson {
   const { createdAt, _count, content, ...rest } = post;
   return {
     ...rest,
-    content: feedContentForClient(content),
+    content: clipHomeFeedContent(content),
     createdAt: homeFeedCreatedAtToIso(createdAt as Date | string),
     commentCount: _count.comments,
   };
@@ -120,9 +115,13 @@ export async function fetchFeedPosts(
       select: HOME_FEED_SELECT,
     });
     const hasMore = posts.length > take;
-    return { posts: hasMore ? posts.slice(0, take) : posts, hasMore };
+    const sliced = hasMore ? posts.slice(0, take) : posts;
+    // Clip before unstable_cache / RSC so LOUNGE bodies do not bloat the payload.
+    return { posts: sliced.map(clipFeedPostContent), hasMore };
   } catch (err) {
+    // Rethrow so unstable_cache does not store a poisoned empty success for 60s.
+    // `/api/feed` catches and returns `{ posts: [], hasMore: false }` instead.
     console.error('[fetchFeedPosts]', { category, skip, take, err });
-    return { posts: [], hasMore: false };
+    throw err;
   }
 }

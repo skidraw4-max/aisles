@@ -1,4 +1,4 @@
-# Plan: Android 16 target + replace AIsle app AdMob with Kakao AdFit
+﻿# Plan: Android 16 target + replace AIsle app AdMob with Kakao AdFit
 
 **Status:** Implemented; Play upload pending signed release keystore.
 
@@ -52,8 +52,8 @@
 
 Google Search Console export:
 
-- Issue: `크롤링됨 - 현재 색인이 생성되지 않음`
-- Sitemap scope: `알려진 모든 페이지`
+- Issue: `?щ·留곷맖 - ?꾩옱 ?됱씤???앹꽦?섏? ?딆쓬`
+- Sitemap scope: `?뚮젮吏?紐⑤뱺 ?섏씠吏`
 - Sample URLs are mostly:
   - `/_next/static/css/*.css?dpl=...`
   - `/og/post/{id}`
@@ -92,9 +92,9 @@ These are not canonical content pages. `/og/post/{id}` is a dynamic Open Graph i
 
 ## Goal
 
-Create a modern PM/service-planning portfolio PowerPoint for 함종두 using:
+Create a modern PM/service-planning portfolio PowerPoint for ?⑥쥌??using:
 
-- Resume PDF: `c:\Users\User\Documents\이력서_함종두.pdf`
+- Resume PDF: `c:\Users\User\Documents\?대젰???⑥쥌??pdf`
 - Existing Google Slides portfolio: `https://docs.google.com/presentation/d/1mWkTq8fTUqyE3cI6-ntesml1jsqvnAHm/edit?slide=id.p1#slide=id.p1`
 - Public project links: AIsle Hub, Side-Sync, Google Play releases
 - User preference: include full resume contact details, modern PM portfolio style, save to `Documents`
@@ -119,7 +119,7 @@ Create a modern PM/service-planning portfolio PowerPoint for 함종두 using:
 - Generate a `.pptx` with `python-pptx` from structured slide content.
 - Use a clean widescreen layout, dark/navy accent palette, concise Korean copy, and link buttons for public URLs.
 - Do not modify application source code.
-- Save output as `c:\Users\User\Documents\Portfolio_함종두_2026.pptx`.
+- Save output as `c:\Users\User\Documents\Portfolio_?⑥쥌??2026.pptx`.
 
 ## Verification
 
@@ -133,17 +133,17 @@ Create a modern PM/service-planning portfolio PowerPoint for 함종두 using:
 
 ## Prod findings
 
-1. **GameScore table exists** — `GET /api/games/brickbreaking/scores` returns 200 `{ entries: [], me: null }` (not 500). Migration is live. `run-build.cjs` runs `prisma migrate deploy` when `DIRECT_URL` is set.
-2. **Path collision (critical)** — `public/games/{slug}/index.html` is served at `/games/{slug}` and **shadows** App Router detail pages. Hard load of `/games/brickbreaking` = Phaser HTML, not RankingBoard. Soft SPA nav from `/games` still shows React rankings.
-3. **Play login gate ineffective** — Guests get full `/games/.../play` (no `NEXT_REDIRECT`); `/upload` soft-redirects. Guests can play → `GamePlayShell` drops POST when no Bearer → empty rankings. MY copy always says 「로그인 후 기록 표시」 when `me === null` (also when logged-in with no score).
-4. **Bridge wiring** — Deployed shell listens for `aisle-game-score`; brick `postScore`/`endGame` and minibrick `endGame` call `notifyAisleParent`. Same-origin iframe OK; scores only fire on game over (not stage clear).
+1. **GameScore table exists** ??`GET /api/games/brickbreaking/scores` returns 200 `{ entries: [], me: null }` (not 500). Migration is live. `run-build.cjs` runs `prisma migrate deploy` when `DIRECT_URL` is set.
+2. **Path collision (critical)** ??`public/games/{slug}/index.html` is served at `/games/{slug}` and **shadows** App Router detail pages. Hard load of `/games/brickbreaking` = Phaser HTML, not RankingBoard. Soft SPA nav from `/games` still shows React rankings.
+3. **Play login gate ineffective** ??Guests get full `/games/.../play` (no `NEXT_REDIRECT`); `/upload` soft-redirects. Guests can play ??`GamePlayShell` drops POST when no Bearer ??empty rankings. MY copy always says ?뚮줈洹몄씤 ??湲곕줉 ?쒖떆??when `me === null` (also when logged-in with no score).
+4. **Bridge wiring** ??Deployed shell listens for `aisle-game-score`; brick `postScore`/`endGame` and minibrick `endGame` call `notifyAisleParent`. Same-origin iframe OK; scores only fire on game over (not stage clear).
 
 ## Fixes
 
 | # | Change |
 |---|--------|
-| A | Move embeds `public/games/{slug}/**` → `public/embeds/{slug}/**`; update `catalog.embedPath` (+ thumbnail paths). Restores `/games/[slug]` detail. |
-| B | Play page: `force-dynamic` + server `getUser` → redirect `/login?next=…` (reliable vs middleware-only). |
+| A | Move embeds `public/games/{slug}/**` ??`public/embeds/{slug}/**`; update `catalog.embedPath` (+ thumbnail paths). Restores `/games/[slug]` detail. |
+| B | Play page: `force-dynamic` + server `getUser` ??redirect `/login?next=?? (reliable vs middleware-only). |
 | C | `GamePlayShell`: session via `getSession`+`refreshSession` fallback; warn on missing auth; keep origin check. |
 | D | `GameRankingBoard`: `useAuth` for MY labels (guest vs logged-in no score); reload on `visibilitychange` / focus after return. |
 | E | Brick: also `notifyAisleParent` on stage clear (current score). |
@@ -163,9 +163,9 @@ Create a modern PM/service-planning portfolio PowerPoint for 함종두 using:
 
 - Every HTML/RSC response: `Cache-Control: private, no-cache, no-store` + `X-Vercel-Cache: MISS`.
 - Serverless origin is `iad1` (US East) even though the edge is `icn1` (Seoul). Static `/_next/static` stays on `icn1` (~100ms).
-- Home RSC navigation: TTFB ~0.3s but **stream total ~3.8s** for ~17KB. Hard refresh home: TTFB 0.5–3s, HTML stream up to ~10s.
-- Cause chain: `(root)/layout.tsx` calls `getInitialSession()` → `cookies()` → whole tree dynamic; `revalidate = 60/3600` unused. Layout also awaits Supabase `getUser` + Prisma (notices, ui labels, fortune) **before children stream**. Home then runs more uncached Prisma (`getHomePageQueries`, `HomeQuasarBoard` without Suspense). `experimental.staleTimes.dynamic: 0` means every Link refetch.
-- Feed/hero use `next/dynamic` `ssr: false`, so ALL 카드는 HTML에 없고 클라 청크 이후에 나타남. `(root)/loading.tsx` makes tab switches look like full reloads.
+- Home RSC navigation: TTFB ~0.3s but **stream total ~3.8s** for ~17KB. Hard refresh home: TTFB 0.5??s, HTML stream up to ~10s.
+- Cause chain: `(root)/layout.tsx` calls `getInitialSession()` ??`cookies()` ??whole tree dynamic; `revalidate = 60/3600` unused. Layout also awaits Supabase `getUser` + Prisma (notices, ui labels, fortune) **before children stream**. Home then runs more uncached Prisma (`getHomePageQueries`, `HomeQuasarBoard` without Suspense). `experimental.staleTimes.dynamic: 0` means every Link refetch.
+- Feed/hero use `next/dynamic` `ssr: false`, so ALL 移대뱶??HTML???녾퀬 ?대씪 泥?겕 ?댄썑???섑??? `(root)/loading.tsx` makes tab switches look like full reloads.
 
 ## Implemented
 
@@ -173,55 +173,55 @@ Create a modern PM/service-planning portfolio PowerPoint for 함종두 using:
    - `(root)/layout.tsx` no longer calls `cookies()` / `getUser()`. Header login uses client `SessionProvider` (`authReady` skeleton until hydrate).
    - `hasSupabaseAuthCookie()` skips Supabase `getUser` when no `sb-*-auth-token` cookie (play page still `force-dynamic` + `getUser` after cookie check).
    - Layout notices/fortune stream behind Suspense. UI labels + rolling notices use `unstable_cache` so layout Prisma does not dynamize the tree.
-   - `experimental.staleTimes.dynamic`: `0` → `30` (post views stay via `after()` + client +1).
-2. **Vercel region:** `vercel.json` `regions: ["bom1"]`. Local `DATABASE_URL` host is `aws-1-ap-south-1.pooler.supabase.com` (Mumbai). **Not `icn1`** — DB is not Seoul. Closest Vercel region to that pooler is `bom1`.
+   - `experimental.staleTimes.dynamic`: `0` ??`30` (post views stay via `after()` + client +1).
+2. **Vercel region:** `vercel.json` `regions: ["bom1"]`. Local `DATABASE_URL` host is `aws-1-ap-south-1.pooler.supabase.com` (Mumbai). **Not `icn1`** ??DB is not Seoul. Closest Vercel region to that pooler is `bom1`.
 3. **Home Data Cache + Quasar:** Date-safe `unstable_cache` (`serializeHomePageCache` ISO then revive). `HomeQuasarBoard` in Suspense + 60s cache; mode queries already parallel.
 4. **Feed SSR + loading:** `HomeAllFeed` / `TodaysBest` / hero carousel SSR (removed `ssr: false`). Deleted `(root)/loading.tsx` so tab switches keep previous content. Post `loading.tsx` kept; `/games/loading.tsx` added.
 5. **Games hub:** removed `force-dynamic`, `revalidate = 60`, parallel `findFirst` + cached highlights; score submit `revalidateTag('game-hub-highlights')`. Play page login gate unchanged.
 
 ## Deferred
 
-- **PPR (`experimental.ppr`)** — Next 15.5 still experimental; client session restores Full Route Cache without it. Home `searchParams` may still keep `/` request-dynamic; `/post/[id]` is the ISR win.
-- **Seoul `icn1` functions** — skipped; DB region is `ap-south-1`, not Korea.
+- **PPR (`experimental.ppr`)** ??Next 15.5 still experimental; client session restores Full Route Cache without it. Home `searchParams` may still keep `/` request-dynamic; `/post/[id]` is the ISR win.
+- **Seoul `icn1` functions** ??skipped; DB region is `ap-south-1`, not Korea.
 - Raising `PG_POOL_MAX`; restoring old `unstable_cache` without Date-safe serialization.
 
-# Plan: 내부 성장 레버 구현
+# Plan: ?대? ?깆옣 ?덈쾭 援ы쁽
 
 **Status:** Implemented 2026-08-21 (approved sequential execution; no commit/push).
 
 ## Goal
 
-내부 성장 방안을 **1→5 순서**로 적용해 검색 유입·구독 전환·공유·UGC 루프·게임 SEO를 강화한다. thin AI 스팸·가치 페이지 noindex·광고/성능 회귀는 금지.
+?대? ?깆옣 諛⑹븞??**1?? ?쒖꽌**濡??곸슜??寃???좎엯쨌援щ룆 ?꾪솚쨌怨듭쑀쨌UGC 猷⑦봽쨌寃뚯엫 SEO瑜?媛뺥솕?쒕떎. thin AI ?ㅽ뙵쨌媛移??섏씠吏 noindex쨌愿묎퀬/?깅뒫 ?뚭???湲덉?.
 
 ## Scope (phases)
 
-1. **복도 unique 메타 + 검색 `noindex,follow`**
-   - LAB/GALLERY/LOUNGE/BUILD/LAUNCH/(crawlable others)에 AI_FORTUNE급 unique title/description/OG
-   - `/search` → `SEO_ROBOTS_NOINDEX_FOLLOW` (`index:false, follow:true`)
-   - sitemap: `/search` 제거(또는 저우선순위), GOSSIP 글 priority 하향, 고가치 복도 `/?category=` 정적 엔트리 추가
-2. **다이제스트 / AI FORTUNE 구독 CTA**
-   - `PostScrollSubscribeModal`, `FortuneDigestSubscribeCta` 카피·위치·임계값 소폭 개선
-   - 기존 GA4 이벤트 유지 (`digest_modal_*`, `fortune_subscribe_cta_click`)
-3. **동적 OG / 공유 카드 확대**
-   - `post-dynamic-og.ts` eligibility: BUILD·LAUNCH·AI_FORTUNE·GALLERY(+ 기존 LAB/LOUNGE)
-   - subtitle 매핑; `/og/post/[id]`·post `generateMetadata`는 helper 재사용
-4. **UGC 주간 루프 노출**
-   - 홈 ALL·BUILD/LAUNCH 교차 CTA, 상세 BUILD/LAUNCH에 복도 교차 프로모
-   - 기존 `BuildHubSection` / `UgcWeeklyBest` / Launch 슬라이더 패턴 유지 (히어로 카드 남발 금지)
-5. **게임 SEO + 스코어 공유(최소)**
-   - robots: `/games` Disallow 제거, `/games/*/play` Disallow 유지
-   - hub·detail → public index; play → private/noindex + 로그인 게이트 유지
+1. **蹂듬룄 unique 硫뷀? + 寃??`noindex,follow`**
+   - LAB/GALLERY/LOUNGE/BUILD/LAUNCH/(crawlable others)??AI_FORTUNE湲?unique title/description/OG
+   - `/search` ??`SEO_ROBOTS_NOINDEX_FOLLOW` (`index:false, follow:true`)
+   - sitemap: `/search` ?쒓굅(?먮뒗 ??곗꽑?쒖쐞), GOSSIP 湲 priority ?섑뼢, 怨좉?移?蹂듬룄 `/?category=` ?뺤쟻 ?뷀듃由?異붽?
+2. **?ㅼ씠?쒖뒪??/ AI FORTUNE 援щ룆 CTA**
+   - `PostScrollSubscribeModal`, `FortuneDigestSubscribeCta` 移댄뵾쨌?꾩튂쨌?꾧퀎媛??뚰룺 媛쒖꽑
+   - 湲곗〈 GA4 ?대깽???좎? (`digest_modal_*`, `fortune_subscribe_cta_click`)
+3. **?숈쟻 OG / 怨듭쑀 移대뱶 ?뺣?**
+   - `post-dynamic-og.ts` eligibility: BUILD쨌LAUNCH쨌AI_FORTUNE쨌GALLERY(+ 湲곗〈 LAB/LOUNGE)
+   - subtitle 留ㅽ븨; `/og/post/[id]`쨌post `generateMetadata`??helper ?ъ궗??
+4. **UGC 二쇨컙 猷⑦봽 ?몄텧**
+   - ??ALL쨌BUILD/LAUNCH 援먯감 CTA, ?곸꽭 BUILD/LAUNCH??蹂듬룄 援먯감 ?꾨줈紐?
+   - 湲곗〈 `BuildHubSection` / `UgcWeeklyBest` / Launch ?щ씪?대뜑 ?⑦꽩 ?좎? (?덉뼱濡?移대뱶 ?⑤컻 湲덉?)
+5. **寃뚯엫 SEO + ?ㅼ퐫??怨듭쑀(理쒖냼)**
+   - robots: `/games` Disallow ?쒓굅, `/games/*/play` Disallow ?좎?
+   - hub쨌detail ??public index; play ??private/noindex + 濡쒓렇??寃뚯씠???좎?
    - sitemap: `/games`, `/games/[slug]`
-   - 스코어 공유: 상세 Web Share + 게임 OG 메타(썸네일). 동적 스코어 OG 이미지는 시간 부족 시 defer
+   - ?ㅼ퐫??怨듭쑀: ?곸꽭 Web Share + 寃뚯엫 OG 硫뷀?(?몃꽕??. ?숈쟻 ?ㅼ퐫??OG ?대?吏???쒓컙 遺議???defer
 
 ## Acceptance criteria
 
-- [ ] 복도 `?category=` metadata가 카테고리별 unique title/description/OG
-- [ ] 검색 결과 robots = noindex,follow; `/post/*`·복도 허브는 index 유지
-- [ ] 동적 OG 대상에 BUILD/LAUNCH/AI_FORTUNE/GALLERY 포함
-- [ ] 게임 hub/detail 색인 가능, play noindex + robots disallow
-- [ ] AdFit/AdSense·anonymous session/ISR/bom1 미훼손
-- [ ] 단위 테스트(메타/robots/OG eligibility/games index policy) 통과
+- [ ] 蹂듬룄 `?category=` metadata媛 移댄뀒怨좊━蹂?unique title/description/OG
+- [ ] 寃??寃곌낵 robots = noindex,follow; `/post/*`쨌蹂듬룄 ?덈툕??index ?좎?
+- [ ] ?숈쟻 OG ??곸뿉 BUILD/LAUNCH/AI_FORTUNE/GALLERY ?ы븿
+- [ ] 寃뚯엫 hub/detail ?됱씤 媛?? play noindex + robots disallow
+- [ ] AdFit/AdSense쨌anonymous session/ISR/bom1 誘명쎕??
+- [ ] ?⑥쐞 ?뚯뒪??硫뷀?/robots/OG eligibility/games index policy) ?듦낵
 
 ## Primary files
 
@@ -236,27 +236,27 @@ Create a modern PM/service-planning portfolio PowerPoint for 함종두 using:
 ## TDD plan
 
 1. Failing tests first: corridor meta builder, `SEO_ROBOTS_NOINDEX_FOLLOW`, OG eligibility set, games indexable path policy / robots disallow list shape
-2. Implement helpers → wire pages → run `node --import tsx --test …` + `tsc --noEmit` if practical
+2. Implement helpers ??wire pages ??run `node --import tsx --test ?? + `tsc --noEmit` if practical
 
 ## What NOT to do
 
-- thin AI 대량 자동 포스팅 / `/post/*`·복도 허브 noindex
-- `/games/.../play` 색인 개방·로그인 게이트 제거
+- thin AI ????먮룞 ?ъ뒪??/ `/post/*`쨌蹂듬룄 ?덈툕 noindex
+- `/games/.../play` ?됱씤 媛쒕갑쨌濡쒓렇??寃뚯씠???쒓굅
 - GOSSIP sitemap high priority
-- AdFit/AdSense 또는 최근 perf(anonymous session, ISR, bom1) 되돌리기
-- commit/push (요청 전 금지)
-- 전체 UI 리디자인
+- AdFit/AdSense ?먮뒗 理쒓렐 perf(anonymous session, ISR, bom1) ?섎룎由ш린
+- commit/push (?붿껌 ??湲덉?)
+- ?꾩껜 UI 由щ뵒?먯씤
 
 ## Deferred
 
-- **동적 스코어 OG 이미지** (`/og/games/[slug]?score=`) — 상세 Web Share + 게임 썸네일 OG로 최소 공유 가능. 점수 합성 카드는 후속.
-- thin AI 대량 자동 포스팅 / 검색 허 리디자인 / AdFit·perf 되돌리기 — 범위 외.
+- **?숈쟻 ?ㅼ퐫??OG ?대?吏** (`/og/games/[slug]?score=`) ???곸꽭 Web Share + 寃뚯엫 ?몃꽕??OG濡?理쒖냼 怨듭쑀 媛?? ?먯닔 ?⑹꽦 移대뱶???꾩냽.
+- thin AI ????먮룞 ?ъ뒪??/ 寃????由щ뵒?먯씤 / AdFit쨌perf ?섎룎由ш린 ??踰붿쐞 ??
 
 ## GSC verify (post-deploy, manual)
 
-1. URL 검사: `/?category=LAB|BUILD|…`, `/search?q=test` (noindex), `/games`, `/games/brickbreaking`, `/games/.../play` (noindex)
-2. 사이트맵 재제출 후 Coverage에서 games hub/detail 발견 확인
-3. 공유 미리보기: BUILD/LAUNCH/AI_FORTUNE/GALLERY 글 OG 카드
+1. URL 寃?? `/?category=LAB|BUILD|??, `/search?q=test` (noindex), `/games`, `/games/brickbreaking`, `/games/.../play` (noindex)
+2. ?ъ씠?몃㏊ ?ъ젣異???Coverage?먯꽌 games hub/detail 諛쒓껄 ?뺤씤
+3. 怨듭쑀 誘몃━蹂닿린: BUILD/LAUNCH/AI_FORTUNE/GALLERY 湲 OG 移대뱶
 
 # Plan: Add Bricks Match to games hub
 
@@ -265,43 +265,43 @@ Create a modern PM/service-planning portfolio PowerPoint for 함종두 using:
 ## Source Finding
 
 - Source game: `c:\dev\Game\Bricks_match` (Capacitor web: `www/` = `index.html` + `css/` + `js/` + `assets/`).
-- AIsle catalog today: `brickbreaking`, `minibrick` → `public/embeds/{slug}/`, hub `/games`, detail `/games/[slug]`, play iframe + login gate.
+- AIsle catalog today: `brickbreaking`, `minibrick` ??`public/embeds/{slug}/`, hub `/games`, detail `/games/[slug]`, play iframe + login gate.
 - Bricks Match modes: stage clear + endless run. No `aisle-game-score` postMessage yet (other embeds have `notifyAisleParent`).
-- Slug: `bricks-match` (title: Bricks Match). Thumbnail: copy `assets/icon-512.png` → `thumbnail.png`.
+- Slug: `bricks-match` (title: Bricks Match). Thumbnail: copy `assets/icon-512.png` ??`thumbnail.png`.
 
 ## Implementation
 
 1. TDD: extend `catalog.test.ts` / `ranking.test.ts` for slug + modes `stage` | `endless`.
-2. Copy `www/` → `public/embeds/bricks-match/`; add score bridge in embed `js/app.js` (stage clear → `stage`, endless fail → `endless`).
+2. Copy `www/` ??`public/embeds/bricks-match/`; add score bridge in embed `js/app.js` (stage clear ??`stage`, endless fail ??`endless`).
 3. Register in `catalog.ts`; update `ranking.ts` `isGameSlug` / `modesForGame` (no longer assume non-brick = mini).
-4. Hub copy mentions third game lightly. SEO via existing `GAME_LIST` sitemap + detail index policy — no play gate change.
+4. Hub copy mentions third game lightly. SEO via existing `GAME_LIST` sitemap + detail index policy ??no play gate change.
 5. Verify: unit tests; hub shows 3 cards; `/games/bricks-match`, `/play` load embed.
 
 ## Out of scope
 
 - Asset recompression; commit/push; native Capacitor packaging.
 
-# Plan: 내부 성장 중기 레버 (1–6)
+# Plan: ?대? ?깆옣 以묎린 ?덈쾭 (1??)
 
-**Status:** Implemented 2026-08-21 — A(중기만), 위클리 자동 발행, 임베드 제외. 배포 진행.
+**Status:** Implemented 2026-08-21 ??A(以묎린留?, ?꾪겢由??먮룞 諛쒗뻾, ?꾨쿋???쒖쇅. 諛고룷 吏꾪뻾.
 
 ## Goal
 
-중기 제안만 적용: Fortune 고정 랜딩, BUILD/LAUNCH 주간 베스트 자동 글, 공유 UX, 게임 스코어 OG, 관련글 품질, 검색 복도·태그 허브.
+以묎린 ?쒖븞留??곸슜: Fortune 怨좎젙 ?쒕뵫, BUILD/LAUNCH 二쇨컙 踰좎뒪???먮룞 湲, 怨듭쑀 UX, 寃뚯엫 ?ㅼ퐫??OG, 愿?④? ?덉쭏, 寃??蹂듬룄쨌?쒓렇 ?덈툕.
 
 ## Scope
 
-1. **`/fortune`** — 최신 AI_FORTUNE + 아카이브 링크, sitemap, 네비/인트로에서 허브 연결. `/post/[id]`는 글 canonical 유지.
-2. **주간 UGC 위클리 자동 발행** — cron이 BUILD·LAUNCH 각각 `fetchUgcWeeklyTop` 스냅샷을 Post로 생성. 멱등 태그 `ugc-weekly:{CAT}:{ISO_WEEK}`. GitHub Actions 주간 스케줄 + `CRON_SECRET`.
-3. **공유 UX** — 클립보드 성공 후 X/카카오 재공유 링크 노출 (`share_click` 유지).
-4. **게임 주간 TOP 스코어 OG** — `/og/games/[slug]?mode=&period=weekly`, 상세 메타·공유에 연결.
-5. **관련글** — 태그 교집합 우선, 부족 시 동일 카테고리 최신으로 채움.
-6. **검색·태그** — corridor를 LAB/LOUNGE/GALLERY/AI_FORTUNE/BUILD/LAUNCH 등으로 확대. `/tags` 인기 태그 허브(index), `/tags/[tag]`는 검색으로 연결하되 thin URL은 noindex 유지 가능 — 허브만 public index.
+1. **`/fortune`** ??理쒖떊 AI_FORTUNE + ?꾩뭅?대툕 留곹겕, sitemap, ?ㅻ퉬/?명듃濡쒖뿉???덈툕 ?곌껐. `/post/[id]`??湲 canonical ?좎?.
+2. **二쇨컙 UGC ?꾪겢由??먮룞 諛쒗뻾** ??cron??BUILD쨌LAUNCH 媛곴컖 `fetchUgcWeeklyTop` ?ㅻ깄?룹쓣 Post濡??앹꽦. 硫깅벑 ?쒓렇 `ugc-weekly:{CAT}:{ISO_WEEK}`. GitHub Actions 二쇨컙 ?ㅼ?以?+ `CRON_SECRET`.
+3. **怨듭쑀 UX** ???대┰蹂대뱶 ?깃났 ??X/移댁뭅???ш났??留곹겕 ?몄텧 (`share_click` ?좎?).
+4. **寃뚯엫 二쇨컙 TOP ?ㅼ퐫??OG** ??`/og/games/[slug]?mode=&period=weekly`, ?곸꽭 硫뷀?쨌怨듭쑀???곌껐.
+5. **愿?④?** ???쒓렇 援먯쭛???곗꽑, 遺議????숈씪 移댄뀒怨좊━ 理쒖떊?쇰줈 梨꾩?.
+6. **寃?됀룻깭洹?* ??corridor瑜?LAB/LOUNGE/GALLERY/AI_FORTUNE/BUILD/LAUNCH ?깆쑝濡??뺣?. `/tags` ?멸린 ?쒓렇 ?덈툕(index), `/tags/[tag]`??寃?됱쑝濡??곌껐?섎릺 thin URL? noindex ?좎? 媛?????덈툕留?public index.
 
 ## Out of scope
 
-- PWA, 임베드 위젯, Android 스토어, GEO FAQ 심화(장기)
-- thin AI 양산, AdFit/perf 되돌리기
+- PWA, ?꾨쿋???꾩젽, Android ?ㅽ넗?? GEO FAQ ?ы솕(?κ린)
+- thin AI ?묒궛, AdFit/perf ?섎룎由ш린
 
 ## TDD
 
@@ -313,39 +313,39 @@ Create a modern PM/service-planning portfolio PowerPoint for 함종두 using:
 
 ## Deploy
 
-커밋 후 `origin/main` 푸시 → Vercel.
+而ㅻ컠 ??`origin/main` ?몄떆 ??Vercel.
 
-# Plan: 역분석 허브 (API 비로그인 체험 제외)
+# Plan: ??텇???덈툕 (API 鍮꾨줈洹몄씤 泥댄뿕 ?쒖쇅)
 
 **Status:** Implemented 2026-09-02.
 
 ## Goal
 
-문서 전략 중 **비용 없는** 항목만: Hero CTA, 공유·캐시 역분석 공개 읽기, GA4, LOUNGE/tags 브릿지. 비로그인 Gemini 호출(무료 체험)은 제외.
+臾몄꽌 ?꾨왂 以?**鍮꾩슜 ?녿뒗** ??ぉ留? Hero CTA, 怨듭쑀쨌罹먯떆 ??텇??怨듦컻 ?쎄린, GA4, LOUNGE/tags 釉뚮┸吏. 鍮꾨줈洹몄씤 Gemini ?몄텧(臾대즺 泥댄뿕)? ?쒖쇅.
 
 ## Scope
 
-1. Hero → GALLERY / 업로드(로그인) CTA + `hero_analysis_cta_click`
-2. DB 캐시된 역분석 비로그인 읽기; 새 분석은 로그인 유지
-3. GALLERY 상세 하단 CTA, `gallery_reverse_*` 이벤트
-4. LOUNGE 상세 → GALLERY 역분석 예시 블록
-5. `/tags` GALLERY 허브 링크, 검색 GALLERY 칩
+1. Hero ??GALLERY / ?낅줈??濡쒓렇?? CTA + `hero_analysis_cta_click`
+2. DB 罹먯떆????텇??鍮꾨줈洹몄씤 ?쎄린; ??遺꾩꽍? 濡쒓렇???좎?
+3. GALLERY ?곸꽭 ?섎떒 CTA, `gallery_reverse_*` ?대깽??
+4. LOUNGE ?곸꽭 ??GALLERY ??텇???덉떆 釉붾줉
+5. `/tags` GALLERY ?덈툕 留곹겕, 寃??GALLERY 移?
 
 ## Out of scope
 
-- 비로그인 무료 분석 API, `/analysis` URL, 메인에서 Game/Fortune 축소
+- 鍮꾨줈洹몄씤 臾대즺 遺꾩꽍 API, `/analysis` URL, 硫붿씤?먯꽌 Game/Fortune 異뺤냼
 
 ## Follow-up (2026-09-03)
 
-로그인 사용자는 `내 이미지 분석하기`가 `/upload?category=GALLERY`로 가고, 게스트만 `/login?next=`를 탄다. 업로드 페이지 비로그인 리다이렉트도 `category`를 유지한다.
+濡쒓렇???ъ슜?먮뒗 `???대?吏 遺꾩꽍?섍린`媛 `/upload?category=GALLERY`濡?媛怨? 寃뚯뒪?몃쭔 `/login?next=`瑜??꾨떎. ?낅줈???섏씠吏 鍮꾨줈洹몄씤 由щ떎?대젆?몃룄 `category`瑜??좎??쒕떎.
 
 # Plan: Add BrickInvasion + Ricorail to games hub
 
-**Status:** Approved by user (“다른 게임과 같은 조건”). Implementing.
+**Status:** Approved by user (?쒕떎瑜?寃뚯엫怨?媛숈? 議곌굔??. Implementing.
 
 ## Sources
-- BrickInvasion: `c:\dev\Game\BrickInvasion\www` → slug `brick-invasion`
-- Ricorail: `c:\dev\Game\Puzzle_bricks` (package `ricorail`, webDir `dist`) → slug `ricorail`
+- BrickInvasion: `c:\dev\Game\BrickInvasion\www` ??slug `brick-invasion`
+- Ricorail: `c:\dev\Game\Puzzle_bricks` (package `ricorail`, webDir `dist`) ??slug `ricorail`
 
 ## Same conditions as existing games
 1. Catalog + hub/detail/play routes via `GAME_LIST`
@@ -356,3 +356,33 @@ Create a modern PM/service-planning portfolio PowerPoint for 함종두 using:
 
 ## Out of scope
 Asset recompression; Capacitor packaging of these games.
+
+# Plan: Fix intermittent empty AI NEWS (LOUNGE) feed
+
+**Status:** Implemented.
+
+## Symptom
+- AI NEWS shows empty-state copy while TodaysBest / fortune still load.
+- Recovers after wait/refresh → transient SSR empty + no client recovery.
+
+## Root cause
+1. LOUNGE SSR fetches 24 posts with full `content` (heavy).
+2. `fetchFeedPosts` swallows DB errors as `{ posts: [], hasMore: false }`.
+3. That empty success can be stored in `unstable_cache` (60s).
+4. `HomeAllFeed` never calls `/api/feed` when `hasMore === false` and posts empty.
+
+## Fix
+1. **Client:** one automatic `/api/feed` retry when initial feed is empty (`replace: true`).
+2. **Server:** `fetchFeedPosts` rethrows on error (API route already catches); do not cache poisoned empty via swallowed errors.
+3. **Payload:** clip `content` to snippet before return/cache (reuse existing snippet max); keep LOUNGE take as-is unless tests show need to reduce.
+
+## TDD
+- Pure helpers: empty-feed retry gate + content clip.
+- Adjust `fetchFeedPosts` error behavior; verify API still returns empty JSON on failure.
+
+## Out of scope
+- TodaysBest loading UX
+- Ad slot empty white box
+- Changing LOUNGE take count unless needed after clip
+
+
