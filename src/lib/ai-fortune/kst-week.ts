@@ -119,8 +119,30 @@ export function aiFortunePostTitle(date: Date = new Date()): string {
   return `[AI FORTUNE] ${month}월 ${week}주차, 당신의 커리어를 바꿀 AI의 흐름`;
 }
 
-/** 월요일 05:00 KST 직후 크론 윈도우인지 (±30분 허용) */
+/**
+ * `date`가 속한 KST 주(월~일)의 월요일 — KST 정오(UTC 03:00) 기준 Date.
+ * 화요일 이후 catch-up에서도 월요일과 동일한 `aiFortuneWeekKey`를 쓰기 위함.
+ */
+export function kstMondayDateOfContainingWeek(date: Date = new Date()): Date {
+  const parts = getKstParts(date);
+  const daysFromMonday = parts.weekday === 0 ? 6 : parts.weekday - 1;
+  // KST 달력 일자 → 해당일 KST 12:00 = UTC 03:00
+  const dayNoonUtcMs = Date.UTC(parts.year, parts.month - 1, parts.day, 3, 0, 0);
+  return new Date(dayNoonUtcMs - daysFromMonday * 24 * 60 * 60 * 1000);
+}
+
+/** 해당 KST 주 월요일 05:00 KST 시각(UTC epoch ms) */
+export function kstMonday0500UtcMs(date: Date = new Date()): number {
+  const monday = kstMondayDateOfContainingWeek(date);
+  const p = getKstParts(monday);
+  // 월요일 05:00 KST = UTC (05:00 - 9h)
+  return Date.UTC(p.year, p.month - 1, p.day, 5, 0, 0) - KST_OFFSET_MS;
+}
+
+/**
+ * 주간 발행 게이트: 그 주 월요일 05:00 KST 이후면 true.
+ * GitHub Actions 지연·화요일 catch-up에도 동일 주차 발행 가능 (이미 있으면 skipped_exists).
+ */
 export function isScheduledAiFortuneCronWindow(date: Date = new Date()): boolean {
-  const { weekday, hour } = getKstParts(date);
-  return weekday === 1 && hour === 5;
+  return date.getTime() >= kstMonday0500UtcMs(date);
 }

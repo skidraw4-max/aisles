@@ -415,3 +415,17 @@ Content generation / Gemini copy changes
 
 ## TDD
 - Assert home cache tags / paths helpers used by revalidatePostCaches
+
+# Plan: AI FORTUNE catch-up schedule + missing weeks backfill
+
+**Status:** Approved. Implementing.
+
+## Goals
+1. Generate missing weeks since 2026-08-W4 (through current week)
+2. Prevent skip when GitHub Actions is delayed past Mon 05:00 KST
+
+## Approach
+- Schedule window: allow anytime after Mon 05:00 KST of the containing week (through next Mon 04:59)
+- Pin weekKey to that week Monday so Tue catch-up does not shift month-week
+- GH Actions: extra Mon retries + Tue 05:00 KST catch-up
+- Backfill script/API range 2026-08-W5 .. current week; run locally with Gemini+DB

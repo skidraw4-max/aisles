@@ -103,6 +103,8 @@ export async function generateAiFortuneWeeklyContent(
   news: AiFortuneNewsContext,
   aggregate: AiFortuneAggregateContext,
   weekLabel: string,
+  /** 백필·스케줄 주차 기준일 — 미지정 시 현재 시각(제목 월·주차) */
+  referenceDate: Date = new Date(),
 ): Promise<
   { ok: true; data: AiFortuneWeeklyPayload; title: string } | { ok: false; error: string }
 > {
@@ -140,7 +142,7 @@ weekLabel 필드에는 "${weekLabel}" 을 그대로 넣으세요.`;
       }
       return {
         ok: true,
-        title: aiFortunePostTitle(),
+        title: aiFortunePostTitle(referenceDate),
         data: { ...data, weekLabel: data.weekLabel || weekLabel },
       };
     }

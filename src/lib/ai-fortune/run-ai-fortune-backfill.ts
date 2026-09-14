@@ -29,7 +29,9 @@ function sleepMs(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-function createdAtForBackfillIndex(index: number, total: number): Date {
+function createdAtForBackfillIndex(index: number, weekKey: string): Date {
+  const fromKey = dateForAiFortuneWeekKey(weekKey);
+  if (fromKey) return fromKey;
   const base = new Date('2026-04-01T03:00:00.000Z');
   return new Date(base.getTime() + index * BACKFILL_STAGGER_MS);
 }
@@ -70,7 +72,7 @@ export async function runAiFortuneBackfill(
     const sync: AiFortuneSyncResult = await runAiFortuneSync({
       referenceDate,
       skipScheduleWindow: true,
-      createdAt: createdAtForBackfillIndex(i, weekKeys.length),
+      createdAt: createdAtForBackfillIndex(i, weekKey),
     });
 
     if (!sync.ok) {

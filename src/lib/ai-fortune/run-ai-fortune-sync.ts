@@ -8,10 +8,12 @@ import {
   aiFortuneWeekKey,
   getKstParts,
   isScheduledAiFortuneCronWindow,
+  kstMondayDateOfContainingWeek,
   weekOfMonthKst,
 } from '@/lib/ai-fortune/kst-week';
 import { loadAiFortuneNewsContext } from '@/lib/ai-fortune/load-news-context';
 import { resolveAiFortuneThumbnailUrl } from '@/lib/ai-fortune/thumbnail';
+import { revalidatePostCaches } from '@/lib/post-revalidate';
 
 export type AiFortuneSyncStep =
   | 'env_gemini'
@@ -62,11 +64,13 @@ export async function runAiFortuneSync(
   const bootstrap = Boolean(options.bootstrap);
   const skipScheduleWindow = Boolean(options.skipScheduleWindow);
   const now = options.referenceDate ?? new Date();
-  const weekKey = aiFortuneWeekKey(now);
-  const weekLabel = weekLabelFromDate(now);
+  // 스케줄 실행은 월~일 중 언제 돌아도 "그 주 월요일" 주차 키를 사용 (화요일 catch-up 안전)
+  const dateForWeekKey = options.referenceDate ?? kstMondayDateOfContainingWeek(now);
+  const weekKey = aiFortuneWeekKey(dateForWeekKey);
+  const weekLabel = weekLabelFromDate(dateForWeekKey);
 
   if (!bootstrap && !force && !skipScheduleWindow && !isScheduledAiFortuneCronWindow(now)) {
-    console.log('[ai-fortune] 스케줄 윈도우 밖 — 월요일 05:00 KST만 자동 실행');
+    console.log('[ai-fortune] 스케줄 윈도우 밖 — 해당 주 월요일 05:00 KST 이후만 자동 실행');
     return {
       ok: true,
       status: 'skipped_window',
@@ -131,6 +135,7 @@ export async function runAiFortuneSync(
     news,
     aggregate,
     weekLabel,
+    dateForWeekKey,
   );
   if (!generated.ok) {
     console.warn('[ai-fortune] Gemini 1차 실패 — 1회 재시도', { error: generated.error });
@@ -139,6 +144,7 @@ export async function runAiFortuneSync(
       news,
       aggregate,
       weekLabel,
+      dateForWeekKey,
     );
   }
   if (!generated.ok) {
@@ -170,6 +176,7 @@ export async function runAiFortuneSync(
       },
     });
     console.log('[ai-fortune] 주간 게시 완료', { weekKey, postId: post.id, bootstrap });
+    revalidatePostCaches(post.id);
     return {
       ok: true,
       status: 'created',

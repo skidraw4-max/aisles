@@ -1,19 +1,30 @@
 /**
- * AI FORTUNE 주차 백필 (2026-04-W1 ~ 2026-05-W2 기본)
+ * AI FORTUNE 주차 백필
  *
  * 필요 env: DATABASE_URL(또는 DIRECT_URL), GOOGLE_GENERATIVE_AI_API_KEY 또는 GEMINI_API_KEY
  *
  * 실행:
  *   npx tsx scripts/backfill-ai-fortune.ts
- *
- * 프로덕션 API (대안, CRON_SECRET 필요):
- *   curl -X POST "https://<host>/api/cron/ai-fortune?backfill=true" -H "Authorization: Bearer $CRON_SECRET"
+ *   npx tsx scripts/backfill-ai-fortune.ts 2026-08-W5 2026-09-W2
  */
-import 'dotenv/config';
-import { runAiFortuneBackfill } from '../src/lib/ai-fortune/run-ai-fortune-backfill';
+import { config as loadEnv } from 'dotenv';
+
+loadEnv({ path: '.env.local' });
+loadEnv();
 
 async function main() {
-  const result = await runAiFortuneBackfill();
+  const { AI_FORTUNE_BACKFILL_END_KEY, AI_FORTUNE_BACKFILL_START_KEY, parseAiFortuneWeekKey } =
+    await import('../src/lib/ai-fortune/kst-week');
+  const { runAiFortuneBackfill } = await import('../src/lib/ai-fortune/run-ai-fortune-backfill');
+
+  const startArg = process.argv[2]?.trim();
+  const endArg = process.argv[3]?.trim();
+  const startKey =
+    startArg && parseAiFortuneWeekKey(startArg) ? startArg : AI_FORTUNE_BACKFILL_START_KEY;
+  const endKey = endArg && parseAiFortuneWeekKey(endArg) ? endArg : AI_FORTUNE_BACKFILL_END_KEY;
+
+  console.log('[backfill-ai-fortune] range', { startKey, endKey });
+  const result = await runAiFortuneBackfill(startKey, endKey);
   console.log('[backfill-ai-fortune] 완료', JSON.stringify(result, null, 2));
   if (!result.ok) process.exit(1);
 }
