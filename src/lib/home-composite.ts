@@ -50,7 +50,8 @@ export async function fetchLatestForCategory(
     });
   } catch (err) {
     console.error('[fetchLatestForCategory]', { category, err });
-    return [];
+    // Rethrow so unstable_cache (home-quasar) does not store a poisoned empty list.
+    throw err;
   }
 }
 

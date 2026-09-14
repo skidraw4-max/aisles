@@ -404,6 +404,7 @@ export function UploadForm({ editInitial = null, initialCategory }: Props) {
       } else {
         router.replace('/');
       }
+      router.refresh();
     } catch (err: unknown) {
       setFormError(err instanceof Error ? err.message : '저장에 실패했습니다.');
     } finally {

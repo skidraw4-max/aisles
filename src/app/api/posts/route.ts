@@ -23,6 +23,7 @@ import { applyWatermarkForUpload } from '@/lib/watermark-image';
 import { normalizeImageToWebp } from '@/lib/normalize-upload-image';
 import { validateContentMinForCategory } from '@/lib/post-description-policy';
 import { runPostPromptAnalysisJob } from '@/app/actions/gemini';
+import { revalidatePostCaches } from '@/lib/post-revalidate';
 
 const EXTERNAL_LINK_MAX = 2048;
 
@@ -219,6 +220,7 @@ async function postFromJson(req: NextRequest) {
       });
     }
 
+    revalidatePostCaches(post.id);
     return NextResponse.json({ ok: true, post });
   } catch (e) {
     console.error(e);
@@ -343,6 +345,7 @@ async function postFromMultipart(req: NextRequest) {
         createdAt: true,
       },
     });
+    revalidatePostCaches(post.id);
     return NextResponse.json({ ok: true, post });
   } catch (e) {
     console.error(e);

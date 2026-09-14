@@ -46,20 +46,40 @@ async function loadQuasarPayloadUncached() {
   };
 }
 
-const getCachedQuasarPayload = unstable_cache(loadQuasarPayloadUncached, ['home-quasar-payload-v1'], {
+const getCachedQuasarPayload = unstable_cache(loadQuasarPayloadUncached, ['home-quasar-payload-v2'], {
   revalidate: 60,
   tags: ['home-page', 'home-quasar'],
 });
 
 async function loadQuasarPayload() {
-  const cached = await getCachedQuasarPayload();
-  return {
-    labGallery: cached.labGallery.map((p) => reviveCachedFeedPost(p)) as unknown as HomeFeedPost[],
-    community: {
-      lounge: cached.community.lounge.map((p) => reviveCachedFeedPost(p)) as unknown as HomeFeedPost[],
-      gossip: cached.community.gossip.map((p) => reviveCachedFeedPost(p)) as unknown as HomeFeedPost[],
-    },
-  };
+  try {
+    const cached = await getCachedQuasarPayload();
+    return {
+      labGallery: cached.labGallery.map((p) => reviveCachedFeedPost(p)) as unknown as HomeFeedPost[],
+      community: {
+        lounge: cached.community.lounge.map((p) => reviveCachedFeedPost(p)) as unknown as HomeFeedPost[],
+        gossip: cached.community.gossip.map((p) => reviveCachedFeedPost(p)) as unknown as HomeFeedPost[],
+      },
+    };
+  } catch (err) {
+    console.error('[loadQuasarPayload] cached fetch failed — uncached retry', err);
+    try {
+      const fresh = await loadQuasarPayloadUncached();
+      return {
+        labGallery: fresh.labGallery.map((p) => reviveCachedFeedPost(p)) as unknown as HomeFeedPost[],
+        community: {
+          lounge: fresh.community.lounge.map((p) => reviveCachedFeedPost(p)) as unknown as HomeFeedPost[],
+          gossip: fresh.community.gossip.map((p) => reviveCachedFeedPost(p)) as unknown as HomeFeedPost[],
+        },
+      };
+    } catch (err2) {
+      console.error('[loadQuasarPayload] uncached fetch failed', err2);
+      return {
+        labGallery: [] as HomeFeedPost[],
+        community: { lounge: [] as HomeFeedPost[], gossip: [] as HomeFeedPost[] },
+      };
+    }
+  }
 }
 
 function formatDate(iso: Date) {

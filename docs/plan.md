@@ -398,3 +398,20 @@ Asset recompression; Capacitor packaging of these games.
 
 ## Out of scope
 Content generation / Gemini copy changes
+
+# Plan: Fix empty AI Work after new post
+
+**Status:** Approved (수정안 진행 + 배포). Implementing.
+
+## Cause
+- POST /api/posts does not call revalidatePostCaches
+- Upload soft-nav replace without router.refresh
+- Quasar unstable_cache can keep stale/empty labGallery up to 60s; fetchLatestForCategory swallows DB errors as []
+
+## Fix
+1. Call revalidatePostCaches after successful create (JSON + multipart); also revalidatePath(/)
+2. UploadForm: router.refresh() after replace
+3. fetchLatestForCategory rethrows on DB error; bump home-quasar-payload cache key to v2
+
+## TDD
+- Assert home cache tags / paths helpers used by revalidatePostCaches
