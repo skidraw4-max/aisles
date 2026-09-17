@@ -25,7 +25,7 @@ describe('revisionStatus helpers', () => {
   });
 });
 
-describe('mock debate revisionStatus', () => {
+describe('mock revisionPass revisionStatus', () => {
   it('can stay UNCHANGED without forcing revision', async () => {
     const llm = createMockReviewBoardLlm({ reviseOnDebate: false, revisionStatus: 'UNCHANGED' });
     const evidence = buildStubEvidencePack();
@@ -34,10 +34,11 @@ describe('mock debate revisionStatus', () => {
       memberId: 'A',
       evidence,
     });
-    const turn = await llm.debateTurn('A', evidence, [own], own);
-    assert.equal(turn.revisionStatus, 'UNCHANGED');
-    assert.equal(turn.revised, false);
-    assert.ok(turn.revisionReason);
+    const debate = await llm.debateTurn('A', evidence, [own], own);
+    const rev = await llm.revisionPass('A', evidence, own, debate, [own]);
+    assert.equal(rev.revisionStatus, 'UNCHANGED');
+    assert.equal(rev.revised, false);
+    assert.ok(rev.retainReason);
   });
 
   it('supports PARTIAL without claiming FULL', async () => {
@@ -48,9 +49,11 @@ describe('mock debate revisionStatus', () => {
       memberId: 'B',
       evidence,
     });
-    const turn = await llm.debateTurn('B', evidence, [own], own);
-    assert.equal(turn.revisionStatus, 'PARTIAL');
-    assert.equal(turn.revised, true);
-    assert.ok(turn.revisedOpinion?.includes('PARTIAL'));
+    const debate = await llm.debateTurn('B', evidence, [own], own);
+    const rev = await llm.revisionPass('B', evidence, own, debate, [own]);
+    assert.equal(rev.revisionStatus, 'PARTIAL');
+    assert.equal(rev.revised, true);
+    assert.ok(rev.changedClaims.length >= 1);
+    assert.ok(rev.finalOpinion.includes('PARTIAL'));
   });
 });

@@ -8,7 +8,8 @@ import {
 import { createBudget, defaultMaxCallsFromEnv, recordCall } from './call-budget';
 import { assertDebateReady, stripPeersForIndependent } from './independence';
 import { enrichFinalReport } from './finalize-report';
-import type { EvidencePack, ReviewBoardRun } from './types';
+import { EXPECTED_PIPELINE_LLM_CALLS } from './revision-quality';
+import type { EvidencePack, ReviewBoardRun, RevisionRecord } from './types';
 
 export type OrchestratorOptions = {
   rootDir: string;
@@ -28,6 +29,12 @@ export async function runReviewBoardPipeline(
   let budget = createBudget(maxCalls);
   const now = () => new Date().toISOString();
 
+  if (maxCalls < EXPECTED_PIPELINE_LLM_CALLS) {
+    throw new Error(
+      `AI_REVIEW_BOARD maxCalls=${maxCalls} < expected pipeline calls ${EXPECTED_PIPELINE_LLM_CALLS}`,
+    );
+  }
+
   const run: ReviewBoardRun = {
     runId,
     status: 'collecting_evidence',
@@ -36,6 +43,7 @@ export async function runReviewBoardPipeline(
     evidence: options.evidence,
     independent: [],
     debate: [],
+    revisions: [],
     critic: null,
     final: null,
     budget,
@@ -52,7 +60,11 @@ export async function runReviewBoardPipeline(
       at: now(),
       type: 'evidence_ready',
       actor: 'system',
-      payload: { generatedAt: options.evidence.generatedAt },
+      payload: {
+        generatedAt: options.evidence.generatedAt,
+        expectedLlmCalls: EXPECTED_PIPELINE_LLM_CALLS,
+        maxCalls,
+      },
     });
     await touch();
 
@@ -66,14 +78,13 @@ export async function runReviewBoardPipeline(
         phase: 'independent',
         memberId,
         evidence: options.evidence,
-        peerAnalyses: run.independent, // stripPeers removes these
+        peerAnalyses: run.independent,
       });
       const analysis = await options.llm.independentAnalysis(
         memberId,
         options.evidence,
         ctx,
       );
-      // Preserve originalOpinion immutably in stored snapshot
       independentResults.push({
         ...analysis,
         originalOpinion: analysis.originalOpinion,
@@ -107,17 +118,48 @@ export async function runReviewBoardPipeline(
       run.debate = [...debateResults];
       await appendHistory(options.rootDir, runId, {
         at: now(),
-        type: turn.revised ? 'opinion_revised' : 'debate_turn',
+        type: 'debate_turn',
         actor: memberId,
         payload: {
           agreement: turn.agreement,
           disagreement: turn.disagreement,
-          revised: turn.revised,
-          revisionStatus: turn.revisionStatus,
-          previousOpinion: turn.previousOpinion,
-          revisedOpinion: turn.revisedOpinion,
-          revisionReason: turn.revisionReason,
-          finalOpinion: turn.finalOpinion,
+          weakEvidence: turn.weakEvidence,
+          missed: turn.missed,
+          needsVerification: turn.needsVerification,
+        },
+      });
+      await touch();
+    }
+
+    run.status = 'revision';
+    await touch();
+
+    const revisionResults: RevisionRecord[] = [];
+    for (const memberId of COMMITTEE_ANALYSTS) {
+      budget = recordCall(budget);
+      const own = run.independent.find((i) => i.memberId === memberId)!;
+      const ownDebate = run.debate.find((d) => d.memberId === memberId)!;
+      const rev = await options.llm.revisionPass(
+        memberId,
+        options.evidence,
+        own,
+        ownDebate,
+        run.independent,
+      );
+      revisionResults.push(rev);
+      run.revisions = [...revisionResults];
+      await appendHistory(options.rootDir, runId, {
+        at: now(),
+        type: rev.revised ? 'opinion_revised' : 'revision_unchanged',
+        actor: memberId,
+        payload: {
+          revisionStatus: rev.revisionStatus,
+          revised: rev.revised,
+          retainReason: rev.retainReason,
+          revisionReason: rev.revisionReason,
+          confidenceBefore: rev.confidenceBefore,
+          confidenceAfter: rev.confidenceAfter,
+          changedClaims: rev.changedClaims,
         },
       });
       await touch();
@@ -126,7 +168,12 @@ export async function runReviewBoardPipeline(
     run.status = 'critic';
     await touch();
     budget = recordCall(budget);
-    run.critic = await options.llm.critic(options.evidence, run.independent, run.debate);
+    run.critic = await options.llm.critic(
+      options.evidence,
+      run.independent,
+      run.debate,
+      run.revisions,
+    );
     await appendHistory(options.rootDir, runId, {
       at: now(),
       type: 'critic_report',
@@ -143,6 +190,7 @@ export async function runReviewBoardPipeline(
       run.independent,
       run.debate,
       run.critic,
+      run.revisions,
     );
     run.final = enrichFinalReport(run.final, run.independent, run.critic);
     await appendHistory(options.rootDir, runId, {

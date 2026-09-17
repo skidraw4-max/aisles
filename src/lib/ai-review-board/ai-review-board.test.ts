@@ -161,7 +161,7 @@ describe('independence', () => {
 });
 
 describe('orchestrator pipeline (mock llm)', () => {
-  it('runs independent → debate → critic → chairman and persists runId files', async () => {
+  it('runs independent → debate → revision → critic → chairman and persists runId files', async () => {
     const root = await fs.mkdtemp(path.join(os.tmpdir(), 'arb-'));
     const evidence = buildStubEvidencePack({
       aggregates: {
@@ -186,17 +186,20 @@ describe('orchestrator pipeline (mock llm)', () => {
     assert.equal(run.status, 'completed');
     assert.equal(run.independent.length, 5);
     assert.equal(run.debate.length, 5);
+    assert.equal(run.revisions?.length, 5);
+    assert.equal(run.budget.usedCalls, 17);
     assert.ok(run.critic);
     assert.ok(run.final);
 
     for (const a of run.independent) {
       assert.ok(a.originalOpinion.length > 0);
     }
-    for (const d of run.debate) {
-      if (d.revised) {
-        assert.ok(d.revisionReason);
-        assert.ok(d.previousOpinion);
-        assert.ok(d.revisedOpinion);
+    for (const r of run.revisions!) {
+      if (r.revised) {
+        assert.ok(r.revisionReason);
+        assert.ok(r.changedClaims.length >= 1);
+      } else {
+        assert.ok(r.retainReason);
       }
     }
 
@@ -204,12 +207,14 @@ describe('orchestrator pipeline (mock llm)', () => {
     assert.ok(loaded);
     assert.equal(loaded!.runId, 'run-test-1');
     assert.equal(loaded!.independent.length, 5);
+    assert.equal(loaded!.revisions?.length, 5);
 
     const dir = path.join(root, 'run-test-1');
     for (const f of [
       'evidence.json',
       'independent-analysis.json',
       'debate.json',
+      'revisions.json',
       'critic.json',
       'final.json',
       'run.json',

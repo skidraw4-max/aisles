@@ -29,7 +29,12 @@ async function main() {
     runReviewBoardPipeline,
   } = await import('../src/lib/ai-review-board');
 
-  console.log('[ai-review-board] starting', { stubEvidence, mockLlm });
+  console.log('[ai-review-board] starting', {
+    stubEvidence,
+    mockLlm,
+    expectedLlmCalls: 17,
+    maxCalls: Number(process.env.AI_REVIEW_BOARD_MAX_CALLS_PER_RUN || 40),
+  });
 
   let evidence;
   if (stubEvidence) {

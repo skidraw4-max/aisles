@@ -10,6 +10,7 @@ export type ReviewBoardPhase =
   | 'collecting_evidence'
   | 'independent'
   | 'debate'
+  | 'revision'
   | 'critic'
   | 'chairman'
   | 'completed'
@@ -74,16 +75,61 @@ export type DebateTurn = {
   weakEvidence: string[];
   missed: string[];
   needsVerification: string[];
-  /** v3+: UNCHANGED | PARTIAL | FULL */
+  /**
+   * v3 only (revision folded into debate).
+   * v4+: omit — use `RevisionRecord` in `run.revisions`.
+   */
+  revisionStatus?: RevisionStatus;
+  revised?: boolean;
+  revisionReason?: string | null;
+  previousOpinion?: string | null;
+  revisedOpinion?: string | null;
+  finalOpinion?: string;
+  confidence?: number;
+};
+
+export type RejectedArgument = {
+  argument: string;
+  reason: string;
+};
+
+/** Q1–Q12 checklist answers (stored in Raw JSON) */
+export type RevisionAnswers = {
+  q1_coreClaim: string;
+  q2_strongestRebuttal: string;
+  q3_rebuttalEvidenceKind: string;
+  q4_evidenceGapsFound: string;
+  q5_gapAffectsCoreClaim: string;
+  q6_directlySupportedScope: string;
+  q7_overclaimCheck: string;
+  q8_whyRetainIfUnchanged: string;
+  q9_claimsToChangeIfPartial: string;
+  q10_groundsForFullRevision: string;
+  q11_chosenStatus: RevisionStatus;
+  q12_confidenceChange: string;
+};
+
+/** v4+ separate Revision Quality Pass */
+export type RevisionRecord = {
+  memberId: CommitteeAnalystId;
   revisionStatus: RevisionStatus;
-  /** 호환: PARTIAL/FULL 이면 true */
   revised: boolean;
+  originalOpinion: string;
   revisionReason: string | null;
-  /** 변경 전 요약 (PARTIAL/FULL 시 필수) */
-  previousOpinion: string | null;
-  revisedOpinion: string | null;
+  retainReason: string | null;
+  changedClaims: string[];
+  newEvidenceAccepted: string[];
+  rejectedArguments: RejectedArgument[];
+  confidenceBefore: number;
+  confidenceAfter: number;
+  confidenceChangeReason: string;
   finalOpinion: string;
-  confidence: number;
+  revisionAnswers: RevisionAnswers;
+};
+
+export type CriticCheck = {
+  ok: boolean;
+  flags: string[];
 };
 
 export type CriticReport = {
@@ -98,6 +144,23 @@ export type CriticReport = {
   overEngineering: boolean;
   notes: string[];
   confidence: number;
+  /** v4+ optional integrity checks */
+  revisionIntegrity?: CriticCheck;
+  evidenceGrounding?: CriticCheck;
+  overclaiming?: CriticCheck;
+  herding?: CriticCheck;
+  confidenceIntegrity?: CriticCheck;
+  fabrication?: CriticCheck;
+  statusConsistency?: CriticCheck;
+};
+
+export type RevisionSummaryBlock = {
+  unchanged: string[];
+  partial: string[];
+  full: string[];
+  confidenceShifts: string[];
+  claimSofteningFromEvidenceGap: string[];
+  herdingRisks: string[];
 };
 
 export type FinalReport = {
@@ -113,6 +176,13 @@ export type FinalReport = {
   opinionDifferences: string[];
   confidence: number;
   needsFurtherVerification: string[];
+  /** v4+ optional structured sections */
+  confirmedFacts?: string[];
+  unknownMissingData?: string[];
+  hypotheses?: string[];
+  disputedPoints?: string[];
+  validatedImprovements?: string[];
+  revisionSummary?: RevisionSummaryBlock;
 };
 
 export type EvidenceAggregates = {
@@ -203,6 +273,8 @@ export type ReviewBoardRun = {
   evidence: EvidencePack | null;
   independent: IndependentAnalysis[];
   debate: DebateTurn[];
+  /** v4+ Revision Quality Pass results */
+  revisions?: RevisionRecord[];
   critic: CriticReport | null;
   final: FinalReport | null;
   budget: CallBudget;
@@ -218,8 +290,8 @@ export type HistoryEvent = {
 
 /** LLM에 넘기는 컨텍스트 — 독립 단계에서는 peerAnalyses 금지 */
 export type LlmContext = {
-  phase: 'independent' | 'debate' | 'critic' | 'chairman';
-  memberId: CommitteeMemberId;
+  phase: 'independent' | 'debate' | 'revision' | 'critic' | 'chairman';
+  memberId?: CommitteeMemberId;
   evidence: EvidencePack;
   /** independent에서는 반드시 undefined/빈 배열 */
   peerAnalyses?: IndependentAnalysis[];

@@ -446,6 +446,142 @@ Content generation / Gemini copy changes
 **Status:** Shipped. Sample run `run-2026-09-17T10-09-59-178Z` preserved (v1/v2 untouched).
 
 **Result:** 5/5 UNCHANGED with explicit keep-reasons; PARTIAL/FULL = 0. Mechanism works; this evidence pack + peer consensus did not produce opinion-overturning rebuttals.
+
+# Plan: AI Review Board v4 — Revision quality (UNCHANGED vs PARTIAL vs FULL discrimination)
+
+**Status:** Shipped. Sample run `run-2026-09-17T10-34-21-451Z` preserved (v1–v3 untouched).
+
+**승인 결정 (2026-09-17):** Debate/Revision 분리 · Q1–Q12 JSON · Admin revisions 우선 · 17 calls.
+
+**Result (honest):** 5/5 UNCHANGED; PARTIAL/FULL=0; confidence 0.9→0.9 all. Mechanism+answers recorded; claim-softening PARTIAL and confidence drop did not occur on this EvidencePack.
+
+## Problem (from v3)
+- All A–E chose UNCHANGED, but often justified by peer consensus (“other reviewers agree”).
+- Evidence gaps (`activeUsersLast7d`/`viewsLast7d` null) + overclaim risk (“platform engagement crisis”) did not lower confidence (~0.95).
+- Goal is **not** higher revision rate — it is honest discrimination + confidence integrity.
+
+## Success criteria (not revision rate)
+1. Evaluate rebuttal strength
+2. Separate direct evidence vs inference
+3. Assess evidence-gap impact on own claims
+4. Soften claim strength when needed (PARTIAL candidate)
+5. Adjust confidence rationally
+6. Do not use majority agreement as revision/retain/confidence ground
+7. UNCHANGED requires concrete `retainReason` (what rebuttal reviewed + why keep)
+
+## Architecture (proposed)
+
+```
+EvidencePack
+→ A–E Independent (unchanged; peers stripped)
+→ A–E Debate (rebuttal only — no revision decision)
+→ A–E Revision Quality Pass (Q1–Q12; 1 shot; no peer revision peek)
+→ F Critic (revision integrity checks)
+→ Chairman (facts / unknown / hypotheses / revision summary)
+```
+
+### Why split Debate vs Revision
+v3 folded revision into `debateTurn`, which encouraged “agree with peers → keep”.  
+v4 makes Revision a **separate LLM call** after all debate turns exist, so each member revisits **own** opinion against EvidencePack + peer arguments without seeing others’ final revisionStatus.
+
+Call budget: 5+5+5+1+1 = **17** (≤40). v1–v3 samples untouched.
+
+### Data model (backward compatible)
+
+**New** `RevisionRecord` (stored as `run.revisions[]`; also `revisions.json`):
+
+| Field | Notes |
+|-------|--------|
+| `memberId` | A–E |
+| `revisionStatus` | UNCHANGED \| PARTIAL \| FULL |
+| `revised` | false iff UNCHANGED |
+| `originalOpinion` | from independent |
+| `revisionReason` | PARTIAL/FULL required; UNCHANGED → null |
+| `retainReason` | UNCHANGED required (concrete); else null |
+| `changedClaims` | string[]; PARTIAL/FULL |
+| `newEvidenceAccepted` | string[] |
+| `rejectedArguments` | `{ argument, reason }[]` |
+| `confidenceBefore` | independent.confidence |
+| `confidenceAfter` | post-revision |
+| `confidenceChangeReason` | string |
+| `finalOpinion` | after revision |
+| `answersQ1toQ12` | optional short map for audit (or omit if token-heavy — **confirm**) |
+
+**DebateTurn (v4 behavior):** keep agreement/disagreement/weakEvidence/missed/needsVerification.  
+Revision fields on DebateTurn remain optional for v1–v3 UI; v4 may leave them unset or mirror from `RevisionRecord` for list metrics only — **no rewrite of old JSON**.
+
+**CriticReport** additive optional:
+
+```ts
+revisionIntegrity?: { ok: boolean; flags: string[] }
+evidenceGrounding?: { ok: boolean; flags: string[] }
+overclaiming?: { ok: boolean; flags: string[] }
+herding?: { ok: boolean; flags: string[] }  // or reuse herdingDetected + flags
+confidenceIntegrity?: { ok: boolean; flags: string[] }
+fabrication?: { ok: boolean; flags: string[] }
+statusConsistency?: { ok: boolean; flags: string[] }
+```
+
+**FinalReport** additive optional structured blocks:
+
+```ts
+confirmedFacts?: string[]
+unknownMissingData?: string[]
+hypotheses?: string[]
+disputedPoints?: string[]
+validatedImprovements?: string[]
+revisionSummary?: {
+  unchanged: string[]
+  partial: string[]
+  full: string[]
+  confidenceShifts: string[]
+  claimSofteningFromEvidenceGap: string[]
+  herdingRisks: string[]
+}
+```
+
+Old runs missing fields → Admin shows `—`. **Tab structure unchanged.**
+
+### Prompt rules (Revision)
+- RULE 1–4 from user brief (no majority→UNCHANGED; no majority→↑confidence; evidence gap may → ↓confidence or PARTIAL; no auto-expand signup/comments=0 → platform-wide crisis)
+- Q1–Q12 checklist in order
+- Ban retain/revision grounds: “All reviewers agree”, “majority”, “consensus supports…”, etc.
+- Do **not** instruct “you should choose PARTIAL”
+
+### Debate prompt change
+Strip revision decision from debate; focus rebuttal lists only (anti-herding peer critique).
+
+### Observation / scripts
+- Extend `computeRunObservationMetrics` for retainReason presence, confidence delta, status counts from `revisions` when present (fallback debate for v3).
+- `compare-ai-review-runs.ts` accept v4 id; columns for confidenceBefore/After, herding/overclaim flags.
+- `.gitignore` exception for new baseline run only after Gemini completes.
+
+### Tests (TDD first — must pass before Gemini)
+1. UNCHANGED + retainReason required path (mock)
+2. PARTIAL + changedClaims
+3. FULL + core claim change
+4–7. confidenceBefore/After down/hold/up rules (unit on helpers + mock)
+8. evidence gap → PARTIAL *allowed* (mock fixture)
+9. weak counter → UNCHANGED allowed
+10. strong counter → revision allowed
+11–12. majority-only strings rejected by validator / mock assert
+13. fabrication flag surface on critic mock
+14. revisionStatus ↔ revised compatibility
+15. loading v1/v2/v3 JSON still parses; no mutate fixtures
+
+### Execution
+After tests green: `npx tsx scripts/run-ai-review-board.ts` (real EvidencePack + Gemini, no stub/mock).  
+Preserve v1–v3. Commit message: `feat: add AI review board revision quality experiment` → push `origin/main` (no force; no unrelated dirty files).
+
+### Out of scope
+Force PARTIAL/FULL, Cron, Prisma/schema changes, rewriting old runs, inventing FULL without conflicting evidence, new Admin tabs.
+
+### Open questions (need answers before implement)
+1. **Debate/Revision split:** Approve separate Revision LLM call (`run.revisions[]`) as above? Or enhance single `debateTurn` only (cheaper, weaker isolation)?
+2. **Q1–Q12 storage:** Persist full answers in JSON for audit, or prompt-only (save tokens / smaller artifacts)?
+3. **DebateTurn mirroring:** Mirror revision fields onto debate for v3 UI compatibility, or Debate tab reads `revisions` when present?
+4. **Budget warning:** 17 calls OK (default max 40)?
+
 ---
 
 # Plan: AI Review Board v2 — EvidencePack metric clarity experiment (archive note)
