@@ -21,6 +21,7 @@ type Deb = {
   weakEvidence: string[];
   missed: string[];
   needsVerification: string[];
+  revisionStatus?: 'UNCHANGED' | 'PARTIAL' | 'FULL';
   revised: boolean;
   revisionReason: string | null;
   previousOpinion: string | null;
@@ -48,7 +49,14 @@ async function main() {
   const weakEvidenceCount = debate.reduce((n, d) => n + d.weakEvidence.length, 0);
   const missedCount = debate.reduce((n, d) => n + d.missed.length, 0);
   const needsVerCount = debate.reduce((n, d) => n + d.needsVerification.length, 0);
-  const revisionCount = debate.filter((d) => d.revised).length;
+  const revisionCount = debate.filter((d) =>
+    d.revisionStatus === 'PARTIAL' || d.revisionStatus === 'FULL' || d.revised,
+  ).length;
+  const partialRevisionCount = debate.filter((d) => d.revisionStatus === 'PARTIAL').length;
+  const fullRevisionCount = debate.filter((d) => d.revisionStatus === 'FULL').length;
+  const unchangedCount = debate.filter(
+    (d) => d.revisionStatus === 'UNCHANGED' || (!d.revisionStatus && !d.revised),
+  ).length;
   const avgConfInd =
     independent.reduce((s, i) => s + i.confidence, 0) / Math.max(1, independent.length);
   const avgConfDeb = debate.reduce((s, d) => s + d.confidence, 0) / Math.max(1, debate.length);
@@ -99,6 +107,9 @@ async function main() {
       missedCount,
       needsVerificationCount: needsVerCount,
       revisionCount,
+      partialRevisionCount,
+      fullRevisionCount,
+      unchangedCount,
       rebuttalProxy: disagreementCount + weakEvidenceCount,
       evidenceChallengeCount: weakEvidenceCount,
     },
@@ -113,7 +124,9 @@ async function main() {
     critic: { herdingDetected: critic.herdingDetected, notes: critic.notes },
     perMemberDebate: debate.map((d) => ({
       memberId: d.memberId,
+      revisionStatus: d.revisionStatus ?? (d.revised ? 'PARTIAL?' : 'UNCHANGED?'),
       revised: d.revised,
+      revisionReason: d.revisionReason,
       agreement: d.agreement.length,
       disagreement: d.disagreement.length,
       weakEvidence: d.weakEvidence.length,

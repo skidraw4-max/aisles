@@ -113,6 +113,7 @@ export async function runReviewBoardPipeline(
           agreement: turn.agreement,
           disagreement: turn.disagreement,
           revised: turn.revised,
+          revisionStatus: turn.revisionStatus,
           previousOpinion: turn.previousOpinion,
           revisedOpinion: turn.revisedOpinion,
           revisionReason: turn.revisionReason,

@@ -26,7 +26,9 @@ import type {
   IndependentAnalysis,
   ImprovementItem,
   LlmContext,
+  RevisionStatus,
 } from './types';
+import { isRevisionStatus, revisionStatusImpliesChange } from './types';
 
 function tryParseJson(text: string): unknown | null {
   const trimmed = text.trim();
@@ -218,17 +220,26 @@ Return JSON:
   "weakEvidence": string[],
   "missed": string[],
   "needsVerification": string[],
+  "revisionStatus": "UNCHANGED" | "PARTIAL" | "FULL",
   "revised": boolean,
-  "revisionReason": string|null,
+  "revisionReason": string,
   "previousOpinion": string|null,
   "revisedOpinion": string|null,
   "finalOpinion": string,
   "confidence": number
-}`;
+}
+
+revisionStatus 선택 가이드: 바꾸라고 강요되지 않는다. 동료 반박이 네 근거를 실제로 무너뜨리면 PARTIAL/FULL, 아니면 UNCHANGED.
+revised 는 revisionStatus가 PARTIAL 또는 FULL 일 때만 true.`;
       const res = await geminiJson(key, system, user);
       if (!res.ok) throw new Error(res.error);
       const o = res.parsed as Record<string, unknown>;
-      const revised = Boolean(o.revised);
+      let revisionStatus: RevisionStatus = isRevisionStatus(o.revisionStatus)
+        ? o.revisionStatus
+        : Boolean(o.revised)
+          ? 'PARTIAL'
+          : 'UNCHANGED';
+      const revised = revisionStatusImpliesChange(revisionStatus);
       const turn: DebateTurn = {
         memberId,
         agreement: asStringArray(o.agreement),
@@ -236,17 +247,21 @@ Return JSON:
         weakEvidence: asStringArray(o.weakEvidence),
         missed: asStringArray(o.missed),
         needsVerification: asStringArray(o.needsVerification),
+        revisionStatus,
         revised,
-        revisionReason: revised ? asString(o.revisionReason, 'unspecified') : null,
+        revisionReason: asString(
+          o.revisionReason,
+          revised ? 'unspecified' : 'kept independent judgment',
+        ),
         previousOpinion: revised
           ? asString(o.previousOpinion, own.originalOpinion)
-          : null,
+          : asString(o.previousOpinion, own.originalOpinion) || own.originalOpinion,
         revisedOpinion: revised ? asString(o.revisedOpinion, asString(o.finalOpinion)) : null,
         finalOpinion: asString(o.finalOpinion, own.originalOpinion),
         confidence: typeof o.confidence === 'number' ? Math.min(1, Math.max(0, o.confidence)) : own.confidence,
       };
-      if (turn.revised && !turn.revisionReason) {
-        turn.revisionReason = 'missing_reason_filled_by_guard';
+      if (!turn.revisionReason) {
+        turn.revisionReason = revised ? 'missing_reason_filled_by_guard' : 'unchanged';
       }
       return turn;
     },

@@ -11,8 +11,8 @@ EvidencePack → AI-A~E 독립 분석 → A~E 토론 → AI-F Critic → Chairma
 ```bash
 npx tsx scripts/run-ai-review-board.ts
 npx tsx scripts/run-ai-review-board.ts --stub-evidence --mock-llm
-npx tsx scripts/analyze-ai-review-debate.ts run-2026-09-17T07-53-24-323Z
-npx tsx scripts/compare-ai-review-runs.ts run-2026-09-17T09-27-13-078Z
+npx tsx scripts/analyze-ai-review-debate.ts run-2026-09-17T10-09-59-178Z
+npx tsx scripts/compare-ai-review-runs.ts run-2026-09-17T09-27-13-078Z run-2026-09-17T10-09-59-178Z
 ```
 
 ## 산출물
@@ -21,6 +21,7 @@ npx tsx scripts/compare-ai-review-runs.ts run-2026-09-17T09-27-13-078Z
 **기준 샘플 (삭제·덮어쓰기 금지):**
 - v1: `run-2026-09-17T07-53-24-323Z`
 - v2 (metric clarity): `run-2026-09-17T09-27-13-078Z`
+- v3 (honest revisionStatus): `run-2026-09-17T10-09-59-178Z`
 
 ## 관찰 UI
 `/admin/ai-review-board` · `/admin/ai-review-board/[runId]` (ADMIN)
@@ -52,30 +53,49 @@ node --import tsx --test src/lib/ai-review-board/*.test.ts
 
 ---
 
-## v1 vs v2 실험 요약
+## Debate revisionStatus (v3+)
 
-| | v1 `…07-53-24-323Z` | v2 `…09-27-13-078Z` |
-|--|--|--|
-| metricDefinitions in evidence | 없음 | 있음 |
-| newUsersLast7d / activeUsers / viewsLast7d | (구 usersLast7d만) | 0 / **null** / **null** |
-| commentsLast7d | (없음) | 0 |
-| Chairman 전제 | “zero **active** users in last 7 days” | “zero **new** users… active/view metrics **unavailable**” |
-| signup-aware 신호 | 약함 | 전원 의견에서 신규 가입 구분 |
-| disagreement items | 8 | 18 |
-| revision | 0 | 0 |
-| overallTrendScore | 2 (enrich 후) | 35 |
+강제 변경 금지. AI가 정직하게 하나만 선택:
 
-### v2에서 확인된 점
-- Debate/Critic/Chairman **구조는 변경하지 않음** — EvidencePack 의미·프롬프트 가드만 강화.
-- AI가 `newUsersLast7d=0`과 `activeUsersLast7d=null`을 **구분**하기 시작함 (v1의 “활성 0” 단정 완화).
-- 여전히 저참여 내러티브는 존재하나, 근거가 “측정 불가 + 신규 가입 0 + 댓글 0” 쪽으로 이동.
+| 값 | 의미 |
+|----|------|
+| `UNCHANGED` | 독립 판단 유지 (유지 근거 `revisionReason` 필수) |
+| `PARTIAL` | 일부 주장·우선순위만 수정, 핵심 thesis 유지 |
+| `FULL` | 핵심 판단 교체·철회 |
 
-### 남은 TODO
-- `activeUsersLast7d` 활동 정의(게시/댓글/좋아요 등) 합의 후 산출
+`revised === true` 는 PARTIAL/FULL 호환 플래그. revision rate를 인위적으로 올리는 프롬프트는 쓰지 않는다.
+
+---
+
+## v1 vs v2 vs v3 실험 요약
+
+| | v1 `…07-53-24-323Z` | v2 `…09-27-13-078Z` | v3 `…10-09-59-178Z` |
+|--|--|--|--|
+| metricDefinitions | 없음 | 있음 | 있음 |
+| revisionStatus 필드 | 없음 | 없음 | **있음** |
+| newUsers / active / views | (구 usersLast7d) | 0 / null / null | 0 / null / null |
+| disagreement items | 8 | 18 | 5 |
+| weakEvidence | 17 | 10 | 7 |
+| revision (PARTIAL+FULL) | 0 | 0 | **0** |
+| UNCHANGED (명시) | — | — | **5/5** |
+| overallTrendScore | 2 | 35 | 20 |
+
+### v3에서 확인된 점
+- 메커니즘은 동작함: 전원 `revisionStatus`를 선택하고, UNCHANGED마다 **유지 근거**를 남김.
+- 이번 런에서는 동료 분석이 **핵심 전제(신규 0·댓글 0·활성/조회 null)** 에 강하게 합의 → 반박이 “근거를 무너뜨리는” 수준이 아니라 **강조점 차이**에 그침 → 전원 UNCHANGED는 정직한 선택으로 해석 가능.
+- disagreement는 v2(18)보다 줄었(5). revision을 강제하지 않았기 때문에 PARTIAL/FULL=0은 실패가 아니라 **“바꿀 필요 없음”을 선택한 결과**.
+- 실험 목적(“재검토할 수 있는가?”)에 대한 답: **재검토 슬롯·근거 기록은 가능**. 이번 Evidence·동료 합의 조건에서는 **실제로 의견을 바꿀 만큼의 반박은 발생하지 않음**.
+
+### 남은 실험 가설 (다음 단계 후보)
+- 의도적으로 **상충 Evidence** 또는 **교차 반박이 강한 stub** 을 넣었을 때만 PARTIAL/FULL이 나오는지
+- Critic 이후에 2차 재검토 라운드가 필요한지 (현재 범위 밖)
+
+### 남은 TODO (제품)
+- `activeUsersLast7d` 활동 정의 합의 후 산출
 - `viewsLast7d`는 이벤트/로그 없으면 계속 null
 
 ---
 
 ## Admin UI
-- Debate: weakEvidence / missed / needsVerification / initial opinion
-- 목록: agree/disagree/weakEv/rev/conf
+- Debate: UNCHANGED / PARTIAL / FULL 배지 + weakEvidence / missed / needsVerification / initial opinion
+- 목록: agree/disagree/weakEv/rev/P/F/conf

@@ -62,9 +62,10 @@ describe('computeRunObservationMetrics', () => {
             weakEvidence: ['w1', 'w2', 'w3'],
             missed: [],
             needsVerification: [],
+            revisionStatus: 'UNCHANGED',
             revised: false,
-            revisionReason: null,
-            previousOpinion: null,
+            revisionReason: 'kept',
+            previousOpinion: 'p0',
             revisedOpinion: null,
             finalOpinion: 'f',
             confidence: 0.9,
@@ -76,6 +77,7 @@ describe('computeRunObservationMetrics', () => {
             weakEvidence: [],
             missed: [],
             needsVerification: [],
+            revisionStatus: 'PARTIAL',
             revised: true,
             revisionReason: 'r',
             previousOpinion: 'p',
@@ -90,6 +92,9 @@ describe('computeRunObservationMetrics', () => {
     assert.equal(m.disagreementCount, 1);
     assert.equal(m.weakEvidenceCount, 3);
     assert.equal(m.revisionCount, 1);
+    assert.equal(m.partialRevisionCount, 1);
+    assert.equal(m.fullRevisionCount, 0);
+    assert.equal(m.unchangedCount, 1);
     assert.equal(m.averageConfidence, 0.8);
     assert.equal(m.confidenceSource, 'debate');
   });

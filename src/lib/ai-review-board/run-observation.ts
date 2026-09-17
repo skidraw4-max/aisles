@@ -1,4 +1,5 @@
 import type { DebateTurn, IndependentAnalysis, ReviewBoardRun } from './types';
+import { revisionStatusImpliesChange } from './types';
 
 /** 기존 debate/independent 배열에서만 집계. 없으면 null (추정 금지). */
 export type RunObservationMetrics = {
@@ -6,6 +7,12 @@ export type RunObservationMetrics = {
   disagreementCount: number | null;
   weakEvidenceCount: number | null;
   revisionCount: number | null;
+  /** v3+: PARTIAL 횟수 (없으면 null — 필드 없는 구런) */
+  partialRevisionCount: number | null;
+  /** v3+: FULL 횟수 */
+  fullRevisionCount: number | null;
+  /** v3+: UNCHANGED 횟수 */
+  unchangedCount: number | null;
   averageConfidence: number | null;
   /** debate confidence 우선, 없으면 independent */
   confidenceSource: 'debate' | 'independent' | null;
@@ -41,16 +48,34 @@ export function computeRunObservationMetrics(run: ReviewBoardRun): RunObservatio
       disagreementCount: null,
       weakEvidenceCount: null,
       revisionCount: null,
+      partialRevisionCount: null,
+      fullRevisionCount: null,
+      unchangedCount: null,
       averageConfidence: avgInd,
       confidenceSource: avgInd === null ? null : 'independent',
     };
   }
 
+  const hasStatusField = debate.some((d) => typeof d.revisionStatus === 'string');
+
   return {
     agreementCount: sumLengths(debate, 'agreement'),
     disagreementCount: sumLengths(debate, 'disagreement'),
     weakEvidenceCount: sumLengths(debate, 'weakEvidence'),
-    revisionCount: debate.filter((d) => d.revised).length,
+    revisionCount: debate.filter((d) =>
+      d.revisionStatus
+        ? revisionStatusImpliesChange(d.revisionStatus)
+        : Boolean(d.revised),
+    ).length,
+    partialRevisionCount: hasStatusField
+      ? debate.filter((d) => d.revisionStatus === 'PARTIAL').length
+      : null,
+    fullRevisionCount: hasStatusField
+      ? debate.filter((d) => d.revisionStatus === 'FULL').length
+      : null,
+    unchangedCount: hasStatusField
+      ? debate.filter((d) => d.revisionStatus === 'UNCHANGED').length
+      : null,
     averageConfidence: avgConfidence(debate),
     confidenceSource: 'debate',
   };

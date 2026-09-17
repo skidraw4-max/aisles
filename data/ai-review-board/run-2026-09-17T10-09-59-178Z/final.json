@@ -1,0 +1,411 @@
+{
+  "statusSummary": "The AIsle platform is experiencing a critical stagnation in user acquisition and community engagement, with zero new users and zero comments in the last 7 days. This, combined with the unavailability of active user and recent view metrics, indicates a severe lack of current user activity and makes performance assessment difficult. While the platform boasts a modern tech stack and historical content, its potential is unrealized due to the fundamental absence of user interaction and growth. Urgent, data-driven strategies are required to address these issues and prevent the platform from becoming a static content archive.",
+  "overallTrendScore": 20,
+  "dimensionScores": [
+    {
+      "dimension": "ui_ux",
+      "score": 40,
+      "evidence": [
+        {
+          "kind": "observation",
+          "text": "Zero new users in the last 7 days (newUsersLast7d: 0).",
+          "source": "aggregates"
+        },
+        {
+          "kind": "observation",
+          "text": "Zero comments created in the last 7 days (commentsLast7d: 0).",
+          "source": "aggregates"
+        },
+        {
+          "kind": "observation",
+          "text": "Content heavily concentrated in 'LOUNGE' category (3280 posts) compared to others.",
+          "source": "aggregates"
+        }
+      ]
+    },
+    {
+      "dimension": "visual",
+      "score": null,
+      "evidence": []
+    },
+    {
+      "dimension": "mobile",
+      "score": null,
+      "evidence": [
+        {
+          "kind": "doc",
+          "text": "Capacitor mobile shell is mentioned in stack notes, indicating mobile app development.",
+          "source": "site.stackNotes"
+        }
+      ]
+    },
+    {
+      "dimension": "web_tech",
+      "score": 90,
+      "evidence": [
+        {
+          "kind": "observation",
+          "text": "Next.js 15 App Router + React 19, Prisma 7 + PostgreSQL (Supabase Auth), Gemini (@google/generative-ai) for LAB/news/fortune, Capacitor mobile shell"
+        },
+        {
+          "kind": "observation",
+          "text": "Next.js 15 App Router + React 19, Prisma 7 + PostgreSQL (Supabase Auth), Gemini (@google/generative-ai) for LAB/news/fortune, Vercel hosting + GitHub Actions cron, Capacitor mobile shell",
+          "source": "site.stackNotes"
+        }
+      ]
+    },
+    {
+      "dimension": "performance",
+      "score": null,
+      "evidence": [
+        {
+          "kind": "metric",
+          "text": "activeUsersLast7d is null. viewsLast7d is null.",
+          "source": "aggregates"
+        },
+        {
+          "kind": "observation",
+          "text": "CRITICAL: activeUsersLast7d and viewsLast7d are null (unsupported); do not invent",
+          "source": "docsHints"
+        }
+      ]
+    },
+    {
+      "dimension": "a11y",
+      "score": null,
+      "evidence": []
+    },
+    {
+      "dimension": "usability",
+      "score": 60,
+      "evidence": [
+        {
+          "kind": "observation",
+          "text": "The platform has a large number of posts (postCount: 3368), suggesting content is available.",
+          "source": "aggregates"
+        },
+        {
+          "kind": "observation",
+          "text": "Zero new users and zero comments in the last 7 days may indicate usability issues in attracting or retaining users.",
+          "source": "aggregates"
+        }
+      ]
+    },
+    {
+      "dimension": "content",
+      "score": 74,
+      "evidence": [
+        {
+          "kind": "observation",
+          "text": "콘텐츠 불균형: 'LOUNGE' 카테고리에 게시글 3280개 집중 (전체 3368개 중).",
+          "source": "aggregates"
+        },
+        {
+          "kind": "observation",
+          "text": "AI 관련 콘텐츠 부족: 'AI_FORTUNE'(17개), 'RECIPE'(16개) 등 소수.",
+          "source": "aggregates"
+        },
+        {
+          "kind": "metric",
+          "text": "postsLast7d is 145, indicating active content creation.",
+          "source": "aggregates.postsLast7d"
+        },
+        {
+          "kind": "metric",
+          "text": "totalViews is 247421, indicating past engagement with content.",
+          "source": "aggregates.totalViews"
+        },
+        {
+          "kind": "metric",
+          "text": "postsByCategory shows 'LOUNGE' is highly populated, suggesting a focus on social content.",
+          "source": "aggregates.postsByCategory"
+        }
+      ]
+    },
+    {
+      "dimension": "community",
+      "score": 20,
+      "evidence": [
+        {
+          "kind": "observation",
+          "text": "commentsLast7d is 0, indicating a lack of community interaction.",
+          "source": "aggregates"
+        },
+        {
+          "kind": "observation",
+          "text": "newUsersLast7d is 0, suggesting a lack of community growth.",
+          "source": "aggregates"
+        },
+        {
+          "kind": "observation",
+          "text": "commentsLast7d is 0"
+        },
+        {
+          "kind": "observation",
+          "text": "commentCount is 4"
+        },
+        {
+          "kind": "observation",
+          "text": "커뮤니티 활동 저조"
+        },
+        {
+          "kind": "observation",
+          "text": "낮은 신규 사용자 유입 및 참여 지표 (newUsersLast7d: 0, commentsLast7d: 0).",
+          "source": "aggregates"
+        },
+        {
+          "kind": "observation",
+          "text": "활성 사용자 수 (activeUsersLast7d) 측정 불가.",
+          "source": "aggregates"
+        },
+        {
+          "kind": "metric",
+          "text": "newUsersLast7d: 0, commentsLast7d: 0",
+          "source": "aggregates"
+        }
+      ]
+    },
+    {
+      "dimension": "ai_usage",
+      "score": 50,
+      "evidence": [
+        {
+          "kind": "observation",
+          "text": "Gemini (@google/generative-ai) for LAB/news/fortune"
+        },
+        {
+          "kind": "observation",
+          "text": "AI 기능 활용도 증대 및 사용자 경험 개선 필요"
+        },
+        {
+          "kind": "observation",
+          "text": "Gemini API를 활용한 AI 기능 통합 (LAB/RECIPE, AI_FORTUNE).",
+          "source": "site.stackNotes"
+        },
+        {
+          "kind": "observation",
+          "text": "AI 관련 카테고리의 콘텐츠 양이 매우 적음.",
+          "source": "aggregates.postsByCategory"
+        }
+      ]
+    },
+    {
+      "dimension": "competitive",
+      "score": 40,
+      "evidence": [
+        {
+          "kind": "observation",
+          "text": "활성 사용자 및 조회수 데이터 측정 불가로 경쟁 서비스와의 직접적인 비교 어려움.",
+          "source": "metricDefinitions, aggregates"
+        },
+        {
+          "kind": "observation",
+          "text": "낮은 참여 지표는 경쟁 서비스 대비 약점으로 작용할 수 있음.",
+          "source": "aggregates"
+        }
+      ]
+    },
+    {
+      "dimension": "acquisition",
+      "score": 16,
+      "evidence": [
+        {
+          "kind": "observation",
+          "text": "newUsersLast7d is 0, indicating no new user acquisition in the last 7 days.",
+          "source": "aggregates"
+        },
+        {
+          "kind": "observation",
+          "text": "newUsersLast7d is 0"
+        },
+        {
+          "kind": "observation",
+          "text": "신규 사용자 유입 부진"
+        },
+        {
+          "kind": "observation",
+          "text": "최근 7일 신규 가입자 수 0명 (newUsersLast7d: 0).",
+          "source": "aggregates"
+        },
+        {
+          "kind": "metric",
+          "text": "newUsersLast7d: 0",
+          "source": "aggregates"
+        },
+        {
+          "kind": "observation",
+          "text": "CRITICAL: newUsersLast7d/usersLast7d = signups only, NEVER active users/DAU",
+          "source": "docsHints"
+        },
+        {
+          "kind": "metric",
+          "text": "newUsersLast7d is 0.",
+          "source": "aggregates.newUsersLast7d"
+        }
+      ]
+    },
+    {
+      "dimension": "retention",
+      "score": 15,
+      "evidence": [
+        {
+          "kind": "observation",
+          "text": "commentsLast7d is 0, suggesting very low recent user engagement and retention.",
+          "source": "aggregates"
+        },
+        {
+          "kind": "observation",
+          "text": "newUsersLast7d is 0, which also implies a lack of new user retention if they are not signing up.",
+          "source": "aggregates"
+        },
+        {
+          "kind": "observation",
+          "text": "commentsLast7d is 0"
+        },
+        {
+          "kind": "observation",
+          "text": "activeUsersLast7d is null"
+        },
+        {
+          "kind": "observation",
+          "text": "커뮤니티 활동 저조"
+        },
+        {
+          "kind": "metric",
+          "text": "commentsLast7d: 0",
+          "source": "aggregates"
+        },
+        {
+          "kind": "metric",
+          "text": "activeUsersLast7d: null",
+          "source": "aggregates"
+        },
+        {
+          "kind": "metric",
+          "text": "newUsersLast7d is 0, indicating no new users are being retained or acquired.",
+          "source": "aggregates.newUsersLast7d"
+        }
+      ]
+    },
+    {
+      "dimension": "seo",
+      "score": null,
+      "evidence": [
+        {
+          "kind": "observation",
+          "text": "docs/geo-optimization.md — GEO/SEO 가이드"
+        },
+        {
+          "kind": "observation",
+          "text": "docs/performance-seo.md"
+        }
+      ]
+    },
+    {
+      "dimension": "geo",
+      "score": null,
+      "evidence": [
+        {
+          "kind": "observation",
+          "text": "docs/geo-optimization.md — GEO/SEO 가이드"
+        }
+      ]
+    },
+    {
+      "dimension": "security",
+      "score": 80,
+      "evidence": [
+        {
+          "kind": "observation",
+          "text": "Prisma 7 + PostgreSQL (Supabase Auth)",
+          "source": "site.stackNotes"
+        }
+      ]
+    },
+    {
+      "dimension": "scalability",
+      "score": 80,
+      "evidence": [
+        {
+          "kind": "observation",
+          "text": "Vercel hosting + GitHub Actions cron",
+          "source": "site.stackNotes"
+        }
+      ]
+    }
+  ],
+  "topProblems": [
+    "Critical lack of new user acquisition (newUsersLast7d: 0).",
+    "Complete absence of community engagement (commentsLast7d: 0).",
+    "Unavailability of key metrics for active users and recent views (activeUsersLast7d: null, viewsLast7d: null), hindering performance analysis.",
+    "Significant content imbalance with 'LOUNGE' category dominating posts.",
+    "Underutilization of AI features, with low content volume in AI-related categories."
+  ],
+  "improvements": [
+    {
+      "id": "UA001",
+      "title": "Implement Targeted User Acquisition Campaigns",
+      "priority": 1,
+      "expectedEffect": "Increase `newUsersLast7d` and overall user base.",
+      "difficulty": "medium",
+      "risk": "medium",
+      "rationale": "Current acquisition rate is zero, indicating a critical need for proactive marketing and outreach efforts to drive new user sign-ups."
+    },
+    {
+      "id": "CE001",
+      "title": "Introduce Features and Initiatives to Foster Community Engagement",
+      "priority": 2,
+      "expectedEffect": "Increase `commentsLast7d` and foster a sense of community.",
+      "difficulty": "medium",
+      "risk": "medium",
+      "rationale": "The absence of recent comments suggests barriers to interaction or a lack of engaging content that prompts discussion. Active measures are needed to stimulate community participation."
+    },
+    {
+      "id": "MT001",
+      "title": "Implement Reliable Tracking for Active Users and Recent Views",
+      "priority": 3,
+      "expectedEffect": "Provide crucial data for understanding user behavior, content popularity, and measuring the impact of improvements.",
+      "difficulty": "medium",
+      "risk": "medium",
+      "rationale": "These key metrics are currently null, preventing effective analysis and optimization of user engagement and content strategy. Accurate tracking is fundamental for informed decision-making."
+    },
+    {
+      "id": "CA001",
+      "title": "Review and Strategize Content Distribution Across Corridors",
+      "priority": 4,
+      "expectedEffect": "Reduce content imbalance, potentially increase engagement in less popular corridors, and improve overall platform diversity.",
+      "difficulty": "medium",
+      "risk": "medium",
+      "rationale": "The heavy concentration of posts in 'LOUNGE' suggests a potential lack of focus or diversity, which may hinder broader user engagement across the platform."
+    },
+    {
+      "id": "AI001",
+      "title": "Enhance AI Content Production and Integration",
+      "priority": 5,
+      "expectedEffect": "Increase AI-related content volume, boost user engagement with AI features, and enhance platform differentiation.",
+      "difficulty": "medium",
+      "risk": "low",
+      "rationale": "While AI features are present, their utilization and content volume are low, representing an opportunity to leverage a key differentiator and potentially drive unique user experiences."
+    }
+  ],
+  "expectedUserEffect": "Increased user acquisition, significantly higher community interaction and engagement, better understanding of user behavior and content performance, and a more balanced and potentially differentiated platform experience.",
+  "expectedDifficulty": "medium",
+  "risk": "medium",
+  "improvementEvidence": [
+    "The critical metrics `newUsersLast7d: 0` and `commentsLast7d: 0` directly indicate the need for acquisition and engagement improvements.",
+    "The null status of `activeUsersLast7d` and `viewsLast7d` necessitates the implementation of tracking mechanisms for better analysis.",
+    "The dominance of the 'LOUNGE' category in `postsByCategory` highlights the need for content distribution strategies.",
+    "The presence of AI features in `stackNotes` alongside low AI content volume suggests an opportunity for enhancement."
+  ],
+  "opinionDifferences": [
+    "Minor differences exist in the emphasis placed on specific improvement areas, such as the degree of focus on UX/UI changes versus broader acquisition campaigns, or the prominence given to AI content activation versus general community engagement strategies.",
+    "Some reviewers noted weak evidence for specific scores (e.g., usability, competitive analysis, AI feature enhancement), often due to the lack of measurable data for these dimensions."
+  ],
+  "confidence": 0.95,
+  "needsFurtherVerification": [
+    "The effectiveness of proposed user acquisition campaigns and community engagement features needs to be measured post-implementation.",
+    "The impact of implementing active user and recent view tracking on data-driven decision-making requires verification.",
+    "The success of strategies aimed at balancing content distribution across corridors and enhancing AI content production needs to be monitored.",
+    "The specific reasons for the 'LOUNGE' corridor's dominance and its implications for user behavior require deeper analysis."
+  ]
+}

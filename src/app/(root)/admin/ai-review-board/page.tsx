@@ -73,6 +73,8 @@ export default async function AiReviewBoardPage() {
                       <span title="disagreement items">disagree {fmtCount(obs.disagreementCount)}</span>
                       <span title="weakEvidence items">weakEv {fmtCount(obs.weakEvidenceCount)}</span>
                       <span title="revised turns">rev {fmtCount(obs.revisionCount)}</span>
+                      <span title="PARTIAL">P {fmtCount(obs.partialRevisionCount)}</span>
+                      <span title="FULL">F {fmtCount(obs.fullRevisionCount)}</span>
                       <span title={`avg confidence (${obs.confidenceSource ?? 'n/a'})`}>
                         conf {obs.averageConfidence ?? '—'}
                       </span>

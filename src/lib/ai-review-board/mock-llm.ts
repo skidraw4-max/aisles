@@ -60,8 +60,11 @@ function stubIndependent(memberId: CommitteeAnalystId, evidence: EvidencePack): 
  */
 export function createMockReviewBoardLlm(options?: {
   reviseOnDebate?: boolean;
+  /** v3 experiment: force a specific revisionStatus in mock debate */
+  revisionStatus?: 'UNCHANGED' | 'PARTIAL' | 'FULL';
 }): ReviewBoardLlm {
   const reviseOnDebate = options?.reviseOnDebate ?? true;
+  const forcedStatus = options?.revisionStatus;
 
   return {
     async independentAnalysis(memberId, evidence, ctx: LlmContext) {
@@ -71,6 +74,9 @@ export function createMockReviewBoardLlm(options?: {
 
     async debateTurn(memberId, _evidence, peers, own) {
       const others = peers.filter((p) => p.memberId !== memberId);
+      const revisionStatus =
+        forcedStatus ?? (reviseOnDebate ? 'PARTIAL' : 'UNCHANGED');
+      const revised = revisionStatus === 'PARTIAL' || revisionStatus === 'FULL';
       const turn: DebateTurn = {
         memberId,
         agreement: others.slice(0, 1).map((o) => `Agree partially with ${o.memberId} on strengths`),
@@ -78,13 +84,22 @@ export function createMockReviewBoardLlm(options?: {
         weakEvidence: ['Some trend claims lack metric evidence'],
         missed: ['Mobile performance field metrics'],
         needsVerification: ['Retention cohort definition'],
-        revised: reviseOnDebate,
-        revisionReason: reviseOnDebate
+        revisionStatus,
+        revised,
+        revisionReason: revised
           ? `Adjusted after reviewing ${others.map((o) => o.memberId).join(',')}`
+          : 'Independent analysis still holds after peer review',
+        previousOpinion: own.originalOpinion,
+        revisedOpinion: revised
+          ? revisionStatus === 'FULL'
+            ? `${own.originalOpinion} (FULL revise)`
+            : `${own.originalOpinion} (PARTIAL revise)`
           : null,
-        previousOpinion: reviseOnDebate ? own.originalOpinion : null,
-        revisedOpinion: reviseOnDebate ? `${own.originalOpinion} (revised)` : null,
-        finalOpinion: reviseOnDebate ? `${own.originalOpinion} (revised)` : own.originalOpinion,
+        finalOpinion: revised
+          ? revisionStatus === 'FULL'
+            ? `${own.originalOpinion} (FULL revise)`
+            : `${own.originalOpinion} (PARTIAL revise)`
+          : own.originalOpinion,
         confidence: Math.max(0.4, own.confidence - 0.05),
       };
       return turn;

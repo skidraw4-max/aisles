@@ -38,11 +38,16 @@ JSON만 출력.`,
 };
 
 export const ANTI_HERDING_DEBATE_RULES = `
-Anti-herding 규칙:
+Anti-herding + honest revision 규칙 (revision rate를 인위적으로 높이지 말 것):
 - 다른 위원에 단순 동조하지 마라. 동의하려면 자체 evidence를 대라.
-- 의견을 바꾸면 revised=true, previousOpinion, revisedOpinion, revisionReason을 모두 채워라.
-- revisionReason 없이 의견 변경 금지.
-- disagreement와 weakEvidence를 최소 1개 이상 검토하라(해당 없으면 명시적으로 없다고 적어라).
+- 반드시 revisionStatus 를 하나만 선택하라: UNCHANGED | PARTIAL | FULL
+  - UNCHANGED: 독립 분석이 여전히 성립. 다수 의견과 달라도 유지 가능.
+  - PARTIAL: 일부 주장·우선순위·근거만 수정. 핵심 thesis는 유지.
+  - FULL: 핵심 판단을 실질적으로 교체·철회.
+- 의견을 바꾸라고 강요되지 않는다. 동료 반박·weakEvidence가 네 근거를 실제로 무너뜨릴 때만 PARTIAL/FULL.
+- PARTIAL/FULL 이면 previousOpinion, revisedOpinion, revisionReason 필수.
+- UNCHANGED 이면 revisionReason에 왜 유지하는지 한 줄 근거를 적어라 (빈 문자열 금지).
+- disagreement와 weakEvidence를 검토하라 (없으면 없다고 명시).
 `;
 
 export const MEMBER_FOCUS: Record<Exclude<CommitteeMemberId, 'F' | 'Chairman'>, string> = {

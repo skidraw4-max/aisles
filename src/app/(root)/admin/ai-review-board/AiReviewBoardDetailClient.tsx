@@ -114,7 +114,14 @@ export function AiReviewBoardDetailClient({ run }: { run: ReviewBoardRun }) {
                   <strong>AI-{id}</strong>
                   <span>{ind ? 'independent ✓' : '—'}</span>
                   <span>
-                    debate {deb ? (deb.revised ? 'revised' : 'unchanged') : '—'}
+                    debate{' '}
+                    {deb
+                      ? deb.revisionStatus
+                        ? deb.revisionStatus
+                        : deb.revised
+                          ? 'revised'
+                          : 'unchanged'
+                      : '—'}
                   </span>
                   {deb && (
                     <span className={styles.muted}>
@@ -206,10 +213,14 @@ export function AiReviewBoardDetailClient({ run }: { run: ReviewBoardRun }) {
                 <article key={`${d.memberId}-${idx}`} className={styles.timelineItem}>
                   <header>
                     <strong>AI-{d.memberId}</strong>
-                    {d.revised ? (
-                      <span className={styles.badgeRev}>revised</span>
+                    {d.revisionStatus === 'FULL' ? (
+                      <span className={styles.badgeRev}>FULL</span>
+                    ) : d.revisionStatus === 'PARTIAL' ? (
+                      <span className={styles.badgeRev}>PARTIAL</span>
                     ) : (
-                      <span className={styles.badgeOk}>unchanged</span>
+                      <span className={styles.badgeOk}>
+                        {d.revisionStatus ?? (d.revised ? 'revised' : 'UNCHANGED')}
+                      </span>
                     )}
                     <span className={styles.muted}>conf {d.confidence}</span>
                   </header>
@@ -230,8 +241,13 @@ export function AiReviewBoardDetailClient({ run }: { run: ReviewBoardRun }) {
                   </div>
                   <ListBlock title="Needs verification" items={d.needsVerification} />
 
-                  {d.revised ? (
+                  {(d.revisionStatus === 'PARTIAL' ||
+                    d.revisionStatus === 'FULL' ||
+                    d.revised) ? (
                     <div className={styles.revision}>
+                      <p>
+                        <strong>Status:</strong> {d.revisionStatus ?? 'revised'}
+                      </p>
                       <p>
                         <strong>Before:</strong> {d.previousOpinion}
                       </p>
@@ -244,7 +260,8 @@ export function AiReviewBoardDetailClient({ run }: { run: ReviewBoardRun }) {
                     </div>
                   ) : (
                     <p className={styles.muted}>
-                      의견 미수정 (revisionReason 없음) — 동조 여부·반박 내용은 위 목록으로 확인
+                      UNCHANGED — {d.revisionReason || '독립 판단 유지'} (반박·weakEvidence는 위
+                      목록으로 확인)
                     </p>
                   )}
                   <p>

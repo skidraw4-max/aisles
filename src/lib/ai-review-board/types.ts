@@ -55,6 +55,18 @@ export type IndependentAnalysis = {
   originalOpinion: string;
 };
 
+/** 토론 후 재검토 결과 — 강제 변경 금지, 정직한 선택 */
+export const REVISION_STATUSES = ['UNCHANGED', 'PARTIAL', 'FULL'] as const;
+export type RevisionStatus = (typeof REVISION_STATUSES)[number];
+
+export function isRevisionStatus(value: unknown): value is RevisionStatus {
+  return value === 'UNCHANGED' || value === 'PARTIAL' || value === 'FULL';
+}
+
+export function revisionStatusImpliesChange(status: RevisionStatus): boolean {
+  return status === 'PARTIAL' || status === 'FULL';
+}
+
 export type DebateTurn = {
   memberId: CommitteeAnalystId;
   agreement: string[];
@@ -62,9 +74,12 @@ export type DebateTurn = {
   weakEvidence: string[];
   missed: string[];
   needsVerification: string[];
+  /** v3+: UNCHANGED | PARTIAL | FULL */
+  revisionStatus: RevisionStatus;
+  /** 호환: PARTIAL/FULL 이면 true */
   revised: boolean;
   revisionReason: string | null;
-  /** 변경 전 요약 (revised 시 필수) */
+  /** 변경 전 요약 (PARTIAL/FULL 시 필수) */
   previousOpinion: string | null;
   revisedOpinion: string | null;
   finalOpinion: string;

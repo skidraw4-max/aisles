@@ -439,6 +439,17 @@ Content generation / Gemini copy changes
 
 # Plan: AI Review Board v2 — EvidencePack metric clarity experiment
 
+**Status:** Shipped (`a0d6c5f`). Sample run `run-2026-09-17T09-27-13-078Z` preserved.
+
+# Plan: AI Review Board v3 — Honest revisionStatus experiment
+
+**Status:** Shipped. Sample run `run-2026-09-17T10-09-59-178Z` preserved (v1/v2 untouched).
+
+**Result:** 5/5 UNCHANGED with explicit keep-reasons; PARTIAL/FULL = 0. Mechanism works; this evidence pack + peer consensus did not produce opinion-overturning rebuttals.
+---
+
+# Plan: AI Review Board v2 — EvidencePack metric clarity experiment (archive note)
+
 **Status:** Implementing
 
 ## Goals
