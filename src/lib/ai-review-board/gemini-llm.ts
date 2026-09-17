@@ -18,6 +18,8 @@ import type {
   CriticReport,
   DebateTurn,
   DimensionScore,
+  EvidenceItem,
+  EvidenceKind,
   EvidencePack,
   FinalReport,
   IndependentAnalysis,
@@ -122,9 +124,9 @@ function parseScores(raw: unknown): DimensionScore[] {
     const dimension = asString(o.dimension);
     if (!SCORE_DIMENSIONS.includes(dimension as DimensionScore['dimension'])) continue;
     const evidenceRaw = Array.isArray(o.evidence) ? o.evidence : [];
-    const evidence = evidenceRaw.map((e) => {
+    const evidence: EvidenceItem[] = evidenceRaw.map((e) => {
       const eo = (e && typeof e === 'object' ? e : {}) as Record<string, unknown>;
-      const kind =
+      const kind: EvidenceKind =
         eo.kind === 'metric' ||
         eo.kind === 'doc' ||
         eo.kind === 'external_ref' ||
