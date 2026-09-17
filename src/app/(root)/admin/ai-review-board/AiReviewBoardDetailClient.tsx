@@ -248,26 +248,69 @@ export function AiReviewBoardDetailClient({ run }: { run: ReviewBoardRun }) {
                     if (!cal) {
                       return <p className={styles.muted}>Claim Calibration —</p>;
                     }
+                    const checks = (run.calibrationRevisionChecks ?? []).filter(
+                      (c) => c.memberId === d.memberId,
+                    );
+                    const revFull = (run.revisions ?? []).find((r) => r.memberId === d.memberId);
                     return (
-                      <div className={styles.listBlock}>
-                        <h4>
-                          Claim Calibration{' '}
-                          <span className={styles.countBadge}>{cal.claims.length}</span>
-                        </h4>
-                        <ul>
-                          {cal.claims.map((c) => (
-                            <li key={c.claimId}>
-                              <strong>{c.claimId}</strong> [{c.evidenceType}/{c.supportLevel}/impact=
-                              {c.evidenceImpact}/overclaim={c.riskOfOverclaiming}] {c.claimText}
-                              <br />
-                              <span className={styles.muted}>
-                                refs: {c.evidenceRefs.join(', ') || '—'} · missing:{' '}
-                                {c.missingEvidence.join(', ') || '—'} · {c.reason || '—'}
-                              </span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
+                      <>
+                        <div className={styles.listBlock}>
+                          <h4>
+                            Claim Calibration{' '}
+                            <span className={styles.countBadge}>{cal.claims.length}</span>
+                          </h4>
+                          <ul>
+                            {cal.claims.map((c) => (
+                              <li key={c.claimId}>
+                                <strong>{c.claimId}</strong> [{c.evidenceType}/{c.supportLevel}/impact=
+                                {c.evidenceImpact}/overclaim={c.riskOfOverclaiming}] {c.claimText}
+                                <br />
+                                <span className={styles.muted}>
+                                  refs: {c.evidenceRefs.join(', ') || '—'} · missing:{' '}
+                                  {c.missingEvidence.join(', ') || '—'} · {c.reason || '—'}
+                                </span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                        <div className={styles.listBlock}>
+                          <h4>
+                            Claim Calibration → Revision{' '}
+                            <span className={styles.countBadge}>{checks.length}</span>
+                          </h4>
+                          {checks.length === 0 ? (
+                            <p className={styles.muted}>—</p>
+                          ) : (
+                            <ul>
+                              {checks.map((ch) => {
+                                const claim = cal.claims.find((c) => c.claimId === ch.claimId);
+                                const assessed =
+                                  revFull?.calibrationImpactAssessment?.affectedClaims?.find(
+                                    (a) => a.claimId === ch.claimId,
+                                  );
+                                return (
+                                  <li key={`${ch.memberId}-${ch.claimId}`}>
+                                    <strong>{ch.claimId}</strong>{' '}
+                                    {claim?.claimText ? `“${claim.claimText}”` : ''}
+                                    <br />
+                                    <span className={styles.muted}>
+                                      {claim?.evidenceType ?? '—'} · {ch.calibrationSupportLevel} ·
+                                      impact={ch.calibrationEvidenceImpact} · overclaim=
+                                      {ch.calibrationRiskOfOverclaiming} · {ch.revisionStatus} ·{' '}
+                                      {ch.revisionAction}
+                                      {assessed ? ` (${assessed.actionReason || '—'})` : ''} ·{' '}
+                                      {ch.consistency}/{ch.severity}
+                                      {(ch.flags?.length ?? 0) > 0
+                                        ? ` · flags: ${ch.flags!.join(',')}`
+                                        : ''}
+                                    </span>
+                                  </li>
+                                );
+                              })}
+                            </ul>
+                          )}
+                        </div>
+                      </>
                     );
                   })()}
 
@@ -355,6 +398,11 @@ export function AiReviewBoardDetailClient({ run }: { run: ReviewBoardRun }) {
                   'causalClaimWithoutEvidenceFlags',
                   'confidenceCalibrationFlags',
                   'herdingFlags',
+                  'calibrationRevisionMismatchFlags',
+                  'overclaimRetainedFlags',
+                  'unknownAsNegativeEvidenceFlags',
+                  'unjustifiedConfidenceFlags',
+                  'majorityDrivenRevisionFlags',
                 ] as const
               ).map((key) => {
                 const check = run.critic?.[key];
@@ -367,6 +415,24 @@ export function AiReviewBoardDetailClient({ run }: { run: ReviewBoardRun }) {
                   </p>
                 );
               })}
+              {run.critic.calibrationRevisionIntegrity && (
+                <div className={styles.listBlock}>
+                  <h4>
+                    calibrationRevisionIntegrity:{' '}
+                    {run.critic.calibrationRevisionIntegrity.status}
+                  </h4>
+                  <p className={styles.muted}>
+                    {run.critic.calibrationRevisionIntegrity.summary}
+                  </p>
+                  {(run.critic.calibrationRevisionIntegrity.issues?.length ?? 0) > 0 ? (
+                    <ul>
+                      {run.critic.calibrationRevisionIntegrity.issues.map((issue, i) => (
+                        <li key={i}>{issue}</li>
+                      ))}
+                    </ul>
+                  ) : null}
+                </div>
+              )}
               <ListBlock title="Notes" items={run.critic.notes} />
               <ListBlock
                 title="Scores without evidence"
@@ -460,6 +526,8 @@ export function AiReviewBoardDetailClient({ run }: { run: ReviewBoardRun }) {
               <ListBlock title="" items={run.final.partiallySupportedClaims ?? []} />
               <h3>Unsupported / Hypothesis Claims</h3>
               <ListBlock title="" items={run.final.unsupportedHypothesisClaims ?? []} />
+              <h3>Calibration → Revision Findings</h3>
+              <ListBlock title="" items={run.final.calibrationRevisionFindings ?? []} />
               <h3>Revision Summary</h3>
               {run.final.revisionSummary ? (
                 <>

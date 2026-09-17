@@ -2,6 +2,7 @@ import { SCORE_DIMENSIONS } from './score-dimensions';
 import { normalizeDimensionScores } from './scoring';
 import type { ReviewBoardLlm } from './llm';
 import type {
+  CalibrationImpactAssessment,
   ClaimCalibration,
   CommitteeAnalystId,
   CriticReport,
@@ -21,6 +22,35 @@ import {
   normalizeClaimCalibration,
 } from './claim-calibration';
 import { listRevisionIntegrityIssues, normalizeRevisionRecord } from './revision-quality';
+
+function assessmentForClaims(
+  cal: ClaimCalibration,
+  pick: (claim: ClaimCalibration['claims'][0]) => {
+    revisionAction: CalibrationImpactAssessment['affectedClaims'][0]['revisionAction'];
+    actionReason: string;
+  } | null,
+): CalibrationImpactAssessment {
+  const affectedClaims = cal.claims
+    .map((c) => {
+      const a = pick(c);
+      if (!a) return null;
+      return {
+        claimId: c.claimId,
+        calibrationSupportLevel: c.supportLevel,
+        calibrationEvidenceImpact: c.evidenceImpact,
+        calibrationRiskOfOverclaiming: c.riskOfOverclaiming,
+        revisionAction: a.revisionAction,
+        actionReason: a.actionReason,
+      };
+    })
+    .filter((x): x is NonNullable<typeof x> => x !== null);
+  return {
+    materiallyAffected: affectedClaims.some((a) => a.revisionAction !== 'NO_ACTION_NEEDED'),
+    affectedClaims,
+  };
+}
+
+export type MockConsistencyScenario = 'A' | 'B' | 'C' | 'D' | 'E';
 
 function baseScores(seed: number): DimensionScore[] {
   return SCORE_DIMENSIONS.map((dimension, i) => ({
@@ -77,17 +107,30 @@ export function createMockReviewBoardLlm(options?: {
   reviseOnDebate?: boolean;
   revisionStatus?: RevisionStatus;
   claimCalibrationProfile?: MockClaimCalibrationProfile;
+  /** v6 mock scenarios for consistency checker */
+  consistencyScenario?: MockConsistencyScenario;
 }): ReviewBoardLlm {
+  const scenario = options?.consistencyScenario;
   const forcedStatus: RevisionStatus =
     options?.revisionStatus ??
-    (options?.reviseOnDebate === false ? 'UNCHANGED' : 'PARTIAL');
+    (scenario === 'A'
+      ? 'PARTIAL'
+      : scenario === 'B' || scenario === 'C' || scenario === 'D' || scenario === 'E'
+        ? 'UNCHANGED'
+        : options?.reviseOnDebate === false
+          ? 'UNCHANGED'
+          : 'PARTIAL');
   const profile: MockClaimCalibrationProfile =
     options?.claimCalibrationProfile ??
-    (forcedStatus === 'UNCHANGED'
-      ? 'all-supported'
-      : forcedStatus === 'FULL'
-        ? 'not-supported-core'
-        : 'mixed-gaps');
+    (scenario === 'D'
+      ? 'mixed-gaps'
+      : scenario === 'E'
+        ? 'mixed-gaps'
+        : forcedStatus === 'UNCHANGED' && !scenario
+          ? 'all-supported'
+          : forcedStatus === 'FULL'
+            ? 'not-supported-core'
+            : 'mixed-gaps');
 
   return {
     async independentAnalysis(memberId, evidence, ctx: LlmContext) {
@@ -111,6 +154,42 @@ export function createMockReviewBoardLlm(options?: {
     },
 
     async claimCalibrate(memberId, evidence, own, _ownDebate) {
+      if (scenario === 'E') {
+        return normalizeClaimCalibration(memberId, {
+          claims: [
+            {
+              claimId: 'C010',
+              claimText: 'activeUsersLast7d / viewsLast7d are null',
+              evidenceRefs: ['activeUsersLast7d', 'viewsLast7d'],
+              evidenceType: 'UNKNOWN',
+              supportLevel: 'NOT_SUPPORTED',
+              reason: 'metrics not measured',
+              missingEvidence: ['activeUsersLast7d', 'viewsLast7d'],
+              evidenceImpact: 'HIGH',
+              riskOfOverclaiming: 'HIGH',
+            },
+          ],
+        });
+      }
+
+      if (scenario === 'D') {
+        return normalizeClaimCalibration(memberId, {
+          claims: [
+            {
+              claimId: 'C011',
+              claimText: 'UX/UI 문제가 신규 부족의 원인이다',
+              evidenceRefs: [],
+              evidenceType: 'HYPOTHESIS',
+              supportLevel: 'NOT_SUPPORTED',
+              reason: 'no UX behavior metrics',
+              missingEvidence: ['ux_events'],
+              evidenceImpact: 'MEDIUM',
+              riskOfOverclaiming: 'HIGH',
+            },
+          ],
+        });
+      }
+
       if (profile === 'all-supported') {
         return normalizeClaimCalibration(memberId, {
           claims: [
@@ -250,13 +329,103 @@ export function createMockReviewBoardLlm(options?: {
     async revisionPass(memberId, evidence, own, ownDebate, _peers, calibration) {
       const cal =
         calibration ??
-        (await (async () => {
-          const empty: ClaimCalibration = { memberId, claims: [] };
-          return empty;
-        })());
+        ({ memberId, claims: [] } satisfies ClaimCalibration);
+
+      // Scenario D: keep causal certainty on HYPOTHESIS
+      if (scenario === 'D') {
+        return normalizeRevisionRecord({
+          memberId,
+          originalOpinion: own.originalOpinion,
+          confidenceBefore: own.confidence,
+          revisionStatus: 'UNCHANGED',
+          retainReason: 'still believe UX is the root cause',
+          confidenceAfter: own.confidence,
+          confidenceChangeReason: 'unchanged',
+          finalOpinion: 'UX 문제 때문에 신규 사용자가 감소했다.',
+          calibrationImpactAssessment: assessmentForClaims(cal, (c) =>
+            c.evidenceType === 'HYPOTHESIS' || c.supportLevel === 'NOT_SUPPORTED'
+              ? {
+                  revisionAction: 'NO_ACTION_NEEDED',
+                  actionReason: 'kept causal wording',
+                }
+              : { revisionAction: 'NO_ACTION_NEEDED', actionReason: 'n/a' },
+          ),
+        });
+      }
+
+      // Scenario E: UNKNOWN → negative activity conclusion
+      if (scenario === 'E') {
+        return normalizeRevisionRecord({
+          memberId,
+          originalOpinion: own.originalOpinion,
+          confidenceBefore: own.confidence,
+          revisionStatus: 'UNCHANGED',
+          retainReason: 'metrics unavailable implies low activity',
+          confidenceAfter: own.confidence,
+          confidenceChangeReason: 'same',
+          finalOpinion: '최근 활동량이 매우 낮다 (active/views unavailable)',
+          calibrationImpactAssessment: assessmentForClaims(cal, (c) => ({
+            revisionAction: 'NO_ACTION_NEEDED',
+            actionReason: c.evidenceType === 'UNKNOWN' ? 'treated null as low' : 'n/a',
+          })),
+        });
+      }
+
+      // Scenario B: UNCHANGED + valid retain justification for partial claims
+      if (scenario === 'B') {
+        return normalizeRevisionRecord({
+          memberId,
+          originalOpinion: own.originalOpinion,
+          confidenceBefore: own.confidence,
+          revisionStatus: 'UNCHANGED',
+          retainReason:
+            'C003: evidence gap noted (null active/views). Retaining because newUsers=0 and comments=0 still support scoped wording for measured channels',
+          confidenceAfter: own.confidence,
+          confidenceChangeReason:
+            'confidence maintained: measured metrics still support scoped claim despite HIGH evidence gap',
+          finalOpinion: own.originalOpinion,
+          calibrationImpactAssessment: assessmentForClaims(cal, (c) =>
+            c.supportLevel === 'PARTIALLY_SUPPORTED'
+              ? {
+                  revisionAction: 'RETAIN_WITH_JUSTIFICATION',
+                  actionReason: 'Scoped measured metrics still support retain',
+                }
+              : {
+                  revisionAction: 'NO_ACTION_NEEDED',
+                  actionReason: 'SUPPORTED fact',
+                },
+          ),
+        });
+      }
+
+      // Scenario C: UNCHANGED + weak retain (expect INCONSISTENT)
+      if (scenario === 'C') {
+        return normalizeRevisionRecord({
+          memberId,
+          originalOpinion: own.originalOpinion,
+          confidenceBefore: own.confidence,
+          revisionStatus: 'UNCHANGED',
+          retainReason: 'No change needed',
+          confidenceAfter: own.confidence,
+          confidenceChangeReason: 'same',
+          finalOpinion: own.originalOpinion,
+          calibrationImpactAssessment: assessmentForClaims(cal, (c) =>
+            c.supportLevel === 'PARTIALLY_SUPPORTED'
+              ? {
+                  revisionAction: 'NO_ACTION_NEEDED',
+                  actionReason: 'ignored calibration gap',
+                }
+              : {
+                  revisionAction: 'NO_ACTION_NEEDED',
+                  actionReason: 'ok',
+                },
+          ),
+        });
+      }
 
       const soften =
         forcedStatus === 'PARTIAL' ||
+        scenario === 'A' ||
         (forcedStatus !== 'UNCHANGED' &&
           forcedStatus !== 'FULL' &&
           calibrationSuggestsSoftening(cal));
@@ -274,6 +443,10 @@ export function createMockReviewBoardLlm(options?: {
             confidenceAfter: own.confidence,
             confidenceChangeReason: 'Supported claims remain; no majority-based boost',
             finalOpinion: own.originalOpinion,
+            calibrationImpactAssessment: assessmentForClaims(cal, () => ({
+              revisionAction: 'RETAIN_WITH_JUSTIFICATION',
+              actionReason: 'SUPPORTED / scoped facts hold',
+            })),
             revisionAnswers: {
               q1_coreClaim: own.originalOpinion.slice(0, 80),
               q2_strongestRebuttal: ownDebate.disagreement[0] ?? 'none',
@@ -305,6 +478,11 @@ export function createMockReviewBoardLlm(options?: {
           confidenceAfter: Math.min(0.85, own.confidence + 0.05),
           confidenceChangeReason: 'Replaced NOT_SUPPORTED core claim using direct metrics',
           finalOpinion: `${own.originalOpinion} (FULL revise after calibration)`,
+          calibrationImpactAssessment: assessmentForClaims(cal, (c) =>
+            c.supportLevel === 'NOT_SUPPORTED'
+              ? { revisionAction: 'REWORD', actionReason: 'NOT_SUPPORTED core' }
+              : { revisionAction: 'NO_ACTION_NEEDED', actionReason: 'ok' },
+          ),
           revisionAnswers: {
             q1_coreClaim: own.originalOpinion.slice(0, 80),
             q2_strongestRebuttal: 'metrics contradict prior core',
@@ -322,7 +500,7 @@ export function createMockReviewBoardLlm(options?: {
         });
       }
 
-      // PARTIAL — soften overclaims from calibration
+      // Scenario A / default PARTIAL — soften overclaims from calibration
       const after = Math.max(0.4, own.confidence - 0.2);
       return normalizeRevisionRecord({
         memberId,
@@ -339,6 +517,18 @@ export function createMockReviewBoardLlm(options?: {
           'HIGH evidenceImpact on PARTIALLY_SUPPORTED core engagement claim → lower confidence',
         finalOpinion: `${own.originalOpinion} (PARTIAL: scoped to measured metrics; gaps acknowledged via calibration)`,
         newEvidenceAccepted: ['claim calibration PARTIALLY_SUPPORTED C003'],
+        calibrationImpactAssessment: assessmentForClaims(cal, (c) =>
+          c.supportLevel === 'PARTIALLY_SUPPORTED' &&
+          (c.evidenceImpact === 'HIGH' || c.evidenceImpact === 'CRITICAL')
+            ? {
+                revisionAction: 'NARROW',
+                actionReason: 'Null active/views → narrow platform-wide claim',
+              }
+            : {
+                revisionAction: 'NO_ACTION_NEEDED',
+                actionReason: 'SUPPORTED fact retained',
+              },
+        ),
         revisionAnswers: {
           q1_coreClaim: own.originalOpinion.slice(0, 80),
           q2_strongestRebuttal: 'cannot prove platform-wide while active/views null',

@@ -12,6 +12,7 @@ export type ReviewBoardPhase =
   | 'debate'
   | 'claim_calibration'
   | 'revision'
+  | 'consistency_check'
   | 'critic'
   | 'chairman'
   | 'completed'
@@ -126,6 +127,90 @@ export type RevisionRecord = {
   confidenceChangeReason: string;
   finalOpinion: string;
   revisionAnswers: RevisionAnswers;
+  /** v6+ calibration → revision mapping */
+  calibrationImpactAssessment?: CalibrationImpactAssessment;
+};
+
+export const REVISION_ACTION_VALUES = [
+  'REWORD',
+  'NARROW',
+  'DOWNGRADE_CONFIDENCE',
+  'ADD_CAVEAT',
+  'RETAIN_WITH_JUSTIFICATION',
+  'NO_ACTION_NEEDED',
+] as const;
+export type RevisionAction = (typeof REVISION_ACTION_VALUES)[number];
+
+export function isRevisionAction(v: unknown): v is RevisionAction {
+  return (
+    v === 'REWORD' ||
+    v === 'NARROW' ||
+    v === 'DOWNGRADE_CONFIDENCE' ||
+    v === 'ADD_CAVEAT' ||
+    v === 'RETAIN_WITH_JUSTIFICATION' ||
+    v === 'NO_ACTION_NEEDED'
+  );
+}
+
+export type AffectedClaimAssessment = {
+  claimId: string;
+  calibrationSupportLevel: ClaimSupportLevel;
+  calibrationEvidenceImpact: EvidenceImpact;
+  calibrationRiskOfOverclaiming: OverclaimRisk;
+  revisionAction: RevisionAction;
+  actionReason: string;
+};
+
+export type CalibrationImpactAssessment = {
+  materiallyAffected: boolean;
+  affectedClaims: AffectedClaimAssessment[];
+};
+
+export const CONSISTENCY_STATUSES = [
+  'CONSISTENT',
+  'PARTIALLY_CONSISTENT',
+  'INCONSISTENT',
+] as const;
+export type ConsistencyStatus = (typeof CONSISTENCY_STATUSES)[number];
+
+export function isConsistencyStatus(v: unknown): v is ConsistencyStatus {
+  return (
+    v === 'CONSISTENT' || v === 'PARTIALLY_CONSISTENT' || v === 'INCONSISTENT'
+  );
+}
+
+export const CONSISTENCY_SEVERITIES = [
+  'INFO',
+  'LOW',
+  'MEDIUM',
+  'HIGH',
+  'CRITICAL',
+] as const;
+export type ConsistencySeverity = (typeof CONSISTENCY_SEVERITIES)[number];
+
+export function isConsistencySeverity(v: unknown): v is ConsistencySeverity {
+  return (
+    v === 'INFO' ||
+    v === 'LOW' ||
+    v === 'MEDIUM' ||
+    v === 'HIGH' ||
+    v === 'CRITICAL'
+  );
+}
+
+/** v6 stored consistency row (mirrors checker output) */
+export type CalibrationRevisionCheck = {
+  memberId: CommitteeAnalystId;
+  claimId: string;
+  calibrationSupportLevel: ClaimSupportLevel;
+  calibrationEvidenceImpact: EvidenceImpact;
+  calibrationRiskOfOverclaiming: OverclaimRisk;
+  revisionStatus: RevisionStatus;
+  revisionAction: RevisionAction;
+  consistency: ConsistencyStatus;
+  severity: ConsistencySeverity;
+  reason: string;
+  flags?: string[];
 };
 
 export const CLAIM_EVIDENCE_TYPES = [
@@ -228,6 +313,17 @@ export type CriticReport = {
   causalClaimWithoutEvidenceFlags?: CriticCheck;
   confidenceCalibrationFlags?: CriticCheck;
   herdingFlags?: CriticCheck;
+  /** v6+ calibration ↔ revision (deterministic checker overlay) */
+  calibrationRevisionIntegrity?: {
+    status: 'PASS' | 'WARN' | 'FAIL';
+    issues: string[];
+    summary: string;
+  };
+  calibrationRevisionMismatchFlags?: CriticCheck;
+  overclaimRetainedFlags?: CriticCheck;
+  unknownAsNegativeEvidenceFlags?: CriticCheck;
+  unjustifiedConfidenceFlags?: CriticCheck;
+  majorityDrivenRevisionFlags?: CriticCheck;
 };
 
 export type RevisionSummaryBlock = {
@@ -263,6 +359,8 @@ export type FinalReport = {
   supportedClaims?: string[];
   partiallySupportedClaims?: string[];
   unsupportedHypothesisClaims?: string[];
+  /** v6+ */
+  calibrationRevisionFindings?: string[];
 };
 
 export type EvidenceAggregates = {
@@ -357,6 +455,8 @@ export type ReviewBoardRun = {
   claimCalibrations?: ClaimCalibration[];
   /** v4+ Revision Quality Pass results */
   revisions?: RevisionRecord[];
+  /** v6+ deterministic consistency rows */
+  calibrationRevisionChecks?: CalibrationRevisionCheck[];
   critic: CriticReport | null;
   final: FinalReport | null;
   budget: CallBudget;
@@ -377,6 +477,7 @@ export type LlmContext = {
     | 'debate'
     | 'claim_calibration'
     | 'revision'
+    | 'consistency_check'
     | 'critic'
     | 'chairman';
   memberId?: CommitteeMemberId;

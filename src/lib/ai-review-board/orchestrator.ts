@@ -9,6 +9,12 @@ import { createBudget, defaultMaxCallsFromEnv, recordCall } from './call-budget'
 import { assertDebateReady, stripPeersForIndependent } from './independence';
 import { enrichFinalReport } from './finalize-report';
 import { EXPECTED_PIPELINE_LLM_CALLS } from './claim-calibration';
+import {
+  buildCriticConsistencyOverlay,
+  formatCalibrationRevisionFindings,
+  runCalibrationRevisionChecks,
+  toCalibrationRevisionChecks,
+} from './calibration-revision-consistency';
 import type {
   ClaimCalibration,
   EvidencePack,
@@ -49,6 +55,7 @@ export async function runReviewBoardPipeline(
     debate: [],
     claimCalibrations: [],
     revisions: [],
+    calibrationRevisionChecks: [],
     critic: null,
     final: null,
     budget,
@@ -196,6 +203,25 @@ export async function runReviewBoardPipeline(
       await touch();
     }
 
+    // v6: deterministic Calibration ↔ Revision consistency (no LLM call)
+    run.status = 'consistency_check';
+    await touch();
+    const consistencyResults = runCalibrationRevisionChecks(
+      run.claimCalibrations ?? [],
+      run.revisions ?? [],
+    );
+    run.calibrationRevisionChecks = toCalibrationRevisionChecks(consistencyResults);
+    await appendHistory(options.rootDir, runId, {
+      at: now(),
+      type: 'consistency_check',
+      actor: 'system',
+      payload: {
+        checkCount: consistencyResults.length,
+        summary: formatCalibrationRevisionFindings(consistencyResults).slice(0, 3),
+      },
+    });
+    await touch();
+
     run.status = 'critic';
     await touch();
     budget = recordCall(budget);
@@ -206,6 +232,42 @@ export async function runReviewBoardPipeline(
       run.revisions,
       run.claimCalibrations,
     );
+    const overlay = buildCriticConsistencyOverlay(consistencyResults);
+    run.critic = {
+      ...run.critic,
+      calibrationRevisionIntegrity: overlay.calibrationRevisionIntegrity,
+      calibrationRevisionMismatchFlags: overlay.calibrationRevisionMismatchFlags,
+      overclaimRetainedFlags: overlay.overclaimRetainedFlags,
+      unknownAsNegativeEvidenceFlags: overlay.unknownAsNegativeEvidenceFlags,
+      unjustifiedConfidenceFlags: overlay.unjustifiedConfidenceFlags,
+      majorityDrivenRevisionFlags: overlay.majorityDrivenRevisionFlags,
+      causalClaimWithoutEvidenceFlags: {
+        ok:
+          (run.critic.causalClaimWithoutEvidenceFlags?.ok ?? true) &&
+          overlay.causalClaimWithoutEvidenceFlags.ok,
+        flags: [
+          ...new Set([
+            ...(run.critic.causalClaimWithoutEvidenceFlags?.flags ?? []),
+            ...overlay.causalClaimWithoutEvidenceFlags.flags,
+          ]),
+        ],
+      },
+      unknownAsEvidenceFlags: {
+        ok:
+          (run.critic.unknownAsEvidenceFlags?.ok ?? true) &&
+          overlay.unknownAsNegativeEvidenceFlags.ok,
+        flags: [
+          ...new Set([
+            ...(run.critic.unknownAsEvidenceFlags?.flags ?? []),
+            ...overlay.unknownAsNegativeEvidenceFlags.flags,
+          ]),
+        ],
+      },
+      notes: [
+        ...(run.critic.notes ?? []),
+        `v6 consistency: ${overlay.calibrationRevisionIntegrity.summary}`,
+      ],
+    };
     await appendHistory(options.rootDir, runId, {
       at: now(),
       type: 'critic_report',
@@ -226,6 +288,14 @@ export async function runReviewBoardPipeline(
       run.claimCalibrations,
     );
     run.final = enrichFinalReport(run.final, run.independent, run.critic);
+    const findings = formatCalibrationRevisionFindings(consistencyResults);
+    run.final = {
+      ...run.final,
+      calibrationRevisionFindings: [
+        ...(run.final.calibrationRevisionFindings ?? []),
+        ...findings,
+      ],
+    };
     await appendHistory(options.rootDir, runId, {
       at: now(),
       type: 'final_report',

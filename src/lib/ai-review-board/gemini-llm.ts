@@ -309,6 +309,19 @@ Return JSON:
   "confidenceAfter": number,
   "confidenceChangeReason": string,
   "finalOpinion": string,
+  "calibrationImpactAssessment": {
+    "materiallyAffected": boolean,
+    "affectedClaims": [
+      {
+        "claimId": "C001",
+        "calibrationSupportLevel": "SUPPORTED" | "PARTIALLY_SUPPORTED" | "NOT_SUPPORTED",
+        "calibrationEvidenceImpact": "NONE" | "LOW" | "MEDIUM" | "HIGH" | "CRITICAL",
+        "calibrationRiskOfOverclaiming": "LOW" | "MEDIUM" | "HIGH",
+        "revisionAction": "REWORD" | "NARROW" | "DOWNGRADE_CONFIDENCE" | "ADD_CAVEAT" | "RETAIN_WITH_JUSTIFICATION" | "NO_ACTION_NEEDED",
+        "actionReason": string
+      }
+    ]
+  },
   "revisionAnswers": {
     "q1_coreClaim": string,
     "q2_strongestRebuttal": string,
@@ -343,6 +356,7 @@ Return JSON:
         confidenceChangeReason: o.confidenceChangeReason,
         finalOpinion: o.finalOpinion,
         revisionAnswers: o.revisionAnswers,
+        calibrationImpactAssessment: o.calibrationImpactAssessment,
       });
     },
 
@@ -455,6 +469,7 @@ Return JSON including statusSummary, overallTrendScore, dimensionScores, topProb
 expectedUserEffect, expectedDifficulty, risk, improvementEvidence, opinionDifferences, confidence,
 needsFurtherVerification, confirmedFacts, unknownMissingData, hypotheses, disputedPoints,
 validatedImprovements, supportedClaims, partiallySupportedClaims, unsupportedHypothesisClaims,
+calibrationRevisionFindings (string[] summarizing Calibration→Revision consistency findings),
 revisionSummary { unchanged, partial, full, confidenceShifts, claimSofteningFromEvidenceGap, herdingRisks }.`;
       const res = await geminiJson(key, system, user);
       if (!res.ok) throw new Error(res.error);
@@ -491,6 +506,7 @@ revisionSummary { unchanged, partial, full, confidenceShifts, claimSofteningFrom
         supportedClaims: asStringArray(o.supportedClaims),
         partiallySupportedClaims: asStringArray(o.partiallySupportedClaims),
         unsupportedHypothesisClaims: asStringArray(o.unsupportedHypothesisClaims),
+        calibrationRevisionFindings: asStringArray(o.calibrationRevisionFindings),
         revisionSummary,
       };
     },

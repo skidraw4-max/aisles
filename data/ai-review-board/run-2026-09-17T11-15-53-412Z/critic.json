@@ -1,0 +1,165 @@
+{
+  "factVsSpeculationOk": true,
+  "evidenceSufficient": true,
+  "scoresWithoutEvidence": [
+    "A:visual",
+    "A:mobile",
+    "A:web_tech",
+    "A:performance",
+    "A:a11y",
+    "A:ai_usage",
+    "A:competitive",
+    "A:retention",
+    "A:seo",
+    "A:geo",
+    "A:security",
+    "A:scalability",
+    "B:ui_ux",
+    "B:visual",
+    "B:a11y",
+    "B:usability",
+    "B:content",
+    "B:competitive",
+    "B:security",
+    "B:scalability",
+    "C:ui_ux",
+    "C:visual",
+    "C:mobile",
+    "C:web_tech",
+    "C:performance",
+    "C:a11y",
+    "C:usability",
+    "C:retention",
+    "C:seo",
+    "C:geo",
+    "C:security",
+    "C:scalability",
+    "D:ui_ux",
+    "D:visual",
+    "D:mobile",
+    "D:a11y",
+    "D:usability",
+    "D:content",
+    "D:competitive",
+    "D:seo",
+    "D:geo",
+    "E:ui_ux",
+    "E:visual",
+    "E:mobile",
+    "E:web_tech",
+    "E:performance",
+    "E:a11y",
+    "E:ai_usage",
+    "E:competitive",
+    "E:seo",
+    "E:geo",
+    "E:security",
+    "E:scalability"
+  ],
+  "herdingDetected": true,
+  "dominantMemberInfluence": null,
+  "trendEvidenceOk": true,
+  "userBenefitLikely": false,
+  "existingFeatureRisk": false,
+  "overEngineering": false,
+  "notes": [
+    "The analysis consistently highlights a critical lack of user engagement and acquisition, evidenced by zero new users and zero comments in the last 7 days, alongside null metrics for active users and recent views. This is the dominant theme across all reviewers.",
+    "The modern tech stack is recognized as a strength, but its potential is overshadowed by the severe engagement issues.",
+    "The calibration process revealed several claims with 'PARTIALLY_SUPPORTED' or 'NOT_SUPPORTED' status, particularly those involving inferences about strategy execution (SEO/GEO) or the impact of AI features, and claims that treated the absence of evidence as evidence of absence.",
+    "Several claims were flagged for overclaiming or using unknown as evidence, particularly when drawing strong conclusions about strategy or impact from limited data.",
+    "The herding flags are raised because all reviewers converged on the same core problems (lack of engagement, missing metrics) with very similar evidence and interpretations, without significant dissenting views or unique analytical angles on these primary issues.",
+    "v6 consistency: consistent=26 partial=0 inconsistent=1"
+  ],
+  "confidence": 0.9,
+  "revisionIntegrity": {
+    "ok": true,
+    "flags": []
+  },
+  "evidenceGrounding": {
+    "ok": true,
+    "flags": []
+  },
+  "overclaiming": {
+    "ok": true,
+    "flags": []
+  },
+  "herding": {
+    "ok": false,
+    "flags": []
+  },
+  "confidenceIntegrity": {
+    "ok": true,
+    "flags": []
+  },
+  "fabrication": {
+    "ok": true,
+    "flags": []
+  },
+  "statusConsistency": {
+    "ok": true,
+    "flags": []
+  },
+  "claimCalibrationIntegrity": {
+    "ok": true,
+    "flags": []
+  },
+  "evidenceMappingIntegrity": {
+    "ok": true,
+    "flags": []
+  },
+  "unsupportedClaimFlags": {
+    "ok": false,
+    "flags": []
+  },
+  "overclaimingFlags": {
+    "ok": false,
+    "flags": []
+  },
+  "unknownAsEvidenceFlags": {
+    "ok": false,
+    "flags": [
+      "D:C006:UNKNOWN_AS_NEGATIVE_EVIDENCE"
+    ]
+  },
+  "causalClaimWithoutEvidenceFlags": {
+    "ok": false,
+    "flags": []
+  },
+  "confidenceCalibrationFlags": {
+    "ok": true,
+    "flags": []
+  },
+  "herdingFlags": {
+    "ok": true,
+    "flags": []
+  },
+  "calibrationRevisionIntegrity": {
+    "status": "FAIL",
+    "issues": [
+      "D/C006: INCONSISTENT [UNKNOWN_AS_NEGATIVE_EVIDENCE] — UNKNOWN_AS_NEGATIVE_EVIDENCE"
+    ],
+    "summary": "consistent=26 partial=0 inconsistent=1"
+  },
+  "calibrationRevisionMismatchFlags": {
+    "ok": true,
+    "flags": []
+  },
+  "overclaimRetainedFlags": {
+    "ok": true,
+    "flags": []
+  },
+  "unknownAsNegativeEvidenceFlags": {
+    "ok": false,
+    "flags": [
+      "D:C006:UNKNOWN_AS_NEGATIVE_EVIDENCE"
+    ]
+  },
+  "unjustifiedConfidenceFlags": {
+    "ok": true,
+    "flags": []
+  },
+  "majorityDrivenRevisionFlags": {
+    "ok": true,
+    "flags": []
+  }
+}

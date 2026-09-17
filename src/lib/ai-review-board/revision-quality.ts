@@ -3,13 +3,14 @@
  * Does NOT force PARTIAL/FULL; only validates shape and flags majority-as-ground.
  */
 import type {
+  CalibrationImpactAssessment,
   CommitteeAnalystId,
   RejectedArgument,
   RevisionAnswers,
   RevisionRecord,
   RevisionStatus,
 } from './types';
-import { isRevisionStatus, revisionStatusImpliesChange } from './types';
+import { isRevisionAction, isRevisionStatus, revisionStatusImpliesChange } from './types';
 
 const HERDING_GROUND_RE =
   /\b(all reviewers agree|the majority agrees?|consensus supports|other reviewers confirmed|peers?\s+agree|majority consensus)\b|다른\s*리뷰어(들)?이?\s*동의|다수\s*(의견|합의)|동료들이\s*동의|전원\s*동의/i;
@@ -134,7 +135,38 @@ export type NormalizeRevisionInput = {
   confidenceChangeReason?: unknown;
   finalOpinion?: unknown;
   revisionAnswers?: unknown;
+  calibrationImpactAssessment?: unknown;
 };
+
+function parseCalibrationImpactAssessment(
+  raw: unknown,
+): CalibrationImpactAssessment | undefined {
+  if (!raw || typeof raw !== 'object') return undefined;
+  const o = raw as Record<string, unknown>;
+  const affected = Array.isArray(o.affectedClaims) ? o.affectedClaims : [];
+  const affectedClaims = affected
+    .map((item) => {
+      if (!item || typeof item !== 'object') return null;
+      const a = item as Record<string, unknown>;
+      const claimId = typeof a.claimId === 'string' ? a.claimId : '';
+      if (!claimId) return null;
+      return {
+        claimId,
+        calibrationSupportLevel: a.calibrationSupportLevel as CalibrationImpactAssessment['affectedClaims'][0]['calibrationSupportLevel'],
+        calibrationEvidenceImpact: a.calibrationEvidenceImpact as CalibrationImpactAssessment['affectedClaims'][0]['calibrationEvidenceImpact'],
+        calibrationRiskOfOverclaiming: a.calibrationRiskOfOverclaiming as CalibrationImpactAssessment['affectedClaims'][0]['calibrationRiskOfOverclaiming'],
+        revisionAction: isRevisionAction(a.revisionAction)
+          ? a.revisionAction
+          : 'NO_ACTION_NEEDED',
+        actionReason: typeof a.actionReason === 'string' ? a.actionReason : '',
+      };
+    })
+    .filter((x): x is NonNullable<typeof x> => x !== null);
+  return {
+    materiallyAffected: Boolean(o.materiallyAffected) || affectedClaims.length > 0,
+    affectedClaims,
+  };
+}
 
 function asStringArray(v: unknown): string[] {
   if (!Array.isArray(v)) return [];
@@ -216,6 +248,9 @@ export function normalizeRevisionRecord(input: NormalizeRevisionInput): Revision
         : 'confidence adjusted after revision checklist'),
     finalOpinion: asString(input.finalOpinion, input.originalOpinion),
     revisionAnswers: answers,
+    calibrationImpactAssessment: parseCalibrationImpactAssessment(
+      input.calibrationImpactAssessment,
+    ),
   };
 }
 

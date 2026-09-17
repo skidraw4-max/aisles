@@ -73,6 +73,13 @@ revised = (PARTIAL|FULL) 만 true.
 When Claim Calibration JSON is provided: use supportLevel/evidenceImpact as input. Do NOT force PARTIAL/FULL.
 If core claims are PARTIALLY_SUPPORTED with HIGH/CRITICAL impact, consider softening (PARTIAL) only if warranted.
 If HIGH/CRITICAL impact but confidence unchanged, explain why in confidenceChangeReason.
+
+v6 — calibrationImpactAssessment REQUIRED:
+- For each Claim Calibration claimId you touch, set revisionAction:
+  REWORD | NARROW | DOWNGRADE_CONFIDENCE | ADD_CAVEAT | RETAIN_WITH_JUSTIFICATION | NO_ACTION_NEEDED
+- Reference Claim Calibration claimIds only (do not invent new claimIds unless marked as new claim with evidence).
+- If UNCHANGED while a claim is PARTIALLY_SUPPORTED + HIGH/CRITICAL evidenceImpact + MEDIUM/HIGH overclaim risk,
+  you MUST use RETAIN_WITH_JUSTIFICATION and retainReason must mention that claimId and the evidence gap.
 `;
 
 export const REVISION_Q_CHECKLIST = `

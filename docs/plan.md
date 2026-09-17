@@ -453,6 +453,32 @@ Content generation / Gemini copy changes
 
 **Result (honest):** Claims decomposed (23 SUPPORTED / 3 PARTIALLY_SUPPORTED). Revision still 5/5 UNCHANGED, conf flat. Critic flagged unknown-as-evidence (E) and causal-without-evidence (A). Calibration→Revision wiring present; soft PARTIAL did not emerge.
 
+# Plan: AI Review Board v6 — Claim → Revision Consistency
+
+**Status:** Shipped. Sample `run-2026-09-17T11-15-53-412Z` (v1–v5 untouched).
+
+**Result (honest):** 27 claims checked; 26 CONSISTENT / 1 INCONSISTENT (D/C006 UNKNOWN_AS_NEGATIVE_EVIDENCE). Revisions still 5/5 UNCHANGED; B/C006 PARTIAL+HIGH retained with RETAIN_WITH_JUSTIFICATION → CONSISTENT. Checker works without forcing revision rate.
+
+## Goal
+Not force PARTIAL/FULL. Verify **logical consistency** between Claim Calibration and Revision.
+UNCHANGED allowed iff retainReason / revisionAction justifies Calibration gaps.
+
+## Pipeline
+Evidence → Independent → Debate → ClaimCalibration → Revision → **Consistency Check** → Critic → Chairman  
+Calls target ≤25 (5+5+5+5+0 deterministic check +1+1 ≈ 22–23; checker is code not LLM). Cap 40.
+
+## Additions
+- `RevisionRecord.calibrationImpactAssessment` + `revisionAction` per affected claim
+- `run.calibrationRevisionChecks[]` (CONSISTENT | PARTIALLY_CONSISTENT | INCONSISTENT)
+- Critic: calibrationRevisionIntegrity + mismatch flags
+- Chairman: Calibration→Revision Findings
+- Admin: claimId ↔ revisionAction ↔ consistency (existing tabs)
+
+## Out of scope
+Force revision rates, Prisma, rewrite v1–v5, unrelated dirty commits, force push.
+
+---
+
 **승인 결정 (2026-09-17):**
 1. `memberId` A–E (UI: AI-A…)
 2. Calibration 입력 = own Independent + Debate + EvidencePack; supportLevel 최종 근거 = EvidencePack only (peer≠evidence)
