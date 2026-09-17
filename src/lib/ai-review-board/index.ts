@@ -12,4 +12,5 @@ export * from './format-evidence-prompt';
 export * from './revision-quality';
 export * from './claim-calibration';
 export * from './calibration-revision-consistency';
+export * from './evidence-claim-entailment';
 export { createGeminiReviewBoardLlm } from './gemini-llm';

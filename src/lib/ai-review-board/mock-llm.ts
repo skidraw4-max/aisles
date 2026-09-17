@@ -9,6 +9,7 @@ import type {
   DebateTurn,
   DimensionScore,
   EvidencePack,
+  EvidenceSemanticsMember,
   FinalReport,
   IndependentAnalysis,
   LlmContext,
@@ -22,6 +23,11 @@ import {
   normalizeClaimCalibration,
 } from './claim-calibration';
 import { listRevisionIntegrityIssues, normalizeRevisionRecord } from './revision-quality';
+import {
+  enrichSemanticsWithHeuristics,
+  normalizeEvidenceSemanticsMember,
+  rowFromHeuristic,
+} from './evidence-claim-entailment';
 
 function assessmentForClaims(
   cal: ClaimCalibration,
@@ -326,7 +332,19 @@ export function createMockReviewBoardLlm(options?: {
       });
     },
 
-    async revisionPass(memberId, evidence, own, ownDebate, _peers, calibration) {
+    async evidenceSemanticsPass(memberId, evidence, calibration) {
+      const raw = {
+        memberId,
+        claims: calibration.claims.map((c) => rowFromHeuristic(c, evidence)),
+      };
+      return enrichSemanticsWithHeuristics(
+        evidence,
+        calibration,
+        normalizeEvidenceSemanticsMember(memberId, raw, calibration),
+      );
+    },
+
+    async revisionPass(memberId, evidence, own, ownDebate, _peers, calibration, _evidenceSemantics) {
       const cal =
         calibration ??
         ({ memberId, claims: [] } satisfies ClaimCalibration);
@@ -546,7 +564,14 @@ export function createMockReviewBoardLlm(options?: {
       });
     },
 
-    async critic(_evidence, independent, debate, revisions, claimCalibrations): Promise<CriticReport> {
+    async critic(
+      _evidence,
+      independent,
+      debate,
+      revisions,
+      claimCalibrations,
+      _evidenceSemantics,
+    ): Promise<CriticReport> {
       const revs = revisions ?? [];
       const cals = claimCalibrations ?? [];
       const integrityFlags = revs.flatMap((r) =>
@@ -611,11 +636,21 @@ export function createMockReviewBoardLlm(options?: {
       };
     },
 
-    async chairman(evidence, independent, debate, critic, revisions, claimCalibrations): Promise<FinalReport> {
+    async chairman(
+      evidence,
+      independent,
+      debate,
+      critic,
+      revisions,
+      claimCalibrations,
+      evidenceSemantics,
+    ): Promise<FinalReport> {
       const revs = revisions ?? [];
       const cals = claimCalibrations ?? [];
+      const sems = evidenceSemantics ?? [];
       const improvements = independent.flatMap((i) => i.improvements).slice(0, 5);
       const allClaims = cals.flatMap((c) => c.claims);
+      const allSem = sems.flatMap((s) => s.claims);
       return {
         statusSummary: `${evidence.site.name} review completed with ${independent.length} analysts`,
         overallTrendScore: 62,
@@ -652,6 +687,16 @@ export function createMockReviewBoardLlm(options?: {
           .slice(0, 8),
         unsupportedHypothesisClaims: allClaims
           .filter((c) => c.supportLevel === 'NOT_SUPPORTED')
+          .map((c) => c.claimText)
+          .slice(0, 8),
+        evidenceSemanticsFindings: [
+          `semantics members=${sems.length}`,
+          `DIRECTLY_SUPPORTS=${allSem.filter((c) => c.evidenceRelation === 'DIRECTLY_SUPPORTS').length}`,
+          `DOES_NOT_SUPPORT=${allSem.filter((c) => c.evidenceRelation === 'DOES_NOT_SUPPORT').length}`,
+          `unsupportedLeap=${allSem.filter((c) => c.unsupportedLeap).length}`,
+        ],
+        directlySupportedClaims: allSem
+          .filter((c) => c.evidenceRelation === 'DIRECTLY_SUPPORTS')
           .map((c) => c.claimText)
           .slice(0, 8),
         revisionSummary: {

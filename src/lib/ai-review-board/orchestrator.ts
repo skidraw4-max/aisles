@@ -15,9 +15,16 @@ import {
   runCalibrationRevisionChecks,
   toCalibrationRevisionChecks,
 } from './calibration-revision-consistency';
+import {
+  buildCriticSemanticsOverlay,
+  enrichSemanticsWithHeuristics,
+  formatEvidenceSemanticsFindings,
+  runEvidenceSemanticsChecks,
+} from './evidence-claim-entailment';
 import type {
   ClaimCalibration,
   EvidencePack,
+  EvidenceSemanticsMember,
   ReviewBoardRun,
   RevisionRecord,
 } from './types';
@@ -54,6 +61,7 @@ export async function runReviewBoardPipeline(
     independent: [],
     debate: [],
     claimCalibrations: [],
+    evidenceSemantics: [],
     revisions: [],
     calibrationRevisionChecks: [],
     critic: null,
@@ -169,6 +177,33 @@ export async function runReviewBoardPipeline(
       await touch();
     }
 
+    // v7: Evidence Semantics / Claim Entailment (LLM ×5)
+    run.status = 'evidence_semantics';
+    await touch();
+    const semanticsResults: EvidenceSemanticsMember[] = [];
+    for (const memberId of COMMITTEE_ANALYSTS) {
+      budget = recordCall(budget);
+      const cal = run.claimCalibrations!.find((c) => c.memberId === memberId)!;
+      let sem = await options.llm.evidenceSemanticsPass(
+        memberId,
+        options.evidence,
+        cal,
+      );
+      sem = enrichSemanticsWithHeuristics(options.evidence, cal, sem);
+      semanticsResults.push(sem);
+      run.evidenceSemantics = [...semanticsResults];
+      await appendHistory(options.rootDir, runId, {
+        at: now(),
+        type: 'evidence_semantics',
+        actor: memberId,
+        payload: {
+          claimCount: sem.claims.length,
+          relations: sem.claims.map((c) => c.evidenceRelation),
+        },
+      });
+      await touch();
+    }
+
     run.status = 'revision';
     await touch();
 
@@ -178,6 +213,7 @@ export async function runReviewBoardPipeline(
       const own = run.independent.find((i) => i.memberId === memberId)!;
       const ownDebate = run.debate.find((d) => d.memberId === memberId)!;
       const cal = run.claimCalibrations!.find((c) => c.memberId === memberId)!;
+      const sem = run.evidenceSemantics!.find((s) => s.memberId === memberId)!;
       const rev = await options.llm.revisionPass(
         memberId,
         options.evidence,
@@ -185,6 +221,7 @@ export async function runReviewBoardPipeline(
         ownDebate,
         run.independent,
         cal,
+        sem,
       );
       revisionResults.push(rev);
       run.revisions = [...revisionResults];
@@ -198,6 +235,7 @@ export async function runReviewBoardPipeline(
           confidenceBefore: rev.confidenceBefore,
           confidenceAfter: rev.confidenceAfter,
           calibrationClaimCount: cal.claims.length,
+          semanticsClaimCount: sem.claims.length,
         },
       });
       await touch();
@@ -231,41 +269,73 @@ export async function runReviewBoardPipeline(
       run.debate,
       run.revisions,
       run.claimCalibrations,
+      run.evidenceSemantics,
     );
     const overlay = buildCriticConsistencyOverlay(consistencyResults);
+    const semanticsChecks = runEvidenceSemanticsChecks(
+      options.evidence,
+      run.claimCalibrations ?? [],
+      run.evidenceSemantics ?? [],
+      run.revisions ?? [],
+    );
+    const semOverlay = buildCriticSemanticsOverlay(semanticsChecks);
     run.critic = {
       ...run.critic,
       calibrationRevisionIntegrity: overlay.calibrationRevisionIntegrity,
       calibrationRevisionMismatchFlags: overlay.calibrationRevisionMismatchFlags,
       overclaimRetainedFlags: overlay.overclaimRetainedFlags,
-      unknownAsNegativeEvidenceFlags: overlay.unknownAsNegativeEvidenceFlags,
       unjustifiedConfidenceFlags: overlay.unjustifiedConfidenceFlags,
       majorityDrivenRevisionFlags: overlay.majorityDrivenRevisionFlags,
+      evidenceSemanticsIntegrity: semOverlay.evidenceSemanticsIntegrity,
+      evidenceClaimSemanticMismatchFlags: semOverlay.evidenceClaimSemanticMismatchFlags,
+      absenceOfEvidenceAsAbsenceFlags: semOverlay.absenceOfEvidenceAsAbsenceFlags,
+      unsupportedCausalClaimFlags: semOverlay.unsupportedCausalClaimFlags,
+      unsupportedRelativeClaimFlags: semOverlay.unsupportedRelativeClaimFlags,
+      unsupportedTimeTrendFlags: semOverlay.unsupportedTimeTrendFlags,
+      unsupportedLeapFlags: semOverlay.unsupportedLeapFlags,
+      contextMistakenAsEvidenceFlags: semOverlay.contextMistakenAsEvidenceFlags,
+      peerOpinionAsEvidenceFlags: semOverlay.peerOpinionAsEvidenceFlags,
       causalClaimWithoutEvidenceFlags: {
         ok:
           (run.critic.causalClaimWithoutEvidenceFlags?.ok ?? true) &&
-          overlay.causalClaimWithoutEvidenceFlags.ok,
+          overlay.causalClaimWithoutEvidenceFlags.ok &&
+          semOverlay.unsupportedCausalClaimFlags.ok,
         flags: [
           ...new Set([
             ...(run.critic.causalClaimWithoutEvidenceFlags?.flags ?? []),
             ...overlay.causalClaimWithoutEvidenceFlags.flags,
+            ...semOverlay.unsupportedCausalClaimFlags.flags,
           ]),
         ],
       },
       unknownAsEvidenceFlags: {
         ok:
           (run.critic.unknownAsEvidenceFlags?.ok ?? true) &&
-          overlay.unknownAsNegativeEvidenceFlags.ok,
+          overlay.unknownAsNegativeEvidenceFlags.ok &&
+          semOverlay.unknownAsNegativeEvidenceFlags.ok,
         flags: [
           ...new Set([
             ...(run.critic.unknownAsEvidenceFlags?.flags ?? []),
             ...overlay.unknownAsNegativeEvidenceFlags.flags,
+            ...semOverlay.unknownAsNegativeEvidenceFlags.flags,
+          ]),
+        ],
+      },
+      unknownAsNegativeEvidenceFlags: {
+        ok:
+          overlay.unknownAsNegativeEvidenceFlags.ok &&
+          semOverlay.unknownAsNegativeEvidenceFlags.ok,
+        flags: [
+          ...new Set([
+            ...overlay.unknownAsNegativeEvidenceFlags.flags,
+            ...semOverlay.unknownAsNegativeEvidenceFlags.flags,
           ]),
         ],
       },
       notes: [
         ...(run.critic.notes ?? []),
         `v6 consistency: ${overlay.calibrationRevisionIntegrity.summary}`,
+        `v7 semantics: ${semOverlay.evidenceSemanticsIntegrity.summary}`,
       ],
     };
     await appendHistory(options.rootDir, runId, {
@@ -286,14 +356,43 @@ export async function runReviewBoardPipeline(
       run.critic,
       run.revisions,
       run.claimCalibrations,
+      run.evidenceSemantics,
     );
     run.final = enrichFinalReport(run.final, run.independent, run.critic);
     const findings = formatCalibrationRevisionFindings(consistencyResults);
+    const semFindings = formatEvidenceSemanticsFindings(semanticsChecks);
+    const allSemRows = (run.evidenceSemantics ?? []).flatMap((s) => s.claims);
     run.final = {
       ...run.final,
       calibrationRevisionFindings: [
         ...(run.final.calibrationRevisionFindings ?? []),
         ...findings,
+      ],
+      evidenceSemanticsFindings: [
+        ...(run.final.evidenceSemanticsFindings ?? []),
+        ...semFindings,
+      ],
+      directlySupportedClaims: [
+        ...(run.final.directlySupportedClaims ?? []),
+        ...allSemRows
+          .filter((c) => c.evidenceRelation === 'DIRECTLY_SUPPORTS')
+          .map((c) => `${c.claimId}: ${c.claimText}`),
+      ],
+      supportedInferences: [
+        ...(run.final.supportedInferences ?? []),
+        ...allSemRows
+          .filter(
+            (c) =>
+              c.entailmentLevel === 'STRONG_INFERENCE' ||
+              c.evidenceRelation === 'PARTIALLY_SUPPORTS',
+          )
+          .map((c) => `${c.claimId}: ${c.claimText}`),
+      ],
+      weakLimitedInferences: [
+        ...(run.final.weakLimitedInferences ?? []),
+        ...allSemRows
+          .filter((c) => c.entailmentLevel === 'WEAK_INFERENCE' || c.unsupportedLeap)
+          .map((c) => `${c.claimId}: ${c.claimText}`),
       ],
     };
     await appendHistory(options.rootDir, runId, {

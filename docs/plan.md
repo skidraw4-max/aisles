@@ -453,6 +453,72 @@ Content generation / Gemini copy changes
 
 **Result (honest):** Claims decomposed (23 SUPPORTED / 3 PARTIALLY_SUPPORTED). Revision still 5/5 UNCHANGED, conf flat. Critic flagged unknown-as-evidence (E) and causal-without-evidence (A). Calibration→Revision wiring present; soft PARTIAL did not emerge.
 
+# Plan: AI Review Board v7 — Evidence Semantics & Claim Entailment
+
+**Status:** Shipped. Sample `run-2026-09-17T11-33-12-976Z` (v1–v6 untouched).
+
+**승인 결정:**
+1. Semantics = new LLM ×5 after Calibration (27 calls ≤40)
+2. Store as `run.evidenceSemantics` (parallel; do not rewrite old calibrations)
+3. Success = semantic error detection first (revision soften = observation only)
+
+**Result (honest):** 27 semantics rows (DIRECTLY=22, PARTIAL=1, DOES_NOT=3, UNKNOWN=1); unsupportedLeap=4. Revisions: 4 UNCHANGED + **1 PARTIAL (B)** with conf 0.9→0.8. Critic flagged unknown-as-negative (A) and causal patterns (B). Heuristic “due to” on measurement-gap claims can over-flag causal — noted for next iteration.
+
+## Problem (from v6)
+Calibration↔Revision consistency exists, but Evidence→Claim **semantic entailment** is weak:
+- `activeUsersLast7d=null` / `viewsLast7d=null` treated as “activity is low”
+- Absence of evidence confused with evidence of absence
+- Relative / trend / causal leaps from single-period zeros
+
+## Goal
+Not raise revision rate. Verify **how directly EvidencePack entails each calibrated claim**.
+Preserve v1–v6 runs; new `runId` only.
+
+## Pipeline
+```
+EvidencePack
+→ Independent ×5
+→ Debate ×5
+→ Claim Calibration ×5
+→ Evidence Semantics / Claim Entailment ×5   ← NEW (LLM)
+→ Revision ×5 (receives semantics; no force PARTIAL/FULL)
+→ Calibration/Revision Consistency (deterministic, keep)
+→ Evidence Semantics Checks (deterministic overlay) ← NEW (no LLM)
+→ Critic ×1
+→ Chairman ×1
+```
+**Calls:** 27 LLM (22+5) ≤40. Cap `AI_REVIEW_BOARD_MAX_CALLS_PER_RUN` unchanged.
+
+## Data model (additive / backward compatible)
+- New phase: `evidence_semantics`
+- `run.evidenceSemantics[]`: `{ memberId, claims: EvidenceSemanticsRow[] }`
+- Per claim row:
+  - `claimId` (Calibration IDs only — no new claim extraction)
+  - `evidenceRelation`: DIRECTLY_SUPPORTS | PARTIALLY_SUPPORTS | CONTEXT_ONLY | DOES_NOT_SUPPORT | CONTRADICTS | UNKNOWN
+  - `entailmentLevel`: DIRECT | STRONG_INFERENCE | WEAK_INFERENCE | UNSUPPORTED | UNKNOWN (categorical only; no numeric score)
+  - `directEvidenceRefs`, `supportingEvidenceRefs`, `missingEvidence`, `inferenceSteps`
+  - `unsupportedLeap: boolean`, `semanticRisk`: LOW|MEDIUM|HIGH|CRITICAL, `explanation`
+- Revision: pass semantics into prompt; extend `calibrationImpactAssessment` actionReason to cite `evidenceRelation` / `semanticRisk` when retaining
+- Critic flags (additive): `EVIDENCE_CLAIM_SEMANTIC_MISMATCH`, `UNKNOWN_AS_NEGATIVE_EVIDENCE`, `ABSENCE_OF_EVIDENCE_AS_ABSENCE`, `UNSUPPORTED_CAUSAL_CLAIM`, `UNSUPPORTED_RELATIVE_CLAIM`, `UNSUPPORTED_TIME_TREND`, `UNSUPPORTED_LEAP`, `CONTEXT_MISTAKEN_AS_EVIDENCE`, `PEER_OPINION_AS_EVIDENCE`
+- Chairman: `evidenceSemanticsFindings[]` + keep Confirmed Facts vs Unknown/Missing Data separation
+- Admin: Debate tab show Claim → evidenceRelation / entailmentLevel / semanticRisk / unsupportedLeap (existing tabs only)
+
+## Deterministic helpers (TDD first)
+Module `evidence-claim-entailment.ts`:
+- Heuristics for null≠low, zero comments≠UX cause, no baseline≠“매우 작다”, single period≠“감소”, Gemini exists≠engagement↑
+- `evaluateEvidenceClaimEntailment`, `runEvidenceSemanticsChecks`, Critic overlay merge (v6 pattern)
+- Tests 1–12 + mock scenarios A–G
+
+## Out of scope
+Force PARTIAL/FULL, Prisma/DB write, mutate Independent/Debate/Calibration meaning, rewrite v1–v6 JSON, unrelated dirty commits, force push.
+
+## Approval defaults (confirm or override)
+1. **Semantics = new LLM ×5** after Calibration (not folded into Calibration; not fully deterministic-only).
+2. **Store** as `run.evidenceSemantics` parallel to calibrations (do not rewrite claimCalibrations shape of old runs).
+3. **Success metric** = semantic error detection + Evidence/Absence separation, **not** revision %.
+
+---
+
 # Plan: AI Review Board v6 — Claim → Revision Consistency
 
 **Status:** Shipped. Sample `run-2026-09-17T11-15-53-412Z` (v1–v5 untouched).

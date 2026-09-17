@@ -4,6 +4,7 @@ import type {
   CriticReport,
   DebateTurn,
   EvidencePack,
+  EvidenceSemanticsMember,
   FinalReport,
   IndependentAnalysis,
   LlmContext,
@@ -30,7 +31,13 @@ export type ReviewBoardLlm = {
     own: IndependentAnalysis,
     ownDebate: DebateTurn,
   ): Promise<ClaimCalibration>;
-  /** v4/v5: Revision Quality Pass — receives calibration when available */
+  /** v7: Evidence Semantics / Claim Entailment per calibrated claim */
+  evidenceSemanticsPass(
+    memberId: CommitteeAnalystId,
+    evidence: EvidencePack,
+    calibration: ClaimCalibration,
+  ): Promise<EvidenceSemanticsMember>;
+  /** v4/v5/v7: Revision — receives calibration + optional semantics */
   revisionPass(
     memberId: CommitteeAnalystId,
     evidence: EvidencePack,
@@ -38,6 +45,7 @@ export type ReviewBoardLlm = {
     ownDebate: DebateTurn,
     peers: IndependentAnalysis[],
     calibration?: ClaimCalibration,
+    evidenceSemantics?: EvidenceSemanticsMember,
   ): Promise<RevisionRecord>;
   critic(
     evidence: EvidencePack,
@@ -45,6 +53,7 @@ export type ReviewBoardLlm = {
     debate: DebateTurn[],
     revisions?: RevisionRecord[],
     claimCalibrations?: ClaimCalibration[],
+    evidenceSemantics?: EvidenceSemanticsMember[],
   ): Promise<CriticReport>;
   chairman(
     evidence: EvidencePack,
@@ -53,5 +62,6 @@ export type ReviewBoardLlm = {
     critic: CriticReport,
     revisions?: RevisionRecord[],
     claimCalibrations?: ClaimCalibration[],
+    evidenceSemantics?: EvidenceSemanticsMember[],
   ): Promise<FinalReport>;
 };

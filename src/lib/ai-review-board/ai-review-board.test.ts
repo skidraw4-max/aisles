@@ -187,7 +187,7 @@ describe('orchestrator pipeline (mock llm)', () => {
     assert.equal(run.independent.length, 5);
     assert.equal(run.debate.length, 5);
     assert.equal(run.revisions?.length, 5);
-    assert.equal(run.budget.usedCalls, 22);
+    assert.equal(run.budget.usedCalls, 27);
     assert.ok(run.critic);
     assert.ok(run.final);
 

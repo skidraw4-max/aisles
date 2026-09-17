@@ -275,6 +275,43 @@ export function AiReviewBoardDetailClient({ run }: { run: ReviewBoardRun }) {
                         </div>
                         <div className={styles.listBlock}>
                           <h4>
+                            Evidence Semantics{' '}
+                            <span className={styles.countBadge}>
+                              {
+                                (
+                                  (run.evidenceSemantics ?? []).find(
+                                    (s) => s.memberId === d.memberId,
+                                  )?.claims ?? []
+                                ).length
+                              }
+                            </span>
+                          </h4>
+                          {(() => {
+                            const sem = (run.evidenceSemantics ?? []).find(
+                              (s) => s.memberId === d.memberId,
+                            );
+                            if (!sem || sem.claims.length === 0) {
+                              return <p className={styles.muted}>—</p>;
+                            }
+                            return (
+                              <ul>
+                                {sem.claims.map((c) => (
+                                  <li key={`sem-${c.claimId}`}>
+                                    <strong>{c.claimId}</strong> {c.evidenceRelation}/
+                                    {c.entailmentLevel}/risk={c.semanticRisk}
+                                    {c.unsupportedLeap ? ' · LEAP' : ''}
+                                    <br />
+                                    <span className={styles.muted}>
+                                      {c.claimText} — {c.explanation || '—'}
+                                    </span>
+                                  </li>
+                                ))}
+                              </ul>
+                            );
+                          })()}
+                        </div>
+                        <div className={styles.listBlock}>
+                          <h4>
                             Claim Calibration → Revision{' '}
                             <span className={styles.countBadge}>{checks.length}</span>
                           </h4>
@@ -403,6 +440,14 @@ export function AiReviewBoardDetailClient({ run }: { run: ReviewBoardRun }) {
                   'unknownAsNegativeEvidenceFlags',
                   'unjustifiedConfidenceFlags',
                   'majorityDrivenRevisionFlags',
+                  'evidenceClaimSemanticMismatchFlags',
+                  'absenceOfEvidenceAsAbsenceFlags',
+                  'unsupportedCausalClaimFlags',
+                  'unsupportedRelativeClaimFlags',
+                  'unsupportedTimeTrendFlags',
+                  'unsupportedLeapFlags',
+                  'contextMistakenAsEvidenceFlags',
+                  'peerOpinionAsEvidenceFlags',
                 ] as const
               ).map((key) => {
                 const check = run.critic?.[key];
@@ -427,6 +472,24 @@ export function AiReviewBoardDetailClient({ run }: { run: ReviewBoardRun }) {
                   {(run.critic.calibrationRevisionIntegrity.issues?.length ?? 0) > 0 ? (
                     <ul>
                       {run.critic.calibrationRevisionIntegrity.issues.map((issue, i) => (
+                        <li key={i}>{issue}</li>
+                      ))}
+                    </ul>
+                  ) : null}
+                </div>
+              )}
+              {run.critic.evidenceSemanticsIntegrity && (
+                <div className={styles.listBlock}>
+                  <h4>
+                    evidenceSemanticsIntegrity:{' '}
+                    {run.critic.evidenceSemanticsIntegrity.status}
+                  </h4>
+                  <p className={styles.muted}>
+                    {run.critic.evidenceSemanticsIntegrity.summary}
+                  </p>
+                  {(run.critic.evidenceSemanticsIntegrity.issues?.length ?? 0) > 0 ? (
+                    <ul>
+                      {run.critic.evidenceSemanticsIntegrity.issues.map((issue, i) => (
                         <li key={i}>{issue}</li>
                       ))}
                     </ul>
@@ -528,6 +591,14 @@ export function AiReviewBoardDetailClient({ run }: { run: ReviewBoardRun }) {
               <ListBlock title="" items={run.final.unsupportedHypothesisClaims ?? []} />
               <h3>Calibration → Revision Findings</h3>
               <ListBlock title="" items={run.final.calibrationRevisionFindings ?? []} />
+              <h3>Evidence Semantics Findings</h3>
+              <ListBlock title="" items={run.final.evidenceSemanticsFindings ?? []} />
+              <h3>Directly Supported Claims</h3>
+              <ListBlock title="" items={run.final.directlySupportedClaims ?? []} />
+              <h3>Supported Inferences</h3>
+              <ListBlock title="" items={run.final.supportedInferences ?? []} />
+              <h3>Weak / Limited Inferences</h3>
+              <ListBlock title="" items={run.final.weakLimitedInferences ?? []} />
               <h3>Revision Summary</h3>
               {run.final.revisionSummary ? (
                 <>

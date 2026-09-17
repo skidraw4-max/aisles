@@ -80,6 +80,11 @@ v6 — calibrationImpactAssessment REQUIRED:
 - Reference Claim Calibration claimIds only (do not invent new claimIds unless marked as new claim with evidence).
 - If UNCHANGED while a claim is PARTIALLY_SUPPORTED + HIGH/CRITICAL evidenceImpact + MEDIUM/HIGH overclaim risk,
   you MUST use RETAIN_WITH_JUSTIFICATION and retainReason must mention that claimId and the evidence gap.
+
+v7 — when Evidence Semantics is provided:
+- If evidenceRelation is DOES_NOT_SUPPORT or UNKNOWN with HIGH/CRITICAL semanticRisk, do not keep strong factual wording without caveat.
+- If unsupportedLeap=true, prefer NARROW / ADD_CAVEAT / REWORD, or UNCHANGED only with explicit retainReason addressing the leap.
+- Never treat null/unknown metrics as proof of low activity in finalOpinion.
 `;
 
 export const REVISION_Q_CHECKLIST = `
@@ -128,6 +133,35 @@ Examples:
 - "Gemini가 참여를 늘린다" → HYPOTHESIS / NOT_SUPPORTED
 
 Ban majority phrases as support grounds.
+`;
+
+/** v7 Evidence Semantics / Claim Entailment */
+export const EVIDENCE_SEMANTICS_RULES = `
+Evidence Semantics Rules (EvidencePack only; peer opinion ≠ evidence):
+
+For EACH Claim Calibration claimId, judge how strongly EvidencePack entails the claim wording.
+
+evidenceRelation:
+- DIRECTLY_SUPPORTS: metric/value itself confirms the claim
+- PARTIALLY_SUPPORTS: only part of the claim is confirmed
+- CONTEXT_ONLY: related context but does not prove the claim
+- DOES_NOT_SUPPORT: evidence exists but does not back the claim
+- CONTRADICTS: evidence opposes the claim
+- UNKNOWN: insufficient information to judge relation
+
+CRITICAL:
+- UNKNOWN/null ≠ LOW / BAD / ZERO / negative evidence
+- Absence of evidence ≠ evidence of absence
+- Single-period value ≠ trend (증가/감소) without prior period
+- Absolute count ≠ relative “매우 작다/크다” without baseline
+- Integration existence ≠ causal effect
+- Peer/majority agreement is never EvidencePack support
+
+entailmentLevel (categorical only — NO numeric score):
+DIRECT | STRONG_INFERENCE | WEAK_INFERENCE | UNSUPPORTED | UNKNOWN
+
+unsupportedLeap=true when claim jumps beyond what refs justify.
+semanticRisk: LOW|MEDIUM|HIGH|CRITICAL
 `;
 
 export const MEMBER_FOCUS: Record<Exclude<CommitteeMemberId, 'F' | 'Chairman'>, string> = {

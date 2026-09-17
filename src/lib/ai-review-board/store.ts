@@ -45,6 +45,9 @@ export async function saveRunSnapshot(root: string, run: ReviewBoardRun): Promis
   if (run.claimCalibrations && run.claimCalibrations.length > 0) {
     await writeJson(path.join(dir, 'claim-calibrations.json'), run.claimCalibrations);
   }
+  if (run.evidenceSemantics && run.evidenceSemantics.length > 0) {
+    await writeJson(path.join(dir, 'evidence-semantics.json'), run.evidenceSemantics);
+  }
   if (run.revisions && run.revisions.length > 0) {
     await writeJson(path.join(dir, 'revisions.json'), run.revisions);
   }

@@ -19,8 +19,8 @@ import {
   isOverclaimRisk,
 } from './types';
 
-/** 5 ind + 5 debate + 5 claimCalibration + 5 revision + critic + chairman */
-export const EXPECTED_PIPELINE_LLM_CALLS = 22;
+/** 5 ind + 5 debate + 5 claimCalibration + 5 evidenceSemantics + 5 revision + critic + chairman */
+export const EXPECTED_PIPELINE_LLM_CALLS = 27;
 
 /** Aggregate keys that may appear in evidenceRefs */
 export const EVIDENCE_REF_KEYS = [

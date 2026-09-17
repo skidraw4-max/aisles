@@ -11,6 +11,7 @@ export type ReviewBoardPhase =
   | 'independent'
   | 'debate'
   | 'claim_calibration'
+  | 'evidence_semantics'
   | 'revision'
   | 'consistency_check'
   | 'critic'
@@ -279,6 +280,62 @@ export type ClaimCalibration = {
   claims: CalibratedClaim[];
 };
 
+/** v7 Evidence relation */
+export const EVIDENCE_RELATION_VALUES = [
+  'DIRECTLY_SUPPORTS',
+  'PARTIALLY_SUPPORTS',
+  'CONTEXT_ONLY',
+  'DOES_NOT_SUPPORT',
+  'CONTRADICTS',
+  'UNKNOWN',
+] as const;
+export type EvidenceRelation = (typeof EVIDENCE_RELATION_VALUES)[number];
+
+export function isEvidenceRelation(v: unknown): v is EvidenceRelation {
+  return (EVIDENCE_RELATION_VALUES as readonly string[]).includes(String(v));
+}
+
+export const ENTAILMENT_LEVEL_VALUES = [
+  'DIRECT',
+  'STRONG_INFERENCE',
+  'WEAK_INFERENCE',
+  'UNSUPPORTED',
+  'UNKNOWN',
+] as const;
+export type EntailmentLevel = (typeof ENTAILMENT_LEVEL_VALUES)[number];
+
+export function isEntailmentLevel(v: unknown): v is EntailmentLevel {
+  return (ENTAILMENT_LEVEL_VALUES as readonly string[]).includes(String(v));
+}
+
+export const SEMANTIC_RISK_VALUES = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'] as const;
+export type SemanticRisk = (typeof SEMANTIC_RISK_VALUES)[number];
+
+export function isSemanticRisk(v: unknown): v is SemanticRisk {
+  return (SEMANTIC_RISK_VALUES as readonly string[]).includes(String(v));
+}
+
+/** v7 per-claim evidence semantics row */
+export type EvidenceSemanticsRow = {
+  claimId: string;
+  claimText: string;
+  evidenceRelation: EvidenceRelation;
+  entailmentLevel: EntailmentLevel;
+  directEvidenceRefs: string[];
+  supportingEvidenceRefs: string[];
+  missingEvidence: string[];
+  inferenceSteps: string[];
+  unsupportedLeap: boolean;
+  semanticRisk: SemanticRisk;
+  explanation: string;
+};
+
+/** v7 per-member evidence semantics */
+export type EvidenceSemanticsMember = {
+  memberId: CommitteeAnalystId;
+  claims: EvidenceSemanticsRow[];
+};
+
 export type CriticCheck = {
   ok: boolean;
   flags: string[];
@@ -324,6 +381,20 @@ export type CriticReport = {
   unknownAsNegativeEvidenceFlags?: CriticCheck;
   unjustifiedConfidenceFlags?: CriticCheck;
   majorityDrivenRevisionFlags?: CriticCheck;
+  /** v7+ evidence semantics */
+  evidenceSemanticsIntegrity?: {
+    status: 'PASS' | 'WARN' | 'FAIL';
+    issues: string[];
+    summary: string;
+  };
+  evidenceClaimSemanticMismatchFlags?: CriticCheck;
+  absenceOfEvidenceAsAbsenceFlags?: CriticCheck;
+  unsupportedCausalClaimFlags?: CriticCheck;
+  unsupportedRelativeClaimFlags?: CriticCheck;
+  unsupportedTimeTrendFlags?: CriticCheck;
+  unsupportedLeapFlags?: CriticCheck;
+  contextMistakenAsEvidenceFlags?: CriticCheck;
+  peerOpinionAsEvidenceFlags?: CriticCheck;
 };
 
 export type RevisionSummaryBlock = {
@@ -361,6 +432,11 @@ export type FinalReport = {
   unsupportedHypothesisClaims?: string[];
   /** v6+ */
   calibrationRevisionFindings?: string[];
+  /** v7+ */
+  evidenceSemanticsFindings?: string[];
+  directlySupportedClaims?: string[];
+  supportedInferences?: string[];
+  weakLimitedInferences?: string[];
 };
 
 export type EvidenceAggregates = {
@@ -453,6 +529,8 @@ export type ReviewBoardRun = {
   debate: DebateTurn[];
   /** v5+ Claim Calibration */
   claimCalibrations?: ClaimCalibration[];
+  /** v7+ Evidence Semantics / Claim Entailment */
+  evidenceSemantics?: EvidenceSemanticsMember[];
   /** v4+ Revision Quality Pass results */
   revisions?: RevisionRecord[];
   /** v6+ deterministic consistency rows */
@@ -476,6 +554,7 @@ export type LlmContext = {
     | 'independent'
     | 'debate'
     | 'claim_calibration'
+    | 'evidence_semantics'
     | 'revision'
     | 'consistency_check'
     | 'critic'

@@ -8,7 +8,7 @@ import {
   GEMINI_API_VERSION_CHAIN,
   GEMINI_GEEKNEWS_MODEL_CHAIN,
 } from '@/lib/gemini-models';
-import { ANTI_HERDING_DEBATE_RULES, CLAIM_CALIBRATION_RULES, MEMBER_FOCUS, PERSONA_SYSTEM, REVISION_QUALITY_RULES, REVISION_Q_CHECKLIST } from './personas';
+import { ANTI_HERDING_DEBATE_RULES, CLAIM_CALIBRATION_RULES, EVIDENCE_SEMANTICS_RULES, MEMBER_FOCUS, PERSONA_SYSTEM, REVISION_QUALITY_RULES, REVISION_Q_CHECKLIST } from './personas';
 import { formatEvidencePackForPrompt } from './format-evidence-prompt';
 import { SCORE_DIMENSIONS } from './score-dimensions';
 import { listScoresLackingHardEvidence, normalizeDimensionScores } from './scoring';
@@ -19,6 +19,11 @@ import {
   normalizeClaimCalibration,
 } from './claim-calibration';
 import { listRevisionIntegrityIssues, normalizeRevisionRecord } from './revision-quality';
+import {
+  enrichSemanticsWithHeuristics,
+  formatSemanticsForRevisionPrompt,
+  normalizeEvidenceSemanticsMember,
+} from './evidence-claim-entailment';
 import type { ReviewBoardLlm } from './llm';
 import type {
   CommitteeAnalystId,
@@ -275,11 +280,48 @@ Extract 3–7 claims. Final supportLevel/evidenceType/evidenceImpact must be gro
       return normalizeClaimCalibration(memberId, res.parsed);
     },
 
-    async revisionPass(memberId, evidence, own, ownDebate, peers, calibration) {
+    async evidenceSemanticsPass(memberId, evidence, calibration) {
+      const system = `${PERSONA_SYSTEM[memberId]}\n${EVIDENCE_SEMANTICS_RULES}`;
+      const user = `EvidencePack:\n${evidenceBlock(evidence)}
+
+Claim Calibration (judge each claimId — do not invent new claimIds):
+${JSON.stringify(calibration, null, 2)}
+
+Return JSON:
+{
+  "memberId": "${memberId}",
+  "claims": [
+    {
+      "claimId": "C001",
+      "claimText": string,
+      "evidenceRelation": "DIRECTLY_SUPPORTS" | "PARTIALLY_SUPPORTS" | "CONTEXT_ONLY" | "DOES_NOT_SUPPORT" | "CONTRADICTS" | "UNKNOWN",
+      "entailmentLevel": "DIRECT" | "STRONG_INFERENCE" | "WEAK_INFERENCE" | "UNSUPPORTED" | "UNKNOWN",
+      "directEvidenceRefs": string[],
+      "supportingEvidenceRefs": string[],
+      "missingEvidence": string[],
+      "inferenceSteps": string[],
+      "unsupportedLeap": boolean,
+      "semanticRisk": "LOW" | "MEDIUM" | "HIGH" | "CRITICAL",
+      "explanation": string
+    }
+  ]
+}
+
+UNKNOWN/null metrics are NOT negative evidence. No numeric entailment scores.`;
+      const res = await geminiJson(key, system, user);
+      if (!res.ok) throw new Error(res.error);
+      const normalized = normalizeEvidenceSemanticsMember(memberId, res.parsed, calibration);
+      return enrichSemanticsWithHeuristics(evidence, calibration, normalized);
+    },
+
+    async revisionPass(memberId, evidence, own, ownDebate, peers, calibration, evidenceSemantics) {
       const system = `${PERSONA_SYSTEM[memberId]}\n${REVISION_QUALITY_RULES}\n${REVISION_Q_CHECKLIST}`;
       const calBlock = calibration
         ? formatCalibrationForRevisionPrompt(calibration)
         : '(no claim calibration provided)';
+      const semBlock = evidenceSemantics
+        ? formatSemanticsForRevisionPrompt(evidenceSemantics)
+        : '(no evidence semantics provided)';
       const user = `EvidencePack:\n${evidenceBlock(evidence)}
 
 Your independent analysis (originalOpinion is immutable history):
@@ -291,10 +333,14 @@ ${JSON.stringify(ownDebate, null, 2)}
 Claim Calibration (use as input; do NOT force PARTIAL/FULL):
 ${calBlock}
 
+Evidence Semantics (v7 — how strongly EvidencePack entails each claim):
+${semBlock}
+
 Peer independent analyses (arguments only — do NOT use majority agreement as retain/revision/confidence ground):
 ${JSON.stringify(peers.filter((p) => p.memberId !== memberId), null, 2)}
 
 Do NOT choose PARTIAL/FULL just to satisfy the experiment. If UNCHANGED is most rational, choose UNCHANGED with concrete retainReason.
+If a claim is DOES_NOT_SUPPORT/UNKNOWN with HIGH semanticRisk, do not keep strong factual wording without caveat.
 
 Return JSON:
 {
@@ -360,12 +406,20 @@ Return JSON:
       });
     },
 
-    async critic(evidence, independent, debate, revisions, claimCalibrations): Promise<CriticReport> {
+    async critic(
+      evidence,
+      independent,
+      debate,
+      revisions,
+      claimCalibrations,
+      evidenceSemantics,
+    ): Promise<CriticReport> {
       const lacking = independent.flatMap((i) =>
         listScoresLackingHardEvidence(i.scores).map((d) => `${i.memberId}:${d}`),
       );
       const revs = revisions ?? [];
       const cals = claimCalibrations ?? [];
+      const sems = evidenceSemantics ?? [];
       const preFlags = revs.flatMap((r) =>
         listRevisionIntegrityIssues(r).map((i) => `${r.memberId}:${i}`),
       );
@@ -380,6 +434,7 @@ Return JSON:
 Independent:\n${JSON.stringify(independent, null, 2)}
 Debate:\n${JSON.stringify(debate, null, 2)}
 ClaimCalibrations:\n${JSON.stringify(cals, null, 2)}
+EvidenceSemantics:\n${JSON.stringify(sems, null, 2)}
 Revisions:\n${JSON.stringify(revs, null, 2)}
 
 Precomputed scoresWithoutEvidence: ${JSON.stringify(lacking)}
@@ -391,7 +446,8 @@ revisionIntegrity, evidenceGrounding, overclaiming, herding, confidenceIntegrity
 claimCalibrationIntegrity, evidenceMappingIntegrity, unsupportedClaimFlags, overclaimingFlags,
 unknownAsEvidenceFlags, causalClaimWithoutEvidenceFlags, confidenceCalibrationFlags, herdingFlags,
 plus notes[], confidence, herdingDetected, factVsSpeculationOk, evidenceSufficient, scoresWithoutEvidence,
-dominantMemberInfluence, trendEvidenceOk, userBenefitLikely, existingFeatureRisk, overEngineering.`;
+dominantMemberInfluence, trendEvidenceOk, userBenefitLikely, existingFeatureRisk, overEngineering.
+Also check: null≠low activity; no unsupported causal/relative/trend leaps; peer≠evidence.`;
       const res = await geminiJson(key, system, user);
       if (!res.ok) throw new Error(res.error);
       const o = res.parsed as Record<string, unknown>;
@@ -451,25 +507,30 @@ dominantMemberInfluence, trendEvidenceOk, userBenefitLikely, existingFeatureRisk
       critic,
       revisions,
       claimCalibrations,
+      evidenceSemantics,
     ): Promise<FinalReport> {
       const revs = revisions ?? [];
       const cals = claimCalibrations ?? [];
+      const sems = evidenceSemantics ?? [];
       const system = PERSONA_SYSTEM.Chairman;
       const user = `EvidencePack:\n${evidenceBlock(evidence)}
 
 Independent:\n${JSON.stringify(independent, null, 2)}
 Debate:\n${JSON.stringify(debate, null, 2)}
 ClaimCalibrations:\n${JSON.stringify(cals, null, 2)}
+EvidenceSemantics:\n${JSON.stringify(sems, null, 2)}
 Revisions:\n${JSON.stringify(revs, null, 2)}
 Critic:\n${JSON.stringify(critic, null, 2)}
 
 Separate Fact / Interpretation / Hypothesis. Do NOT invent cases that did not occur. No majority-only conclusions.
+Clearly separate "data is missing/null" from "value is low".
 
 Return JSON including statusSummary, overallTrendScore, dimensionScores, topProblems, improvements,
 expectedUserEffect, expectedDifficulty, risk, improvementEvidence, opinionDifferences, confidence,
 needsFurtherVerification, confirmedFacts, unknownMissingData, hypotheses, disputedPoints,
 validatedImprovements, supportedClaims, partiallySupportedClaims, unsupportedHypothesisClaims,
-calibrationRevisionFindings (string[] summarizing Calibration→Revision consistency findings),
+directlySupportedClaims, supportedInferences, weakLimitedInferences,
+calibrationRevisionFindings, evidenceSemanticsFindings,
 revisionSummary { unchanged, partial, full, confidenceShifts, claimSofteningFromEvidenceGap, herdingRisks }.`;
       const res = await geminiJson(key, system, user);
       if (!res.ok) throw new Error(res.error);
@@ -507,6 +568,10 @@ revisionSummary { unchanged, partial, full, confidenceShifts, claimSofteningFrom
         partiallySupportedClaims: asStringArray(o.partiallySupportedClaims),
         unsupportedHypothesisClaims: asStringArray(o.unsupportedHypothesisClaims),
         calibrationRevisionFindings: asStringArray(o.calibrationRevisionFindings),
+        evidenceSemanticsFindings: asStringArray(o.evidenceSemanticsFindings),
+        directlySupportedClaims: asStringArray(o.directlySupportedClaims),
+        supportedInferences: asStringArray(o.supportedInferences),
+        weakLimitedInferences: asStringArray(o.weakLimitedInferences),
         revisionSummary,
       };
     },
