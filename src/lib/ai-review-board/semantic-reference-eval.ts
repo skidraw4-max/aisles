@@ -2,8 +2,9 @@
  * v9 Semantic Judge Reference Evaluation — human Expected vs deterministic Judge.
  * TP/FP/TN/FN and accuracy metrics apply ONLY to this regression fixture path.
  * Live Gemini runs must NOT invent Expected or classic TP/FP from this set.
+ *
+ * Browser-safe: no node:fs — fixture is bundled via JSON import.
  */
-import { readFileSync } from 'node:fs';
 import embeddedFixture from '../../../tests/fixtures/ai-review-board/semantic-reference-cases.json';
 import { buildStubEvidencePack } from './evidence-pack';
 import {
@@ -146,11 +147,9 @@ export function evidencePackFromReferenceEntries(
 }
 
 export function loadSemanticReferenceCases(
-  fixturePath?: string,
+  fixture?: { cases?: unknown[] },
 ): SemanticReferenceCase[] {
-  const raw = fixturePath
-    ? (JSON.parse(readFileSync(fixturePath, 'utf8')) as { cases?: unknown[] })
-    : (embeddedFixture as { cases?: unknown[] });
+  const raw = fixture ?? (embeddedFixture as { cases?: unknown[] });
   if (!Array.isArray(raw.cases)) {
     throw new Error('semantic-reference-cases.json: missing cases[]');
   }
@@ -311,9 +310,9 @@ export function summarizeReferenceResults(
 }
 
 export function runSemanticReferenceEvaluation(
-  fixturePath?: string,
+  fixture?: { cases?: unknown[] },
 ): ReferenceEvalReport {
-  const cases = loadSemanticReferenceCases(fixturePath);
+  const cases = loadSemanticReferenceCases(fixture);
   const results = cases.map(evaluateReferenceCase);
   return { results, metrics: summarizeReferenceResults(results) };
 }
