@@ -2,9 +2,21 @@
  * EvidencePack — 읽기 전용 집계만. INSERT/UPDATE/DELETE 금지.
  */
 import type { PrismaClient } from '@prisma/client';
-import { EVIDENCE_METRIC_DEFINITIONS, type EvidencePack } from './types';
+import {
+  EVIDENCE_METRIC_DEFINITIONS,
+  type EvidenceAggregates,
+  type EvidencePack,
+} from './types';
 
 export type EvidenceDb = Pick<PrismaClient, 'user' | 'post' | 'comment'>;
+
+/** stub 시 aggregates 일부만 덮어쓸 수 있게 함 */
+export type StubEvidencePackOverrides = Omit<
+  Partial<EvidencePack>,
+  'aggregates' | 'piiExcluded' | 'readOnly' | 'metricDefinitions'
+> & {
+  aggregates?: Partial<EvidenceAggregates>;
+};
 
 const CORRIDORS = [
   'LAB/RECIPE',
@@ -54,7 +66,7 @@ function emptyAggregates(): EvidencePack['aggregates'] {
 }
 
 /** 테스트용 — DB 없이 고정 스냅샷 */
-export function buildStubEvidencePack(overrides?: Partial<EvidencePack>): EvidencePack {
+export function buildStubEvidencePack(overrides?: StubEvidencePackOverrides): EvidencePack {
   const base: EvidencePack = {
     generatedAt: new Date().toISOString(),
     site: {

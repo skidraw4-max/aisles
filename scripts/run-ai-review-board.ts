@@ -37,8 +37,12 @@ async function main() {
       aggregates: {
         userCount: 0,
         usersLast7d: 0,
+        newUsersLast7d: 0,
+        activeUsersLast7d: null,
         postCount: 0,
         postsLast7d: 0,
+        commentsLast7d: 0,
+        viewsLast7d: null,
         totalViews: 0,
         commentCount: 0,
         postsByCategory: {},
