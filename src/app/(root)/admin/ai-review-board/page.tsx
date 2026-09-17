@@ -46,7 +46,7 @@ export default async function AiReviewBoardPage() {
         {runs.length === 0 ? (
           <p className={styles.empty}>
             아직 저장된 런이 없습니다. CLI로 실행하면 <code>data/ai-review-board/</code>에
-            결과가 쌓입니다.
+            결과가 쌓입니다. (프로덕션에서는 배포 번들에 포함된 baseline run만 보입니다.)
           </p>
         ) : (
           <ul className={styles.list}>
