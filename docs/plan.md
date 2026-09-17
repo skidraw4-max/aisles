@@ -429,3 +429,270 @@ Content generation / Gemini copy changes
 - Pin weekKey to that week Monday so Tue catch-up does not shift month-week
 - GH Actions: extra Mon retries + Tue 05:00 KST catch-up
 - Backfill script/API range 2026-08-W5 .. current week; run locally with Gemini+DB
+# Plan: AI Review Board (AI 운영위원회) — 1차
+
+**Status:** Approved (2026-09-17). Implementing 1차.
+
+**승인 결정:** 파일 JSON (`data/ai-review-board/`) · 로컬 CLI만 · EvidencePack DB 집계 읽기 허용(쓰기 금지) · SEO/GEO 분리 · Admin은 결과 관찰만 · Cron 미연결.
+
+**Hard rules (1차):** 서비스 코드 자동 수정·자동 배포·광고 변경·사용자 데이터 삭제 금지. 기존 Prisma 스키마 변경 금지. Gemini는 CLI 수동 실행 + 호출 상한만.
+
+---
+
+## 0. 현황 분석 요약 (보고 항목 1–6)
+
+### 1. 프로젝트 구조
+- 모노레포성 Next 앱: `src/app` (App Router), `src/lib` (도메인·크론·Gemini), `src/components`, `prisma/`, `scripts/`, `mobile/` (Capacitor), `.github/workflows/` (크론), `docs/`
+- 공개 복도: LAB(RECIPE)·GALLERY·LOUNGE·GOSSIP·BUILD·LAUNCH·AI_FORTUNE 등 `Post.category`
+- 관리자 UI 기존 위치: `src/app/(root)/admin/*`, `src/app/(root)/notices/admin`
+
+### 2. 프레임워크 / 스택
+- Next.js 15 + React 19 + TypeScript
+- Prisma 7 + PostgreSQL (Supabase)
+- Auth: `@supabase/ssr` + Prisma `User` (id = Supabase auth user id)
+- AI: `@google/generative-ai` (Gemini Flash / Flash-Lite 체인)
+- Hosting: Vercel (추정) + GitHub Actions cron → `/api/cron/*` + `CRON_SECRET`
+- Mobile: Capacitor 7
+
+### 3. 기존 데이터 구조 (관련분)
+- `User.role`: USER | BUILDER | ADMIN
+- `Post` + 뉴스/운세 전용 유니크 키, `AiMetadata`, `UiConfig`, `Notice`, `GameScore` 등
+- 운영위원회용 테이블은 **없음**
+
+### 4. 인증 구조
+- 세션: Supabase cookie (`createClient` server)
+- 관리자: `src/lib/auth/require-admin.ts` — `requireAdminAction` / `getViewerIsAdmin` → `User.role === ADMIN`
+- middleware는 `/upload`, games play 위주 보호; **admin 경로는 페이지/액션에서 자체 검증**
+
+### 5. 관리자 기능 (기존)
+- `/admin/ui-settings` — UI 카피
+- `/admin/launch-banners` — LAUNCH 홈 배너
+- `/notices/admin` — 공지
+- 패턴: page에서 `getViewerIsAdmin` 게이트 + server actions에서 `requireAdminAction`
+
+### 6. AI API 연동 (기존)
+- 키: `GOOGLE_GENERATIVE_AI_API_KEY` / `GEMINI_API_KEY` 등 (`readGeminiApiKeyFromEnv`)
+- 공통: `src/lib/gemini-prompt-analysis-engine.ts`, `src/lib/gemini-models.ts`
+- 용도: LAB 프롬프트 분석, 갤러리 역분석, 뉴스 요약 크론, AI FORTUNE 주간 생성
+- 레이트리밋 완화: `NEWS_SYNC_GEMINI_GAP_MS`, 모델 체인 폴백
+- **Cursor SDK / 다중 LLM 벤더는 미도입**
+
+---
+
+## 1. 적용 위치 · 충돌 · 파일 (보고 7–9)
+
+### 7. 어디에 추가할지
+- **도메인 로직:** `src/lib/ai-review-board/` (오케스트레이션·페르소나·스키마·스토리지) — 기존 Gemini/뉴스/운세와 분리
+- **관리 UI:** `src/app/(root)/admin/ai-review-board/` — 기존 admin 패턴 재사용
+- **API:** `src/app/api/admin/ai-review-board/` (ADMIN 세션) 또는 Server Actions only
+- **산출물 저장 (1차 권장):** 로컬/서버 파일 또는 DB **신규 테이블만** — 기존 Post/User 스키마 손대지 않음
+- **문서:** `docs/ai-review-board.md` (운영 가이드)
+
+### 8. 충돌 가능성
+| 위험 | 완화 |
+|------|------|
+| 동일 Gemini 키 RPM/TPM (뉴스·운세 크론과 경합) | 관리자 수동 실행만, 동시 1세션, Flash-Lite 우선, 호출 간 gap, 선택적 별도 키 `AI_REVIEW_BOARD_GEMINI_API_KEY` |
+| Vercel `maxDuration` (긴 파이프라인) | 단계별 job + 상태머신; 1차 로컬 CLI `scripts/run-ai-review-board.ts` 권장, 대시보드는 결과 뷰어 중심 |
+| egress/DB 부하 | 1차는 읽기 전용 스냅샷(집계·공개 메타만), 사용자 PII 최소 |
+| “자동 코드 수정” 유혹 | 파이프라인에 write/deploy 단계 없음; 산출물 = Markdown/JSON 개선안만 |
+| Prisma migrate 사고 | 1차 **파일 스토리지**로 migrate 0회 가능 (아래 결정 문항) |
+
+### 9. 필요 파일/폴더 (예정)
+```
+src/lib/ai-review-board/
+  types.ts                 # Run, MemberOpinion, ScoreCard, DebateTurn, FinalReport
+  personas.ts              # A–F + Chairman system prompts
+  score-dimensions.ts      # 16(+GEO) 영역 enum
+  evidence-pack.ts         # 읽기 전용 AIsle 스냅샷 빌더
+  independence.ts          # 독립 분석 격리 보장
+  debate.ts
+  critic.ts                # AI-F
+  chairman.ts
+  orchestrator.ts          # 상태머신
+  store.ts                 # JSON 파일 또는 Prisma adapter
+  anti-herding.ts          # 동조 방지 프롬프트/체크
+src/app/(root)/admin/ai-review-board/
+  page.tsx
+  AiReviewBoardClient.tsx
+  [runId]/page.tsx
+scripts/run-ai-review-board.ts
+data/ai-review-board/      # gitignore 권장 (런 산출물)
+docs/ai-review-board.md
+```
+TDD: `src/lib/ai-review-board/*.test.ts` (상태머신·스키마 파싱·독립성 가드)
+
+---
+
+## 2. Agent / 모델 전략 (보고 14 + 구성 2)
+
+### 결론 (현실적 1차)
+**동일 Gemini 백엔드 + 역할별 Persona(시스템 프롬프트) + 오케스트레이터가 “독립성”을 강제**하는 구조가 현재 AIsle·Cursor 환경에 가장 적합하다.
+
+| 방식 | 적합도 | 이유 |
+|------|--------|------|
+| **A. Gemini 멀티 페르소나 (권장)** | 높음 | 기존 키·SDK·레이트리밋 패턴 재사용. Vercel/로컬 모두 가능 |
+| B. 벤더 다중화 (Gemini+OpenAI+Claude) | 중·후순위 | 관점 다양성↑, 비용·키·스키마 파싱 복잡도↑. 2차 |
+| C. Cursor SDK Agent × 6 | 낮음(런타임) | IDE/클라우드 Agent는 “레포 심층 분석”에 강하나 Vercel 서버리스 파이프라인과 맞지 않음. 비용·인증 별도 |
+| D. Cursor Agent 하이브리드 | 보조로 권장 | **증거 패킷**만 Cursor/로컬 스크립트로 생성(코드·라우트 맵·성능 메모) → Gemini 위원회 입력. 위원회 본체는 Gemini |
+
+**독립 Agent처럼 보이게 하는 방법 (동일 모델이라도):**
+1. 멤버별 격리된 system prompt + 금지 규칙(“다른 위원 의견 가정 금지”)
+2. 오케스트레이터가 독립 단계에서는 **타 위원 JSON을 컨텍스트에 넣지 않음** (코드 레벨 가드 + 테스트)
+3. temperature/seed 약간 다르게 (선택)
+4. AI-F·Chairman은 이후 단계에서만 전체 공개
+
+---
+
+## 3. 데이터 흐름
+
+```
+[Admin: Run 시작]
+    → EvidencePack 생성 (읽기 전용)
+         · 라우트/복도 목록, 공개 카테고리 글 수, 최근 크론 헬스, docs 요약,
+           robots/SEO 메모, (선택) Lighthouse/수동 메모 stub
+    → Phase INDEPENDENT: A,B,C,D,E 병렬 또는 순차 (서로 결과 비공개)
+         · 각자: 상태/장점/문제/트렌드갭/우선순위/효과/난이도/위험/근거/confidence
+         · 영역별 score + evidence[] 분리 저장
+    → Phase DEBATE: 전원에게 타인 결과 공개
+         · 동의/반대/근거부족/누락/추가검증/의견수정여부·이유
+         · anti-herding: “단순 동조 금지, 수정 시 근거 필수”
+    → Phase CRITIC (AI-F): 전체 검토 체크리스트
+    → Phase CHAIRMAN: 가중 종합 보고서 (다수결/평균만 금지)
+    → Store: run JSON + history events
+    → Admin Dashboard 표시
+    → (사람 검토) — 적용은 별도 개발 단계 (이 시스템 밖)
+```
+
+상태: `queued → collecting_evidence → independent → debate → critic → chairman → completed | failed`
+
+---
+
+## 4. DB / 스토리지 (보고 10) — 1차 결정 포인트
+
+### 권장 A (1차 기본): 파일 JSON 스토어
+- `data/ai-review-board/runs/{runId}.json` (+ `events.jsonl`)
+- **기존 DB 마이그레이션 0** → 요구사항 §9와 정합
+- gitignore; 로컬·관리자 머신에서 CLI 실행 후 결과 커밋/업로드 가능
+- Vercel 읽기 전용 FS 제약 → **프로덕션 대시보드는 업로드된 아티팩트 또는 R2** 필요 시 1.1에서
+
+### 대안 B: Prisma 신규 모델만 (additive)
+```
+ReviewBoardRun { id, status, startedAt, finishedAt, evidencePack Json, finalReport Json, createdBy }
+ReviewBoardMemberOutput { id, runId, memberId, phase, payload Json, confidence, revisedFrom Json? }
+ReviewBoardEvent { id, runId, type, actor, payload Json, createdAt }  // 토론·의견변경 감사로그
+ReviewBoardScore { id, runId, memberId?, dimension, score, evidence Json }  // 점수/근거 분리
+```
+기존 User/Post **변경 없음**. migrate는 “신규 테이블만”.
+
+**승인 시 A 또는 B 선택 필요.**
+
+---
+
+## 5. API (보고 11)
+
+| 메서드 | 경로/액션 | 역할 |
+|--------|-----------|------|
+| Server Action / POST | `startReviewBoardRun` | ADMIN, EvidencePack+파이프라인 시작(또는 CLI 트리거 안내) |
+| GET | `/admin/ai-review-board` | 런 목록 |
+| GET | `/admin/ai-review-board/[runId]` | 상세·타임라인·점수·최종안 |
+| (선택) POST | `/api/admin/ai-review-board/[runId]/cancel` | 중단 |
+| **없음 (1차)** | 코드 패치·배포·DB mutate 엔드포인트 | |
+
+인증: 전부 `requireAdminAction`. 공개 API 없음.
+
+---
+
+## 6. 환경변수 (보고 12)
+
+| 변수 | 필수 | 설명 |
+|------|------|------|
+| 기존 Gemini 키 | 예 | 공용 가능 |
+| `AI_REVIEW_BOARD_GEMINI_API_KEY` | 권장 | 크론과 격리 |
+| `AI_REVIEW_BOARD_MAX_CALLS_PER_RUN` | 권장 | 기본 예: 40 |
+| `AI_REVIEW_BOARD_MODEL` | 선택 | 기본 Flash-Lite |
+| `AI_REVIEW_BOARD_ENABLED` | 권장 | 기본 false in prod until ready |
+| Cursor | 1차 불필요 | 증거 패킷 보조 시만 로컬 |
+
+---
+
+## 7. 예상 비용 (보고 13)
+
+가정: Flash-Lite, 멤버 5명 독립 + 5명 토론 + F + Chairman ≈ **12–20회** JSON 호출/런 (+ Evidence 0–2회).
+- 입력에 EvidencePack·타인 분석 포함 시 토큰↑ → **런당 대략 $0.05–0.40** 수준(모델·패킷 크기 의존)
+- 주 1회 수동: 무시 가능 / 일 다회: 키 할당량·뉴스 크론과 경합 주의
+- Cursor Agent를 본체에 쓰면 **Cursor 과금 + Gemini 이중** → 1차 비권장
+
+---
+
+## 8. 관리자 화면 구조
+
+`/admin/ai-review-board`
+- 상단: Run 시작 (확인 모달: 예상 호출 수·비용 경고), 상태 배지
+- 런 목록: id, 시각, status, overall score, confidence
+
+`/admin/ai-review-board/[runId]`
+- 탭: Overview | Members | Debate timeline | Critic | Scores | Final | Raw JSON
+- Members: A–E 카드(독립 분석), 의견 변경 배지
+- Debate: 시간순 이벤트 (동의/반대/수정 이유 강조)
+- Scores: 영역별 0–100 + **근거 패널 분리**
+- Final: Chairman 13개 섹션 고정 레이아웃
+
+1차 UI는 **관찰 우선** (실행은 CLI여도 UI는 결과 뷰어 OK).
+
+---
+
+## 9. 점수·근거 스키마 (요지)
+
+```ts
+dimension: 'ui_ux' | 'visual' | 'mobile' | 'web_tech' | 'performance' | 'a11y' | 'usability'
+  | 'content' | 'community' | 'ai_usage' | 'competitive' | 'acquisition' | 'retention'
+  | 'seo_geo' | 'security' | 'scalability'
+score: 0–100
+evidence: { kind: 'observation'|'metric'|'doc'|'external_ref'|'inference'; text; source?; }
+// inference만 있으면 confidence 자동 하향 + Critic 플래그
+```
+
+---
+
+## 10. 기술적 문제와 해결
+
+1. **장시간 파이프라인 / Vercel 타임아웃** → 1차 CLI 오케스트레이션; 또는 phase별 resume
+2. **동조(herding)** → 토론 프롬프트에 반례 요구; Critic이 동조율 검사; 수정 시 reason 필수 스키마
+3. **환각 점수** → evidence 없으면 score null 또는 cap; Chairman이 evidence 가중
+4. **경쟁사/트렌드 실시간 검색 부재** → EvidencePack에 수동/문서 링크; 웹검색은 2차(또는 제한적 fetch allowlist)
+5. **비밀·PII** → 스냅샷에 이메일·토큰 제외; ADMIN만 열람
+6. **JSON 파싱 실패** → 기존 fortune/news와 동일 재시도·수정 프롬프트
+7. **§9 “비용 발생 작업 실행”** → 구현 완료 후 **자동 cron 연결하지 않음**; 승인된 수동 실행만
+
+---
+
+## 11. 1차 구현 계획 (승인 후 작업 순서)
+
+### In scope (1차)
+1. 타입·페르소나·점수 차원·JSON 스키마 + **실패하는 테스트 먼저** (TDD)
+2. EvidencePack 빌더 (읽기 전용, 안전 필드만)
+3. Orchestrator: independent → debate → critic → chairman (파일 스토어)
+4. CLI `scripts/run-ai-review-board.ts`
+5. Admin 대시보드: 런 목록 + 상세 관찰 UI (실행 버튼은 feature flag)
+6. docs + plan 상태 Approved로 갱신
+7. **보안/성능 셀프리뷰 보고**
+
+### Out of scope (1차)
+- 프로덕션 코드 자동 수정 / PR 생성 / 배포
+- 기존 DB 모델 변경, 사용자 데이터 삭제
+- 광고·결제·크론 자동 연결
+- Cursor SDK 본체 연동, 멀티벤더 LLM
+- 적용 결과 측정 루프 (차기)
+
+### 승인 전 확인 질문
+1. 스토리지: **A 파일 JSON** vs **B Prisma 신규 테이블**?
+2. 1차 실행 위치: **로컬 CLI만** vs **Admin 버튼으로 서버 실행**?
+3. EvidencePack에 **프로덕션 DB 집계 읽기** 허용 여부 (카운트만)?
+4. SEO+GEO를 한 차원(`seo_geo`)으로 둘지, 분리할지? (요청상 SEO, GEO — **분리 권장**)
+
+---
+
+## 12. 설계 철학 매핑
+- 독립 → 토론 → 검증 → 종합 → 사람 검토: 오케스트레이터 단계로 고정
+- “무엇을/왜/왜 바꿨는가”: `ReviewBoardEvent` + member `revision` 필드 필수
+- 적용·측정은 시스템 경계 밖 (별도 개발 단계)

@@ -1,0 +1,47 @@
+{
+  "generatedAt": "2026-09-17T07:53:24.320Z",
+  "site": {
+    "name": "AIsle",
+    "corridors": [
+      "LAB/RECIPE",
+      "GALLERY",
+      "LOUNGE",
+      "GOSSIP",
+      "BUILD",
+      "LAUNCH",
+      "AI_FORTUNE"
+    ],
+    "stackNotes": [
+      "Next.js 15 App Router + React 19",
+      "Prisma 7 + PostgreSQL (Supabase Auth)",
+      "Gemini (@google/generative-ai) for LAB/news/fortune",
+      "Vercel hosting + GitHub Actions cron",
+      "Capacitor mobile shell"
+    ]
+  },
+  "aggregates": {
+    "userCount": 14,
+    "usersLast7d": 0,
+    "postCount": 3368,
+    "postsLast7d": 145,
+    "totalViews": 247231,
+    "commentCount": 4,
+    "postsByCategory": {
+      "LOUNGE": 3280,
+      "AI_FORTUNE": 17,
+      "GALLERY": 23,
+      "RECIPE": 16,
+      "LAUNCH": 6,
+      "BUILD": 5,
+      "GOSSIP": 21
+    }
+  },
+  "docsHints": [
+    "docs/geo-optimization.md — GEO/SEO 가이드",
+    "docs/performance-seo.md",
+    "docs/cron-operations.md",
+    "복도형 커뮤니티 + AI Work/Fortune/Games"
+  ],
+  "piiExcluded": true,
+  "readOnly": true
+}
