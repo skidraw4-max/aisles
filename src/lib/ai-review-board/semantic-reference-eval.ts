@@ -30,6 +30,8 @@ import {
   isJudgeRecommendedAction,
   isOverclaimRisk,
   isSemanticLeapType,
+  judgeActionsEquivalent,
+  type CalibrationJudgeMismatchType,
 } from './types';
 
 export type ReferenceEvidenceEntry = {
@@ -135,11 +137,20 @@ export function evidencePackFromReferenceEntries(
     commentCount: 0,
     postsByCategory: {},
   };
+  const postsByCategory: Record<string, number> = {};
   for (const e of entries) {
+    if (e.ref.startsWith('aggregates.postsByCategory.')) {
+      const cat = e.ref.slice('aggregates.postsByCategory.'.length);
+      if (typeof e.value === 'number') postsByCategory[cat] = e.value;
+      continue;
+    }
     if (e.ref.startsWith('aggregates.')) {
       const key = e.ref.slice('aggregates.'.length);
       aggregates[key] = e.value as number | null;
     }
+  }
+  if (Object.keys(postsByCategory).length) {
+    aggregates.postsByCategory = postsByCategory;
   }
   return buildStubEvidencePack({
     aggregates: aggregates as EvidencePack['aggregates'],
@@ -240,7 +251,7 @@ export function evaluateReferenceCase(c: SemanticReferenceCase): ReferenceCaseRe
       adj.classification.evidenceRelation === c.expected.evidenceRelation,
     overclaimRisk: adj.classification.overclaimRisk === c.expected.overclaimRisk,
     semanticLeap: adj.semanticLeap.type === c.expected.semanticLeap,
-    action: adj.recommendedAction === c.expectedAction,
+    action: judgeActionsEquivalent(adj.recommendedAction, c.expectedAction),
   };
   return {
     id: c.id,
@@ -409,4 +420,67 @@ export function measureRevisionInfluence(input: {
     judgeIgnoredRisk,
     judgeRevisionMismatch: mismatch.size,
   };
+}
+
+const SUPPORT_RANK: Record<ClaimSupportLevel, number> = {
+  SUPPORTED: 2,
+  PARTIALLY_SUPPORTED: 1,
+  NOT_SUPPORTED: 0,
+};
+
+export function compareCalibrationJudgeMismatch(
+  calibration: { supportLevel: ClaimSupportLevel; evidenceRelation: string },
+  judge: { supportLevel: ClaimSupportLevel; evidenceRelation: string },
+): CalibrationJudgeMismatchType {
+  if (
+    calibration.supportLevel === judge.supportLevel &&
+    calibration.evidenceRelation === judge.evidenceRelation
+  ) {
+    return 'NONE';
+  }
+  const c = SUPPORT_RANK[calibration.supportLevel];
+  const j = SUPPORT_RANK[judge.supportLevel];
+  if (j < c) return 'JUDGE_STRICTER';
+  if (c < j) return 'CALIBRATION_STRICTER';
+  return 'CALIBRATION_JUDGE_CONFLICT';
+}
+
+/** Deterministic scan of Chairman/final text for known reliability failures. */
+export function scanChairmanReliability(input: {
+  confirmedFacts?: string[];
+  hypotheses?: string[];
+  statusSummary?: string;
+  supportedClaims?: string[];
+  unsupportedHypothesisClaims?: string[];
+}): string[] {
+  const blob = [
+    ...(input.confirmedFacts ?? []),
+    ...(input.hypotheses ?? []),
+    ...(input.supportedClaims ?? []),
+    ...(input.unsupportedHypothesisClaims ?? []),
+    input.statusSummary ?? '',
+  ].join('\n');
+  const flags: string[] = [];
+  if (
+    /(null|unavailable|측정).{0,40}(low|낮|dormant|inactive)/i.test(blob) ||
+    /activity is low/i.test(blob)
+  ) {
+    flags.push('NULL_AS_LOW_ACTIVITY');
+  }
+  if (/(댓글\s*0|comments?\s*=?\s*0).{0,40}(전체|platform|entire).{0,20}(inactive|참여)/i.test(blob)) {
+    flags.push('SINGLE_METRIC_AS_PLATFORM_INACTIVE');
+  }
+  if (/(Gemini|AI).{0,40}(integration|통합).{0,40}(increases?|증가|효과)/i.test(blob)) {
+    flags.push('PRESENCE_AS_EFFECT');
+  }
+  if (/(many posts|게시글\s*수|postCount).{0,40}(quality|품질)/i.test(blob)) {
+    flags.push('QUANTITY_AS_QUALITY');
+  }
+  if (/(2025|2026|트렌드).{0,40}(격차|gap)/i.test(blob) && !/benchmark/i.test(blob)) {
+    flags.push('BENCHMARK_WITHOUT_EVIDENCE');
+  }
+  if (/(UI\/?UX).{0,40}(confirmed cause|원인이다|확정)/i.test(blob)) {
+    flags.push('UX_HYPOTHESIS_AS_FACT');
+  }
+  return flags;
 }

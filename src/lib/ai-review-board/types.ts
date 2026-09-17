@@ -367,18 +367,39 @@ export function isSemanticLeapType(v: unknown): v is SemanticLeapType {
 
 export const JUDGE_RECOMMENDED_ACTIONS = [
   'NO_CHANGE',
+  /** Alias of NO_CHANGE — accepted in fixtures/prompts; do not rename NO_CHANGE away */
+  'NO_ACTION_NEEDED',
   'REWORD',
   'NARROW',
   'DOWNGRADE_SUPPORT',
   'DOWNGRADE_CONFIDENCE',
   'ADD_CAVEAT',
   'REQUEST_MORE_EVIDENCE',
+  'VERIFY',
 ] as const;
 export type JudgeRecommendedAction = (typeof JUDGE_RECOMMENDED_ACTIONS)[number];
 
 export function isJudgeRecommendedAction(v: unknown): v is JudgeRecommendedAction {
   return (JUDGE_RECOMMENDED_ACTIONS as readonly string[]).includes(String(v));
 }
+
+/** NO_ACTION_NEEDED ≡ NO_CHANGE for equality checks */
+export function normalizeJudgeAction(v: string): string {
+  return v === 'NO_ACTION_NEEDED' ? 'NO_CHANGE' : v;
+}
+
+export function judgeActionsEquivalent(a: string, b: string): boolean {
+  return normalizeJudgeAction(a) === normalizeJudgeAction(b);
+}
+
+export type CalibrationJudgeMismatchType =
+  | 'NONE'
+  | 'CALIBRATION_STRICTER'
+  | 'JUDGE_STRICTER'
+  | 'CALIBRATION_JUDGE_CONFLICT'
+  | 'UNKNOWN_HANDLING_CONFLICT'
+  | 'CAUSALITY_CONFLICT'
+  | 'BENCHMARK_CONFLICT';
 
 export type SemanticJudgeClassification = {
   evidenceType: ClaimEvidenceType;
@@ -398,6 +419,8 @@ export type SemanticJudgment = {
   verdict: JudgeVerdict;
   /** Operational: Judge vs Calibration/Semantics agreement (not classic FP/FN) */
   calibrationAgreement?: 'AGREE' | 'DISAGREE' | 'PARTIAL';
+  /** v9.1: typed mismatch vs Calibration (not classic FP/FN) */
+  mismatchType?: CalibrationJudgeMismatchType;
   judgeReason: string;
   missingEvidence: string[];
   semanticLeap: {
@@ -552,6 +575,8 @@ export type FinalReport = {
   semanticJudgeFindings?: string[];
   semanticRisks?: string[];
   semanticJudgeSummary?: SemanticJudgeSummary;
+  /** v9.1: deterministic chairman reliability scan flags */
+  chairmanReliabilityFlags?: string[];
 };
 
 export type EvidenceAggregates = {

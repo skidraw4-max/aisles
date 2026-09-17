@@ -466,7 +466,8 @@ Content generation / Gemini copy changes
 
 # Plan: AI Review Board v9 — Semantic Judge Validation & Chairman Reliability
 
-**Status:** Done — Gemini v9 `run-2026-09-17T12-25-17-531Z` (33 calls). Reference suite 15/15 match.
+**Status:** Done — Gemini v9 `run-2026-09-17T12-25-17-531Z` (33 calls). Reference suite 15/15 match.  
+**Shipped:** `dd6f004` + browser-safe fix `9e08688`.
 
 **승인 결정:**
 1. OR Expected → plan default 단일 Expected (SEM-005/010/013/015)
@@ -475,80 +476,85 @@ Content generation / Gemini copy changes
 4. Chairman fixture subset = SEM-001 / 005 / 006 / 012 / 014
 5. Calls ~32 ≤40; commit `feat: add AI review board semantic judge validation`
 
-## Goal
-v8 Judge가 “좋은 판정자”인지 **사람 정의 Reference Set**으로 검증하고, Calibration 대비 차이·Revision 영향·Chairman Fact/Inference/Hypothesis 분리를 측정한다.
+---
 
-성공 ≠ 전부 맞춤 / ≠ 더 많은 leap / ≠ 더 많은 disagreement.  
-성공 = Evidence 범위를 넘지 않으면서 Direct Fact를 지키며 leap·unknown-as-negative를 탐지하고, 차이를 추적·보고할 수 있을 것.
+# Plan: AI Review Board v9.1 — Live-issue Reference Expansion & Reliability Flags
 
-## Pipeline (calls unchanged ~32 ≤40)
-```
-EvidencePack
-→ Independent ×5 → Debate ×5
-→ Claim Calibration ×5 → Evidence Semantics ×5
-→ Semantic Judge ×5 → Deterministic Overlay (flags only)
-→ Revision ×5 → Consistency → Critic ×1 → Chairman ×1
-→ Validation Report (regression metrics; live ≠ TP/FP)
-```
+**Status:** Done — CASE-01…10 regression + reliability UX (no new Gemini live).
+
+**승인 결정:**
+1. v9.1 증분 only (CASE-01…10 + reliability UX); no full rewrite
+2. `NO_CHANGE` kept; `NO_ACTION_NEEDED` = Judge action alias (no rename)
+3. **No new Live Gemini run** — regression/fixture/UX only
+4. CASE-04/06/08 → plan single Expected as fixture ground truth
+5. Preserve SEM-* + v1–v9 JSON untouched
+
+## Context
+v9(SEM-001…015 + Live Run + Admin Live/Regression 분리)는 이미 완료·배포됨.  
+이번 사용자 브리프는 **v8 Live에서 관측된 실패 모드**를 CASE-01…10으로 고정하고, mismatchType·Chairman reliability·Claim Table UX를 보강한다.  
+→ **전면 재구현이 아니라 additive 증분(v9.1)**. v1–v9 JSON / schema breaking 금지.
+
+## Goal (unchanged philosophy)
+성공 ≠ Revision 비율.  
+성공 = 근거에 맞는 판단 + 일관된 revision (UNCHANGED도 정당하면 정답).
+
+## Gap vs shipped v9
+
+| Brief item | Shipped v9 | v9.1 plan |
+|------------|------------|-----------|
+| CASE-01…10 (v8 live wording) | SEM-001…015 (synthetic Korean) | **Add** CASE-01…10 to fixture (keep SEM-*) |
+| `NO_ACTION_NEEDED` | Judge uses `NO_CHANGE`; Revision already has `NO_ACTION_NEEDED` | Alias: treat `NO_ACTION_NEEDED` ≡ `NO_CHANGE` for Judge expectedAction (no rename) |
+| `mismatchType` enum | `calibrationAgreement` AGREE/DISAGREE/PARTIAL only | Add `mismatchType`: NONE / CALIBRATION_STRICTER / JUDGE_STRICTER / … |
+| `chairmanReliabilityFlags[]` | chairman bucket helper only | Deterministic scan of Final for null→low, quantity→quality, etc. |
+| Admin Claim Table | list + summary | Columns: Claim/Evidence/Cal/Judge/Support/Risk/Leap/Action/Revision/Consistency |
+| Live TP/FP | already forbidden | keep |
+| Calls | 32 ≤40 | **no new LLM phase** (still ~32) |
+
+## CASE-01…10 defaults (single Expected; OR resolved)
+
+| ID | Expected support / relation / leap / action |
+|----|-----------------------------------------------|
+| CASE-01 | SUPPORTED / DIRECTLY_SUPPORTS / NONE / NO_CHANGE (null=unavailable fact) |
+| CASE-02 | NOT_SUPPORTED / DOES_NOT_SUPPORT / UNKNOWN_AS_NEGATIVE / REWORD |
+| CASE-03 | NOT_SUPPORTED / DOES_NOT_SUPPORT / FACT_TO_CAUSALITY / REWORD |
+| CASE-04 | NOT_SUPPORTED / DOES_NOT_SUPPORT / FACT_TO_TREND / ADD_CAVEAT |
+| CASE-05 | SUPPORTED / DIRECTLY_SUPPORTS / NONE / NO_CHANGE (LOUNGE % calc) |
+| CASE-06 | PARTIALLY_SUPPORTED / PARTIALLY_SUPPORTS / FACT_TO_GLOBAL / REWORD |
+| CASE-07 | SUPPORTED / DIRECTLY_SUPPORTS / NONE / NO_CHANGE |
+| CASE-08 | NOT_SUPPORTED (platform-wide) / DOES_NOT_SUPPORT / FACT_TO_GLOBAL / NARROW |
+| CASE-09 | NOT_SUPPORTED / DOES_NOT_SUPPORT / TECH_STACK_TO_QUALITY→quantity≠quality flag / NARROW |
+| CASE-10 | NOT_SUPPORTED / DOES_NOT_SUPPORT / FACT_TO_CAUSALITY / NARROW |
+
+## Architecture (additive)
+1. Extend `semantic-reference-cases.json` with CASE-01…10 (+ keep SEM-*).
+2. Extend adjudicator for LOUNGE-ratio, corridor-scope, quantity≠quality, presence≠effectiveness (TDD first).
+3. `compareCalibrationJudge()` → `mismatchType` on live judgments (optional field).
+4. `scanChairmanReliability(final, evidence)` → `chairmanReliabilityFlags[]` on Final (additive).
+5. Admin Semantic Judge: Claim Table columns + detail; still **Regression vs Live** split; no Live TP/FP.
+6. Regression: TP/FP only vs human Expected. Live Gemini: classification/leap/action/risk/confidence only.
+7. Revision: still no force; mismatch if HIGH leap + UNCHANGED without retainReason.
 
 ## Out of scope
-자동 코드/배포/DB/UX/마케팅/SEO 수정 · Revision 강제 · Judge/majority를 정답 취급 · v1–v8 JSON mutate · unrelated dirty files · force push · Prisma schema.
+Prisma/DB write · v1–v9 mutate · schema rename · Revision 강제 · Live TP/FP · majority=truth · unrelated dirty · force push · second full Gemini unless tests need re-baseline.
 
-## Reference Evaluation Set (Human Expected only)
-- Path (default): `tests/fixtures/ai-review-board/semantic-reference-cases.json`  
-  (프로젝트에 기존 fixture 관례가 있으면 그 구조를 우선)
-- Expected는 **LLM 생성 금지** — 사람이 정의한 기준만.
-- 최소 **15 cases** SEM-001…015 (Category A–G: Direct / Missing / Causal / Trend / Global / Tech / Valid Inference)
-- Structure per case: `id`, `evidence[]`, `claim`, `expected{evidenceType,supportLevel,evidenceRelation,overclaimRisk,semanticLeap}`, `expectedAction`, `rationale`
-- Judge ≠ Expected → **자동으로 Expected 폐기 금지**; test 결과로만 기록
-
-### OR Expected 기본안 (승인 시 확정/수정)
-| Case | Brief OR | Plan default (단일 Expected) |
-|------|----------|------------------------------|
-| SEM-005 | INFERENCE\|UNKNOWN / NOT\|PARTIAL | `INFERENCE` + `NOT_SUPPORTED` + leap `UNKNOWN_AS_NEGATIVE_EVIDENCE` + HIGH |
-| SEM-010 | PARTIAL\|NOT / MED~HIGH | `NOT_SUPPORTED` + `FACT_TO_GLOBAL_CONCLUSION` + HIGH |
-| SEM-013 | NOT\|PARTIAL | `NOT_SUPPORTED` + `TECH_STACK_TO_QUALITY` + HIGH |
-| SEM-015 | SUPPORTED\|PARTIAL / LOW~MED | `SUPPORTED` + `DIRECTLY_SUPPORTS` + LOW + NONE |
-
-## Metrics (Reference / regression only)
-Classification Accuracy · Support Accuracy · Evidence Relation Accuracy · Overclaim Precision/Recall · Unknown-as-Negative / Causal / Trend / Global / Tech Leap Recall · TP/FP/TN/FN (fixture only).
-
-**Live Gemini run:** TP/FP **금지**. 저장: judgeClassification, calibration, agreement/disagreement, leap, confidence, recommendedAction, overlayFlags[], revision-influence flags.
-
-## Deterministic Overlay
-LLM을 **대체·자동 수정하지 않음**. `overlayFlags[]`만 기록:
-null→0 · UNKNOWN→negative · majority reasoning · leap marker↔wording mismatch · EvidenceRef 존재/허위.
-
-## Judge vs Calibration
-per-claim `{ calibration, judge, comparison{agreement, differences[]} }` — disagreement ≠ error.
-
-## Revision influence (no force)
-Metrics: `judgeTriggeredRevision|Reword|Narrow|ConfidenceChange`, `judgeIgnoredRisk`, `judgeRevisionMismatch`.  
-위험 유지 시 retainReason 요구; PARTIAL/FULL 강제 금지.
-
-## Chairman
-Judge 입력 받되 EvidencePack 최종 확인. 분리: Confirmed Facts / Supported Inferences / Partially Supported / Unsupported·Hypothesis / Unknown / Semantic Risks.  
-Fixture 일부로 Fact vs Inference vs 과장 Hypothesis 분리 regression.
-
-## Admin
-기존 탭 유지 + Semantic Judge 탭에:
-- Summary (counts, leaps, revision influence, mismatch)
-- **Regression Reference** vs **Live Run** 섹션 명확 분리  
-v1–v8 데이터 없으면 "—". Migration 금지.
-
-## TDD order (승인 후)
-1 전체 기존 테스트 → 2 fixture → 3 fixture 검증 → 4 Judge → 5 Overlay → 6 Judge/Cal compare → 7 Revision influence → 8 Chairman classification → 9 전체 → 10 Gemini live → 분석 → commit `feat: add AI review board semantic judge validation` → push (no force).
+## TDD (승인 후)
+1. Full existing tests  
+2. CASE-01…10 fixture + failing tests  
+3. Adjudicator / mismatchType / chairmanReliability  
+4. Admin Claim Table  
+5. Full suite  
+6. Optional Gemini live only if user requests new baseline (else reuse v9 run + regression-only)
 
 ## Cost / Git
-Start log: expected 32 calls + cost estimate. Report runId/calls/cost. Board files only. Preserve v1–v8 baselines.
+Calls unchanged ~32 if Gemini re-run. Commit: `feat: expand AI review board judge reference cases` (or project convention). Board files only.
 
-## Approval questions (답변 후 구현)
-1. OR Expected 기본안 테이블 승인? (또는 케이스별 지정)
-2. Reference Evaluation = regression/CLI·unit만, Live run에 fixture 미혼합 — 맞음?
-3. Overlay = flags only (LLM 판정 덮어쓰기 없음) — 맞음?
-4. Chairman fixture는 SEM subset(예: 001/005/006/012/014)만? 범위 지정?
+## Approval questions
+1. 범위 = **v9.1 증분**(CASE-01…10 + flags/UI) — 맞음? (전면 재구현 아님)
+2. Judge action: **NO_CHANGE 유지 + NO_ACTION_NEEDED 별칭** — 맞음?
+3. Gemini live 재실행: **이번엔 regression만 / 새 Live run도**?
+4. CASE-04/06/08 OR → 위 단일 Expected 테이블 승인?
 
-**승인 전 금지:** 코드·테스트·DB·UI·Gemini·commit·push.
+**승인 전 금지:** 코드·테스트·UI·Gemini·commit·push.
 
 # Plan: AI Review Board v7 — Evidence Semantics & Claim Entailment
 

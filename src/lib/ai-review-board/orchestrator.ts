@@ -27,7 +27,10 @@ import {
   runJudgeRevisionConsistency,
   summarizeSemanticJudgments,
 } from './semantic-judge';
-import { measureRevisionInfluence } from './semantic-reference-eval';
+import {
+  measureRevisionInfluence,
+  scanChairmanReliability,
+} from './semantic-reference-eval';
 import type {
   ClaimCalibration,
   EvidencePack,
@@ -473,6 +476,13 @@ export async function runReviewBoardPipeline(
         judgeTriggeredConfidenceChange: influence.judgeTriggeredConfidenceChange,
         judgeIgnoredRisk: influence.judgeIgnoredRisk,
       },
+      chairmanReliabilityFlags: scanChairmanReliability({
+        confirmedFacts: run.final.confirmedFacts,
+        hypotheses: run.final.hypotheses,
+        statusSummary: run.final.statusSummary,
+        supportedClaims: run.final.supportedClaims,
+        unsupportedHypothesisClaims: run.final.unsupportedHypothesisClaims,
+      }),
       directlySupportedClaims: [
         ...(run.final.directlySupportedClaims ?? []),
         ...allSemRows

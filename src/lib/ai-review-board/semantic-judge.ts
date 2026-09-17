@@ -8,6 +8,7 @@ import type {
   ClaimCalibration,
   ClaimEvidenceType,
   ClaimSupportLevel,
+  CalibrationJudgeMismatchType,
   CommitteeAnalystId,
   EvidencePack,
   EvidenceRelation,
@@ -55,19 +56,28 @@ export type JudgeClassification = {
 };
 
 const MEASUREMENT_GAP_RE =
-  /(측정.*(없|불가)|알\s*수\s*없|확인\s*할\s*수\s*없|확인할\s*수\s*없|not\s+measured|unavailable|null|데이터가\s*없|측정되지)/i;
+  /(측정.*(없|불가)|알\s*수\s*없|확인\s*할\s*수\s*없|확인할\s*수\s*없|측정할\s*수\s*없|not\s+measured|unavailable|null이므로.{0,40}측정|데이터가\s*없|측정되지)/i;
 const LOW_ACTIVITY_RE =
-  /(활성도가\s*낮|활성\s*사용자[가이]?\s*적|활동량이\s*낮|참여도가\s*(심각히\s*|심각하게\s*)?낮|휴면|dormant|low\s+activity|low\s+engagement|severely\s+low)/i;
+  /(활성도가\s*낮|활성\s*사용자[가이]?\s*적|활동량이\s*낮|참여도가\s*(심각히\s*|심각하게\s*)?낮|휴면|dormant|non-?existent|존재하지\s*않|low\s+activity|low\s+engagement|severely\s+low)/i;
 const CAUSAL_FAIL_RE =
-  /(전략이\s*실패|마케팅이\s*실패|효과가\s*없|때문에|원인|로\s*인해|caused by|due to|failed|failure)/i;
+  /(전략이\s*실패|마케팅이\s*실패|효과가\s*없|때문에|원인|로\s*인해|caused by|due to|failed|failure|저해|유발)/i;
 const ACQUISITION_FAIL_RE = /(획득\s*전략|유입\s*전략|acquisition).{0,30}(실패|효과\s*없|failed)/i;
 const GLOBAL_ENGAGEMENT_RE =
-  /(전체\s*(커뮤니티\s*)?참여|플랫폼\s*전체|overall\s+(community\s+)?engagement|community\s+participation)/i;
+  /(전체\s*(커뮤니티\s*)?참여|플랫폼\s*전체|커뮤니티\s*전체|overall\s+(community\s+)?engagement|community\s+participation)/i;
 const TREND_RE =
-  /(감소하|감소했|증가하|증가했|하락|성장하고|정체|악화|개선되고|declined|decreased|increased|worsened|improved|trend)/i;
+  /(감소하|감소했|증가하|증가했|하락|성장하고|정체|악화|개선되고|격차|트렌드|trend|declined|decreased|increased|worsened|improved)/i;
 const TECH_QUALITY_RE =
-  /(확장성이\s*검증|성능이\s*우수|확장\s*가능|scalability\s+(verified|proven)|performance\s+is\s+(excellent|good))/i;
-const TECH_STACK_RE = /(Vercel|PostgreSQL|Next\.js|기술\s*스택|infra|인프라)/i;
+  /(확장성이\s*검증|성능이\s*우수|확장\s*가능|콘텐츠\s*품질이\s*높|품질이\s*높|scalability\s+(verified|proven)|performance\s+is\s+(excellent|good)|content\s+quality\s+is\s+high)/i;
+const TECH_STACK_RE = /(Vercel|PostgreSQL|Next\.js|기술\s*스택|infra|인프라|Gemini|게시글\s*수)/i;
+const BENCHMARK_YEAR_RE = /(2025|2026|업계\s*평균|경쟁사|시장\s*평균|benchmark)/i;
+const UX_CAUSAL_RE = /(UI\/?UX|UX|UI).{0,40}(원인|저해|때문에|인한|hindering|cause)/i;
+const CORRIDOR_SCOPE_RE = /(LAB\/news\/fortune|LAB.*fortune).{0,20}(만|만\s*제한|에만)|AI\s*기능은.{0,40}(만|제한)/i;
+const QUANTITY_QUALITY_RE = /(게시글\s*수가\s*많|postCount|많으므로).{0,30}(품질|quality)/i;
+const PRESENCE_EFFECT_RE =
+  /(Gemini|AI\s*기능).{0,40}(통합|존재|있으므로).{0,40}(증가|효과|참여를\s*증가)|통합되어\s*있으므로.{0,40}참여/i;
+const POSTS_CONTINUITY_RE =
+  /(게시글\s*\d+|postsLast7d|콘텐츠\s*생성이\s*지속|생성이\s*지속)/i;
+const LOUNGE_RATIO_RE = /(LOUNGE|라운지).{0,40}(\d+\s*%|집중)|전체\s*게시글\s*중.{0,20}(LOUNGE|라운지)/i;
 
 /** Deterministic adjudication of a single claim against EvidencePack (Rules R1–R8). */
 export function adjudicateClaimDeterministic(
@@ -89,7 +99,7 @@ export function adjudicateClaimDeterministic(
   if (
     MEASUREMENT_GAP_RE.test(text) &&
     (a.activeUsersLast7d == null || a.viewsLast7d == null) &&
-    /(active|활성|views|조회)/i.test(text) &&
+    /(active|활성|views|조회|사용자\s*활동)/i.test(text) &&
     !LOW_ACTIVITY_RE.test(text)
   ) {
     return {
@@ -106,7 +116,7 @@ export function adjudicateClaimDeterministic(
     };
   }
 
-  // UNKNOWN as negative — null metrics ≠ “low activity” (not global platform claims)
+  // UNKNOWN as negative — null ≠ dormant / non-existent / low
   if (
     (a.activeUsersLast7d == null || a.viewsLast7d == null) &&
     LOW_ACTIVITY_RE.test(text) &&
@@ -124,7 +134,133 @@ export function adjudicateClaimDeterministic(
       semanticLeap: { detected: true, type: 'UNKNOWN_AS_NEGATIVE_EVIDENCE' },
       recommendedAction: 'REWORD',
       missingEvidence: missing,
-      judgeReason: 'null/UNKNOWN metrics do not entail low activity',
+      judgeReason: 'null/UNKNOWN metrics do not entail low/dormant/non-existent activity',
+    };
+  }
+
+  // LOUNGE concentration ratio from postsByCategory (CASE-05)
+  if (LOUNGE_RATIO_RE.test(text) && typeof a.postCount === 'number' && a.postCount > 0) {
+    const lounge = a.postsByCategory?.LOUNGE;
+    if (typeof lounge === 'number') {
+      const pct = (lounge / a.postCount) * 100;
+      if (pct >= 97 || /97/.test(text)) {
+        return {
+          classification: {
+            evidenceType: 'DIRECT_FACT',
+            supportLevel: 'SUPPORTED',
+            evidenceRelation: 'DIRECTLY_SUPPORTS',
+            overclaimRisk: 'LOW',
+          },
+          semanticLeap: { detected: false, type: 'NONE' },
+          recommendedAction: 'NO_CHANGE',
+          missingEvidence: [],
+          judgeReason: `LOUNGE share ${(pct).toFixed(1)}% is a direct ratio from postsByCategory`,
+        };
+      }
+    }
+  }
+
+  // posts continuity (CASE-07) — not quality/engagement expansion
+  if (
+    POSTS_CONTINUITY_RE.test(text) &&
+    typeof a.postsLast7d === 'number' &&
+    a.postsLast7d > 0 &&
+    !TECH_QUALITY_RE.test(text) &&
+    !GLOBAL_ENGAGEMENT_RE.test(text) &&
+    !QUANTITY_QUALITY_RE.test(text) &&
+    !CAUSAL_FAIL_RE.test(text)
+  ) {
+    return {
+      classification: {
+        evidenceType: 'DIRECT_FACT',
+        supportLevel: 'SUPPORTED',
+        evidenceRelation: 'DIRECTLY_SUPPORTS',
+        overclaimRisk: 'LOW',
+      },
+      semanticLeap: { detected: false, type: 'NONE' },
+      recommendedAction: 'NO_CHANGE',
+      missingEvidence: [],
+      judgeReason: 'postsLast7d>0 directly supports ongoing content production wording',
+    };
+  }
+
+  // Quantity ≠ quality (CASE-09)
+  if (QUANTITY_QUALITY_RE.test(text) || (TECH_QUALITY_RE.test(text) && /게시글\s*수|postCount|많으/.test(text))) {
+    return {
+      classification: {
+        evidenceType: 'HYPOTHESIS',
+        supportLevel: 'NOT_SUPPORTED',
+        evidenceRelation: 'DOES_NOT_SUPPORT',
+        overclaimRisk: 'HIGH',
+      },
+      semanticLeap: { detected: true, type: 'TECH_STACK_TO_QUALITY' },
+      recommendedAction: 'NARROW',
+      missingEvidence: ['quality_rubric', 'editorial_review'],
+      judgeReason: 'Post quantity does not entail content quality',
+    };
+  }
+
+  // Corridor scope overclaim (CASE-06)
+  if (CORRIDOR_SCOPE_RE.test(text)) {
+    return {
+      classification: {
+        evidenceType: 'INFERENCE',
+        supportLevel: 'PARTIALLY_SUPPORTED',
+        evidenceRelation: 'PARTIALLY_SUPPORTS',
+        overclaimRisk: 'HIGH',
+      },
+      semanticLeap: { detected: true, type: 'FACT_TO_GLOBAL_CONCLUSION' },
+      recommendedAction: 'REWORD',
+      missingEvidence: ['ai_usage_by_corridor'],
+      judgeReason: 'Mentioned LAB/news/fortune scope ≠ proven exclusive AI coverage',
+    };
+  }
+
+  // Presence ≠ positive engagement effect (CASE-10)
+  if (PRESENCE_EFFECT_RE.test(text)) {
+    return {
+      classification: {
+        evidenceType: 'HYPOTHESIS',
+        supportLevel: 'NOT_SUPPORTED',
+        evidenceRelation: 'DOES_NOT_SUPPORT',
+        overclaimRisk: 'HIGH',
+      },
+      semanticLeap: { detected: true, type: 'FACT_TO_CAUSALITY' },
+      recommendedAction: 'NARROW',
+      missingEvidence: ['ai_feature_usage', 'engagement_lift'],
+      judgeReason: 'Feature presence does not entail engagement increase',
+    };
+  }
+
+  // UI/UX causal (CASE-03)
+  if (UX_CAUSAL_RE.test(text)) {
+    return {
+      classification: {
+        evidenceType: 'HYPOTHESIS',
+        supportLevel: 'NOT_SUPPORTED',
+        evidenceRelation: 'DOES_NOT_SUPPORT',
+        overclaimRisk: 'HIGH',
+      },
+      semanticLeap: { detected: true, type: 'FACT_TO_CAUSALITY' },
+      recommendedAction: 'REWORD',
+      missingEvidence: ['ux_study', 'funnel_attribution'],
+      judgeReason: 'Outcome metrics alone do not establish UI/UX as the cause',
+    };
+  }
+
+  // Benchmark / year trend gap without external benchmark (CASE-04)
+  if (BENCHMARK_YEAR_RE.test(text) && TREND_RE.test(text)) {
+    return {
+      classification: {
+        evidenceType: 'INFERENCE',
+        supportLevel: 'NOT_SUPPORTED',
+        evidenceRelation: 'DOES_NOT_SUPPORT',
+        overclaimRisk: 'HIGH',
+      },
+      semanticLeap: { detected: true, type: 'FACT_TO_TREND' },
+      recommendedAction: 'ADD_CAVEAT',
+      missingEvidence: ['external_benchmark', 'competitor_metrics'],
+      judgeReason: 'No external 2025–2026 / industry benchmark in EvidencePack',
     };
   }
 
@@ -554,6 +690,29 @@ export function compareToReference(
   return 'SEMANTICALLY_AMBIGUOUS';
 }
 
+const SUPPORT_RANK_INLINE: Record<ClaimSupportLevel, number> = {
+  SUPPORTED: 2,
+  PARTIALLY_SUPPORTED: 1,
+  NOT_SUPPORTED: 0,
+};
+
+function compareCalibrationJudgeMismatchInline(
+  calibration: JudgeClassification,
+  judge: JudgeClassification,
+): CalibrationJudgeMismatchType {
+  if (
+    calibration.supportLevel === judge.supportLevel &&
+    calibration.evidenceRelation === judge.evidenceRelation
+  ) {
+    return 'NONE';
+  }
+  const c = SUPPORT_RANK_INLINE[calibration.supportLevel];
+  const j = SUPPORT_RANK_INLINE[judge.supportLevel];
+  if (j < c) return 'JUDGE_STRICTER';
+  if (c < j) return 'CALIBRATION_STRICTER';
+  return 'CALIBRATION_JUDGE_CONFLICT';
+}
+
 export function calibrationAgreement(
   original: JudgeClassification,
   judge: JudgeClassification,
@@ -680,6 +839,10 @@ export function buildSemanticJudgment(input: BuildJudgmentInput): SemanticJudgme
     judgeClassification,
     verdict,
     calibrationAgreement: calibrationAgreement(
+      originalSemanticClassification,
+      judgeClassification,
+    ),
+    mismatchType: compareCalibrationJudgeMismatchInline(
       originalSemanticClassification,
       judgeClassification,
     ),

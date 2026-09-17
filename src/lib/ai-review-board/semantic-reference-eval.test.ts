@@ -14,8 +14,8 @@ import { collectOverlayFlags } from './semantic-judge';
 import { buildStubEvidencePack } from './evidence-pack';
 
 describe('semantic reference evaluation (v9)', () => {
-  it('loads 15 human reference cases', () => {
-    const cases = loadSemanticReferenceCases();
+  it('loads 15 human SEM reference cases (CASE-* may also exist)', () => {
+    const cases = loadSemanticReferenceCases().filter((c) => c.id.startsWith('SEM-'));
     assert.equal(cases.length, 15);
     assert.ok(cases.every((c) => c.id.startsWith('SEM-')));
     assert.ok(cases.filter((c) => c.chairmanProbe).length >= 5);
@@ -23,8 +23,8 @@ describe('semantic reference evaluation (v9)', () => {
 
   it('evaluates all cases and reports metrics (no throw)', () => {
     const report = runSemanticReferenceEvaluation();
-    assert.equal(report.results.length, 15);
-    assert.equal(report.metrics.cases, 15);
+    assert.ok(report.results.length >= 15);
+    assert.equal(report.metrics.cases, report.results.length);
     assert.ok(report.metrics.classificationAccuracy >= 0);
     assert.ok(report.metrics.supportAccuracy >= 0);
   });

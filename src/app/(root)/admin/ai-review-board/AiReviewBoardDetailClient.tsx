@@ -443,6 +443,48 @@ export function AiReviewBoardDetailClient({ run }: { run: ReviewBoardRun }) {
                   live TP/FP: {liveSummary?.truePositive ?? 'null'}/
                   {liveSummary?.falsePositive ?? 'null'} (regression-only elsewhere)
                 </span>
+                <span>
+                  chairmanReliability:{' '}
+                  {(run.final?.chairmanReliabilityFlags ?? []).length
+                    ? (run.final?.chairmanReliabilityFlags ?? []).join(', ')
+                    : '—'}
+                </span>
+              </div>
+              <h4>Claim Table</h4>
+              <div style={{ overflowX: 'auto' }}>
+                <table className={styles.table ?? undefined} style={{ width: '100%', fontSize: 12 }}>
+                  <thead>
+                    <tr>
+                      <th>Claim</th>
+                      <th>Calibration</th>
+                      <th>Judge</th>
+                      <th>Support</th>
+                      <th>Risk</th>
+                      <th>Leap</th>
+                      <th>Action</th>
+                      <th>Mismatch</th>
+                      <th>Agree</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredJudgments.map((j) => (
+                      <tr key={`row-${j.memberId}-${j.claimId}`}>
+                        <td>
+                          {j.memberId}/{j.claimId}: {j.claimText.slice(0, 60)}
+                          {j.claimText.length > 60 ? '…' : ''}
+                        </td>
+                        <td>{j.originalSemanticClassification.supportLevel}</td>
+                        <td>{j.judgeClassification.supportLevel}</td>
+                        <td>{j.judgeClassification.evidenceRelation}</td>
+                        <td>{j.judgeClassification.overclaimRisk}</td>
+                        <td>{j.semanticLeap.type}</td>
+                        <td>{j.recommendedAction}</td>
+                        <td>{j.mismatchType ?? '—'}</td>
+                        <td>{j.calibrationAgreement ?? '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
               <div className={styles.flagGrid}>
                 <label>
@@ -517,11 +559,15 @@ export function AiReviewBoardDetailClient({ run }: { run: ReviewBoardRun }) {
 
           <h3 style={{ marginTop: '1.5rem' }}>Regression Reference</h3>
           <p className={styles.muted}>
-            Human Expected fixture (SEM-001…015). Not mixed into this Live run. TP/FP apply here
-            only.
+            Human Expected fixture (SEM-* + CASE-01…10). Not mixed into this Live run. TP/FP apply
+            here only.
           </p>
           <div className={styles.flagGrid}>
-            <span>cases: {referenceEval.metrics.cases}</span>
+            <span>
+              cases: {referenceEval.metrics.cases} (SEM{' '}
+              {referenceEval.results.filter((r) => r.id.startsWith('SEM-')).length} + CASE{' '}
+              {referenceEval.results.filter((r) => r.id.startsWith('CASE-')).length})
+            </span>
             <span>
               classification: {(referenceEval.metrics.classificationAccuracy * 100).toFixed(0)}%
             </span>

@@ -252,6 +252,172 @@
       },
       "expectedAction": "NO_CHANGE",
       "rationale": "측정된 두 사실을 병치한 관찰 진술."
+    },
+    {
+      "id": "CASE-01",
+      "category": "V91_NULL_MEASUREMENT",
+      "evidence": [
+        { "ref": "aggregates.activeUsersLast7d", "value": null },
+        { "ref": "aggregates.viewsLast7d", "value": null }
+      ],
+      "claim": "activeUsersLast7d와 viewsLast7d가 null이므로 최근 사용자 활동을 측정할 수 없다.",
+      "expected": {
+        "evidenceType": "DIRECT_FACT",
+        "supportLevel": "SUPPORTED",
+        "evidenceRelation": "DIRECTLY_SUPPORTS",
+        "overclaimRisk": "LOW",
+        "semanticLeap": "NONE"
+      },
+      "expectedAction": "NO_ACTION_NEEDED",
+      "rationale": "null = unavailable 사실. unsupported가 아님."
+    },
+    {
+      "id": "CASE-02",
+      "category": "V91_NULL_AS_NEGATIVE",
+      "evidence": [{ "ref": "aggregates.activeUsersLast7d", "value": null }],
+      "claim": "activeUsersLast7d가 null이므로 활성 사용자 기반이 dormant 또는 non-existent 상태다.",
+      "expected": {
+        "evidenceType": "INFERENCE",
+        "supportLevel": "NOT_SUPPORTED",
+        "evidenceRelation": "DOES_NOT_SUPPORT",
+        "overclaimRisk": "HIGH",
+        "semanticLeap": "UNKNOWN_AS_NEGATIVE_EVIDENCE"
+      },
+      "expectedAction": "REWORD",
+      "rationale": "UNKNOWN ≠ dormant / non-existent."
+    },
+    {
+      "id": "CASE-03",
+      "category": "V91_CAUSAL_UX",
+      "evidence": [
+        { "ref": "aggregates.newUsersLast7d", "value": 0 },
+        { "ref": "aggregates.commentsLast7d", "value": 0 }
+      ],
+      "claim": "UI/UX가 신규 사용자 유입과 커뮤니티 참여 부족의 원인이다.",
+      "expected": {
+        "evidenceType": "HYPOTHESIS",
+        "supportLevel": "NOT_SUPPORTED",
+        "evidenceRelation": "DOES_NOT_SUPPORT",
+        "overclaimRisk": "HIGH",
+        "semanticLeap": "FACT_TO_CAUSALITY"
+      },
+      "expectedAction": "REWORD",
+      "rationale": "결과 지표만으로 UI/UX 인과 확정 불가."
+    },
+    {
+      "id": "CASE-04",
+      "category": "V91_BENCHMARK_TREND",
+      "evidence": [
+        { "ref": "aggregates.newUsersLast7d", "value": 0 },
+        { "ref": "aggregates.postsLast7d", "value": 141 }
+      ],
+      "claim": "AIsle은 2025~2026 웹 트렌드에 비해 큰 격차가 있다.",
+      "expected": {
+        "evidenceType": "INFERENCE",
+        "supportLevel": "NOT_SUPPORTED",
+        "evidenceRelation": "DOES_NOT_SUPPORT",
+        "overclaimRisk": "HIGH",
+        "semanticLeap": "FACT_TO_TREND"
+      },
+      "expectedAction": "ADD_CAVEAT",
+      "rationale": "외부 benchmark 없이 trend gap 단정."
+    },
+    {
+      "id": "CASE-05",
+      "category": "V91_RATIO_FACT",
+      "evidence": [
+        { "ref": "aggregates.postCount", "value": 3372 },
+        { "ref": "aggregates.postsByCategory.LOUNGE", "value": 3284 }
+      ],
+      "claim": "전체 게시글 중 97% 이상이 LOUNGE에 집중되어 있다.",
+      "expected": {
+        "evidenceType": "DIRECT_FACT",
+        "supportLevel": "SUPPORTED",
+        "evidenceRelation": "DIRECTLY_SUPPORTS",
+        "overclaimRisk": "LOW",
+        "semanticLeap": "NONE"
+      },
+      "expectedAction": "NO_CHANGE",
+      "rationale": "단순 비율 계산은 semantic leap 아님."
+    },
+    {
+      "id": "CASE-06",
+      "category": "V91_SCOPE_OVERCLAIM",
+      "evidence": [{ "ref": "site.stackNotes", "value": "Gemini for LAB/news/fortune" }],
+      "claim": "AI 기능은 LAB/news/fortune에만 제한되어 있다.",
+      "expected": {
+        "evidenceType": "INFERENCE",
+        "supportLevel": "PARTIALLY_SUPPORTED",
+        "evidenceRelation": "PARTIALLY_SUPPORTS",
+        "overclaimRisk": "HIGH",
+        "semanticLeap": "FACT_TO_GLOBAL_CONCLUSION"
+      },
+      "expectedAction": "REWORD",
+      "rationale": "언급된 범위 ≠ 전체 사용 범위 단정."
+    },
+    {
+      "id": "CASE-07",
+      "category": "V91_POSTS_CONTINUITY",
+      "evidence": [{ "ref": "aggregates.postsLast7d", "value": 141 }],
+      "claim": "최근 7일 게시글 141건은 콘텐츠 생성이 지속되고 있음을 보여준다.",
+      "expected": {
+        "evidenceType": "DIRECT_FACT",
+        "supportLevel": "SUPPORTED",
+        "evidenceRelation": "DIRECTLY_SUPPORTS",
+        "overclaimRisk": "LOW",
+        "semanticLeap": "NONE"
+      },
+      "expectedAction": "NO_CHANGE",
+      "rationale": "postsLast7d>0의 직접 관찰. 품질/참여 확장 없음."
+    },
+    {
+      "id": "CASE-08",
+      "category": "V91_ENGAGEMENT_OVERCLAIM",
+      "evidence": [
+        { "ref": "aggregates.commentsLast7d", "value": 0 },
+        { "ref": "aggregates.activeUsersLast7d", "value": null },
+        { "ref": "aggregates.viewsLast7d", "value": null }
+      ],
+      "claim": "댓글 0건이므로 커뮤니티 전체의 사용자 참여가 심각하게 낮다.",
+      "expected": {
+        "evidenceType": "INFERENCE",
+        "supportLevel": "NOT_SUPPORTED",
+        "evidenceRelation": "DOES_NOT_SUPPORT",
+        "overclaimRisk": "HIGH",
+        "semanticLeap": "FACT_TO_GLOBAL_CONCLUSION"
+      },
+      "expectedAction": "NARROW",
+      "rationale": "단일 지표를 플랫폼 전체 engagement로 확장."
+    },
+    {
+      "id": "CASE-09",
+      "category": "V91_QUANTITY_QUALITY",
+      "evidence": [{ "ref": "aggregates.postCount", "value": 3372 }],
+      "claim": "게시글 수가 많으므로 콘텐츠 품질이 높다.",
+      "expected": {
+        "evidenceType": "HYPOTHESIS",
+        "supportLevel": "NOT_SUPPORTED",
+        "evidenceRelation": "DOES_NOT_SUPPORT",
+        "overclaimRisk": "HIGH",
+        "semanticLeap": "TECH_STACK_TO_QUALITY"
+      },
+      "expectedAction": "NARROW",
+      "rationale": "수량 ≠ 품질."
+    },
+    {
+      "id": "CASE-10",
+      "category": "V91_PRESENCE_EFFECT",
+      "evidence": [{ "ref": "site.stackNotes", "value": "Gemini" }],
+      "claim": "Gemini가 통합되어 있으므로 AI 기능이 사용자 참여를 증가시키고 있다.",
+      "expected": {
+        "evidenceType": "HYPOTHESIS",
+        "supportLevel": "NOT_SUPPORTED",
+        "evidenceRelation": "DOES_NOT_SUPPORT",
+        "overclaimRisk": "HIGH",
+        "semanticLeap": "FACT_TO_CAUSALITY"
+      },
+      "expectedAction": "NARROW",
+      "rationale": "기술적 존재 ≠ 참여 증가 효과."
     }
   ]
 }
