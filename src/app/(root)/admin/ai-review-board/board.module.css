@@ -191,11 +191,39 @@
   color: #fff;
 }
 
+.sectionTitle {
+  font-size: 1.1rem;
+  font-weight: 650;
+  margin: 1.25rem 0 0.65rem;
+}
+
+.okNote {
+  color: #8fd4a8;
+  font-size: 0.9rem;
+  margin: 0.5rem 0;
+}
+
+.versionPill {
+  font-size: 0.75rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  background: #243044;
+  border: 1px solid #4a6fa5;
+  color: #c8daf5;
+}
+
+.cardNote {
+  color: #9aa3b2;
+  font-size: 0.8rem;
+  line-height: 1.35;
+}
+
 .panel {
   border: 1px solid #2a3140;
   border-radius: 8px;
   padding: 1rem 1.1rem;
   background: #12161e;
+  margin-bottom: 1rem;
 }
 
 .muted {
