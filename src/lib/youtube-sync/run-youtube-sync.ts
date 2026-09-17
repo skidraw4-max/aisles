@@ -242,6 +242,7 @@ async function runYoutubeSyncInner(options: { force: boolean }): Promise<Youtube
             attachmentUrls: [],
             tags: tagsForSource(source),
             authorId: author.id,
+          authorKind: 'SYSTEM',
             externalLink: watchUrl.slice(0, 2048),
             youtubeVideoId: entry.videoId,
             youtubeSyndicationSource: source,

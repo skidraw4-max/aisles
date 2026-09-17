@@ -615,12 +615,12 @@ export const EVIDENCE_METRIC_DEFINITIONS = {
   newUsersLast7d:
     '최근 7일 신규 가입자 수 (User.createdAt >= now-7d). NOT active users, NOT DAU/WAU, NOT visitors.',
   activeUsersLast7d:
-    '최근 7일 활성 사용자. 현재 신뢰 가능한 활동 정의 없음 → 반드시 null. 신규 가입(newUsersLast7d)으로 대체·추정 금지.',
+    '최근 7일 활성 사용자 수. 정의: 해당 기간에 Post 작성·Comment 작성·PostLike·Bookmark·GameScore(updatedAt) 중 하나 이상. 신규 가입(newUsersLast7d)과 동일시 금지. null이면 집계 실패.',
   postCount: '전체 게시글 수 (Post count).',
   postsLast7d: '최근 7일 작성 게시글 수 (Post.createdAt >= now-7d).',
   commentsLast7d: '최근 7일 작성 댓글 수 (Comment.createdAt >= now-7d).',
   viewsLast7d:
-    '최근 7일 조회수. Post.views 는 누적만 존재 → 현재 null. totalViews 로 추정 금지.',
+    '최근 7일 조회수 합 (PostViewDaily.count where day >= now-7d UTC). Post.views(누적 totalViews)로 추정 금지. 버킷이 비면 0일 수 있음(배포 이후부터 적재).',
   totalViews: '전체 기간 게시글 조회수 합 (Post.views sum). 최근 7일 조회수가 아님.',
   commentCount: '전체 댓글 수 (Comment count).',
   postsByCategory: '카테고리별 게시글 수.',
@@ -629,8 +629,8 @@ export const EVIDENCE_METRIC_DEFINITIONS = {
 /** 프롬프트 상단 고정 경고 (EvidencePack JSON 앞에 붙임) */
 export const EVIDENCE_METRIC_PROMPT_GUARD = `METRIC INTERPRETATION RULES (must follow):
 1. newUsersLast7d / usersLast7d = NEW SIGNUPS in last 7 days ONLY. Never call this "active users", DAU, WAU, or engagement.
-2. activeUsersLast7d is null until an approved activity definition exists. Do not invent or substitute from newUsersLast7d.
-3. viewsLast7d is null. Do not estimate it from totalViews.
+2. activeUsersLast7d = distinct users with Post|Comment|PostLike|Bookmark|GameScore activity in last 7d when present. Never substitute from newUsersLast7d. If null, say unknown / not measured.
+3. viewsLast7d comes from PostViewDaily buckets when present. Do not estimate it from totalViews.
 4. commentsLast7d is last-7-day comment creations when present; commentCount is all-time.
 5. If a metric is null, say "unknown / not measured" — do not treat null as zero engagement proof by itself.
 6. Prefer citing newUsersLast7d by name; avoid relying on deprecated usersLast7d.`;

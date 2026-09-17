@@ -69,6 +69,8 @@ export function AiFortunePostView({
         currentAvatarUrl={null}
         listHref={listHref}
         adjacentNav={<PostAdjacentNav prev={prevPost} next={nextPost} />}
+        showStance
+        isWeeklyDiscussion={false}
       />
       <ContentReportLink postUrl={postPageUrl} />
       <PostOwnerActionsGate

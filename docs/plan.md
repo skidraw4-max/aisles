@@ -1173,3 +1173,62 @@ evidence: { kind: 'observation'|'metric'|'doc'|'external_ref'|'inference'; text;
 - 독립 → 토론 → 검증 → 종합 → 사람 검토: 오케스트레이터 단계로 고정
 - “무엇을/왜/왜 바꿨는가”: `ReviewBoardEvent` + member `revision` 필드 필수
 - 적용·측정은 시스템 경계 밖 (별도 개발 단계)
+---
+
+# Plan: Community activation Phase 0 + Phase 1
+
+**Status:** Implemented (Phase 0 + Phase 1). Deploying to main.
+
+**Source:** AI Review Board v9.1 Live `run-2026-09-17T12-58-30-257Z` + canvas community-activation-plan.
+**Scope:** Phase 0 (measurement) + Phase 1 (comment loop) only. Phase 2 out.
+**Deploy:** After green checks, commit and push `main` → Vercel production.
+
+## Confirmed facts
+
+- 14 users, newUsersLast7d=0, commentsLast7d=0, commentCount=4, postsLast7d=141, LOUNGE ~97%
+- `activeUsersLast7d` / `viewsLast7d` always null in EvidencePack
+- Comments require Bearer; no comment notification; `Post.views` cumulative only
+
+## Architecture
+
+### Phase 0 — Measurement
+
+1. **Active user (fixed):** distinct User with any of in last 7d: Post, Comment, PostLike, Bookmark, GameScore. No lastLogin field.
+2. **EvidencePack:** compute `activeUsersLast7d`; update `metricDefinitions` + `docsHints`.
+3. **viewsLast7d:** Prisma `PostViewDaily { postId, day Date, count }` unique(postId, day). Upsert on `incrementPostViews`. Sum last 7d for EvidencePack. Keep `Post.views` cumulative.
+4. **`Post.authorKind`** enum `HUMAN | SYSTEM | AI` default HUMAN. Backfill: known cron usernames → SYSTEM; `aiFortuneWeekKey` → AI. Cron ingest sets SYSTEM.
+5. **GA4:** `comment_submit` on successful comment create.
+
+### Phase 1 — Comment loop
+
+1. Keep login required. UX: sticky CTA, clearer guest modal, prompt chips on composer.
+2. Agree/Disagree: `PostReactionChoice` AGREE|DISAGREE + API + UI on AI-ish posts; optional prefill comment.
+3. Email notify via Resend when someone comments on your post (author ≠ commenter); rate-limit 1/author/post/10min.
+4. Revalidate post-comments cache on POST/DELETE.
+5. `featuredOnHome` badge "이번 주 토론" on post page (existing flags; no LOUNGE spam).
+6. **Out:** guest comments, push, threads, points, Phase 2.
+
+## TDD first
+
+1. `activeUsersLast7d` helper tests
+2. `viewsLast7d` from PostViewDaily tests
+3. comment notify + revalidate mocked tests
+4. agree/disagree uniqueness tests
+5. EvidencePack no longer forces null when data exists
+6. Implement → migrate → focused tests → build → push main
+
+## Defaults if approved as-is
+
+- Active includes GameScore/Bookmark
+- views via PostViewDaily
+- authorKind + cron username backfill
+- Comment notify = email only
+- Auth still required
+- Deploy = push main
+
+## Approval questions
+
+1. Active 정의에 GameScore/Bookmark 포함 OK? (기본: 포함)
+2. 댓글 알림: 이메일만 OK? (기본: 이메일만)
+3. 비로그인 댓글 허용? (기본: 불가)
+4. 시스템 계정 username 목록? (기본: Nedai + env author usernames)

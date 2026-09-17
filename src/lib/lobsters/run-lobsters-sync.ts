@@ -362,6 +362,7 @@ async function runLobstersSyncInner(options: { force: boolean }): Promise<Lobste
           attachmentUrls: [],
           tags: ['Lobsters'],
           authorId: author.id,
+          authorKind: 'SYSTEM',
           lobstersOriginalUrl: externalUrl,
           externalLink: externalUrl,
         },

@@ -386,6 +386,7 @@ async function runVergeSyncInner(options: { force: boolean }): Promise<VergeSync
           attachmentUrls: [],
           tags: ['The Verge'],
           authorId: author.id,
+          authorKind: 'SYSTEM',
           externalLink: link,
           vergeOriginalUrl: link,
         },

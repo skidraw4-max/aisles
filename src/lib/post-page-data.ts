@@ -111,7 +111,7 @@ export const getPostDetail = cache(async (id: string): Promise<PostDetail | null
   const cached = await unstable_cache(
     () => fetchPostDetailUncached(id),
     // v2: bust Data Cache after AI FORTUNE trendBullets KO retranslate (v1 served stale EN)
-    ['post-detail-v2', id],
+    ['post-detail-v3', id],
     {
       revalidate: POST_DETAIL_REVALIDATE_SEC,
       tags: [`post-${id}`],

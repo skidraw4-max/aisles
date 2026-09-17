@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { revalidateTag } from 'next/cache';
 import { prisma } from '@/lib/prisma';
 import { getUserFromBearer } from '@/lib/auth-bearer';
 
@@ -22,5 +23,7 @@ export async function DELETE(req: NextRequest, ctx: Ctx) {
   }
 
   await prisma.comment.delete({ where: { id: commentId } });
+  revalidateTag('post-comments');
+  revalidateTag(`post-${postId}`);
   return NextResponse.json({ ok: true });
 }

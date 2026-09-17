@@ -252,6 +252,7 @@ async function runAiBreakfastSyncInner(options: { force: boolean }): Promise<AiB
         attachmentUrls: [],
         tags: ['AI Breakfast', 'Newsletter'],
         authorId: author.id,
+          authorKind: 'SYSTEM',
         externalLink: link,
         aiBreakfastOriginalUrl: link,
       },

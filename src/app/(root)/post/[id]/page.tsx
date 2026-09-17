@@ -770,6 +770,12 @@ export default async function PostPage({ params }: Props) {
                     currentAvatarUrl={null}
                     listHref={listHref}
                     adjacentNav={<PostAdjacentNav prev={prevPost} next={nextPost} />}
+                    showStance={
+                      post.authorKind === 'AI' ||
+                      post.authorKind === 'SYSTEM' ||
+                      post.category === 'RECIPE'
+                    }
+                    isWeeklyDiscussion={post.featuredOnHome === true}
                   />
 
                   <ContentReportLink postUrl={postPageUrl} />

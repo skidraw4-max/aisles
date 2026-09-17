@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { usePostLike } from './PostLikeContext';
@@ -12,7 +11,14 @@ import { PostSignupPromptModal } from './PostSignupPromptModalLoader';
 import { copyTextToClipboard } from '@/lib/clipboard-copy';
 import { buildKakaoShareUrl, buildXShareUrl } from '@/lib/share-social';
 import { sendGAEvent } from '@/lib/ga4';
+import { PostStanceStrip } from './PostStanceStrip';
 import styles from './post.module.css';
+
+const COMMENT_PROMPTS = [
+  '가장 인상 깊었던 한 가지는?',
+  '동의하거나 다른 점이 있다면?',
+  '다음에 궁금한 점을 남겨 주세요',
+] as const;
 
 const SIGNUP_PROMPT_COUNT_KEY = 'aisle.signupPrompt.articleViews';
 const SIGNUP_PROMPT_HIDE_UNTIL_KEY = 'aisle.signupPrompt.hideUntil';
@@ -37,6 +43,10 @@ type Props = {
   currentAvatarUrl: string | null;
   listHref: string;
   adjacentNav?: ReactNode;
+  /** AI/시스템 글 등 — 동의·반박 스트립 표시 */
+  showStance?: boolean;
+  /** 홈 피처드 주간 토론 */
+  isWeeklyDiscussion?: boolean;
 };
 
 function avatarInitials(username: string) {
@@ -55,8 +65,9 @@ export function PostEngagement({
   currentAvatarUrl: currentAvatarUrlProp,
   listHref,
   adjacentNav,
+  showStance = false,
+  isWeeklyDiscussion = false,
 }: Props) {
-  const router = useRouter();
   const viewer = usePostViewerOptional();
   const currentUserId = viewer?.userId ?? currentUserIdProp;
   const currentUsername = viewer?.username ?? currentUsernameProp;
@@ -71,6 +82,11 @@ export function PostEngagement({
   const [shareUrl, setShareUrl] = useState('');
   const [showSignupPrompt, setShowSignupPrompt] = useState(false);
   const [effectiveUserId, setEffectiveUserId] = useState<string | null>(currentUserId);
+  const [promptIndex, setPromptIndex] = useState(0);
+
+  useEffect(() => {
+    setPromptIndex(Math.floor(Date.now() / 86_400_000) % COMMENT_PROMPTS.length);
+  }, [postId]);
 
   useEffect(() => {
     setEffectiveUserId(currentUserId);
@@ -210,6 +226,7 @@ export function PostEngagement({
           const rest = prev.filter((c) => c.id !== optimisticId);
           return [...rest, data.comment!];
         });
+        sendGAEvent('comment_submit', { post_id: postId });
       } else {
         setComments((prev) => prev.filter((c) => c.id !== optimisticId));
         setBody(trimmed);
@@ -336,13 +353,32 @@ export function PostEngagement({
 
       {adjacentNav}
 
+      {isWeeklyDiscussion ? (
+        <p className={styles.weeklyDiscussionBadge} role="status">
+          이번 주 토론
+        </p>
+      ) : null}
+
+      {showStance ? (
+        <PostStanceStrip
+          postId={postId}
+          onPrefillComment={(text) => {
+            setBody((prev) => (prev.trim() ? prev : text));
+          }}
+        />
+      ) : null}
+
       <section className={styles.commentsMagazine} id="post-comments" aria-labelledby="comments-heading">
         <h2 id="comments-heading" className={styles.commentsMagazineTitle}>
           댓글 <span className={styles.commentsMagazineCount}>{comments.length}</span>
         </h2>
 
         {comments.length === 0 ? (
-          <p className={styles.commentsEmptyMagazine}>아직 댓글이 없습니다. 첫 댓글을 남겨 보세요.</p>
+          <p className={styles.commentsEmptyMagazine}>
+            {effectiveUserId
+              ? '아직 댓글이 없습니다. 아래 프롬프트로 첫 의견을 남겨 보세요.'
+              : '아직 댓글이 없습니다. 로그인하면 바로 의견을 남길 수 있습니다.'}
+          </p>
         ) : (
           <ul className={styles.commentListMagazine}>
             {comments.map((c) => (
@@ -387,6 +423,24 @@ export function PostEngagement({
           <label className={styles.commentLabelMagazine} htmlFor="comment-input">
             댓글 작성
           </label>
+          <div className={styles.commentPromptChips} role="group" aria-label="댓글 프롬프트">
+            {COMMENT_PROMPTS.map((p, i) => (
+              <button
+                key={p}
+                type="button"
+                className={
+                  i === promptIndex ? styles.commentPromptChipActive : styles.commentPromptChip
+                }
+                disabled={!effectiveUserId || commentLoading}
+                onClick={() => {
+                  setPromptIndex(i);
+                  setBody((prev) => (prev.trim() ? prev : `${p} `));
+                }}
+              >
+                {p}
+              </button>
+            ))}
+          </div>
           <div className={styles.commentFormRow}>
             <textarea
               id="comment-input"
@@ -396,7 +450,9 @@ export function PostEngagement({
               maxLength={2000}
               rows={3}
               placeholder={
-                effectiveUserId ? '의견을 남겨 주세요' : '로그인 후 댓글을 작성할 수 있습니다'
+                effectiveUserId
+                  ? COMMENT_PROMPTS[promptIndex]
+                  : '로그인 후 댓글을 작성할 수 있습니다'
               }
               disabled={!effectiveUserId || commentLoading}
             />

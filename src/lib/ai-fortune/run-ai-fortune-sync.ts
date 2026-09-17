@@ -170,6 +170,7 @@ export async function runAiFortuneSync(
         attachmentUrls: [],
         tags: ['AI FORTUNE', '주간 운세', 'MBTI', '커리어'],
         authorId: author.id,
+        authorKind: 'AI',
         aiFortuneWeekKey: weekKey,
         aiFortunePayload: payloadJson,
         ...(options.createdAt ? { createdAt: options.createdAt } : {}),

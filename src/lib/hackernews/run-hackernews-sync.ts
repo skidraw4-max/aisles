@@ -294,6 +294,7 @@ export async function runHackerNewsSync(options: { force: boolean }): Promise<Ha
           attachmentUrls: [],
           tags: ['HackerNews'],
           authorId: author.id,
+          authorKind: 'SYSTEM',
           hackerNewsOriginalUrl: externalUrl,
           externalLink: externalUrl,
         },

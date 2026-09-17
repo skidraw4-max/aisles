@@ -24,7 +24,7 @@ import {
 import type { FeedPostJson } from '@/lib/home-feed';
 import { tryCreateBrowserClient } from '@/lib/supabase/client';
 import { isCapacitorNative } from '@/lib/capacitor-oauth';
-import { NativeAdSlot } from '@/components/NativeAdSlot';
+import { AdBanner } from '@/components/AdBanner';
 import { FeedPostLink } from '@/components/FeedPostLink';
 import { homeFeedSurface } from '@/lib/ga4';
 import { shouldClientRetryEmptyFeed } from '@/lib/home-feed-resilience';
@@ -378,7 +378,7 @@ function FeedBoardTable({
                 />
               ) : (
                 <li key={`board-ad-${item.slotIndex}`} className={styles.feedBoardAdRow}>
-                  <NativeAdSlot variant="boardRow" slotIndex={item.slotIndex} />
+                  <AdBanner variant="kakao-infeed" remountKey={`board-${item.slotIndex}`} />
                 </li>
               )
             )}
@@ -596,7 +596,7 @@ export function HomeAllFeed({ category, excludeIds, initialPosts, initialHasMore
               </li>
             ) : (
               <li key={`feed-ad-${item.slotIndex}`} className={styles.feedAdRow}>
-                <NativeAdSlot variant="fullWidthRow" slotIndex={item.slotIndex} />
+                <AdBanner variant="kakao-infeed" remountKey={`feed-${item.slotIndex}`} />
               </li>
             )
           )}

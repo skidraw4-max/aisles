@@ -2,13 +2,18 @@
  * EvidencePack — 읽기 전용 집계만. INSERT/UPDATE/DELETE 금지.
  */
 import type { PrismaClient } from '@prisma/client';
+import { countActiveUsersLast7d } from '@/lib/community-metrics/active-users';
+import { countViewsLast7d, utcDayStart } from '@/lib/community-metrics/views-last-7d';
 import {
   EVIDENCE_METRIC_DEFINITIONS,
   type EvidenceAggregates,
   type EvidencePack,
 } from './types';
 
-export type EvidenceDb = Pick<PrismaClient, 'user' | 'post' | 'comment'>;
+export type EvidenceDb = Pick<
+  PrismaClient,
+  'user' | 'post' | 'comment' | 'postLike' | 'bookmark' | 'gameScore' | 'postViewDaily'
+>;
 
 /** stub 시 aggregates 일부만 덮어쓸 수 있게 함 */
 export type StubEvidencePackOverrides = Omit<
@@ -42,8 +47,9 @@ const DOCS_HINTS = [
   'docs/cron-operations.md',
   '복도형 커뮤니티 + AI Work/Fortune/Games',
   'CRITICAL: newUsersLast7d/usersLast7d = signups only, NEVER active users/DAU',
-  'CRITICAL: activeUsersLast7d and viewsLast7d are null (unsupported); do not invent',
-  'commentsLast7d = Comment.createdAt last 7d; totalViews is all-time only',
+  'activeUsersLast7d = Post|Comment|PostLike|Bookmark|GameScore activity last 7d',
+  'viewsLast7d = PostViewDaily sum last 7d UTC; totalViews is all-time Post.views only',
+  'commentsLast7d = Comment.createdAt last 7d',
 ] as const;
 
 function daysAgo(n: number): Date {
@@ -93,10 +99,10 @@ export function buildStubEvidencePack(overrides?: StubEvidencePackOverrides): Ev
 
 /**
  * 프로덕션 DB 집계 읽기 전용.
- * 산출 가능한 지표만 채우고, 정의 없는 활동/기간 조회는 null 유지.
  */
 export async function buildEvidencePackFromDb(db: EvidenceDb): Promise<EvidencePack> {
   const since7d = daysAgo(7);
+  const sinceDay = utcDayStart(since7d);
 
   const [
     userCount,
@@ -107,6 +113,8 @@ export async function buildEvidencePackFromDb(db: EvidenceDb): Promise<EvidenceP
     commentsLast7d,
     viewsAgg,
     byCategory,
+    activeUsersLast7d,
+    viewsLast7d,
   ] = await Promise.all([
     db.user.count(),
     db.user.count({ where: { createdAt: { gte: since7d } } }),
@@ -119,6 +127,8 @@ export async function buildEvidencePackFromDb(db: EvidenceDb): Promise<EvidenceP
       by: ['category'],
       _count: { _all: true },
     }),
+    countActiveUsersLast7d(db, since7d),
+    countViewsLast7d(db, sinceDay),
   ]);
 
   const postsByCategory: Record<string, number> = {};
@@ -137,11 +147,11 @@ export async function buildEvidencePackFromDb(db: EvidenceDb): Promise<EvidenceP
       userCount,
       usersLast7d: newUsersLast7d,
       newUsersLast7d,
-      activeUsersLast7d: null,
+      activeUsersLast7d,
       postCount,
       postsLast7d,
       commentsLast7d,
-      viewsLast7d: null,
+      viewsLast7d,
       totalViews: viewsAgg._sum.views ?? 0,
       commentCount,
       postsByCategory,

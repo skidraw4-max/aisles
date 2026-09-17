@@ -302,6 +302,7 @@ export async function runGeekNewsSync(options: { force: boolean }): Promise<Geek
           attachmentUrls: [],
           tags: ['GeekNews'],
           authorId: author.id,
+          authorKind: 'SYSTEM',
           geeknewsOriginalUrl: item.externalUrl.slice(0, 2048),
           externalLink: item.externalUrl.slice(0, 2048),
         },

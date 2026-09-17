@@ -324,6 +324,7 @@ export async function runTechmemeSync(options: { force: boolean }): Promise<Tech
           attachmentUrls: [],
           tags: ['Techmeme'],
           authorId: author.id,
+          authorKind: 'SYSTEM',
           techmemeOriginalUrl: externalUrl,
           externalLink: externalUrl,
         },

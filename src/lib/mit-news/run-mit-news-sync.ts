@@ -374,6 +374,7 @@ async function runMitNewsSyncInner(options: { force: boolean }): Promise<MitNews
           attachmentUrls: [],
           tags: ['MIT News', 'Artificial Intelligence'],
           authorId: author.id,
+          authorKind: 'SYSTEM',
           externalLink: link,
           mitNewsOriginalUrl: link,
         },

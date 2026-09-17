@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { revalidateTag } from 'next/cache';
 import { prisma } from '@/lib/prisma';
 import { getUserFromBearer } from '@/lib/auth-bearer';
 import { ensurePrismaUser } from '@/lib/ensure-user';
+import { notifyPostAuthorOfComment } from '@/lib/community-metrics/notify-comment';
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -76,6 +78,17 @@ export async function POST(req: NextRequest, ctx: Ctx) {
       },
       include: { author: { select: { id: true, username: true, avatarUrl: true } } },
     });
+
+    revalidateTag('post-comments');
+    revalidateTag(`post-${postId}`);
+
+    void notifyPostAuthorOfComment({
+      postId,
+      commenterId: c.authorId,
+      commenterUsername: c.author.username,
+      commentContent: c.content,
+    });
+
     return NextResponse.json({
       comment: {
         id: c.id,

@@ -14,8 +14,8 @@ describe('metricDefinitions forbid active-user misread', () => {
   it('documents newUsers vs activeUsers vs views clearly', () => {
     assert.equal(metricDefinitionsForbidActiveUserMisread(), true);
     assert.match(EVIDENCE_METRIC_DEFINITIONS.newUsersLast7d, /NOT active/i);
-    assert.match(EVIDENCE_METRIC_DEFINITIONS.activeUsersLast7d, /null/i);
-    assert.match(EVIDENCE_METRIC_DEFINITIONS.viewsLast7d, /null/i);
+    assert.match(EVIDENCE_METRIC_DEFINITIONS.activeUsersLast7d, /Post|Comment|활동/);
+    assert.match(EVIDENCE_METRIC_DEFINITIONS.viewsLast7d, /PostViewDaily/);
     assert.match(EVIDENCE_METRIC_DEFINITIONS.usersLast7d, /DEPRECATED/i);
   });
 });
@@ -40,9 +40,10 @@ describe('formatEvidencePackForPrompt', () => {
     assert.match(text, /NEVER call this "active users"/i);
   });
 
-  it('keeps activeUsersLast7d and viewsLast7d null in stub/db contract', () => {
+  it('allows stub nulls; definitions no longer force always-null', () => {
     const pack = buildStubEvidencePack();
     assert.equal(pack.aggregates.activeUsersLast7d, null);
     assert.equal(pack.aggregates.viewsLast7d, null);
+    assert.doesNotMatch(EVIDENCE_METRIC_DEFINITIONS.activeUsersLast7d, /반드시 null/);
   });
 });

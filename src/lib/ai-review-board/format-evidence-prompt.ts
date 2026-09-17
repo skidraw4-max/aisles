@@ -33,8 +33,8 @@ export function metricDefinitionsForbidActiveUserMisread(
     nu.includes('not active') &&
     (us.includes('not') || us.includes('활성')) &&
     (us.includes('active') || us.includes('dau')) &&
-    au.includes('null') &&
-    vv.includes('null') &&
+    (au.includes('newusers') || au.includes('신규')) &&
+    (vv.includes('postviewdaily') || vv.includes('totalviews')) &&
     (tv.includes('전체') || tv.includes('all') || tv.includes('sum'))
   );
 }
