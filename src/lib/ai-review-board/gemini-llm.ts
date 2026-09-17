@@ -57,7 +57,17 @@ function tryParseJson(text: string): unknown | null {
       try {
         return JSON.parse(trimmed.slice(start, end + 1));
       } catch {
-        return null;
+        // truncated JSON: close open braces/brackets heuristically
+        let slice = trimmed.slice(start);
+        slice = slice.replace(/,\s*$/, '');
+        const opens = (slice.match(/{/g) || []).length - (slice.match(/}/g) || []).length;
+        const openArr = (slice.match(/\[/g) || []).length - (slice.match(/]/g) || []).length;
+        slice += ']'.repeat(Math.max(0, openArr)) + '}'.repeat(Math.max(0, opens));
+        try {
+          return JSON.parse(slice);
+        } catch {
+          return null;
+        }
       }
     }
     return null;
@@ -80,7 +90,7 @@ async function geminiJson(
             generationConfig: {
               temperature: 0.4,
               responseMimeType: 'application/json',
-              maxOutputTokens: 8192,
+              maxOutputTokens: 16384,
             },
             systemInstruction: system,
           },
@@ -718,7 +728,8 @@ Separate Fact / Interpretation / Hypothesis. Do NOT invent cases that did not oc
 Clearly separate "data is missing/null" from "value is low".
 Do NOT invent TP/FP counts for live runs — report ambiguous + leap counts + calibrationAgreement disagreements.
 
-Return JSON including statusSummary, overallTrendScore, dimensionScores, topProblems, improvements,
+Return ONE compact JSON object (no markdown). Prefer short string arrays (max 8 items each).
+Include: statusSummary, overallTrendScore, dimensionScores, topProblems, improvements,
 expectedUserEffect, expectedDifficulty, risk, improvementEvidence, opinionDifferences, confidence,
 needsFurtherVerification, confirmedFacts, unknownMissingData, hypotheses, disputedPoints,
 validatedImprovements, supportedClaims, partiallySupportedClaims, unsupportedHypothesisClaims,

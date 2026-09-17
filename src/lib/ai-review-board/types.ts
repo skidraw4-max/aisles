@@ -406,6 +406,8 @@ export type SemanticJudgment = {
   };
   confidence: number;
   recommendedAction: JudgeRecommendedAction;
+  /** v9+: deterministic overlay flags (never auto-rewrite LLM judgment) */
+  overlayFlags?: string[];
 };
 
 export type SemanticJudgeSummary = {
@@ -423,6 +425,12 @@ export type SemanticJudgeSummary = {
   techQualityLeapCount: number;
   judgeRevisionMismatchCount: number;
   disagreeWithCalibration?: number;
+  /** v9 live revision-influence (not classic TP/FP) */
+  judgeTriggeredRevision?: number;
+  judgeTriggeredReword?: number;
+  judgeTriggeredNarrow?: number;
+  judgeTriggeredConfidenceChange?: number;
+  judgeIgnoredRisk?: number;
 };
 
 export type CriticCheck = {

@@ -27,6 +27,7 @@ import {
   runJudgeRevisionConsistency,
   summarizeSemanticJudgments,
 } from './semantic-judge';
+import { measureRevisionInfluence } from './semantic-reference-eval';
 import type {
   ClaimCalibration,
   EvidencePack,
@@ -431,9 +432,17 @@ export async function runReviewBoardPipeline(
     const findings = formatCalibrationRevisionFindings(consistencyResults);
     const semFindings = formatEvidenceSemanticsFindings(semanticsChecks);
     const judgeSummary = summarizeSemanticJudgments(run.semanticJudgments ?? []);
+    const mismatchKeys = judgeChecks
+      .filter((c) => c.flags.includes('JUDGE_REVISION_MISMATCH'))
+      .map((c) => `${c.memberId}/${c.claimId}`);
+    const influence = measureRevisionInfluence({
+      judgments: run.semanticJudgments ?? [],
+      revisions: run.revisions ?? [],
+      mismatchClaimKeys: mismatchKeys,
+    });
     const judgeFindings = formatSemanticJudgeFindings(
       run.semanticJudgments ?? [],
-      judgeChecks.filter((c) => c.flags.includes('JUDGE_REVISION_MISMATCH')).length,
+      mismatchKeys.length,
     );
     const allSemRows = (run.evidenceSemantics ?? []).flatMap((s) => s.claims);
     const leaps = (run.semanticJudgments ?? []).filter((j) => j.semanticLeap.detected);
@@ -450,15 +459,19 @@ export async function runReviewBoardPipeline(
       semanticJudgeFindings: [
         ...(run.final.semanticJudgeFindings ?? []),
         ...judgeFindings,
+        `revisionInfluence: triggered=${influence.judgeTriggeredRevision} reword=${influence.judgeTriggeredReword} narrow=${influence.judgeTriggeredNarrow} confDown=${influence.judgeTriggeredConfidenceChange} ignoredRisk=${influence.judgeIgnoredRisk} mismatch=${influence.judgeRevisionMismatch}`,
       ],
       semanticRisks: leaps.map(
         (j) => `${j.memberId}/${j.claimId}: ${j.semanticLeap.type} — ${j.claimText.slice(0, 80)}`,
       ),
       semanticJudgeSummary: {
         ...judgeSummary,
-        judgeRevisionMismatchCount: judgeChecks.filter((c) =>
-          c.flags.includes('JUDGE_REVISION_MISMATCH'),
-        ).length,
+        judgeRevisionMismatchCount: mismatchKeys.length,
+        judgeTriggeredRevision: influence.judgeTriggeredRevision,
+        judgeTriggeredReword: influence.judgeTriggeredReword,
+        judgeTriggeredNarrow: influence.judgeTriggeredNarrow,
+        judgeTriggeredConfidenceChange: influence.judgeTriggeredConfidenceChange,
+        judgeIgnoredRisk: influence.judgeIgnoredRisk,
       },
       directlySupportedClaims: [
         ...(run.final.directlySupportedClaims ?? []),

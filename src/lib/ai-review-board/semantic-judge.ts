@@ -55,16 +55,16 @@ export type JudgeClassification = {
 };
 
 const MEASUREMENT_GAP_RE =
-  /(측정.*(없|불가)|알\s*수\s*없|not\s+measured|unavailable|null|데이터가\s*없|측정되지)/i;
+  /(측정.*(없|불가)|알\s*수\s*없|확인\s*할\s*수\s*없|확인할\s*수\s*없|not\s+measured|unavailable|null|데이터가\s*없|측정되지)/i;
 const LOW_ACTIVITY_RE =
-  /(활성도가\s*낮|활동량이\s*낮|참여도가\s*(심각히\s*)?낮|휴면|dormant|low\s+activity|low\s+engagement|severely\s+low)/i;
+  /(활성도가\s*낮|활성\s*사용자[가이]?\s*적|활동량이\s*낮|참여도가\s*(심각히\s*|심각하게\s*)?낮|휴면|dormant|low\s+activity|low\s+engagement|severely\s+low)/i;
 const CAUSAL_FAIL_RE =
   /(전략이\s*실패|마케팅이\s*실패|효과가\s*없|때문에|원인|로\s*인해|caused by|due to|failed|failure)/i;
 const ACQUISITION_FAIL_RE = /(획득\s*전략|유입\s*전략|acquisition).{0,30}(실패|효과\s*없|failed)/i;
 const GLOBAL_ENGAGEMENT_RE =
   /(전체\s*(커뮤니티\s*)?참여|플랫폼\s*전체|overall\s+(community\s+)?engagement|community\s+participation)/i;
 const TREND_RE =
-  /(감소했|증가했|하락|성장하고|정체|악화|개선되고|declined|decreased|increased|worsened|improved|trend)/i;
+  /(감소하|감소했|증가하|증가했|하락|성장하고|정체|악화|개선되고|declined|decreased|increased|worsened|improved|trend)/i;
 const TECH_QUALITY_RE =
   /(확장성이\s*검증|성능이\s*우수|확장\s*가능|scalability\s+(verified|proven)|performance\s+is\s+(excellent|good))/i;
 const TECH_STACK_RE = /(Vercel|PostgreSQL|Next\.js|기술\s*스택|infra|인프라)/i;
@@ -106,16 +106,17 @@ export function adjudicateClaimDeterministic(
     };
   }
 
-  // UNKNOWN as negative
+  // UNKNOWN as negative — null metrics ≠ “low activity” (not global platform claims)
   if (
     (a.activeUsersLast7d == null || a.viewsLast7d == null) &&
     LOW_ACTIVITY_RE.test(text) &&
-    !MEASUREMENT_GAP_RE.test(text)
+    !MEASUREMENT_GAP_RE.test(text) &&
+    !GLOBAL_ENGAGEMENT_RE.test(text)
   ) {
     missing.push('activeUsersLast7d', 'viewsLast7d');
     return {
       classification: {
-        evidenceType: 'UNKNOWN',
+        evidenceType: 'INFERENCE',
         supportLevel: 'NOT_SUPPORTED',
         evidenceRelation: 'DOES_NOT_SUPPORT',
         overclaimRisk: 'HIGH',
@@ -127,11 +128,36 @@ export function adjudicateClaimDeterministic(
     };
   }
 
-  // Dual zero newUsers+comments descriptive
+  // userCount direct
   if (
-    /신규.{0,20}0/.test(text) &&
-    /댓글.{0,20}0/.test(text) &&
+    /전체\s*회원|회원\s*수|userCount|total\s+members?/i.test(text) &&
+    typeof a.userCount === 'number' &&
+    new RegExp(String(a.userCount)).test(text) &&
+    !TREND_RE.test(text) &&
+    !CAUSAL_FAIL_RE.test(text)
+  ) {
+    return {
+      classification: {
+        evidenceType: 'DIRECT_FACT',
+        supportLevel: 'SUPPORTED',
+        evidenceRelation: 'DIRECTLY_SUPPORTS',
+        overclaimRisk: 'LOW',
+      },
+      semanticLeap: { detected: false, type: 'NONE' },
+      recommendedAction: 'NO_CHANGE',
+      missingEvidence: [],
+      judgeReason: 'userCount directly supports the membership count claim',
+    };
+  }
+
+  // Dual zero / dual absence descriptive (no causal/global leap)
+  if (
+    /(신규|가입)/.test(text) &&
+    /댓글/.test(text) &&
+    /(0|없|관찰되지|관찰\s*되지)/.test(text) &&
     !CAUSAL_FAIL_RE.test(text) &&
+    !GLOBAL_ENGAGEMENT_RE.test(text) &&
+    !/실패|의미|전략/.test(text) &&
     a.newUsersLast7d === 0 &&
     a.commentsLast7d === 0
   ) {
@@ -145,7 +171,92 @@ export function adjudicateClaimDeterministic(
       semanticLeap: { detected: false, type: 'NONE' },
       recommendedAction: 'NO_CHANGE',
       missingEvidence: [],
-      judgeReason: 'Both zeros are directly measured',
+      judgeReason: 'Both zeros/absences are directly measured',
+    };
+  }
+
+  // posts present + comments absent observation
+  if (
+    /게시/.test(text) &&
+    /댓글/.test(text) &&
+    /(있었|작성은|posts?)/i.test(text) &&
+    /(관찰되지|0|없)/.test(text) &&
+    !CAUSAL_FAIL_RE.test(text) &&
+    !GLOBAL_ENGAGEMENT_RE.test(text) &&
+    !TREND_RE.test(text) &&
+    typeof a.postsLast7d === 'number' &&
+    a.postsLast7d > 0 &&
+    a.commentsLast7d === 0
+  ) {
+    return {
+      classification: {
+        evidenceType: 'DIRECT_FACT',
+        supportLevel: 'SUPPORTED',
+        evidenceRelation: 'DIRECTLY_SUPPORTS',
+        overclaimRisk: 'LOW',
+      },
+      semanticLeap: { detected: false, type: 'NONE' },
+      recommendedAction: 'NO_CHANGE',
+      missingEvidence: [],
+      judgeReason: 'postsLast7d>0 and commentsLast7d=0 are directly observed',
+    };
+  }
+
+  // Community failure / global doom from sparse metrics
+  if (
+    /(커뮤니티가\s*실패|플랫폼이\s*실패|community\s+failed)/i.test(text)
+  ) {
+    return {
+      classification: {
+        evidenceType: 'HYPOTHESIS',
+        supportLevel: 'NOT_SUPPORTED',
+        evidenceRelation: 'DOES_NOT_SUPPORT',
+        overclaimRisk: 'HIGH',
+      },
+      semanticLeap: { detected: true, type: 'FACT_TO_GLOBAL_CONCLUSION' },
+      recommendedAction: 'NARROW',
+      missingEvidence: ['retention', 'activeUsersLast7d', 'qualitative_feedback'],
+      judgeReason: 'Sparse signup/comment zeros do not entail community failure',
+    };
+  }
+
+  // Gemini / AI feature causal failure
+  if (
+    /(Gemini|AI\s*기능).{0,40}(참여|engagement).{0,40}(증가시키지\s*못했|실패|효과\s*없)/i.test(
+      text,
+    ) ||
+    /(참여|engagement).{0,40}(증가시키지\s*못했|효과적이지\s*못)/i.test(text)
+  ) {
+    return {
+      classification: {
+        evidenceType: 'HYPOTHESIS',
+        supportLevel: 'NOT_SUPPORTED',
+        evidenceRelation: 'DOES_NOT_SUPPORT',
+        overclaimRisk: 'HIGH',
+      },
+      semanticLeap: { detected: true, type: 'FACT_TO_CAUSALITY' },
+      recommendedAction: 'NARROW',
+      missingEvidence: ['feature_attribution', 'experiment_metrics'],
+      judgeReason: 'Feature presence + low comments ≠ causal product failure',
+    };
+  }
+
+  // Onboarding / causal root-cause from signup zero
+  if (
+    /(온보딩|원인|때문에|로\s*인해).{0,40}(신규|감소|하락)/i.test(text) ||
+    /(신규|감소).{0,40}(온보딩|원인)/i.test(text)
+  ) {
+    return {
+      classification: {
+        evidenceType: 'HYPOTHESIS',
+        supportLevel: 'NOT_SUPPORTED',
+        evidenceRelation: 'DOES_NOT_SUPPORT',
+        overclaimRisk: 'HIGH',
+      },
+      semanticLeap: { detected: true, type: 'FACT_TO_CAUSALITY' },
+      recommendedAction: 'NARROW',
+      missingEvidence: ['onboarding_funnel', 'channel_attribution'],
+      judgeReason: 'Measured zero does not identify onboarding as the cause',
     };
   }
 
@@ -217,37 +328,49 @@ export function adjudicateClaimDeterministic(
     return {
       classification: {
         evidenceType: 'INFERENCE',
-        supportLevel: 'PARTIALLY_SUPPORTED',
-        evidenceRelation: 'PARTIALLY_SUPPORTS',
+        supportLevel: 'NOT_SUPPORTED',
+        evidenceRelation: 'DOES_NOT_SUPPORT',
         overclaimRisk: 'HIGH',
       },
       semanticLeap: { detected: true, type: 'FACT_TO_GLOBAL_CONCLUSION' },
       recommendedAction: 'NARROW',
       missingEvidence: missing,
-      judgeReason: 'comments=0 partially supports weak interaction; not platform-wide engagement',
+      judgeReason: 'comments=0 does not establish platform-wide engagement failure',
     };
   }
 
-  // Trend from postCount / postsLast7d without prior
-  if (
-    TREND_RE.test(text) &&
-    /게시|posts?|생산/.test(text) &&
-    typeof a.postCount === 'number' &&
-    typeof a.postsLast7d === 'number'
-  ) {
-    missing.push('postsPriorPeriod');
-    return {
-      classification: {
-        evidenceType: 'INFERENCE',
-        supportLevel: 'NOT_SUPPORTED',
-        evidenceRelation: 'DOES_NOT_SUPPORT',
-        overclaimRisk: 'HIGH',
-      },
-      semanticLeap: { detected: true, type: 'FACT_TO_TREND' },
-      recommendedAction: 'REQUEST_MORE_EVIDENCE',
-      missingEvidence: missing,
-      judgeReason: 'Single-period postsLast7d/postCount cannot establish decline trend',
-    };
+  // Trend from single-period metrics (posts or newUsers)
+  if (TREND_RE.test(text)) {
+    if (/게시|posts?|생산/.test(text)) {
+      missing.push('postsPriorPeriod');
+      return {
+        classification: {
+          evidenceType: 'INFERENCE',
+          supportLevel: 'NOT_SUPPORTED',
+          evidenceRelation: 'DOES_NOT_SUPPORT',
+          overclaimRisk: 'HIGH',
+        },
+        semanticLeap: { detected: true, type: 'FACT_TO_TREND' },
+        recommendedAction: 'REQUEST_MORE_EVIDENCE',
+        missingEvidence: missing,
+        judgeReason: 'Single-period postsLast7d/postCount cannot establish decline trend',
+      };
+    }
+    if (/신규|사용자\s*증가|증가세|growth|acquisition/i.test(text)) {
+      missing.push('newUsersPriorPeriod');
+      return {
+        classification: {
+          evidenceType: 'INFERENCE',
+          supportLevel: 'NOT_SUPPORTED',
+          evidenceRelation: 'DOES_NOT_SUPPORT',
+          overclaimRisk: 'HIGH',
+        },
+        semanticLeap: { detected: true, type: 'FACT_TO_TREND' },
+        recommendedAction: 'REQUEST_MORE_EVIDENCE',
+        missingEvidence: missing,
+        judgeReason: 'Single-period newUsersLast7d cannot establish growth-trend decline',
+      };
+    }
   }
 
   // Tech stack → quality
@@ -318,6 +441,80 @@ export function adjudicateClaimDeterministic(
     missingEvidence: ev.missingEvidence.length ? ev.missingEvidence : missing,
     judgeReason: ev.explanation,
   };
+}
+
+export const OVERLAY_FLAG_VALUES = [
+  'NULL_TREATED_AS_ZERO',
+  'UNKNOWN_AS_NEGATIVE',
+  'MAJORITY_REASONING',
+  'LEAP_MARKER_MISMATCH',
+  'MISSING_EVIDENCE_REF',
+  'FABRICATED_EVIDENCE_REF',
+] as const;
+export type OverlayFlag = (typeof OVERLAY_FLAG_VALUES)[number];
+
+/**
+ * Deterministic overlay — records flags only; does NOT mutate LLM/judge classification.
+ */
+export function collectOverlayFlags(input: {
+  claimText: string;
+  evidence: EvidencePack;
+  evidenceRefs: string[];
+  judgeReason: string;
+  leapType: SemanticLeapType;
+}): OverlayFlag[] {
+  const flags: OverlayFlag[] = [];
+  const text = input.claimText;
+  const a = input.evidence.aggregates;
+
+  if (
+    (a.activeUsersLast7d == null || a.viewsLast7d == null) &&
+    /(활성.*(0|없)|views?\s*=\s*0|조회.*0)/i.test(text) &&
+    !MEASUREMENT_GAP_RE.test(text)
+  ) {
+    flags.push('NULL_TREATED_AS_ZERO');
+  }
+  if (
+    (a.activeUsersLast7d == null || a.viewsLast7d == null) &&
+    LOW_ACTIVITY_RE.test(text) &&
+    !MEASUREMENT_GAP_RE.test(text)
+  ) {
+    flags.push('UNKNOWN_AS_NEGATIVE');
+  }
+  if (textUsesMajorityAsJudgeGround(input.judgeReason) || textUsesMajorityAsJudgeGround(text)) {
+    flags.push('MAJORITY_REASONING');
+  }
+  if (
+    input.leapType === 'NONE' &&
+    (CAUSAL_FAIL_RE.test(text) || TREND_RE.test(text) || TECH_QUALITY_RE.test(text))
+  ) {
+    flags.push('LEAP_MARKER_MISMATCH');
+  }
+  if (input.evidenceRefs.length === 0) {
+    flags.push('MISSING_EVIDENCE_REF');
+  }
+  const known = new Set([
+    'aggregates.userCount',
+    'aggregates.usersLast7d',
+    'aggregates.newUsersLast7d',
+    'aggregates.activeUsersLast7d',
+    'aggregates.postCount',
+    'aggregates.postsLast7d',
+    'aggregates.commentsLast7d',
+    'aggregates.viewsLast7d',
+    'aggregates.totalViews',
+    'aggregates.commentCount',
+    'site.stackNotes',
+    'site.name',
+    'site.corridors',
+  ]);
+  for (const ref of input.evidenceRefs) {
+    if (!known.has(ref) && !ref.startsWith('aggregates.') && !ref.startsWith('site.')) {
+      flags.push('FABRICATED_EVIDENCE_REF');
+      break;
+    }
+  }
+  return flags;
 }
 
 export function compareToReference(
@@ -401,7 +598,12 @@ export function buildSemanticJudgment(input: BuildJudgmentInput): SemanticJudgme
     overclaimRisk: claim.riskOfOverclaiming,
   };
 
-  // Prefer LLM classification when present; overlay overrides on clear deterministic leaps / majority
+  // Prefer LLM when present. Deterministic overlay records flags only (v9: no auto-rewrite).
+  const hasLlm =
+    !!llmJudgment &&
+    (isClaimSupportLevel(llmJudgment.judgeClassification?.supportLevel) ||
+      isSemanticLeapType(llmJudgment.semanticLeap?.type));
+
   let judgeClassification: JudgeClassification = {
     evidenceType: isClaimEvidenceType(llmJudgment?.judgeClassification?.evidenceType)
       ? llmJudgment!.judgeClassification!.evidenceType
@@ -423,33 +625,36 @@ export function buildSemanticJudgment(input: BuildJudgmentInput): SemanticJudgme
   };
   if (llmJudgment?.semanticLeap && typeof llmJudgment.semanticLeap === 'object') {
     const sl = llmJudgment.semanticLeap;
-    if (sl.detected && isSemanticLeapType(sl.type) && sl.type !== 'NONE') {
-      semanticLeap = { detected: true, type: sl.type };
+    if (isSemanticLeapType(sl.type)) {
+      semanticLeap = { detected: sl.type !== 'NONE' && !!sl.detected, type: sl.type };
     }
-  }
-  // Overlay wins on clear deterministic leap
-  if (det.semanticLeap.detected) {
+  } else if (!hasLlm) {
     semanticLeap = det.semanticLeap;
-    judgeClassification = det.classification;
   }
 
-  let judgeReason =
+  const judgeReason =
     typeof llmJudgment?.judgeReason === 'string' && llmJudgment.judgeReason.trim()
       ? llmJudgment.judgeReason
       : det.judgeReason;
-  if (textUsesMajorityAsJudgeGround(judgeReason)) {
-    judgeReason = `${judgeReason} | OVERLAY: majority reasoning rejected`;
-  }
 
-  const recommendedAction: JudgeRecommendedAction =
-    isJudgeRecommendedAction(llmJudgment?.recommendedAction) && !det.semanticLeap.detected
-      ? llmJudgment!.recommendedAction!
-      : det.recommendedAction;
+  const recommendedAction: JudgeRecommendedAction = isJudgeRecommendedAction(
+    llmJudgment?.recommendedAction,
+  )
+    ? llmJudgment!.recommendedAction!
+    : det.recommendedAction;
 
   const missingEvidence =
     Array.isArray(llmJudgment?.missingEvidence) && llmJudgment!.missingEvidence!.length
       ? (llmJudgment!.missingEvidence as string[])
       : det.missingEvidence;
+
+  const overlayFlags = collectOverlayFlags({
+    claimText: claim.claimText,
+    evidence,
+    evidenceRefs: claim.evidenceRefs,
+    judgeReason,
+    leapType: semanticLeap.type,
+  });
 
   let verdict: JudgeVerdict = 'SEMANTICALLY_AMBIGUOUS';
   if (reference) {
@@ -483,6 +688,7 @@ export function buildSemanticJudgment(input: BuildJudgmentInput): SemanticJudgme
     semanticLeap,
     confidence,
     recommendedAction,
+    overlayFlags,
   };
 }
 

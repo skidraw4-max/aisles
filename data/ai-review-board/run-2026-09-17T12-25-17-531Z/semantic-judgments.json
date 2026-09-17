@@ -1,0 +1,955 @@
+[
+  {
+    "memberId": "A",
+    "claimId": "C001",
+    "claimText": "The platform exhibits a critical lack of user acquisition, evidenced by zero new users in the last 7 days.",
+    "evidenceRefs": [
+      "aggregates.newUsersLast7d"
+    ],
+    "originalSemanticClassification": {
+      "evidenceType": "DIRECT_FACT",
+      "supportLevel": "SUPPORTED",
+      "evidenceRelation": "DIRECTLY_SUPPORTS",
+      "overclaimRisk": "LOW"
+    },
+    "judgeClassification": {
+      "evidenceType": "DIRECT_FACT",
+      "supportLevel": "SUPPORTED",
+      "evidenceRelation": "DIRECTLY_SUPPORTS",
+      "overclaimRisk": "LOW"
+    },
+    "verdict": "SEMANTICALLY_AMBIGUOUS",
+    "calibrationAgreement": "AGREE",
+    "judgeReason": "The claim is directly supported by the 'newUsersLast7d' metric, which is explicitly stated as 0 in the EvidencePack. This metric directly reflects new user acquisition over the last 7 days.",
+    "missingEvidence": [],
+    "semanticLeap": {
+      "detected": false,
+      "type": "NONE"
+    },
+    "confidence": 1,
+    "recommendedAction": "NO_CHANGE",
+    "overlayFlags": []
+  },
+  {
+    "memberId": "A",
+    "claimId": "C002",
+    "claimText": "Community interaction is severely lacking, as indicated by zero comments created in the last 7 days.",
+    "evidenceRefs": [
+      "aggregates.commentsLast7d"
+    ],
+    "originalSemanticClassification": {
+      "evidenceType": "DIRECT_FACT",
+      "supportLevel": "SUPPORTED",
+      "evidenceRelation": "DIRECTLY_SUPPORTS",
+      "overclaimRisk": "LOW"
+    },
+    "judgeClassification": {
+      "evidenceType": "DIRECT_FACT",
+      "supportLevel": "SUPPORTED",
+      "evidenceRelation": "DIRECTLY_SUPPORTS",
+      "overclaimRisk": "LOW"
+    },
+    "verdict": "SEMANTICALLY_AMBIGUOUS",
+    "calibrationAgreement": "AGREE",
+    "judgeReason": "The claim is directly supported by the 'commentsLast7d' metric, which is explicitly stated as 0 in the EvidencePack. This metric directly reflects community interaction through comments over the last 7 days.",
+    "missingEvidence": [],
+    "semanticLeap": {
+      "detected": false,
+      "type": "NONE"
+    },
+    "confidence": 1,
+    "recommendedAction": "NO_CHANGE",
+    "overlayFlags": []
+  },
+  {
+    "memberId": "A",
+    "claimId": "C003",
+    "claimText": "User engagement is not being reliably measured due to undefined metrics for active users and views.",
+    "evidenceRefs": [
+      "aggregates.activeUsersLast7d",
+      "aggregates.viewsLast7d",
+      "metricDefinitions.activeUsersLast7d",
+      "metricDefinitions.viewsLast7d"
+    ],
+    "originalSemanticClassification": {
+      "evidenceType": "DIRECT_FACT",
+      "supportLevel": "SUPPORTED",
+      "evidenceRelation": "DOES_NOT_SUPPORT",
+      "overclaimRisk": "LOW"
+    },
+    "judgeClassification": {
+      "evidenceType": "DIRECT_FACT",
+      "supportLevel": "SUPPORTED",
+      "evidenceRelation": "DIRECTLY_SUPPORTS",
+      "overclaimRisk": "LOW"
+    },
+    "verdict": "SEMANTICALLY_AMBIGUOUS",
+    "calibrationAgreement": "PARTIAL",
+    "judgeReason": "The claim is supported by the null values for 'activeUsersLast7d' and 'viewsLast7d' in the aggregates, and confirmed by their respective metric definitions which state they are not reliably measured or are currently null. The 'docsHints' also reinforce this.",
+    "missingEvidence": [
+      "A defined metric for 'activeUsersLast7d' and a method to track 'viewsLast7d'."
+    ],
+    "semanticLeap": {
+      "detected": true,
+      "type": "UNKNOWN_AS_NEGATIVE_EVIDENCE"
+    },
+    "confidence": 0.9,
+    "recommendedAction": "ADD_CAVEAT",
+    "overlayFlags": [
+      "FABRICATED_EVIDENCE_REF"
+    ]
+  },
+  {
+    "memberId": "A",
+    "claimId": "C004",
+    "claimText": "Content creation is heavily concentrated in the 'LOUNGE' category, suggesting a lack of balanced engagement across other platform areas.",
+    "evidenceRefs": [
+      "aggregates.postsByCategory"
+    ],
+    "originalSemanticClassification": {
+      "evidenceType": "INFERENCE",
+      "supportLevel": "SUPPORTED",
+      "evidenceRelation": "DIRECTLY_SUPPORTS",
+      "overclaimRisk": "MEDIUM"
+    },
+    "judgeClassification": {
+      "evidenceType": "INFERENCE",
+      "supportLevel": "SUPPORTED",
+      "evidenceRelation": "DIRECTLY_SUPPORTS",
+      "overclaimRisk": "MEDIUM"
+    },
+    "verdict": "SEMANTICALLY_AMBIGUOUS",
+    "calibrationAgreement": "AGREE",
+    "judgeReason": "The evidence strongly supports the concentration of content in the 'LOUNGE' category (3284 posts vs. significantly fewer in others). The inference about 'lack of balanced engagement' is a reasonable conclusion, but it is an inference, not a direct fact, as engagement metrics per category are missing.",
+    "missingEvidence": [
+      "Metrics on user engagement (e.g., views, comments) per category to confirm if this concentration reflects actual user interest or just content creation patterns."
+    ],
+    "semanticLeap": {
+      "detected": false,
+      "type": "NONE"
+    },
+    "confidence": 0.8,
+    "recommendedAction": "ADD_CAVEAT",
+    "overlayFlags": []
+  },
+  {
+    "memberId": "A",
+    "claimId": "C005",
+    "claimText": "The platform's UI/UX may be hindering new user acquisition and community interaction, contributing to the observed low metrics.",
+    "evidenceRefs": [
+      "aggregates.newUsersLast7d",
+      "aggregates.commentsLast7d",
+      "aggregates.postsByCategory"
+    ],
+    "originalSemanticClassification": {
+      "evidenceType": "HYPOTHESIS",
+      "supportLevel": "NOT_SUPPORTED",
+      "evidenceRelation": "DOES_NOT_SUPPORT",
+      "overclaimRisk": "HIGH"
+    },
+    "judgeClassification": {
+      "evidenceType": "HYPOTHESIS",
+      "supportLevel": "NOT_SUPPORTED",
+      "evidenceRelation": "DOES_NOT_SUPPORT",
+      "overclaimRisk": "HIGH"
+    },
+    "verdict": "SEMANTICALLY_AMBIGUOUS",
+    "calibrationAgreement": "AGREE",
+    "judgeReason": "The claim hypothesizes a causal link between UI/UX and low metrics. While the low metrics are factual, the EvidencePack provides no data (user feedback, usability testing) to establish this causal relationship. This is a significant leap beyond the provided evidence.",
+    "missingEvidence": [
+      "User feedback, usability testing results, or specific UI/UX design analysis that points to friction points for new users or community interaction."
+    ],
+    "semanticLeap": {
+      "detected": true,
+      "type": "FACT_TO_CAUSALITY"
+    },
+    "confidence": 0.5,
+    "recommendedAction": "REWORD",
+    "overlayFlags": []
+  },
+  {
+    "memberId": "B",
+    "claimId": "C001",
+    "claimText": "AIsle은 최근 7일간 신규 사용자 유입이 전혀 없어 사용자 확보에 심각한 어려움을 겪고 있습니다.",
+    "evidenceRefs": [
+      "newUsersLast7d: 0"
+    ],
+    "originalSemanticClassification": {
+      "evidenceType": "DIRECT_FACT",
+      "supportLevel": "SUPPORTED",
+      "evidenceRelation": "DIRECTLY_SUPPORTS",
+      "overclaimRisk": "LOW"
+    },
+    "judgeClassification": {
+      "evidenceType": "DIRECT_FACT",
+      "supportLevel": "SUPPORTED",
+      "evidenceRelation": "DIRECTLY_SUPPORTS",
+      "overclaimRisk": "LOW"
+    },
+    "verdict": "SEMANTICALLY_AMBIGUOUS",
+    "calibrationAgreement": "AGREE",
+    "judgeReason": "The claim directly states that there are no new users in the last 7 days, and the evidence `newUsersLast7d: 0` directly supports this by showing zero new signups in the specified period.",
+    "missingEvidence": [],
+    "semanticLeap": {
+      "detected": false,
+      "type": "NONE"
+    },
+    "confidence": 1,
+    "recommendedAction": "NO_CHANGE",
+    "overlayFlags": [
+      "FABRICATED_EVIDENCE_REF"
+    ]
+  },
+  {
+    "memberId": "B",
+    "claimId": "C002",
+    "claimText": "AIsle은 사용자 간 상호작용이 거의 없는 커뮤니티로, 댓글 활동이 전무합니다.",
+    "evidenceRefs": [
+      "commentsLast7d: 0"
+    ],
+    "originalSemanticClassification": {
+      "evidenceType": "DIRECT_FACT",
+      "supportLevel": "SUPPORTED",
+      "evidenceRelation": "DIRECTLY_SUPPORTS",
+      "overclaimRisk": "LOW"
+    },
+    "judgeClassification": {
+      "evidenceType": "DIRECT_FACT",
+      "supportLevel": "SUPPORTED",
+      "evidenceRelation": "DIRECTLY_SUPPORTS",
+      "overclaimRisk": "LOW"
+    },
+    "verdict": "SEMANTICALLY_AMBIGUOUS",
+    "calibrationAgreement": "AGREE",
+    "judgeReason": "The claim asserts a lack of comment activity, and the evidence `commentsLast7d: 0` directly confirms that no comments were made in the last 7 days.",
+    "missingEvidence": [],
+    "semanticLeap": {
+      "detected": false,
+      "type": "NONE"
+    },
+    "confidence": 1,
+    "recommendedAction": "NO_CHANGE",
+    "overlayFlags": [
+      "FABRICATED_EVIDENCE_REF"
+    ]
+  },
+  {
+    "memberId": "B",
+    "claimId": "C003",
+    "claimText": "AIsle은 활성 사용자 수 및 최근 7일 조회수 측정 지표가 부재하여 사용자 참여 수준을 파악할 수 없습니다.",
+    "evidenceRefs": [
+      "activeUsersLast7d: null",
+      "viewsLast7d: null"
+    ],
+    "originalSemanticClassification": {
+      "evidenceType": "DIRECT_FACT",
+      "supportLevel": "SUPPORTED",
+      "evidenceRelation": "DIRECTLY_SUPPORTS",
+      "overclaimRisk": "LOW"
+    },
+    "judgeClassification": {
+      "evidenceType": "DIRECT_FACT",
+      "supportLevel": "SUPPORTED",
+      "evidenceRelation": "DIRECTLY_SUPPORTS",
+      "overclaimRisk": "LOW"
+    },
+    "verdict": "SEMANTICALLY_AMBIGUOUS",
+    "calibrationAgreement": "AGREE",
+    "judgeReason": "The claim states that metrics for active users and recent views are absent, making it impossible to gauge engagement. The evidence `activeUsersLast7d: null` and `viewsLast7d: null`, along with the `metricDefinitions` clarifying why these are null (lack of activity definition and no recent view metric), directly supports this claim.",
+    "missingEvidence": [
+      "Definition of 'activity' for activeUsersLast7d",
+      "Measurement of viewsLast7d"
+    ],
+    "semanticLeap": {
+      "detected": false,
+      "type": "NONE"
+    },
+    "confidence": 1,
+    "recommendedAction": "NO_CHANGE",
+    "overlayFlags": [
+      "FABRICATED_EVIDENCE_REF"
+    ]
+  },
+  {
+    "memberId": "B",
+    "claimId": "C004",
+    "claimText": "AIsle의 콘텐츠는 'LOUNGE' 카테고리에 과도하게 집중되어 있어 콘텐츠 다양성이 부족합니다.",
+    "evidenceRefs": [
+      "postsByCategory.LOUNGE: 3284"
+    ],
+    "originalSemanticClassification": {
+      "evidenceType": "INFERENCE",
+      "supportLevel": "SUPPORTED",
+      "evidenceRelation": "DIRECTLY_SUPPORTS",
+      "overclaimRisk": "LOW"
+    },
+    "judgeClassification": {
+      "evidenceType": "INFERENCE",
+      "supportLevel": "SUPPORTED",
+      "evidenceRelation": "DIRECTLY_SUPPORTS",
+      "overclaimRisk": "LOW"
+    },
+    "verdict": "SEMANTICALLY_AMBIGUOUS",
+    "calibrationAgreement": "AGREE",
+    "judgeReason": "The claim asserts that content is overly concentrated in the 'LOUNGE' category, indicating a lack of diversity. The evidence shows that 'LOUNGE' comprises over 96% of all posts, with other categories having very few posts, strongly inferring the claimed lack of diversity.",
+    "missingEvidence": [
+      "Distribution of posts across other categories relative to their potential"
+    ],
+    "semanticLeap": {
+      "detected": false,
+      "type": "NONE"
+    },
+    "confidence": 1,
+    "recommendedAction": "NO_CHANGE",
+    "overlayFlags": [
+      "FABRICATED_EVIDENCE_REF"
+    ]
+  },
+  {
+    "memberId": "B",
+    "claimId": "C005",
+    "claimText": "AIsle은 최신 웹 기술 스택을 활용하고 있으나, 사용자 확보 및 참여 지표의 부재는 2025-2026년 웹 트렌드 대비 큰 격차를 나타냅니다.",
+    "evidenceRefs": [
+      "site.stackNotes",
+      "newUsersLast7d: 0",
+      "commentsLast7d: 0",
+      "activeUsersLast7d: null",
+      "viewsLast7d: null"
+    ],
+    "originalSemanticClassification": {
+      "evidenceType": "INFERENCE",
+      "supportLevel": "SUPPORTED",
+      "evidenceRelation": "DIRECTLY_SUPPORTS",
+      "overclaimRisk": "MEDIUM"
+    },
+    "judgeClassification": {
+      "evidenceType": "INFERENCE",
+      "supportLevel": "SUPPORTED",
+      "evidenceRelation": "DIRECTLY_SUPPORTS",
+      "overclaimRisk": "MEDIUM"
+    },
+    "verdict": "SEMANTICALLY_AMBIGUOUS",
+    "calibrationAgreement": "AGREE",
+    "judgeReason": "The claim connects the modern tech stack with a gap in user acquisition and engagement metrics relative to future trends. While the tech stack is confirmed and the lack of user metrics is directly supported, the assertion about a 'significant gap' relative to '2025-2026 web trends' involves an inference about future trends that is not explicitly detailed in the provided evidence. This makes the leap to 'significant gap' an unsupported inference, though the core components (modern tech vs. poor metrics) are evident.",
+    "missingEvidence": [
+      "Specific 2025-2026 web trend data beyond general assumptions",
+      "Comparative data with competitors"
+    ],
+    "semanticLeap": {
+      "detected": true,
+      "type": "FACT_TO_TREND"
+    },
+    "confidence": 0.7,
+    "recommendedAction": "ADD_CAVEAT",
+    "overlayFlags": [
+      "FABRICATED_EVIDENCE_REF"
+    ]
+  },
+  {
+    "memberId": "C",
+    "claimId": "C001",
+    "claimText": "AIsle의 신규 사용자 유입은 최근 7일간 0명으로, 사용자 획득에 심각한 문제가 있습니다.",
+    "evidenceRefs": [
+      "aggregates.newUsersLast7d=0"
+    ],
+    "originalSemanticClassification": {
+      "evidenceType": "DIRECT_FACT",
+      "supportLevel": "SUPPORTED",
+      "evidenceRelation": "DIRECTLY_SUPPORTS",
+      "overclaimRisk": "LOW"
+    },
+    "judgeClassification": {
+      "evidenceType": "DIRECT_FACT",
+      "supportLevel": "SUPPORTED",
+      "evidenceRelation": "DIRECTLY_SUPPORTS",
+      "overclaimRisk": "LOW"
+    },
+    "verdict": "SEMANTICALLY_AMBIGUOUS",
+    "calibrationAgreement": "AGREE",
+    "judgeReason": "The claim is directly supported by the 'newUsersLast7d' metric being 0 in the EvidencePack.",
+    "missingEvidence": [],
+    "semanticLeap": {
+      "detected": false,
+      "type": "NONE"
+    },
+    "confidence": 1,
+    "recommendedAction": "NO_CHANGE",
+    "overlayFlags": []
+  },
+  {
+    "memberId": "C",
+    "claimId": "C002",
+    "claimText": "최근 7일간의 사용자 활동을 측정할 수 있는 활성 사용자 지표(activeUsersLast7d)가 존재하지 않습니다.",
+    "evidenceRefs": [
+      "aggregates.activeUsersLast7d=null",
+      "metricDefinitions.activeUsersLast7d"
+    ],
+    "originalSemanticClassification": {
+      "evidenceType": "DIRECT_FACT",
+      "supportLevel": "SUPPORTED",
+      "evidenceRelation": "DIRECTLY_SUPPORTS",
+      "overclaimRisk": "LOW"
+    },
+    "judgeClassification": {
+      "evidenceType": "DIRECT_FACT",
+      "supportLevel": "SUPPORTED",
+      "evidenceRelation": "DIRECTLY_SUPPORTS",
+      "overclaimRisk": "LOW"
+    },
+    "verdict": "SEMANTICALLY_AMBIGUOUS",
+    "calibrationAgreement": "AGREE",
+    "judgeReason": "The claim is directly supported by 'activeUsersLast7d' being null and the metric definition explicitly stating no reliable activity definition exists.",
+    "missingEvidence": [],
+    "semanticLeap": {
+      "detected": false,
+      "type": "NONE"
+    },
+    "confidence": 1,
+    "recommendedAction": "NO_CHANGE",
+    "overlayFlags": [
+      "FABRICATED_EVIDENCE_REF"
+    ]
+  },
+  {
+    "memberId": "C",
+    "claimId": "C003",
+    "claimText": "최근 7일간의 댓글 작성 수가 0건으로, 커뮤니티 참여가 매우 저조합니다.",
+    "evidenceRefs": [
+      "aggregates.commentsLast7d=0"
+    ],
+    "originalSemanticClassification": {
+      "evidenceType": "DIRECT_FACT",
+      "supportLevel": "SUPPORTED",
+      "evidenceRelation": "DIRECTLY_SUPPORTS",
+      "overclaimRisk": "LOW"
+    },
+    "judgeClassification": {
+      "evidenceType": "DIRECT_FACT",
+      "supportLevel": "SUPPORTED",
+      "evidenceRelation": "DIRECTLY_SUPPORTS",
+      "overclaimRisk": "LOW"
+    },
+    "verdict": "SEMANTICALLY_AMBIGUOUS",
+    "calibrationAgreement": "AGREE",
+    "judgeReason": "The claim is directly supported by the 'commentsLast7d' metric being 0 in the EvidencePack.",
+    "missingEvidence": [],
+    "semanticLeap": {
+      "detected": false,
+      "type": "NONE"
+    },
+    "confidence": 1,
+    "recommendedAction": "NO_CHANGE",
+    "overlayFlags": []
+  },
+  {
+    "memberId": "C",
+    "claimId": "C004",
+    "claimText": "최근 7일간의 콘텐츠 조회수(viewsLast7d)를 파악할 수 없습니다.",
+    "evidenceRefs": [
+      "aggregates.viewsLast7d=null",
+      "metricDefinitions.viewsLast7d"
+    ],
+    "originalSemanticClassification": {
+      "evidenceType": "DIRECT_FACT",
+      "supportLevel": "SUPPORTED",
+      "evidenceRelation": "DIRECTLY_SUPPORTS",
+      "overclaimRisk": "LOW"
+    },
+    "judgeClassification": {
+      "evidenceType": "DIRECT_FACT",
+      "supportLevel": "SUPPORTED",
+      "evidenceRelation": "DIRECTLY_SUPPORTS",
+      "overclaimRisk": "LOW"
+    },
+    "verdict": "SEMANTICALLY_AMBIGUOUS",
+    "calibrationAgreement": "AGREE",
+    "judgeReason": "The claim is directly supported by 'viewsLast7d' being null and the metric definition stating only cumulative views exist.",
+    "missingEvidence": [],
+    "semanticLeap": {
+      "detected": false,
+      "type": "NONE"
+    },
+    "confidence": 1,
+    "recommendedAction": "NO_CHANGE",
+    "overlayFlags": [
+      "FABRICATED_EVIDENCE_REF"
+    ]
+  },
+  {
+    "memberId": "C",
+    "claimId": "C005",
+    "claimText": "전체 게시글의 97% 이상이 'LOUNGE' 카테고리에 집중되어 있어, 콘텐츠 분포가 불균형합니다.",
+    "evidenceRefs": [
+      "aggregates.postsByCategory.LOUNGE=3284",
+      "aggregates.postCount=3372"
+    ],
+    "originalSemanticClassification": {
+      "evidenceType": "INFERENCE",
+      "supportLevel": "SUPPORTED",
+      "evidenceRelation": "DIRECTLY_SUPPORTS",
+      "overclaimRisk": "LOW"
+    },
+    "judgeClassification": {
+      "evidenceType": "INFERENCE",
+      "supportLevel": "SUPPORTED",
+      "evidenceRelation": "DIRECTLY_SUPPORTS",
+      "overclaimRisk": "LOW"
+    },
+    "verdict": "SEMANTICALLY_AMBIGUOUS",
+    "calibrationAgreement": "AGREE",
+    "judgeReason": "The calculation based on 'postsByCategory.LOUNGE' and 'postCount' directly supports the inference of content concentration in the 'LOUNGE' category.",
+    "missingEvidence": [],
+    "semanticLeap": {
+      "detected": false,
+      "type": "NONE"
+    },
+    "confidence": 1,
+    "recommendedAction": "NO_CHANGE",
+    "overlayFlags": []
+  },
+  {
+    "memberId": "C",
+    "claimId": "C006",
+    "claimText": "AI 기능은 'LAB/news/fortune'에 대한 Gemini 통합으로 제한적으로 활용되고 있으며, 다른 커뮤니티 공간에서의 활용은 불확실합니다.",
+    "evidenceRefs": [
+      "site.stackNotes",
+      "site.corridors"
+    ],
+    "originalSemanticClassification": {
+      "evidenceType": "INFERENCE",
+      "supportLevel": "PARTIALLY_SUPPORTED",
+      "evidenceRelation": "PARTIALLY_SUPPORTS",
+      "overclaimRisk": "MEDIUM"
+    },
+    "judgeClassification": {
+      "evidenceType": "INFERENCE",
+      "supportLevel": "PARTIALLY_SUPPORTED",
+      "evidenceRelation": "PARTIALLY_SUPPORTS",
+      "overclaimRisk": "MEDIUM"
+    },
+    "verdict": "SEMANTICALLY_AMBIGUOUS",
+    "calibrationAgreement": "AGREE",
+    "judgeReason": "The claim that AI is 'limited' and 'uncertain' in other spaces is an inference beyond the direct evidence. While Gemini integration is mentioned for specific areas, the EvidencePack does not explicitly state limitations or provide details on AI usage in other corridors.",
+    "missingEvidence": [
+      "Specific details on how AI is utilized in corridors other than LAB/RECIPE/AI_FORTUNE (e.g., GALLERY, LOUNGE, GOSSIP, BUILD, LAUNCH)."
+    ],
+    "semanticLeap": {
+      "detected": false,
+      "type": "NONE"
+    },
+    "confidence": 0.6,
+    "recommendedAction": "REWORD",
+    "overlayFlags": []
+  },
+  {
+    "memberId": "D",
+    "claimId": "C001",
+    "claimText": "최근 7일 신규 가입자가 0명입니다.",
+    "evidenceRefs": [
+      "aggregates.newUsersLast7d"
+    ],
+    "originalSemanticClassification": {
+      "evidenceType": "DIRECT_FACT",
+      "supportLevel": "SUPPORTED",
+      "evidenceRelation": "DIRECTLY_SUPPORTS",
+      "overclaimRisk": "LOW"
+    },
+    "judgeClassification": {
+      "evidenceType": "DIRECT_FACT",
+      "supportLevel": "SUPPORTED",
+      "evidenceRelation": "DIRECTLY_SUPPORTS",
+      "overclaimRisk": "LOW"
+    },
+    "verdict": "SEMANTICALLY_AMBIGUOUS",
+    "calibrationAgreement": "AGREE",
+    "judgeReason": "EvidencePack의 aggregates 섹션에 newUsersLast7d가 0으로 명시되어 있어 직접적으로 뒷받침됩니다.",
+    "missingEvidence": [],
+    "semanticLeap": {
+      "detected": false,
+      "type": "NONE"
+    },
+    "confidence": 1,
+    "recommendedAction": "NO_CHANGE",
+    "overlayFlags": []
+  },
+  {
+    "memberId": "D",
+    "claimId": "C002",
+    "claimText": "최근 7일 댓글 작성 수가 0건입니다.",
+    "evidenceRefs": [
+      "aggregates.commentsLast7d"
+    ],
+    "originalSemanticClassification": {
+      "evidenceType": "DIRECT_FACT",
+      "supportLevel": "SUPPORTED",
+      "evidenceRelation": "DIRECTLY_SUPPORTS",
+      "overclaimRisk": "LOW"
+    },
+    "judgeClassification": {
+      "evidenceType": "DIRECT_FACT",
+      "supportLevel": "SUPPORTED",
+      "evidenceRelation": "DIRECTLY_SUPPORTS",
+      "overclaimRisk": "LOW"
+    },
+    "verdict": "SEMANTICALLY_AMBIGUOUS",
+    "calibrationAgreement": "AGREE",
+    "judgeReason": "EvidencePack의 aggregates 섹션에 commentsLast7d가 0으로 명시되어 있어 직접적으로 뒷받침합니다.",
+    "missingEvidence": [],
+    "semanticLeap": {
+      "detected": false,
+      "type": "NONE"
+    },
+    "confidence": 1,
+    "recommendedAction": "NO_CHANGE",
+    "overlayFlags": []
+  },
+  {
+    "memberId": "D",
+    "claimId": "C003",
+    "claimText": "최근 7일 활성 사용자 수와 조회수 데이터는 측정되지 않았습니다.",
+    "evidenceRefs": [
+      "aggregates.activeUsersLast7d",
+      "aggregates.viewsLast7d",
+      "metricDefinitions.activeUsersLast7d",
+      "metricDefinitions.viewsLast7d"
+    ],
+    "originalSemanticClassification": {
+      "evidenceType": "DIRECT_FACT",
+      "supportLevel": "SUPPORTED",
+      "evidenceRelation": "DIRECTLY_SUPPORTS",
+      "overclaimRisk": "LOW"
+    },
+    "judgeClassification": {
+      "evidenceType": "DIRECT_FACT",
+      "supportLevel": "SUPPORTED",
+      "evidenceRelation": "DIRECTLY_SUPPORTS",
+      "overclaimRisk": "LOW"
+    },
+    "verdict": "SEMANTICALLY_AMBIGUOUS",
+    "calibrationAgreement": "AGREE",
+    "judgeReason": "EvidencePack의 aggregates 섹션에서 activeUsersLast7d와 viewsLast7d가 null이며, metricDefinitions에서도 이 지표들이 신뢰할 수 있는 정의가 없어 null임을 명시하고 있어 직접적으로 뒷받침합니다.",
+    "missingEvidence": [],
+    "semanticLeap": {
+      "detected": false,
+      "type": "NONE"
+    },
+    "confidence": 1,
+    "recommendedAction": "NO_CHANGE",
+    "overlayFlags": [
+      "FABRICATED_EVIDENCE_REF"
+    ]
+  },
+  {
+    "memberId": "D",
+    "claimId": "C004",
+    "claimText": "플랫폼은 Next.js 15, React 19, Prisma 7, PostgreSQL 등 최신 기술 스택을 사용합니다.",
+    "evidenceRefs": [
+      "site.stackNotes"
+    ],
+    "originalSemanticClassification": {
+      "evidenceType": "DIRECT_FACT",
+      "supportLevel": "SUPPORTED",
+      "evidenceRelation": "DIRECTLY_SUPPORTS",
+      "overclaimRisk": "LOW"
+    },
+    "judgeClassification": {
+      "evidenceType": "DIRECT_FACT",
+      "supportLevel": "SUPPORTED",
+      "evidenceRelation": "DIRECTLY_SUPPORTS",
+      "overclaimRisk": "LOW"
+    },
+    "verdict": "SEMANTICALLY_AMBIGUOUS",
+    "calibrationAgreement": "AGREE",
+    "judgeReason": "EvidencePack의 site.stackNotes에 사용된 기술 스택이 명시되어 있어 직접적으로 뒷받침합니다.",
+    "missingEvidence": [],
+    "semanticLeap": {
+      "detected": false,
+      "type": "NONE"
+    },
+    "confidence": 1,
+    "recommendedAction": "NO_CHANGE",
+    "overlayFlags": []
+  },
+  {
+    "memberId": "D",
+    "claimId": "C005",
+    "claimText": "Gemini AI가 일부 기능(LAB/news/fortune)에 통합되어 있습니다.",
+    "evidenceRefs": [
+      "site.stackNotes"
+    ],
+    "originalSemanticClassification": {
+      "evidenceType": "DIRECT_FACT",
+      "supportLevel": "SUPPORTED",
+      "evidenceRelation": "DIRECTLY_SUPPORTS",
+      "overclaimRisk": "LOW"
+    },
+    "judgeClassification": {
+      "evidenceType": "DIRECT_FACT",
+      "supportLevel": "SUPPORTED",
+      "evidenceRelation": "DIRECTLY_SUPPORTS",
+      "overclaimRisk": "LOW"
+    },
+    "verdict": "SEMANTICALLY_AMBIGUOUS",
+    "calibrationAgreement": "AGREE",
+    "judgeReason": "EvidencePack의 site.stackNotes에 Gemini가 언급되어 있어 직접적으로 뒷받침합니다.",
+    "missingEvidence": [],
+    "semanticLeap": {
+      "detected": false,
+      "type": "NONE"
+    },
+    "confidence": 1,
+    "recommendedAction": "NO_CHANGE",
+    "overlayFlags": []
+  },
+  {
+    "memberId": "D",
+    "claimId": "C006",
+    "claimText": "전체 게시글 대비 최근 7일 게시글 작성 비율이 낮습니다.",
+    "evidenceRefs": [
+      "aggregates.postCount",
+      "aggregates.postsLast7d"
+    ],
+    "originalSemanticClassification": {
+      "evidenceType": "INFERENCE",
+      "supportLevel": "PARTIALLY_SUPPORTED",
+      "evidenceRelation": "PARTIALLY_SUPPORTS",
+      "overclaimRisk": "MEDIUM"
+    },
+    "judgeClassification": {
+      "evidenceType": "INFERENCE",
+      "supportLevel": "PARTIALLY_SUPPORTED",
+      "evidenceRelation": "PARTIALLY_SUPPORTS",
+      "overclaimRisk": "MEDIUM"
+    },
+    "verdict": "SEMANTICALLY_AMBIGUOUS",
+    "calibrationAgreement": "AGREE",
+    "judgeReason": "최근 7일 게시글 수는 141건이고 전체 게시글 수는 3372건으로, 최근 활동이 전체 활동에 비해 상대적으로 적음을 시사합니다. 그러나 '낮다'는 판단은 주관적이며 명확한 기준이 없어 약한 추론이며, 객관적인 기준이 누락되어 unsupportedLeap가 true입니다.",
+    "missingEvidence": [
+      "전체 게시글 수 대비 최근 게시글 수의 적절한 비율에 대한 기준"
+    ],
+    "semanticLeap": {
+      "detected": false,
+      "type": "NONE"
+    },
+    "confidence": 0.7,
+    "recommendedAction": "ADD_CAVEAT",
+    "overlayFlags": []
+  },
+  {
+    "memberId": "E",
+    "claimId": "C001",
+    "claimText": "최근 7일 동안 신규 사용자 유입이 전혀 없었습니다.",
+    "evidenceRefs": [
+      "aggregates.newUsersLast7d"
+    ],
+    "originalSemanticClassification": {
+      "evidenceType": "DIRECT_FACT",
+      "supportLevel": "SUPPORTED",
+      "evidenceRelation": "DIRECTLY_SUPPORTS",
+      "overclaimRisk": "LOW"
+    },
+    "judgeClassification": {
+      "evidenceType": "DIRECT_FACT",
+      "supportLevel": "SUPPORTED",
+      "evidenceRelation": "DIRECTLY_SUPPORTS",
+      "overclaimRisk": "LOW"
+    },
+    "verdict": "SEMANTICALLY_AMBIGUOUS",
+    "calibrationAgreement": "AGREE",
+    "judgeReason": "The claim is directly supported by the 'newUsersLast7d' metric, which is 0. This indicates no new user signups in the last 7 days.",
+    "missingEvidence": [],
+    "semanticLeap": {
+      "detected": false,
+      "type": "NONE"
+    },
+    "confidence": 1,
+    "recommendedAction": "NO_CHANGE",
+    "overlayFlags": []
+  },
+  {
+    "memberId": "E",
+    "claimId": "C002",
+    "claimText": "최근 7일 동안 커뮤니티 상호작용(댓글)이 전혀 없었습니다.",
+    "evidenceRefs": [
+      "aggregates.commentsLast7d"
+    ],
+    "originalSemanticClassification": {
+      "evidenceType": "DIRECT_FACT",
+      "supportLevel": "SUPPORTED",
+      "evidenceRelation": "DIRECTLY_SUPPORTS",
+      "overclaimRisk": "LOW"
+    },
+    "judgeClassification": {
+      "evidenceType": "DIRECT_FACT",
+      "supportLevel": "SUPPORTED",
+      "evidenceRelation": "DIRECTLY_SUPPORTS",
+      "overclaimRisk": "LOW"
+    },
+    "verdict": "SEMANTICALLY_AMBIGUOUS",
+    "calibrationAgreement": "AGREE",
+    "judgeReason": "The claim is directly supported by the 'commentsLast7d' metric, which is 0. This indicates no comments were made in the last 7 days.",
+    "missingEvidence": [],
+    "semanticLeap": {
+      "detected": false,
+      "type": "NONE"
+    },
+    "confidence": 1,
+    "recommendedAction": "NO_CHANGE",
+    "overlayFlags": []
+  },
+  {
+    "memberId": "E",
+    "claimId": "C003",
+    "claimText": "최근 7일 동안의 활성 사용자 수는 측정할 수 없습니다.",
+    "evidenceRefs": [
+      "aggregates.activeUsersLast7d"
+    ],
+    "originalSemanticClassification": {
+      "evidenceType": "DIRECT_FACT",
+      "supportLevel": "SUPPORTED",
+      "evidenceRelation": "DIRECTLY_SUPPORTS",
+      "overclaimRisk": "LOW"
+    },
+    "judgeClassification": {
+      "evidenceType": "DIRECT_FACT",
+      "supportLevel": "SUPPORTED",
+      "evidenceRelation": "DIRECTLY_SUPPORTS",
+      "overclaimRisk": "LOW"
+    },
+    "verdict": "SEMANTICALLY_AMBIGUOUS",
+    "calibrationAgreement": "AGREE",
+    "judgeReason": "The claim is directly supported by the 'activeUsersLast7d' metric being null, and the metric definition explicitly states it cannot be reliably measured.",
+    "missingEvidence": [],
+    "semanticLeap": {
+      "detected": false,
+      "type": "NONE"
+    },
+    "confidence": 1,
+    "recommendedAction": "NO_CHANGE",
+    "overlayFlags": []
+  },
+  {
+    "memberId": "E",
+    "claimId": "C004",
+    "claimText": "최근 7일 동안의 게시글 조회수는 측정할 수 없습니다.",
+    "evidenceRefs": [
+      "aggregates.viewsLast7d"
+    ],
+    "originalSemanticClassification": {
+      "evidenceType": "DIRECT_FACT",
+      "supportLevel": "SUPPORTED",
+      "evidenceRelation": "DIRECTLY_SUPPORTS",
+      "overclaimRisk": "LOW"
+    },
+    "judgeClassification": {
+      "evidenceType": "DIRECT_FACT",
+      "supportLevel": "SUPPORTED",
+      "evidenceRelation": "DIRECTLY_SUPPORTS",
+      "overclaimRisk": "LOW"
+    },
+    "verdict": "SEMANTICALLY_AMBIGUOUS",
+    "calibrationAgreement": "AGREE",
+    "judgeReason": "The claim is directly supported by the 'viewsLast7d' metric being null, and the metric definition explicitly states it is currently unavailable.",
+    "missingEvidence": [],
+    "semanticLeap": {
+      "detected": false,
+      "type": "NONE"
+    },
+    "confidence": 1,
+    "recommendedAction": "NO_CHANGE",
+    "overlayFlags": []
+  },
+  {
+    "memberId": "E",
+    "claimId": "C005",
+    "claimText": "최근 7일 동안 꾸준한 콘텐츠 생성이 이루어지고 있습니다.",
+    "evidenceRefs": [
+      "aggregates.postsLast7d"
+    ],
+    "originalSemanticClassification": {
+      "evidenceType": "DIRECT_FACT",
+      "supportLevel": "SUPPORTED",
+      "evidenceRelation": "DIRECTLY_SUPPORTS",
+      "overclaimRisk": "LOW"
+    },
+    "judgeClassification": {
+      "evidenceType": "DIRECT_FACT",
+      "supportLevel": "SUPPORTED",
+      "evidenceRelation": "DIRECTLY_SUPPORTS",
+      "overclaimRisk": "LOW"
+    },
+    "verdict": "SEMANTICALLY_AMBIGUOUS",
+    "calibrationAgreement": "AGREE",
+    "judgeReason": "The 'postsLast7d' metric shows 141 posts, directly indicating that content creation is occurring in the last 7 days. The term '꾸준한' (consistent) is a reasonable inference from this non-zero value.",
+    "missingEvidence": [],
+    "semanticLeap": {
+      "detected": false,
+      "type": "NONE"
+    },
+    "confidence": 1,
+    "recommendedAction": "NO_CHANGE",
+    "overlayFlags": []
+  },
+  {
+    "memberId": "E",
+    "claimId": "C006",
+    "claimText": "플랫폼에는 상당한 양의 기존 콘텐츠가 축적되어 있습니다.",
+    "evidenceRefs": [
+      "aggregates.postCount"
+    ],
+    "originalSemanticClassification": {
+      "evidenceType": "DIRECT_FACT",
+      "supportLevel": "SUPPORTED",
+      "evidenceRelation": "DIRECTLY_SUPPORTS",
+      "overclaimRisk": "LOW"
+    },
+    "judgeClassification": {
+      "evidenceType": "DIRECT_FACT",
+      "supportLevel": "SUPPORTED",
+      "evidenceRelation": "DIRECTLY_SUPPORTS",
+      "overclaimRisk": "LOW"
+    },
+    "verdict": "SEMANTICALLY_AMBIGUOUS",
+    "calibrationAgreement": "AGREE",
+    "judgeReason": "The 'postCount' of 3372 directly indicates a large number of accumulated posts. The term '상당한 양' (significant amount) is a reasonable inference from this total.",
+    "missingEvidence": [],
+    "semanticLeap": {
+      "detected": false,
+      "type": "NONE"
+    },
+    "confidence": 1,
+    "recommendedAction": "NO_CHANGE",
+    "overlayFlags": []
+  },
+  {
+    "memberId": "E",
+    "claimId": "C007",
+    "claimText": "콘텐츠의 대부분은 'LOUNGE' 카테고리에 집중되어 있습니다.",
+    "evidenceRefs": [
+      "aggregates.postsByCategory.LOUNGE"
+    ],
+    "originalSemanticClassification": {
+      "evidenceType": "DIRECT_FACT",
+      "supportLevel": "SUPPORTED",
+      "evidenceRelation": "DIRECTLY_SUPPORTS",
+      "overclaimRisk": "LOW"
+    },
+    "judgeClassification": {
+      "evidenceType": "DIRECT_FACT",
+      "supportLevel": "SUPPORTED",
+      "evidenceRelation": "DIRECTLY_SUPPORTS",
+      "overclaimRisk": "LOW"
+    },
+    "verdict": "SEMANTICALLY_AMBIGUOUS",
+    "calibrationAgreement": "AGREE",
+    "judgeReason": "The 'LOUNGE' category has 3284 posts out of a total of 3372, which directly supports the claim that most content is concentrated there. The term '대부분' (most) is accurately inferred.",
+    "missingEvidence": [],
+    "semanticLeap": {
+      "detected": false,
+      "type": "NONE"
+    },
+    "confidence": 1,
+    "recommendedAction": "NO_CHANGE",
+    "overlayFlags": []
+  }
+]

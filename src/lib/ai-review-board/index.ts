@@ -14,5 +14,6 @@ export * from './claim-calibration';
 export * from './calibration-revision-consistency';
 export * from './evidence-claim-entailment';
 export * from './semantic-judge';
+export * from './semantic-reference-eval';
 export * from './finalize-report';
 export { createGeminiReviewBoardLlm } from './gemini-llm';

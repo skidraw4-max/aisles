@@ -1,0 +1,437 @@
+[
+  {
+    "memberId": "A",
+    "revisionStatus": "UNCHANGED",
+    "revised": false,
+    "originalOpinion": "The platform is currently failing to attract new users and foster community interaction, as evidenced by zero new signups and comments in the last 7 days. The heavy concentration of content in the 'LOUNGE' category further highlights a lack of balanced engagement across the platform. While the technology stack is modern, the core user experience seems to be hindering growth and participation.",
+    "revisionReason": null,
+    "retainReason": "The core claim that the platform is failing to attract new users and foster community interaction remains valid. The evidence of 0 new users and 0 comments in the last 7 days is direct and critical. While the claim that UI/UX may be hindering these metrics (C005) is a hypothesis unsupported by direct evidence, it is a reasonable inference given the critical lack of engagement. The calibration and semantic judge assessments confirm that the core factual claims (C001, C002) are directly supported, and the inferential claims (C004) are supported with caveats. The unsupported hypothesis (C005) is identified as such, and the recommendation is to REWORD, which aligns with retaining the overall sentiment but acknowledging it's a hypothesis. No new evidence or strong rebuttals necessitate a change to the original opinion's core assertion.",
+    "changedClaims": [],
+    "newEvidenceAccepted": [],
+    "rejectedArguments": [],
+    "confidenceBefore": 0.9,
+    "confidenceAfter": 0.9,
+    "confidenceChangeReason": "Confidence remains high as the core claims are strongly supported by direct metrics (newUsersLast7d, commentsLast7d) and the identified hypothesis (UI/UX impact) is appropriately flagged as such. The calibration and semantic judge reviews reinforce the validity of the original opinion's assessment, with recommendations for caveats or rewording on specific claims rather than a change to the overall conclusion.",
+    "finalOpinion": "The platform is currently failing to attract new users and foster community interaction, as evidenced by zero new signups and comments in the last 7 days. The heavy concentration of content in the 'LOUNGE' category further highlights a lack of balanced engagement across the platform. While the technology stack is modern, the core user experience seems to be hindering growth and participation, though this specific causal link is a hypothesis requiring further investigation.",
+    "revisionAnswers": {
+      "q1_coreClaim": "The platform is failing to attract new users and foster community interaction, with a heavy concentration of content in one category, suggesting a core user experience issue hindering growth.",
+      "q2_strongestRebuttal": "The claim that UI/UX is *causing* the low metrics (C005) is a hypothesis unsupported by direct evidence, as there's no user feedback or usability testing data to establish a causal link. The Evidence Semantics and Semantic Judge both identified this as unsupported and a significant leap.",
+      "q3_rebuttalEvidenceKind": "inference",
+      "q4_evidenceGapsFound": "User feedback, usability testing results, or specific UI/UX design analysis that points to friction points for new users or community interaction (for C005). Metrics on user engagement (e.g., views, comments) per category to confirm if content concentration reflects actual user interest or just content creation patterns (for C004). A defined metric for 'activeUsersLast7d' and a method to track 'viewsLast7d' (for C003).",
+      "q5_gapAffectsCoreClaim": "Yes, the gap in evidence for C005 directly affects the core claim's assertion of UI/UX *hindering* growth, as it shifts it from a likely cause to a plausible hypothesis. The gaps for C003 and C004 also affect the nuance of the overall assessment by limiting the certainty with which engagement and content distribution can be discussed.",
+      "q6_directlySupportedScope": "The platform's failure to attract new users (0 newUsersLast7d) and foster community interaction (0 commentsLast7d) are directly supported by metrics. The lack of defined active user and view metrics (activeUsersLast7d, viewsLast7d are null) is also directly supported. The concentration of posts in the 'LOUNGE' category is directly supported by 'postsByCategory' data.",
+      "q7_overclaimCheck": "Yes, the original opinion stated 'the core user experience seems to be hindering growth and participation.' While this is a reasonable inference given the data, the claim C005 was identified as a HYPOTHESIS with HIGH risk of overclaiming by the Claim Calibration and Semantic Judge. The final opinion will be reworded to reflect this as a hypothesis, acknowledging the lack of direct evidence for causality.",
+      "q8_whyRetainIfUnchanged": "The core assertion remains unchanged because the most critical data points (0 new users, 0 comments) are direct facts that strongly support the overall conclusion of a lack of acquisition and engagement. The identified hypothesis (UI/UX impact) is still a plausible explanation for these critical metrics, and the revision process has ensured it's presented as such, not as a proven fact. The semantic judge and calibration confirmed the factual claims are supported and the hypothesis is identified appropriately.",
+      "q9_claimsToChangeIfPartial": "C003: Add caveat to clarify that while metrics are null/undefined, the *implication* of this lack of measurement needs careful consideration. C004: Add caveat to specify that 'lack of balanced engagement' is an inference based on post volume, not direct engagement metrics per category. C005: Reword to clearly state it's a hypothesis about UI/UX causing low metrics, acknowledging the lack of direct evidence.",
+      "q10_groundsForFullRevision": "No grounds for full revision. The core conclusion remains valid based on direct evidence. Specific claims have been refined or flagged as hypotheses as per calibration and semantic judge feedback, but the overall assessment is not overturned.",
+      "q11_chosenStatus": "UNCHANGED",
+      "q12_confidenceChange": "Confidence remains at 0.9. The calibration and semantic judge reviews validated the core claims and provided specific, actionable feedback on how to refine the wording for claims identified as hypotheses or inferences (C003, C004, C005). This process has strengthened the overall assessment by ensuring appropriate caveats and acknowledgments of evidence limitations are in place, rather than weakening the confidence."
+    },
+    "calibrationImpactAssessment": {
+      "materiallyAffected": true,
+      "affectedClaims": [
+        {
+          "claimId": "C001",
+          "calibrationSupportLevel": "SUPPORTED",
+          "calibrationEvidenceImpact": "CRITICAL",
+          "calibrationRiskOfOverclaiming": "LOW",
+          "revisionAction": "NO_ACTION_NEEDED",
+          "actionReason": "The claim is directly supported by the 'newUsersLast7d' metric (0) and is a critical observation. No changes are needed."
+        },
+        {
+          "claimId": "C002",
+          "calibrationSupportLevel": "SUPPORTED",
+          "calibrationEvidenceImpact": "CRITICAL",
+          "calibrationRiskOfOverclaiming": "LOW",
+          "revisionAction": "NO_ACTION_NEEDED",
+          "actionReason": "The claim is directly supported by the 'commentsLast7d' metric (0) and is a critical observation. No changes are needed."
+        },
+        {
+          "claimId": "C003",
+          "calibrationSupportLevel": "SUPPORTED",
+          "calibrationEvidenceImpact": "HIGH",
+          "calibrationRiskOfOverclaiming": "LOW",
+          "revisionAction": "ADD_CAVEAT",
+          "actionReason": "The claim that engagement metrics are not reliably measured is supported by null values and metric definitions. However, the semantic judge identified a HIGH semantic risk and an unsupported leap in the original opinion's interpretation. Adding a caveat will clarify that while the metrics are indeed undefined/null, the *implication* of this lack of measurement needs careful consideration, and the original opinion's phrasing might be too strong without this caveat."
+        },
+        {
+          "claimId": "C004",
+          "calibrationSupportLevel": "SUPPORTED",
+          "calibrationEvidenceImpact": "MEDIUM",
+          "calibrationRiskOfOverclaiming": "MEDIUM",
+          "revisionAction": "ADD_CAVEAT",
+          "actionReason": "The claim about content concentration is supported by data, but the inference of 'lack of balanced engagement' carries a MEDIUM risk. The semantic judge recommended ADD_CAVEAT. Acknowledging this is an inference based on post volume, rather than direct engagement data per category, will strengthen the claim's accuracy."
+        },
+        {
+          "claimId": "C005",
+          "calibrationSupportLevel": "NOT_SUPPORTED",
+          "calibrationEvidenceImpact": "HIGH",
+          "calibrationRiskOfOverclaiming": "HIGH",
+          "revisionAction": "REWORD",
+          "actionReason": "The claim that UI/UX is *causing* the low metrics is a hypothesis unsupported by direct evidence. The semantic judge identified a HIGH risk and recommended REWORD. The final opinion will be adjusted to reflect this as a hypothesis rather than a direct cause, aligning with the judge's recommendation and the original opinion's nuanced statement about 'seem[ing] to be hindering'."
+        }
+      ]
+    }
+  },
+  {
+    "memberId": "B",
+    "revisionStatus": "UNCHANGED",
+    "revised": false,
+    "originalOpinion": "AIsle은 기술적으로는 최신 스택을 사용하고 AI도 통합했지만, 사용자 확보와 참여가 전혀 이루어지지 않고 있습니다. 특히 신규 가입자가 없고 댓글이 없는 것은 심각한 문제입니다. 활성 사용자나 조회수 데이터도 없어서 현재 상황을 제대로 알 수 없습니다. 2025-2026년에는 사용자 참여와 AI 기반 개인화가 중요해질 텐데, AIsle은 이 부분에서 큰 격차가 있습니다. 사용자 데이터를 제대로 측정하고 커뮤니티를 활성화하며 신규 사용자를 늘리는 것이 시급합니다.",
+    "revisionReason": null,
+    "retainReason": "The core claim remains valid despite the identified semantic leap in C005. The evidence strongly supports the existence of a gap between the modern tech stack and the severe lack of user engagement metrics. The leap to 'future trends' is an inference, but the core assertion of a gap is well-supported by the data. The Semantic Judge's recommendation to ADD_CAVEAT to C005 is addressed within the calibrationImpactAssessment, not by altering the overall opinion or core claim.",
+    "changedClaims": [],
+    "newEvidenceAccepted": [],
+    "rejectedArguments": [
+      {
+        "argument": "Reviewer A's assessment of 'content' score being null is weak, as there is clear evidence of content creation (`postsLast7d`, `postCount`) and categorization (`postsByCategory`), even if engagement is low.",
+        "reason": "The original opinion and my analysis correctly identified that while content *creation* exists, the *engagement* and *diversity* aspects (which are crucial for a 'content' score) are problematic, as indicated by low comments and category imbalance. The 'content' score itself was not a core claim, and its null status was acknowledged."
+      },
+      {
+        "argument": "Reviewer C's assessment of 'competitive' score being 20 is weak. While `activeUsersLast7d` and `viewsLast7d` are null, this is a platform-level measurement issue, not necessarily a direct competitive disadvantage without comparative data.",
+        "reason": "The 'competitive' score is a separate dimension and its assessment by other reviewers does not directly invalidate the core claims about user acquisition and engagement, which are the focus of the overall opinion. The null metrics are indeed a measurement issue but also a proxy for competitive disadvantage in terms of user engagement."
+      },
+      {
+        "argument": "Reviewer D's 'performance' score of 60 is questionable. While `viewsLast7d` and `activeUsersLast7d` are null, this is due to a lack of definition/measurement, not necessarily a performance degradation of the platform itself. The score should reflect actual performance issues if any were observed.",
+        "reason": "The original opinion and my analysis correctly identified the null metrics for `activeUsersLast7d` and `viewsLast7d` as a critical problem for understanding engagement, not necessarily a technical performance issue. The 'performance' score's validity is outside the scope of the core claims being evaluated."
+      }
+    ],
+    "confidenceBefore": 0.9,
+    "confidenceAfter": 0.9,
+    "confidenceChangeReason": "Confidence remains high as the core claims are strongly supported by direct evidence. The semantic leap identified in C005, regarding future trends, has been addressed via a caveat in the calibration assessment, which is appropriate for an inference-based claim and does not weaken the overall judgment.",
+    "finalOpinion": "AIsle은 최신 기술 스택과 AI 통합이라는 강점을 가지고 있으나, 사용자 확보 및 참여 측면에서 심각한 문제를 겪고 있습니다. 특히, 신규 사용자 유입이 없고 댓글 활동이 전무하며, 활성 사용자 및 조회수 데이터가 측정되지 않아 서비스의 현재 상태를 정확히 파악하고 미래 트렌드에 대비하는 데 큰 격차가 존재합니다. 2025-2026년 웹 트렌드는 사용자 참여 증진, 개인화된 경험 제공, 커뮤니티 활성화, 그리고 AI 기반의 지능형 서비스 고도화에 초점을 맞출 것으로 예상되므로, 현재의 데이터 부재 및 참여 부족 문제는 이러한 트렌드에 대응하기 어려운 근본적인 약점입니다.",
+    "revisionAnswers": {
+      "q1_coreClaim": "AIsle은 최신 웹 기술 스택과 AI 통합이라는 강점을 가지고 있으나, 사용자 확보 및 참여 측면에서 심각한 문제를 겪고 있습니다. 특히, 신규 사용자 유입이 없고 댓글 활동이 전무하며, 활성 사용자 및 조회수 데이터가 측정되지 않아 서비스의 현재 상태를 정확히 파악하고 미래 트렌드에 대비하는 데 큰 격차가 존재합니다. 2025-2026년 웹 트렌드는 사용자 참여 증진, 개인화된 경험 제공, 커뮤니티 활성화, 그리고 AI 기반의 지능형 서비스 고도화에 초점을 맞출 것으로 예상되므로, 현재의 데이터 부재 및 참여 부족 문제는 이러한 트렌드에 대응하기 어려운 근본적인 약점입니다.",
+      "q2_strongestRebuttal": "The Semantic Judge identified a semantic leap in claim C005, stating that the assertion about a 'significant gap' relative to '2025-2026 web trends' involves an inference about future trends that is not explicitly detailed in the provided evidence, making the leap unsupported.",
+      "q3_rebuttalEvidenceKind": "inference",
+      "q4_evidenceGapsFound": "The primary evidence gap identified by the Semantic Judge is the lack of specific 2025-2026 web trend data and comparative data with competitors, which weakens the inference in C005 regarding the 'gap' relative to future trends.",
+      "q5_gapAffectsCoreClaim": "Yes, the gap in evidence for future trends specifically affects the inference in claim C005, which links the current state to future trends. However, the core claim about the existence of a gap between current metrics and future expectations remains valid, albeit with a need for a caveat.",
+      "q6_directlySupportedScope": "Claims C001, C002, and C003 are directly supported by specific metrics (`newUsersLast7d: 0`, `commentsLast7d: 0`, `activeUsersLast7d: null`, `viewsLast7d: null`). Claim C004 is strongly inferred from `postsByCategory.LOUNGE: 3284`. Claim C005 is supported by the tech stack and lack of user metrics, but the 'gap' relative to future trends is an inference.",
+      "q7_overclaimCheck": "Claim C005 makes a strong inference by linking current data to '2025-2026 web trends' and stating a 'significant gap'. While the evidence supports the poor current metrics and a modern tech stack, the specific future trends and the magnitude of the gap are inferred rather than directly evidenced, leading to a MEDIUM risk of overclaiming.",
+      "q8_whyRetainIfUnchanged": "The core claim remains unchanged because the fundamental issues of zero user acquisition and engagement, coupled with a lack of measurable activity, are directly evidenced. While the link to future trends in C005 is an inference, the overall assessment of a gap is still valid. The Semantic Judge's recommendation to 'ADD_CAVEAT' to C005 is incorporated into the calibration assessment, acknowledging the inferential nature without altering the overall judgment.",
+      "q9_claimsToChangeIfPartial": "N/A, revisionStatus is UNCHANGED.",
+      "q10_groundsForFullRevision": "N/A, revisionStatus is UNCHANGED.",
+      "q11_chosenStatus": "UNCHANGED",
+      "q12_confidenceChange": "Confidence remains at 0.9. The core claims are strongly supported by direct evidence. The identified semantic leap in C005, concerning future trends, is an inference and has been addressed by adding a caveat in the calibration assessment, which is appropriate for such claims and does not fundamentally alter the overall judgment or the confidence in the core issues identified."
+    },
+    "calibrationImpactAssessment": {
+      "materiallyAffected": true,
+      "affectedClaims": [
+        {
+          "claimId": "C001",
+          "calibrationSupportLevel": "SUPPORTED",
+          "calibrationEvidenceImpact": "CRITICAL",
+          "calibrationRiskOfOverclaiming": "LOW",
+          "revisionAction": "NO_ACTION_NEEDED",
+          "actionReason": "The claim is directly supported by the evidence `newUsersLast7d: 0` and has a critical impact. No revision is needed."
+        },
+        {
+          "claimId": "C002",
+          "calibrationSupportLevel": "SUPPORTED",
+          "calibrationEvidenceImpact": "CRITICAL",
+          "calibrationRiskOfOverclaiming": "LOW",
+          "revisionAction": "NO_ACTION_NEEDED",
+          "actionReason": "The claim is directly supported by the evidence `commentsLast7d: 0` and has a critical impact. No revision is needed."
+        },
+        {
+          "claimId": "C003",
+          "calibrationSupportLevel": "SUPPORTED",
+          "calibrationEvidenceImpact": "HIGH",
+          "calibrationRiskOfOverclaiming": "LOW",
+          "revisionAction": "NO_ACTION_NEEDED",
+          "actionReason": "The claim is directly supported by the null metrics for `activeUsersLast7d` and `viewsLast7d`, which have a high impact. No revision is needed."
+        },
+        {
+          "claimId": "C004",
+          "calibrationSupportLevel": "SUPPORTED",
+          "calibrationEvidenceImpact": "MEDIUM",
+          "calibrationRiskOfOverclaiming": "LOW",
+          "revisionAction": "NO_ACTION_NEEDED",
+          "actionReason": "The claim is supported by evidence of category concentration and has a medium impact. No revision is needed."
+        },
+        {
+          "claimId": "C005",
+          "calibrationSupportLevel": "SUPPORTED",
+          "calibrationEvidenceImpact": "HIGH",
+          "calibrationRiskOfOverclaiming": "MEDIUM",
+          "revisionAction": "ADD_CAVEAT",
+          "actionReason": "The claim connects the modern tech stack with a gap relative to future trends. While the tech stack and lack of user metrics are supported, the assertion about a 'significant gap' relative to '2025-2026 web trends' involves an inference about future trends not explicitly detailed in the evidence. Adding a caveat acknowledges this inferential leap while retaining the core observation of a gap between current metrics and future expectations."
+        }
+      ]
+    }
+  },
+  {
+    "memberId": "C",
+    "revisionStatus": "PARTIAL",
+    "revised": true,
+    "originalOpinion": "AIsle은 AI 기술을 활용한 커뮤니티 플랫폼으로서의 잠재력을 가지고 있으나, 현재 사용자 획득 및 참여 측면에서 심각한 문제점을 안고 있습니다. 'LOUNGE'에 콘텐츠가 집중되어 있고, AI 기능 활용이 특정 영역에 국한되어 있어 전반적인 사용자 경험 및 플랫폼 성장에 제약이 있습니다. 활성 사용자 및 조회수 관련 지표가 측정되지 않는 점은 플랫폼의 실제 성과를 파악하고 개선 방향을 설정하는 데 큰 어려움을 줍니다. 경쟁 서비스와의 차별성을 확보하고 사용자 기반을 확장하기 위해서는 신규 사용자 유입 전략 강화, 커뮤니티 참여 활성화, AI 기능의 다각적 활용 및 측정 가능한 지표 시스템 구축이 시급합니다.",
+    "revisionReason": "The original opinion's core claims remain valid, but the assessment of AI usage needs refinement due to a semantic leap identified in claim C006. The claim that AI usage is 'limited' and 'uncertain' in other corridors goes beyond the direct evidence provided.",
+    "retainReason": null,
+    "changedClaims": [
+      "C006"
+    ],
+    "newEvidenceAccepted": [],
+    "rejectedArguments": [],
+    "confidenceBefore": 0.9,
+    "confidenceAfter": 0.85,
+    "confidenceChangeReason": "The confidence has been slightly reduced due to the need to reword claim C006, acknowledging the inference made regarding AI usage limitations.",
+    "finalOpinion": "AIsle은 AI 기술을 활용한 커뮤니티 플랫폼으로서의 잠재력을 가지고 있으나, 현재 사용자 획득 및 참여 측면에서 심각한 문제점을 안고 있습니다. 'LOUNGE'에 콘텐츠가 집중되어 있고, AI 기능 활용이 특정 영역(LAB/news/fortune)에 통합되어 있으나 다른 커뮤니티 공간에서의 활용은 명확하지 않아 전반적인 사용자 경험 및 플랫폼 성장에 제약이 있습니다. 활성 사용자 및 조회수 관련 지표가 측정되지 않는 점은 플랫폼의 실제 성과를 파악하고 개선 방향을 설정하는 데 큰 어려움을 줍니다. 경쟁 서비스와의 차별성을 확보하고 사용자 기반을 확장하기 위해서는 신규 사용자 유입 전략 강화, 커뮤니티 참여 활성화, AI 기능의 활용 범위 및 효과에 대한 명확한 이해와 측정 가능한 지표 시스템 구축이 시급합니다.",
+    "revisionAnswers": {
+      "q1_coreClaim": "AIsle은 AI 기술을 활용한 커뮤니티 플랫폼으로서의 잠재력을 가지고 있으나, 현재 사용자 획득 및 참여 측면에서 심각한 문제점을 안고 있습니다. 'LOUNGE'에 콘텐츠가 집중되어 있고, AI 기능 활용이 특정 영역에 국한되어 있어 전반적인 사용자 경험 및 플랫폼 성장에 제약이 있습니다. 활성 사용자 및 조회수 관련 지표가 측정되지 않는 점은 플랫폼의 실제 성과를 파악하고 개선 방향을 설정하는 데 큰 어려움을 줍니다. 경쟁 서비스와의 차별성을 확보하고 사용자 기반을 확장하기 위해서는 신규 사용자 유입 전략 강화, 커뮤니티 참여 활성화, AI 기능의 다각적 활용 및 측정 가능한 지표 시스템 구축이 시급합니다.",
+      "q2_strongestRebuttal": "The claim that AI usage is 'limited' and 'uncertain' in other corridors (C006) is an inference that goes beyond the direct evidence. While Gemini integration is mentioned for specific areas, the EvidencePack does not explicitly state limitations or provide details on AI usage in other corridors, making this an unsupported leap.",
+      "q3_rebuttalEvidenceKind": "inference",
+      "q4_evidenceGapsFound": "The EvidencePack lacks specific details on how AI is utilized in corridors other than LAB/RECIPE/AI_FORTUNE (e.g., GALLERY, LOUNGE, GOSSIP, BUILD, LAUNCH). It also does not explicitly state that AI is *limited* to these areas or provide details about AI usage in other corridors.",
+      "q5_gapAffectsCoreClaim": "Yes, the gap affects the claim regarding the scope and limitations of AI usage, leading to a potential overstatement in the original opinion.",
+      "q6_directlySupportedScope": "Claims C001, C002, C003, and C004 are directly supported by specific metrics (newUsersLast7d=0, activeUsersLast7d=null, commentsLast7d=0, viewsLast7d=null). Claim C005 is supported by a direct calculation from post counts. Claim C006 is partially supported by the mention of Gemini integration for specific areas.",
+      "q7_overclaimCheck": "Yes, the original wording of claim C006, stating AI usage is 'limited' and 'uncertain' in other corridors, was an overclaim as it inferred limitations not explicitly stated in the evidence.",
+      "q8_whyRetainIfUnchanged": "",
+      "q9_claimsToChangeIfPartial": "C006: The claim needs to be reworded to reflect that AI integration is confirmed for specific areas (LAB/news/fortune), but its scope and impact in other corridors are not detailed, rather than stating it is 'limited' and 'uncertain'.",
+      "q10_groundsForFullRevision": "Not applicable, as the core issues identified in the original opinion remain valid and only one claim required rewording due to an inference.",
+      "q11_chosenStatus": "PARTIAL",
+      "q12_confidenceChange": "Confidence decreased slightly from 0.9 to 0.85 because the revision process identified a semantic leap in one of the claims (C006), necessitating a rewording and a more cautious approach to inferring AI usage limitations. This adjustment reflects a more precise interpretation of the available evidence."
+    },
+    "calibrationImpactAssessment": {
+      "materiallyAffected": true,
+      "affectedClaims": [
+        {
+          "claimId": "C001",
+          "calibrationSupportLevel": "SUPPORTED",
+          "calibrationEvidenceImpact": "CRITICAL",
+          "calibrationRiskOfOverclaiming": "LOW",
+          "revisionAction": "NO_ACTION_NEEDED",
+          "actionReason": "The claim is directly supported by the 'newUsersLast7d' metric being 0."
+        },
+        {
+          "claimId": "C002",
+          "calibrationSupportLevel": "SUPPORTED",
+          "calibrationEvidenceImpact": "CRITICAL",
+          "calibrationRiskOfOverclaiming": "LOW",
+          "revisionAction": "NO_ACTION_NEEDED",
+          "actionReason": "The claim is directly supported by 'activeUsersLast7d' being null and the metric definition."
+        },
+        {
+          "claimId": "C003",
+          "calibrationSupportLevel": "SUPPORTED",
+          "calibrationEvidenceImpact": "HIGH",
+          "calibrationRiskOfOverclaiming": "LOW",
+          "revisionAction": "NO_ACTION_NEEDED",
+          "actionReason": "The claim is directly supported by the 'commentsLast7d' metric being 0."
+        },
+        {
+          "claimId": "C004",
+          "calibrationSupportLevel": "SUPPORTED",
+          "calibrationEvidenceImpact": "HIGH",
+          "calibrationRiskOfOverclaiming": "LOW",
+          "revisionAction": "NO_ACTION_NEEDED",
+          "actionReason": "The claim is directly supported by 'viewsLast7d' being null and the metric definition."
+        },
+        {
+          "claimId": "C005",
+          "calibrationSupportLevel": "SUPPORTED",
+          "calibrationEvidenceImpact": "MEDIUM",
+          "calibrationRiskOfOverclaiming": "LOW",
+          "revisionAction": "NO_ACTION_NEEDED",
+          "actionReason": "The calculation based on post counts directly supports the inference of content concentration."
+        },
+        {
+          "claimId": "C006",
+          "calibrationSupportLevel": "PARTIALLY_SUPPORTED",
+          "calibrationEvidenceImpact": "MEDIUM",
+          "calibrationRiskOfOverclaiming": "MEDIUM",
+          "revisionAction": "REWORD",
+          "actionReason": "The claim that AI usage is 'limited' and 'uncertain' in other spaces is an inference beyond the direct evidence. The wording needs to be adjusted to reflect that AI integration is confirmed for specific areas, but its scope and impact in other corridors are not detailed."
+        }
+      ]
+    }
+  },
+  {
+    "memberId": "D",
+    "revisionStatus": "UNCHANGED",
+    "revised": false,
+    "originalOpinion": "The platform is technically sound with a modern stack and scalable infrastructure. However, it suffers from a severe lack of user engagement, evidenced by zero new users and comments in the last 7 days. This indicates a critical need to address user acquisition and retention strategies, as well as to implement proper activity tracking to gain insights into user behavior. The AI integration is a positive aspect, but its impact is currently overshadowed by the fundamental engagement problems.",
+    "revisionReason": null,
+    "retainReason": "The strongest rebuttal from reviewer B regarding the 2025-2026 web trends is a general observation about future trends and not a direct counter-argument to the current platform's state. The evidence presented in the EvidencePack strongly supports the claims about the platform's current lack of user engagement and activity metrics. The core claims remain directly supported by the provided data.",
+    "changedClaims": [],
+    "newEvidenceAccepted": [],
+    "rejectedArguments": [
+      {
+        "argument": "Reviewer B mentions the 2025-2026 web trends without directly linking them to specific evidence within the provided pack, other than general observations about user engagement and AI.",
+        "reason": "This is a general observation about future trends and not a direct rebuttal to the current state of the platform as evidenced by the provided data."
+      },
+      {
+        "argument": "Reviewer C's assessment of AI usage being limited to 'AI_FORTUNE' is an inference, as the stack notes mention Gemini for 'LAB/news/fortune', which could include other corridors beyond just AI_FORTUNE. The evidence for 'AI_FORTUNE' is explicit, but the limitation to *only* that corridor is not definitively proven by the provided data.",
+        "reason": "This is a valid point about inference, but the core claim about Gemini integration is supported by the stack notes. The extent of its use is a secondary detail not central to the main assessment of engagement issues."
+      }
+    ],
+    "confidenceBefore": 0.9,
+    "confidenceAfter": 0.9,
+    "confidenceChangeReason": "No new evidence or strong counter-arguments were presented that would alter the confidence in the original assessment. The existing evidence strongly supports the identified problems and the overall opinion.",
+    "finalOpinion": "The platform is technically sound with a modern stack and scalable infrastructure. However, it suffers from a severe lack of user engagement, evidenced by zero new users and comments in the last 7 days. This indicates a critical need to address user acquisition and retention strategies, as well as to implement proper activity tracking to gain insights into user behavior. The AI integration is a positive aspect, but its impact is currently overshadowed by the fundamental engagement problems.",
+    "revisionAnswers": {
+      "q1_coreClaim": "The platform is technically sound with a modern stack and scalable infrastructure. However, it suffers from a severe lack of user engagement, evidenced by zero new users and comments in the last 7 days. This indicates a critical need to address user acquisition and retention strategies, as well as to implement proper activity tracking to gain insights into user behavior. The AI integration is a positive aspect, but its impact is currently overshadowed by the fundamental engagement problems.",
+      "q2_strongestRebuttal": "Reviewer B's mention of 2025-2026 web trends, suggesting a focus on user engagement, personalization, community, and AI, implies that the platform's current state is misaligned with future trends. However, this is a general observation about future trends rather than a direct refutation of the current data's implications.",
+      "q3_rebuttalEvidenceKind": "Inference/Hypothesis (based on general trends)",
+      "q4_evidenceGapsFound": "The primary evidence gaps identified relate to the lack of defined metrics for 'activeUsersLast7d' and 'viewsLast7d', making it impossible to measure recent user activity and content consumption. Additionally, there's a lack of a clear benchmark for determining what constitutes a 'low' ratio of recent posts to total posts (for claim C006).",
+      "q5_gapAffectsCoreClaim": "Yes, the gaps in 'activeUsersLast7d' and 'viewsLast7d' directly affect the ability to fully assess user engagement and content consumption trends, which are core to the platform's problems. However, the *current* core claim is based on the *available* data (0 new users, 0 comments), which is sufficient to identify severe engagement issues.",
+      "q6_directlySupportedScope": "The core claims about the modern tech stack (C004), AI integration (C005), zero new users (C001), zero comments (C002), and unmeasured active users/views (C003) are directly supported by the EvidencePack. The claim about the ratio of recent posts to total posts (C006) is partially supported by inference.",
+      "q7_overclaimCheck": "The original opinion states 'potential for low content creation if new user acquisition is zero' for C006. This is a reasonable inference given the data, but the 'ADD_CAVEAT' recommendation from the semantic judge for C006 suggests that the wording could be slightly softened to reflect the subjective nature of 'low' without a benchmark. However, the overall assessment of critical engagement issues is strongly supported.",
+      "q8_whyRetainIfUnchanged": "The original opinion remains unchanged because the strongest rebuttal (reviewer B's trend analysis) is a forward-looking generalization and not a direct refutation of the current data. The core claims about the platform's severe lack of user engagement (zero new users, zero comments) and missing activity metrics are directly and strongly supported by the EvidencePack. The identified evidence gaps do not invalidate the existing conclusions about the critical engagement problems.",
+      "q9_claimsToChangeIfPartial": "Claim C006 ('전체 게시글 대비 최근 7일 게시글 작성 비율이 낮습니다.') would be modified by adding a caveat to explicitly state that 'low' is a subjective assessment due to the lack of a defined benchmark, as recommended by the semantic judge.",
+      "q10_groundsForFullRevision": "No grounds for a FULL revision exist. The core assessment of the platform's severe engagement issues is well-supported by the data. No new evidence fundamentally changes the overall conclusion, and no strong counter-arguments invalidate the primary findings.",
+      "q11_chosenStatus": "UNCHANGED",
+      "q12_confidenceChange": "Confidence remains at 0.9. The original assessment is strongly supported by the provided EvidencePack. No new evidence or rebuttals were presented that would significantly alter the confidence level in the existing conclusions."
+    },
+    "calibrationImpactAssessment": {
+      "materiallyAffected": true,
+      "affectedClaims": [
+        {
+          "claimId": "C001",
+          "calibrationSupportLevel": "SUPPORTED",
+          "calibrationEvidenceImpact": "CRITICAL",
+          "calibrationRiskOfOverclaiming": "LOW",
+          "revisionAction": "NO_ACTION_NEEDED",
+          "actionReason": "The claim is directly supported by aggregates.newUsersLast7d and has a critical evidence impact with low overclaiming risk."
+        },
+        {
+          "claimId": "C002",
+          "calibrationSupportLevel": "SUPPORTED",
+          "calibrationEvidenceImpact": "HIGH",
+          "calibrationRiskOfOverclaiming": "LOW",
+          "revisionAction": "NO_ACTION_NEEDED",
+          "actionReason": "The claim is directly supported by aggregates.commentsLast7d and has a high evidence impact with low overclaiming risk."
+        },
+        {
+          "claimId": "C003",
+          "calibrationSupportLevel": "SUPPORTED",
+          "calibrationEvidenceImpact": "HIGH",
+          "calibrationRiskOfOverclaiming": "LOW",
+          "revisionAction": "NO_ACTION_NEEDED",
+          "actionReason": "The claim is directly supported by null values in aggregates.activeUsersLast7d and viewsLast7d, with high evidence impact and low overclaiming risk."
+        },
+        {
+          "claimId": "C004",
+          "calibrationSupportLevel": "SUPPORTED",
+          "calibrationEvidenceImpact": "NONE",
+          "calibrationRiskOfOverclaiming": "LOW",
+          "revisionAction": "NO_ACTION_NEEDED",
+          "actionReason": "The claim is directly supported by site.stackNotes and has no significant evidence impact on the core assessment, with low overclaiming risk."
+        },
+        {
+          "claimId": "C005",
+          "calibrationSupportLevel": "SUPPORTED",
+          "calibrationEvidenceImpact": "MEDIUM",
+          "calibrationRiskOfOverclaiming": "LOW",
+          "revisionAction": "NO_ACTION_NEEDED",
+          "actionReason": "The claim is directly supported by site.stackNotes and has a medium evidence impact, with low overclaiming risk."
+        },
+        {
+          "claimId": "C006",
+          "calibrationSupportLevel": "PARTIALLY_SUPPORTED",
+          "calibrationEvidenceImpact": "LOW",
+          "calibrationRiskOfOverclaiming": "MEDIUM",
+          "revisionAction": "ADD_CAVEAT",
+          "actionReason": "The claim is partially supported and has a medium risk of overclaiming. The semantic judge recommended ADD_CAVEAT due to the subjective nature of 'low' and the lack of a clear benchmark. The original opinion already reflects this nuance by stating 'potential for low content creation if new user acquisition is zero', which is a reasonable inference given the data."
+        }
+      ]
+    }
+  },
+  {
+    "memberId": "E",
+    "revisionStatus": "UNCHANGED",
+    "revised": false,
+    "originalOpinion": "The platform is experiencing a severe lack of user acquisition and community engagement, despite ongoing content creation. The current metrics indicate a dormant or non-existent active user base, which needs immediate attention through targeted acquisition and engagement strategies.",
+    "revisionReason": null,
+    "retainReason": "The core claim that the platform has a severe lack of user acquisition and community engagement, despite ongoing content creation, remains valid. The provided evidence directly supports the claims of zero new users and zero comments in the last 7 days. While there are discussions about potential future trends and AI usage, these do not invalidate the current, data-backed assessment of the platform's immediate engagement crisis. The null values for active users and views are also directly supported by the evidence pack's metric definitions, reinforcing the conclusion that current engagement levels are unmeasurable and likely very low.",
+    "changedClaims": [],
+    "newEvidenceAccepted": [],
+    "rejectedArguments": [
+      {
+        "argument": "Reviewer B's 'trendGap' analysis mentions '2025-2026년 웹 트렌드' without specific evidence from the provided pack to support this future outlook in relation to the current platform's metrics.",
+        "reason": "This argument is noted as weak evidence because it introduces external future trends without directly refuting the current platform's metrics or the core claim about its present state. The core claim is based on current data, not future predictions."
+      },
+      {
+        "argument": "Reviewer C's 'ai_usage' score of 20 seems low given the mention of Gemini integration, although the evidence for its broad usage beyond 'AI_FORTUNE' is indeed limited.",
+        "reason": "This argument is noted as weak evidence because it is a subjective interpretation of a score ('ai_usage' score of 20) that is not directly tied to the core claims about user acquisition and engagement. The limited evidence for broad AI usage is acknowledged but does not impact the core claims."
+      }
+    ],
+    "confidenceBefore": 0.9,
+    "confidenceAfter": 0.9,
+    "confidenceChangeReason": "Confidence remains high as the core claims are directly supported by the provided metrics (newUsersLast7d=0, commentsLast7d=0) and the explicit definition of null metrics (activeUsersLast7d, viewsLast7d). No new evidence or compelling counterarguments were presented that would necessitate a change in confidence.",
+    "finalOpinion": "The platform is experiencing a severe lack of user acquisition and community engagement, despite ongoing content creation. The current metrics indicate a dormant or non-existent active user base, which needs immediate attention through targeted acquisition and engagement strategies. The lack of measurable active users and recent views further underscores the critical state of engagement.",
+    "revisionAnswers": {
+      "q1_coreClaim": "The platform is experiencing a severe lack of user acquisition and community engagement, despite ongoing content creation. The current metrics indicate a dormant or non-existent active user base, which needs immediate attention through targeted acquisition and engagement strategies.",
+      "q2_strongestRebuttal": "Reviewer B's 'trendGap' analysis mentions '2025-2026년 웹 트렌드' without specific evidence from the provided pack to support this future outlook in relation to the current platform's metrics.",
+      "q3_rebuttalEvidenceKind": "inference/hypothesis",
+      "q4_evidenceGapsFound": "The implication of 'userCount' of 14 in relation to other metrics was not explicitly discussed. The potential impact of the 'Capacitor mobile shell' on user acquisition and engagement was not deeply analyzed. The extent to which AI features are actually being used beyond 'AI_FORTUNE' needs verification. The rationale behind the 'LOUNGE' category's dominance needs further investigation.",
+      "q5_gapAffectsCoreClaim": "No. While these are interesting points for further exploration, they do not invalidate the core claim about the current severe lack of user acquisition and engagement, which is directly supported by the provided metrics.",
+      "q6_directlySupportedScope": "The claims regarding zero new users (newUsersLast7d=0), zero comments (commentsLast7d=0), unmeasurable active users (activeUsersLast7d=null), and unmeasurable recent views (viewsLast7d=null) are directly supported by the provided metrics and metric definitions. The ongoing content creation (postsLast7d=141) and substantial existing content (postCount=3372) are also directly supported.",
+      "q7_overclaimCheck": "No, the wording is not stronger than the evidence allows. Claims about severe lack of acquisition and engagement are directly supported by the zero metrics for new users and comments, and the null metrics for active users and views, which are explicitly defined as unmeasurable or unavailable.",
+      "q8_whyRetainIfUnchanged": "The core claim remains unchanged because the strongest rebuttal (future trends without current data linkage) does not invalidate the direct evidence of current platform stagnation. The identified evidence gaps (userCount implication, Capacitor impact, AI usage breadth, LOUNGE dominance rationale) are areas for deeper analysis but do not contradict the primary findings of low acquisition and engagement.",
+      "q9_claimsToChangeIfPartial": "N/A",
+      "q10_groundsForFullRevision": "N/A",
+      "q11_chosenStatus": "UNCHANGED",
+      "q12_confidenceChange": "Confidence remained at 0.9. Before: 0.9. After: 0.9. Reason: The core claims are strongly supported by direct metrics (newUsersLast7d=0, commentsLast7d=0) and the explicit definition of null metrics (activeUsersLast7d, viewsLast7d). No new evidence or compelling counterarguments were presented that would necessitate a change in confidence. The identified gaps and weak arguments did not undermine the primary conclusions."
+    },
+    "calibrationImpactAssessment": {
+      "materiallyAffected": true,
+      "affectedClaims": [
+        {
+          "claimId": "C001",
+          "calibrationSupportLevel": "SUPPORTED",
+          "calibrationEvidenceImpact": "CRITICAL",
+          "calibrationRiskOfOverclaiming": "LOW",
+          "revisionAction": "NO_ACTION_NEEDED",
+          "actionReason": "The claim is directly supported by the 'newUsersLast7d' metric being 0. No revision is needed."
+        },
+        {
+          "claimId": "C002",
+          "calibrationSupportLevel": "SUPPORTED",
+          "calibrationEvidenceImpact": "CRITICAL",
+          "calibrationRiskOfOverclaiming": "LOW",
+          "revisionAction": "NO_ACTION_NEEDED",
+          "actionReason": "The claim is directly supported by the 'commentsLast7d' metric being 0. No revision is needed."
+        },
+        {
+          "claimId": "C003",
+          "calibrationSupportLevel": "SUPPORTED",
+          "calibrationEvidenceImpact": "HIGH",
+          "calibrationRiskOfOverclaiming": "LOW",
+          "revisionAction": "NO_ACTION_NEEDED",
+          "actionReason": "The claim is directly supported by 'activeUsersLast7d' being null and its definition stating it cannot be reliably measured. No revision is needed."
+        },
+        {
+          "claimId": "C004",
+          "calibrationSupportLevel": "SUPPORTED",
+          "calibrationEvidenceImpact": "HIGH",
+          "calibrationRiskOfOverclaiming": "LOW",
+          "revisionAction": "NO_ACTION_NEEDED",
+          "actionReason": "The claim is directly supported by 'viewsLast7d' being null and its definition stating it is unavailable. No revision is needed."
+        },
+        {
+          "claimId": "C005",
+          "calibrationSupportLevel": "SUPPORTED",
+          "calibrationEvidenceImpact": "MEDIUM",
+          "calibrationRiskOfOverclaiming": "LOW",
+          "revisionAction": "NO_ACTION_NEEDED",
+          "actionReason": "The claim is directly supported by 'postsLast7d' being 141, indicating ongoing content creation. No revision is needed."
+        },
+        {
+          "claimId": "C006",
+          "calibrationSupportLevel": "SUPPORTED",
+          "calibrationEvidenceImpact": "MEDIUM",
+          "calibrationRiskOfOverclaiming": "LOW",
+          "revisionAction": "NO_ACTION_NEEDED",
+          "actionReason": "The claim is directly supported by 'postCount' being 3372, indicating a significant amount of existing content. No revision is needed."
+        },
+        {
+          "claimId": "C007",
+          "calibrationSupportLevel": "SUPPORTED",
+          "calibrationEvidenceImpact": "MEDIUM",
+          "calibrationRiskOfOverclaiming": "LOW",
+          "revisionAction": "NO_ACTION_NEEDED",
+          "actionReason": "The claim is directly supported by the distribution of posts in 'postsByCategory.LOUNGE'. No revision is needed."
+        }
+      ]
+    }
+  }
+]

@@ -1,0 +1,311 @@
+{
+  "factVsSpeculationOk": true,
+  "evidenceSufficient": true,
+  "scoresWithoutEvidence": [
+    "A:web_tech",
+    "A:performance",
+    "A:content",
+    "A:ai_usage",
+    "A:competitive",
+    "A:seo",
+    "A:geo",
+    "A:security",
+    "A:scalability",
+    "B:ui_ux",
+    "B:visual",
+    "B:mobile",
+    "B:performance",
+    "B:a11y",
+    "B:usability",
+    "B:content",
+    "B:competitive",
+    "B:security",
+    "B:scalability",
+    "C:ui_ux",
+    "C:visual",
+    "C:mobile",
+    "C:web_tech",
+    "C:performance",
+    "C:a11y",
+    "C:usability",
+    "C:retention",
+    "C:seo",
+    "C:geo",
+    "C:security",
+    "C:scalability",
+    "D:ui_ux",
+    "D:visual",
+    "D:mobile",
+    "D:a11y",
+    "D:usability",
+    "D:content",
+    "D:competitive",
+    "D:seo",
+    "D:geo",
+    "E:ui_ux",
+    "E:visual",
+    "E:mobile",
+    "E:web_tech",
+    "E:performance",
+    "E:a11y",
+    "E:ai_usage",
+    "E:competitive",
+    "E:seo",
+    "E:geo",
+    "E:security",
+    "E:scalability"
+  ],
+  "herdingDetected": false,
+  "dominantMemberInfluence": null,
+  "trendEvidenceOk": false,
+  "userBenefitLikely": false,
+  "existingFeatureRisk": false,
+  "overEngineering": false,
+  "notes": [
+    "Member A's claim C005 about UI/UX causing low metrics is a hypothesis unsupported by direct evidence.",
+    "Member C's claim C006 about AI usage limitations is an inference beyond direct evidence.",
+    "Member D's claim C006 about the ratio of recent posts being 'low' is partially supported and subjective due to lack of benchmark.",
+    "All members agree on the critical lack of user acquisition and engagement.",
+    "All members agree that activeUsersLast7d and viewsLast7d are null and unmeasurable.",
+    "All members agree on the content concentration in the 'LOUNGE' category.",
+    "The 'LOUNGE' category dominance and the null metrics for engagement are key findings across all members.",
+    "There is a general consensus on the severe lack of user acquisition and engagement, directly supported by 0 new users and 0 comments in the last 7 days.",
+    "The lack of measurable active users and recent views is also a consistent finding, directly supported by null values and metric definitions.",
+    "The concentration of content in the 'LOUNGE' category is consistently observed and supported by post counts.",
+    "Member A's claim C005 regarding UI/UX as a cause for low metrics is identified as a hypothesis without direct supporting evidence.",
+    "Member C's claim C006 regarding AI usage limitations is identified as an inference beyond direct evidence.",
+    "Member D's claim C006 regarding the ratio of recent posts being 'low' is noted as partially supported and subjective due to the lack of a benchmark.",
+    "v6 consistency: consistent=29 partial=0 inconsistent=0",
+    "v7 semantics: flaggedClaims=14 mismatch=0 unknownNeg=13",
+    "v8 judge: leaps=3 mismatch=0 unknownNeg=1"
+  ],
+  "confidence": 0.9,
+  "revisionIntegrity": {
+    "ok": true,
+    "flags": []
+  },
+  "evidenceGrounding": {
+    "ok": true,
+    "flags": []
+  },
+  "overclaiming": {
+    "ok": true,
+    "flags": [
+      "A:C005:overclaim_risk"
+    ]
+  },
+  "herding": {
+    "ok": true,
+    "flags": []
+  },
+  "confidenceIntegrity": {
+    "ok": true,
+    "flags": []
+  },
+  "fabrication": {
+    "ok": true,
+    "flags": []
+  },
+  "statusConsistency": {
+    "ok": true,
+    "flags": []
+  },
+  "claimCalibrationIntegrity": {
+    "ok": true,
+    "flags": []
+  },
+  "evidenceMappingIntegrity": {
+    "ok": true,
+    "flags": []
+  },
+  "unsupportedClaimFlags": {
+    "ok": false,
+    "flags": []
+  },
+  "overclaimingFlags": {
+    "ok": false,
+    "flags": [
+      "A:C005:overclaim_risk"
+    ]
+  },
+  "unknownAsEvidenceFlags": {
+    "ok": false,
+    "flags": [
+      "D:C001:UNKNOWN_AS_NEGATIVE_EVIDENCE",
+      "D:C002:UNKNOWN_AS_NEGATIVE_EVIDENCE",
+      "D:C003:UNKNOWN_AS_NEGATIVE_EVIDENCE",
+      "D:C004:UNKNOWN_AS_NEGATIVE_EVIDENCE",
+      "D:C005:UNKNOWN_AS_NEGATIVE_EVIDENCE",
+      "D:C006:UNKNOWN_AS_NEGATIVE_EVIDENCE",
+      "E:C001:UNKNOWN_AS_NEGATIVE_EVIDENCE",
+      "E:C002:UNKNOWN_AS_NEGATIVE_EVIDENCE",
+      "E:C003:UNKNOWN_AS_NEGATIVE_EVIDENCE",
+      "E:C004:UNKNOWN_AS_NEGATIVE_EVIDENCE",
+      "E:C005:UNKNOWN_AS_NEGATIVE_EVIDENCE",
+      "E:C006:UNKNOWN_AS_NEGATIVE_EVIDENCE",
+      "E:C007:UNKNOWN_AS_NEGATIVE_EVIDENCE",
+      "A:C003"
+    ]
+  },
+  "causalClaimWithoutEvidenceFlags": {
+    "ok": false,
+    "flags": [
+      "A:C003:UNSUPPORTED_CAUSAL_CLAIM",
+      "A:C005"
+    ]
+  },
+  "confidenceCalibrationFlags": {
+    "ok": false,
+    "flags": []
+  },
+  "herdingFlags": {
+    "ok": false,
+    "flags": []
+  },
+  "calibrationRevisionIntegrity": {
+    "status": "PASS",
+    "issues": [],
+    "summary": "consistent=29 partial=0 inconsistent=0"
+  },
+  "calibrationRevisionMismatchFlags": {
+    "ok": true,
+    "flags": []
+  },
+  "overclaimRetainedFlags": {
+    "ok": true,
+    "flags": []
+  },
+  "unjustifiedConfidenceFlags": {
+    "ok": true,
+    "flags": []
+  },
+  "majorityDrivenRevisionFlags": {
+    "ok": true,
+    "flags": []
+  },
+  "evidenceSemanticsIntegrity": {
+    "status": "FAIL",
+    "issues": [
+      "A/C003: [UNSUPPORTED_CAUSAL_CLAIM] Causal claim lacks direct causal evidence in pack",
+      "D/C001: [UNKNOWN_AS_NEGATIVE_EVIDENCE] 최근 7일 신규 가입자가 0명입니다.",
+      "D/C002: [UNKNOWN_AS_NEGATIVE_EVIDENCE] 최근 7일 댓글 작성 수가 0건입니다.",
+      "D/C003: [UNKNOWN_AS_NEGATIVE_EVIDENCE] No strong pattern match; relation unknown",
+      "D/C004: [UNKNOWN_AS_NEGATIVE_EVIDENCE] No strong pattern match; relation unknown",
+      "D/C005: [UNKNOWN_AS_NEGATIVE_EVIDENCE] No strong pattern match; relation unknown",
+      "D/C006: [UNKNOWN_AS_NEGATIVE_EVIDENCE] No strong pattern match; relation unknown",
+      "E/C001: [UNKNOWN_AS_NEGATIVE_EVIDENCE] 최근 7일 동안 신규 사용자 유입이 전혀 없었습니다.",
+      "E/C002: [UNKNOWN_AS_NEGATIVE_EVIDENCE] 최근 7일 동안 커뮤니티 상호작용(댓글)이 전혀 없었습니다.",
+      "E/C003: [UNKNOWN_AS_NEGATIVE_EVIDENCE] 최근 7일 동안의 활성 사용자 수는 측정할 수 없습니다.",
+      "E/C004: [UNKNOWN_AS_NEGATIVE_EVIDENCE] 최근 7일 동안의 게시글 조회수는 측정할 수 없습니다.",
+      "E/C005: [UNKNOWN_AS_NEGATIVE_EVIDENCE] No strong pattern match; relation unknown",
+      "E/C006: [UNKNOWN_AS_NEGATIVE_EVIDENCE] No strong pattern match; relation unknown",
+      "E/C007: [UNKNOWN_AS_NEGATIVE_EVIDENCE] No strong pattern match; relation unknown"
+    ],
+    "summary": "flaggedClaims=14 mismatch=0 unknownNeg=13"
+  },
+  "evidenceClaimSemanticMismatchFlags": {
+    "ok": true,
+    "flags": []
+  },
+  "absenceOfEvidenceAsAbsenceFlags": {
+    "ok": true,
+    "flags": []
+  },
+  "unsupportedCausalClaimFlags": {
+    "ok": false,
+    "flags": [
+      "A:C003:UNSUPPORTED_CAUSAL_CLAIM"
+    ]
+  },
+  "unsupportedRelativeClaimFlags": {
+    "ok": true,
+    "flags": []
+  },
+  "unsupportedTimeTrendFlags": {
+    "ok": true,
+    "flags": []
+  },
+  "unsupportedLeapFlags": {
+    "ok": true,
+    "flags": []
+  },
+  "contextMistakenAsEvidenceFlags": {
+    "ok": true,
+    "flags": []
+  },
+  "peerOpinionAsEvidenceFlags": {
+    "ok": true,
+    "flags": []
+  },
+  "semanticJudgeIntegrity": {
+    "status": "FAIL",
+    "issues": [
+      "A:C003:UNKNOWN_AS_NEGATIVE_EVIDENCE",
+      "A:C005:FACT_TO_CAUSALITY",
+      "B:C005:FACT_TO_TREND",
+      "A/C003: UNKNOWN_NEGATIVE_EVIDENCE",
+      "A/C005: CAUSAL_LEAP_RETAINED",
+      "B/C005: TREND_LEAP_RETAINED"
+    ],
+    "summary": "leaps=3 mismatch=0 unknownNeg=1"
+  },
+  "falsePositiveFlags": {
+    "ok": true,
+    "flags": []
+  },
+  "falseNegativeFlags": {
+    "ok": true,
+    "flags": []
+  },
+  "semanticLeapFlags": {
+    "ok": false,
+    "flags": [
+      "A:C003:UNKNOWN_AS_NEGATIVE_EVIDENCE",
+      "A:C005:FACT_TO_CAUSALITY",
+      "B:C005:FACT_TO_TREND"
+    ]
+  },
+  "causalClaimFlags": {
+    "ok": false,
+    "flags": [
+      "A:C005"
+    ]
+  },
+  "trendClaimFlags": {
+    "ok": false,
+    "flags": [
+      "B:C005"
+    ]
+  },
+  "techQualityLeapFlags": {
+    "ok": true,
+    "flags": []
+  },
+  "majorityDrivenJudgeFlags": {
+    "ok": true,
+    "flags": []
+  },
+  "judgeRevisionMismatchFlags": {
+    "ok": true,
+    "flags": []
+  },
+  "unknownAsNegativeEvidenceFlags": {
+    "ok": false,
+    "flags": [
+      "D:C001:UNKNOWN_AS_NEGATIVE_EVIDENCE",
+      "D:C002:UNKNOWN_AS_NEGATIVE_EVIDENCE",
+      "D:C003:UNKNOWN_AS_NEGATIVE_EVIDENCE",
+      "D:C004:UNKNOWN_AS_NEGATIVE_EVIDENCE",
+      "D:C005:UNKNOWN_AS_NEGATIVE_EVIDENCE",
+      "D:C006:UNKNOWN_AS_NEGATIVE_EVIDENCE",
+      "E:C001:UNKNOWN_AS_NEGATIVE_EVIDENCE",
+      "E:C002:UNKNOWN_AS_NEGATIVE_EVIDENCE",
+      "E:C003:UNKNOWN_AS_NEGATIVE_EVIDENCE",
+      "E:C004:UNKNOWN_AS_NEGATIVE_EVIDENCE",
+      "E:C005:UNKNOWN_AS_NEGATIVE_EVIDENCE",
+      "E:C006:UNKNOWN_AS_NEGATIVE_EVIDENCE",
+      "E:C007:UNKNOWN_AS_NEGATIVE_EVIDENCE",
+      "A:C003"
+    ]
+  }
+}

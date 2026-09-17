@@ -1,0 +1,257 @@
+{
+  "version": 9,
+  "description": "Human-authored Semantic Judge reference cases. Expected values are NOT LLM-generated.",
+  "cases": [
+    {
+      "id": "SEM-001",
+      "category": "A_DIRECT_FACT",
+      "evidence": [{ "ref": "aggregates.newUsersLast7d", "value": 0 }],
+      "claim": "최근 7일 신규 사용자가 0명이다.",
+      "expected": {
+        "evidenceType": "DIRECT_FACT",
+        "supportLevel": "SUPPORTED",
+        "evidenceRelation": "DIRECTLY_SUPPORTS",
+        "overclaimRisk": "LOW",
+        "semanticLeap": "NONE"
+      },
+      "expectedAction": "NO_CHANGE",
+      "rationale": "Evidence가 Claim을 직접 측정한다.",
+      "chairmanProbe": true
+    },
+    {
+      "id": "SEM-002",
+      "category": "A_DIRECT_FACT",
+      "evidence": [{ "ref": "aggregates.commentsLast7d", "value": 0 }],
+      "claim": "최근 7일 댓글 작성 수가 0건이다.",
+      "expected": {
+        "evidenceType": "DIRECT_FACT",
+        "supportLevel": "SUPPORTED",
+        "evidenceRelation": "DIRECTLY_SUPPORTS",
+        "overclaimRisk": "LOW",
+        "semanticLeap": "NONE"
+      },
+      "expectedAction": "NO_CHANGE",
+      "rationale": "commentsLast7d=0이 Claim을 직접 지지한다."
+    },
+    {
+      "id": "SEM-003",
+      "category": "A_DIRECT_FACT",
+      "evidence": [{ "ref": "aggregates.userCount", "value": 14 }],
+      "claim": "전체 회원 수는 14명이다.",
+      "expected": {
+        "evidenceType": "DIRECT_FACT",
+        "supportLevel": "SUPPORTED",
+        "evidenceRelation": "DIRECTLY_SUPPORTS",
+        "overclaimRisk": "LOW",
+        "semanticLeap": "NONE"
+      },
+      "expectedAction": "NO_CHANGE",
+      "rationale": "userCount가 Claim을 직접 측정한다."
+    },
+    {
+      "id": "SEM-004",
+      "category": "B_MISSING_DATA",
+      "evidence": [{ "ref": "aggregates.activeUsersLast7d", "value": null }],
+      "claim": "최근 7일 활성 사용자 수를 확인할 수 없다.",
+      "expected": {
+        "evidenceType": "DIRECT_FACT",
+        "supportLevel": "SUPPORTED",
+        "evidenceRelation": "DIRECTLY_SUPPORTS",
+        "overclaimRisk": "LOW",
+        "semanticLeap": "NONE"
+      },
+      "expectedAction": "NO_CHANGE",
+      "rationale": "null 측정 공백을 그대로 진술한다."
+    },
+    {
+      "id": "SEM-005",
+      "category": "B_MISSING_DATA",
+      "evidence": [{ "ref": "aggregates.activeUsersLast7d", "value": null }],
+      "claim": "최근 7일 활성 사용자가 적다.",
+      "expected": {
+        "evidenceType": "INFERENCE",
+        "supportLevel": "NOT_SUPPORTED",
+        "evidenceRelation": "DOES_NOT_SUPPORT",
+        "overclaimRisk": "HIGH",
+        "semanticLeap": "UNKNOWN_AS_NEGATIVE_EVIDENCE"
+      },
+      "expectedAction": "REWORD",
+      "rationale": "null을 부정적 활동으로 해석하는 leap.",
+      "chairmanProbe": true
+    },
+    {
+      "id": "SEM-006",
+      "category": "C_CAUSAL_LEAP",
+      "evidence": [{ "ref": "aggregates.newUsersLast7d", "value": 0 }],
+      "claim": "온보딩 문제가 신규 사용자 감소의 원인이다.",
+      "expected": {
+        "evidenceType": "HYPOTHESIS",
+        "supportLevel": "NOT_SUPPORTED",
+        "evidenceRelation": "DOES_NOT_SUPPORT",
+        "overclaimRisk": "HIGH",
+        "semanticLeap": "FACT_TO_CAUSALITY"
+      },
+      "expectedAction": "NARROW",
+      "rationale": "0명 사실에서 온보딩 인과를 도출함.",
+      "chairmanProbe": true
+    },
+    {
+      "id": "SEM-007",
+      "category": "C_CAUSAL_LEAP",
+      "evidence": [
+        { "ref": "site.stackNotes", "value": "Gemini" },
+        { "ref": "aggregates.commentsLast7d", "value": 0 }
+      ],
+      "claim": "Gemini 기능이 사용자 참여를 증가시키지 못했다.",
+      "expected": {
+        "evidenceType": "HYPOTHESIS",
+        "supportLevel": "NOT_SUPPORTED",
+        "evidenceRelation": "DOES_NOT_SUPPORT",
+        "overclaimRisk": "HIGH",
+        "semanticLeap": "FACT_TO_CAUSALITY"
+      },
+      "expectedAction": "NARROW",
+      "rationale": "스택 존재+댓글0 ≠ Gemini 효과 실패 인과."
+    },
+    {
+      "id": "SEM-008",
+      "category": "D_TREND_LEAP",
+      "evidence": [{ "ref": "aggregates.postsLast7d", "value": 141 }],
+      "claim": "게시글 생산량이 감소하고 있다.",
+      "expected": {
+        "evidenceType": "INFERENCE",
+        "supportLevel": "NOT_SUPPORTED",
+        "evidenceRelation": "DOES_NOT_SUPPORT",
+        "overclaimRisk": "HIGH",
+        "semanticLeap": "FACT_TO_TREND"
+      },
+      "expectedAction": "REQUEST_MORE_EVIDENCE",
+      "rationale": "단일 기간 postsLast7d로 추세 불가."
+    },
+    {
+      "id": "SEM-009",
+      "category": "D_TREND_LEAP",
+      "evidence": [{ "ref": "aggregates.newUsersLast7d", "value": 0 }],
+      "claim": "사용자 증가세가 하락하고 있다.",
+      "expected": {
+        "evidenceType": "INFERENCE",
+        "supportLevel": "NOT_SUPPORTED",
+        "evidenceRelation": "DOES_NOT_SUPPORT",
+        "overclaimRisk": "HIGH",
+        "semanticLeap": "FACT_TO_TREND"
+      },
+      "expectedAction": "REQUEST_MORE_EVIDENCE",
+      "rationale": "단일 시점 0으로 증가세 하락을 주장."
+    },
+    {
+      "id": "SEM-010",
+      "category": "E_GLOBAL_CONCLUSION",
+      "evidence": [{ "ref": "aggregates.commentsLast7d", "value": 0 }],
+      "claim": "플랫폼 전체 사용자 참여도가 심각하게 낮다.",
+      "expected": {
+        "evidenceType": "INFERENCE",
+        "supportLevel": "NOT_SUPPORTED",
+        "evidenceRelation": "DOES_NOT_SUPPORT",
+        "overclaimRisk": "HIGH",
+        "semanticLeap": "FACT_TO_GLOBAL_CONCLUSION"
+      },
+      "expectedAction": "NARROW",
+      "rationale": "댓글0만으로 플랫폼 전체 참여도 단정."
+    },
+    {
+      "id": "SEM-011",
+      "category": "E_GLOBAL_CONCLUSION",
+      "evidence": [
+        { "ref": "aggregates.newUsersLast7d", "value": 0 },
+        { "ref": "aggregates.commentsLast7d", "value": 0 }
+      ],
+      "claim": "커뮤니티가 실패했다.",
+      "expected": {
+        "evidenceType": "HYPOTHESIS",
+        "supportLevel": "NOT_SUPPORTED",
+        "evidenceRelation": "DOES_NOT_SUPPORT",
+        "overclaimRisk": "HIGH",
+        "semanticLeap": "FACT_TO_GLOBAL_CONCLUSION"
+      },
+      "expectedAction": "NARROW",
+      "rationale": "두 지표 0이 커뮤니티 실패를 직접 입증하지 않음."
+    },
+    {
+      "id": "SEM-012",
+      "category": "F_TECH_STACK_LEAP",
+      "evidence": [
+        { "ref": "site.stackNotes", "value": "Next.js 15" },
+        { "ref": "site.stackNotes", "value": "React 19" },
+        { "ref": "site.stackNotes", "value": "PostgreSQL" },
+        { "ref": "site.stackNotes", "value": "Vercel" }
+      ],
+      "claim": "플랫폼의 성능이 우수하다.",
+      "expected": {
+        "evidenceType": "HYPOTHESIS",
+        "supportLevel": "NOT_SUPPORTED",
+        "evidenceRelation": "DOES_NOT_SUPPORT",
+        "overclaimRisk": "HIGH",
+        "semanticLeap": "TECH_STACK_TO_QUALITY"
+      },
+      "expectedAction": "ADD_CAVEAT",
+      "rationale": "스택 구성 ≠ 성능 우수 입증.",
+      "chairmanProbe": true
+    },
+    {
+      "id": "SEM-013",
+      "category": "F_TECH_STACK_LEAP",
+      "evidence": [
+        { "ref": "site.stackNotes", "value": "Next.js" },
+        { "ref": "site.stackNotes", "value": "PostgreSQL" },
+        { "ref": "site.stackNotes", "value": "Vercel" }
+      ],
+      "claim": "플랫폼의 확장성이 검증되었다.",
+      "expected": {
+        "evidenceType": "HYPOTHESIS",
+        "supportLevel": "NOT_SUPPORTED",
+        "evidenceRelation": "DOES_NOT_SUPPORT",
+        "overclaimRisk": "HIGH",
+        "semanticLeap": "TECH_STACK_TO_QUALITY"
+      },
+      "expectedAction": "ADD_CAVEAT",
+      "rationale": "스택 ≠ 확장성 검증."
+    },
+    {
+      "id": "SEM-014",
+      "category": "G_VALID_INFERENCE",
+      "evidence": [
+        { "ref": "aggregates.newUsersLast7d", "value": 0 },
+        { "ref": "aggregates.commentsLast7d", "value": 0 }
+      ],
+      "claim": "최근 7일 동안 신규 가입과 댓글 활동이 관찰되지 않았다.",
+      "expected": {
+        "evidenceType": "DIRECT_FACT",
+        "supportLevel": "SUPPORTED",
+        "evidenceRelation": "DIRECTLY_SUPPORTS",
+        "overclaimRisk": "LOW",
+        "semanticLeap": "NONE"
+      },
+      "expectedAction": "NO_CHANGE",
+      "rationale": "두 지표를 관찰 부재로만 진술 — 과도한 leap 없음.",
+      "chairmanProbe": true
+    },
+    {
+      "id": "SEM-015",
+      "category": "G_VALID_INFERENCE",
+      "evidence": [
+        { "ref": "aggregates.postsLast7d", "value": 141 },
+        { "ref": "aggregates.commentsLast7d", "value": 0 }
+      ],
+      "claim": "최근 7일 게시글 작성은 있었지만 댓글 기반 상호작용은 관찰되지 않았다.",
+      "expected": {
+        "evidenceType": "DIRECT_FACT",
+        "supportLevel": "SUPPORTED",
+        "evidenceRelation": "DIRECTLY_SUPPORTS",
+        "overclaimRisk": "LOW",
+        "semanticLeap": "NONE"
+      },
+      "expectedAction": "NO_CHANGE",
+      "rationale": "측정된 두 사실을 병치한 관찰 진술."
+    }
+  ]
+}

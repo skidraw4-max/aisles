@@ -462,65 +462,93 @@ Content generation / Gemini copy changes
 2. TP/FP/TN/FN = regression tests only; live Gemini stores judgeClassification + semanticLeap + recommendedAction; verdict SEMANTICALLY_AMBIGUOUS; show calibrationAgreement without inventing FP/FN
 3. Admin: new Semantic Judge tab; missing → "—"; no v1–v7 migration
 
-## Problem (from v7)
-Evidence Semantics exists, but A–E self-labeling can still:
-- treat null as low activity
-- leap fact→causality / trend / global / tech→quality
-- produce false positives (e.g. English “due to” on measurement-gap claims)
+---
 
-Need an **independent Judge** before Revision, with TP/FP/TN/FN vs regression references (not majority).
+# Plan: AI Review Board v9 — Semantic Judge Validation & Chairman Reliability
+
+**Status:** Done — Gemini v9 `run-2026-09-17T12-25-17-531Z` (33 calls). Reference suite 15/15 match.
+
+**승인 결정:**
+1. OR Expected → plan default 단일 Expected (SEM-005/010/013/015)
+2. Reference Evaluation = regression/CLI·unit only; Live Gemini에 fixture 미혼합
+3. Overlay = `overlayFlags[]` only (LLM 판정 덮어쓰기 없음)
+4. Chairman fixture subset = SEM-001 / 005 / 006 / 012 / 014
+5. Calls ~32 ≤40; commit `feat: add AI review board semantic judge validation`
 
 ## Goal
-Accurate adjudication of Evidence↔Claim — **not** higher revision rate.
-Preserve v1–v7 runs; new `runId` only.
+v8 Judge가 “좋은 판정자”인지 **사람 정의 Reference Set**으로 검증하고, Calibration 대비 차이·Revision 영향·Chairman Fact/Inference/Hypothesis 분리를 측정한다.
 
-## Pipeline
+성공 ≠ 전부 맞춤 / ≠ 더 많은 leap / ≠ 더 많은 disagreement.  
+성공 = Evidence 범위를 넘지 않으면서 Direct Fact를 지키며 leap·unknown-as-negative를 탐지하고, 차이를 추적·보고할 수 있을 것.
+
+## Pipeline (calls unchanged ~32 ≤40)
 ```
 EvidencePack
-→ Independent ×5
-→ Debate ×5
-→ Claim Calibration ×5
-→ Evidence Semantics ×5
-→ Semantic Judge ×5          ← NEW (before Revision; no revision leakage)
-→ Revision ×5 (receives judge; no force PARTIAL/FULL)
-→ Consistency (+ judge↔revision flags)
-→ Critic ×1
-→ Chairman ×1
+→ Independent ×5 → Debate ×5
+→ Claim Calibration ×5 → Evidence Semantics ×5
+→ Semantic Judge ×5 → Deterministic Overlay (flags only)
+→ Revision ×5 → Consistency → Critic ×1 → Chairman ×1
+→ Validation Report (regression metrics; live ≠ TP/FP)
 ```
-**Calls:** 32 LLM (27+5) ≤40. Cap unchanged. Log expected calls at start.
-
-## Data model (additive)
-- Phase: `semantic_judge`
-- `run.semanticJudgments[]` per claim (schema as brief §5)
-- Regression-only `ReferenceExpectedClassification` in unit tests (not stored as “truth” for live Gemini claims)
-- Live Gemini verdict when no reference:
-  - **Agreement path:** judge vs originalSemanticClassification + leap detection → operational labels:
-    - leap detected & original was over-optimistic → treat as TP-like `TRUE_POSITIVE`
-    - no leap & classifications agree on support → `TRUE_NEGATIVE`
-    - judge over-downgrades clear DIRECT fact → `FALSE_POSITIVE`
-    - leap missed while heuristics detect leap → `FALSE_NEGATIVE`
-    - else `SEMANTICALLY_AMBIGUOUS`
-  - Classic TP/FP only forced on regression fixtures with Expected Classification
-- Chairman: `semanticJudgeSummary` counts
-- Critic: integrity + leap / mismatch flags (§12)
-- Admin: new **Semantic Judge** tab + verdict/leap filters; missing data → "—" (never invent 0)
-
-## Deterministic layer (TDD first)
-Module `semantic-judge.ts`:
-- Rules R1–R8 (null≠0, unknown≠negative, causal/trend/global/tech leaps, no majority)
-- `adjudicateClaim`, `compareToReference`, `runJudgeRevisionConsistency`
-- Regression Tests 1–10 (+ majority reject, no over-downgrade of valid dual-zero claim)
-- Reuse/extend v7 entailment heuristics where they match; fix “due to” false causal on measurement-gap wording
 
 ## Out of scope
-Force revision rates, Prisma/DB write, mutate v1–v7 JSON, unrelated dirty commits, force push, new evidence collection.
+자동 코드/배포/DB/UX/마케팅/SEO 수정 · Revision 강제 · Judge/majority를 정답 취급 · v1–v8 JSON mutate · unrelated dirty files · force push · Prisma schema.
 
-## Approval defaults (confirm or override)
-1. **Judge = LLM ×5** (one pass per member A–E) + deterministic post-check overlay (like v6/v7).
-2. **Live verdict** uses operational judge-vs-calibration+heuristic rules; **classic Expected Classification** only in regression tests.
-3. **Success** = leap detection accuracy + no over-downgrade of clear DIRECT facts (not revision %).
+## Reference Evaluation Set (Human Expected only)
+- Path (default): `tests/fixtures/ai-review-board/semantic-reference-cases.json`  
+  (프로젝트에 기존 fixture 관례가 있으면 그 구조를 우선)
+- Expected는 **LLM 생성 금지** — 사람이 정의한 기준만.
+- 최소 **15 cases** SEM-001…015 (Category A–G: Direct / Missing / Causal / Trend / Global / Tech / Valid Inference)
+- Structure per case: `id`, `evidence[]`, `claim`, `expected{evidenceType,supportLevel,evidenceRelation,overclaimRisk,semanticLeap}`, `expectedAction`, `rationale`
+- Judge ≠ Expected → **자동으로 Expected 폐기 금지**; test 결과로만 기록
 
----
+### OR Expected 기본안 (승인 시 확정/수정)
+| Case | Brief OR | Plan default (단일 Expected) |
+|------|----------|------------------------------|
+| SEM-005 | INFERENCE\|UNKNOWN / NOT\|PARTIAL | `INFERENCE` + `NOT_SUPPORTED` + leap `UNKNOWN_AS_NEGATIVE_EVIDENCE` + HIGH |
+| SEM-010 | PARTIAL\|NOT / MED~HIGH | `NOT_SUPPORTED` + `FACT_TO_GLOBAL_CONCLUSION` + HIGH |
+| SEM-013 | NOT\|PARTIAL | `NOT_SUPPORTED` + `TECH_STACK_TO_QUALITY` + HIGH |
+| SEM-015 | SUPPORTED\|PARTIAL / LOW~MED | `SUPPORTED` + `DIRECTLY_SUPPORTS` + LOW + NONE |
+
+## Metrics (Reference / regression only)
+Classification Accuracy · Support Accuracy · Evidence Relation Accuracy · Overclaim Precision/Recall · Unknown-as-Negative / Causal / Trend / Global / Tech Leap Recall · TP/FP/TN/FN (fixture only).
+
+**Live Gemini run:** TP/FP **금지**. 저장: judgeClassification, calibration, agreement/disagreement, leap, confidence, recommendedAction, overlayFlags[], revision-influence flags.
+
+## Deterministic Overlay
+LLM을 **대체·자동 수정하지 않음**. `overlayFlags[]`만 기록:
+null→0 · UNKNOWN→negative · majority reasoning · leap marker↔wording mismatch · EvidenceRef 존재/허위.
+
+## Judge vs Calibration
+per-claim `{ calibration, judge, comparison{agreement, differences[]} }` — disagreement ≠ error.
+
+## Revision influence (no force)
+Metrics: `judgeTriggeredRevision|Reword|Narrow|ConfidenceChange`, `judgeIgnoredRisk`, `judgeRevisionMismatch`.  
+위험 유지 시 retainReason 요구; PARTIAL/FULL 강제 금지.
+
+## Chairman
+Judge 입력 받되 EvidencePack 최종 확인. 분리: Confirmed Facts / Supported Inferences / Partially Supported / Unsupported·Hypothesis / Unknown / Semantic Risks.  
+Fixture 일부로 Fact vs Inference vs 과장 Hypothesis 분리 regression.
+
+## Admin
+기존 탭 유지 + Semantic Judge 탭에:
+- Summary (counts, leaps, revision influence, mismatch)
+- **Regression Reference** vs **Live Run** 섹션 명확 분리  
+v1–v8 데이터 없으면 "—". Migration 금지.
+
+## TDD order (승인 후)
+1 전체 기존 테스트 → 2 fixture → 3 fixture 검증 → 4 Judge → 5 Overlay → 6 Judge/Cal compare → 7 Revision influence → 8 Chairman classification → 9 전체 → 10 Gemini live → 분석 → commit `feat: add AI review board semantic judge validation` → push (no force).
+
+## Cost / Git
+Start log: expected 32 calls + cost estimate. Report runId/calls/cost. Board files only. Preserve v1–v8 baselines.
+
+## Approval questions (답변 후 구현)
+1. OR Expected 기본안 테이블 승인? (또는 케이스별 지정)
+2. Reference Evaluation = regression/CLI·unit만, Live run에 fixture 미혼합 — 맞음?
+3. Overlay = flags only (LLM 판정 덮어쓰기 없음) — 맞음?
+4. Chairman fixture는 SEM subset(예: 001/005/006/012/014)만? 범위 지정?
+
+**승인 전 금지:** 코드·테스트·DB·UI·Gemini·commit·push.
 
 # Plan: AI Review Board v7 — Evidence Semantics & Claim Entailment
 

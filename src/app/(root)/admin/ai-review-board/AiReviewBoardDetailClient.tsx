@@ -8,6 +8,7 @@ import {
   formatRunWhen,
   resolveMemberRevisionView,
 } from '@/lib/ai-review-board/run-observation';
+import { runSemanticReferenceEvaluation } from '@/lib/ai-review-board/semantic-reference-eval';
 import styles from './board.module.css';
 
 /** 관찰 핵심 탭을 앞에 두고, 기존 Overview/Members/Scores도 유지 */
@@ -50,6 +51,8 @@ export function AiReviewBoardDetailClient({ run }: { run: ReviewBoardRun }) {
   const [leapFilter, setLeapFilter] = useState<string>('ALL');
   const obs = useMemo(() => computeRunObservationMetrics(run), [run]);
   const judgments = run.semanticJudgments ?? [];
+  const referenceEval = useMemo(() => runSemanticReferenceEvaluation(), []);
+  const liveSummary = run.final?.semanticJudgeSummary;
   const filteredJudgments = useMemo(() => {
     return judgments.filter((j) => {
       if (verdictFilter !== 'ALL' && j.verdict !== verdictFilter) return false;
@@ -413,10 +416,34 @@ export function AiReviewBoardDetailClient({ run }: { run: ReviewBoardRun }) {
 
       {tab === 'Semantic Judge' && (
         <section className={styles.panel}>
+          <h3>Live Run</h3>
           {!run.semanticJudgments || run.semanticJudgments.length === 0 ? (
             <p className={styles.muted}>Semantic Judge —</p>
           ) : (
             <>
+              <div className={styles.flagGrid}>
+                <span>total: {liveSummary?.totalClaims ?? judgments.length}</span>
+                <span>reviewed: {liveSummary?.judgeReviewedClaims ?? judgments.length}</span>
+                <span>
+                  cal agree/disagree: {judgments.filter((j) => j.calibrationAgreement === 'AGREE').length}/
+                  {judgments.filter((j) => j.calibrationAgreement === 'DISAGREE').length}
+                </span>
+                <span>leaps: {liveSummary?.semanticLeapCount ?? '—'}</span>
+                <span>unknownNeg: {liveSummary?.unknownAsNegativeEvidenceCount ?? '—'}</span>
+                <span>causal: {liveSummary?.causalLeapCount ?? '—'}</span>
+                <span>trend: {liveSummary?.trendLeapCount ?? '—'}</span>
+                <span>tech: {liveSummary?.techQualityLeapCount ?? '—'}</span>
+                <span>mismatch: {liveSummary?.judgeRevisionMismatchCount ?? '—'}</span>
+                <span>
+                  revInfluence: trig={liveSummary?.judgeTriggeredRevision ?? '—'} narrow=
+                  {liveSummary?.judgeTriggeredNarrow ?? '—'} ignored=
+                  {liveSummary?.judgeIgnoredRisk ?? '—'}
+                </span>
+                <span className={styles.muted}>
+                  live TP/FP: {liveSummary?.truePositive ?? 'null'}/
+                  {liveSummary?.falsePositive ?? 'null'} (regression-only elsewhere)
+                </span>
+              </div>
               <div className={styles.flagGrid}>
                 <label>
                   Verdict{' '}
@@ -466,6 +493,9 @@ export function AiReviewBoardDetailClient({ run }: { run: ReviewBoardRun }) {
                   <p className={styles.muted}>
                     refs: {j.evidenceRefs.join(', ') || '—'} · missing:{' '}
                     {j.missingEvidence.join(', ') || '—'}
+                    {j.overlayFlags && j.overlayFlags.length > 0
+                      ? ` · overlay: ${j.overlayFlags.join(', ')}`
+                      : ''}
                   </p>
                   <p>
                     <strong>Calibration:</strong> {j.originalSemanticClassification.evidenceType}/
@@ -484,6 +514,79 @@ export function AiReviewBoardDetailClient({ run }: { run: ReviewBoardRun }) {
               ))}
             </>
           )}
+
+          <h3 style={{ marginTop: '1.5rem' }}>Regression Reference</h3>
+          <p className={styles.muted}>
+            Human Expected fixture (SEM-001…015). Not mixed into this Live run. TP/FP apply here
+            only.
+          </p>
+          <div className={styles.flagGrid}>
+            <span>cases: {referenceEval.metrics.cases}</span>
+            <span>
+              classification: {(referenceEval.metrics.classificationAccuracy * 100).toFixed(0)}%
+            </span>
+            <span>support: {(referenceEval.metrics.supportAccuracy * 100).toFixed(0)}%</span>
+            <span>
+              relation: {(referenceEval.metrics.evidenceRelationAccuracy * 100).toFixed(0)}%
+            </span>
+            <span>
+              overclaim P/R:{' '}
+              {referenceEval.metrics.overclaimPrecision == null
+                ? '—'
+                : (referenceEval.metrics.overclaimPrecision * 100).toFixed(0)}
+              % /
+              {referenceEval.metrics.overclaimRecall == null
+                ? '—'
+                : (referenceEval.metrics.overclaimRecall * 100).toFixed(0)}
+              %
+            </span>
+            <span>
+              leap recalls: unk=
+              {referenceEval.metrics.unknownNegativeRecall == null
+                ? '—'
+                : (referenceEval.metrics.unknownNegativeRecall * 100).toFixed(0)}
+              % causal=
+              {referenceEval.metrics.causalLeapRecall == null
+                ? '—'
+                : (referenceEval.metrics.causalLeapRecall * 100).toFixed(0)}
+              % trend=
+              {referenceEval.metrics.trendLeapRecall == null
+                ? '—'
+                : (referenceEval.metrics.trendLeapRecall * 100).toFixed(0)}
+              % global=
+              {referenceEval.metrics.globalConclusionRecall == null
+                ? '—'
+                : (referenceEval.metrics.globalConclusionRecall * 100).toFixed(0)}
+              % tech=
+              {referenceEval.metrics.techQualityRecall == null
+                ? '—'
+                : (referenceEval.metrics.techQualityRecall * 100).toFixed(0)}
+              %
+            </span>
+            <span>
+              TP/FP/TN/FN: {referenceEval.metrics.truePositive}/
+              {referenceEval.metrics.falsePositive}/{referenceEval.metrics.trueNegative}/
+              {referenceEval.metrics.falseNegative}
+            </span>
+          </div>
+          {referenceEval.results.map((r) => (
+            <article key={r.id} className={styles.timelineItem}>
+              <header>
+                <strong>{r.id}</strong>
+                <span className={styles.muted}>
+                  {r.match.classification && r.match.semanticLeap ? 'MATCH' : 'DIFF'} ·{' '}
+                  {r.verdict}
+                </span>
+              </header>
+              <p>{r.claim}</p>
+              <p className={styles.muted}>
+                expected: {r.expected.supportLevel}/{r.expected.semanticLeap} → actual:{' '}
+                {r.actual.supportLevel}/{r.actual.semanticLeap}
+                {r.overlayFlags.length ? ` · overlay: ${r.overlayFlags.join(', ')}` : ''}
+              </p>
+              <p className={styles.muted}>{r.reason}</p>
+            </article>
+          ))}
         </section>
       )}
 
