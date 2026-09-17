@@ -181,7 +181,7 @@ describe('revision quality helpers', () => {
 });
 
 describe('mock pipeline revision phase', () => {
-  it('runs independent → debate → revision → critic → chairman (27 calls)', async () => {
+  it('runs independent → debate → revision → critic → chairman (32 calls)', async () => {
     const root = await fs.mkdtemp(path.join(os.tmpdir(), 'arb-v4-'));
     const evidence = buildStubEvidencePack();
     const llm = createMockReviewBoardLlm({ revisionStatus: 'PARTIAL' });

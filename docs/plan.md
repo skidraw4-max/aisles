@@ -453,6 +453,75 @@ Content generation / Gemini copy changes
 
 **Result (honest):** Claims decomposed (23 SUPPORTED / 3 PARTIALLY_SUPPORTED). Revision still 5/5 UNCHANGED, conf flat. Critic flagged unknown-as-evidence (E) and causal-without-evidence (A). Calibration→Revision wiring present; soft PARTIAL did not emerge.
 
+# Plan: AI Review Board v8 — Semantic Judge / Adjudication
+
+**Status:** Done — Gemini v8 `run-2026-09-17T11-52-42-008Z` completed (33 calls).
+
+**승인 결정:**
+1. Judge = LLM ×5 + deterministic overlay (32 calls ≤40)
+2. TP/FP/TN/FN = regression tests only; live Gemini stores judgeClassification + semanticLeap + recommendedAction; verdict SEMANTICALLY_AMBIGUOUS; show calibrationAgreement without inventing FP/FN
+3. Admin: new Semantic Judge tab; missing → "—"; no v1–v7 migration
+
+## Problem (from v7)
+Evidence Semantics exists, but A–E self-labeling can still:
+- treat null as low activity
+- leap fact→causality / trend / global / tech→quality
+- produce false positives (e.g. English “due to” on measurement-gap claims)
+
+Need an **independent Judge** before Revision, with TP/FP/TN/FN vs regression references (not majority).
+
+## Goal
+Accurate adjudication of Evidence↔Claim — **not** higher revision rate.
+Preserve v1–v7 runs; new `runId` only.
+
+## Pipeline
+```
+EvidencePack
+→ Independent ×5
+→ Debate ×5
+→ Claim Calibration ×5
+→ Evidence Semantics ×5
+→ Semantic Judge ×5          ← NEW (before Revision; no revision leakage)
+→ Revision ×5 (receives judge; no force PARTIAL/FULL)
+→ Consistency (+ judge↔revision flags)
+→ Critic ×1
+→ Chairman ×1
+```
+**Calls:** 32 LLM (27+5) ≤40. Cap unchanged. Log expected calls at start.
+
+## Data model (additive)
+- Phase: `semantic_judge`
+- `run.semanticJudgments[]` per claim (schema as brief §5)
+- Regression-only `ReferenceExpectedClassification` in unit tests (not stored as “truth” for live Gemini claims)
+- Live Gemini verdict when no reference:
+  - **Agreement path:** judge vs originalSemanticClassification + leap detection → operational labels:
+    - leap detected & original was over-optimistic → treat as TP-like `TRUE_POSITIVE`
+    - no leap & classifications agree on support → `TRUE_NEGATIVE`
+    - judge over-downgrades clear DIRECT fact → `FALSE_POSITIVE`
+    - leap missed while heuristics detect leap → `FALSE_NEGATIVE`
+    - else `SEMANTICALLY_AMBIGUOUS`
+  - Classic TP/FP only forced on regression fixtures with Expected Classification
+- Chairman: `semanticJudgeSummary` counts
+- Critic: integrity + leap / mismatch flags (§12)
+- Admin: new **Semantic Judge** tab + verdict/leap filters; missing data → "—" (never invent 0)
+
+## Deterministic layer (TDD first)
+Module `semantic-judge.ts`:
+- Rules R1–R8 (null≠0, unknown≠negative, causal/trend/global/tech leaps, no majority)
+- `adjudicateClaim`, `compareToReference`, `runJudgeRevisionConsistency`
+- Regression Tests 1–10 (+ majority reject, no over-downgrade of valid dual-zero claim)
+- Reuse/extend v7 entailment heuristics where they match; fix “due to” false causal on measurement-gap wording
+
+## Out of scope
+Force revision rates, Prisma/DB write, mutate v1–v7 JSON, unrelated dirty commits, force push, new evidence collection.
+
+## Approval defaults (confirm or override)
+1. **Judge = LLM ×5** (one pass per member A–E) + deterministic post-check overlay (like v6/v7).
+2. **Live verdict** uses operational judge-vs-calibration+heuristic rules; **classic Expected Classification** only in regression tests.
+3. **Success** = leap detection accuracy + no over-downgrade of clear DIRECT facts (not revision %).
+
+---
+
 # Plan: AI Review Board v7 — Evidence Semantics & Claim Entailment
 
 **Status:** Shipped. Sample `run-2026-09-17T11-33-12-976Z` (v1–v6 untouched).

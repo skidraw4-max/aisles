@@ -48,3 +48,11 @@ export const GEMINI_GEEKNEWS_MODEL_CHAIN = [
   GEMINI_MODEL_FALLBACK,
   GEMINI_MODEL_TERTIARY,
 ] as const;
+
+export const GEMINI_REVIEW_BOARD_MODEL_CHAIN = [
+  GEMINI_MODEL_FALLBACK,
+  GEMINI_MODEL_PRIMARY,
+] as const;
+
+/** Board LLM uses systemInstruction — v1 rejects it; stay on v1beta. */
+export const GEMINI_REVIEW_BOARD_API_VERSION_CHAIN = ['v1beta'] as const;

@@ -28,6 +28,7 @@ import {
   normalizeEvidenceSemanticsMember,
   rowFromHeuristic,
 } from './evidence-claim-entailment';
+import { normalizeSemanticJudgments } from './semantic-judge';
 
 function assessmentForClaims(
   cal: ClaimCalibration,
@@ -344,7 +345,27 @@ export function createMockReviewBoardLlm(options?: {
       );
     },
 
-    async revisionPass(memberId, evidence, own, ownDebate, _peers, calibration, _evidenceSemantics) {
+    async semanticJudgePass(memberId, evidence, _own, _ownDebate, calibration, evidenceSemantics) {
+      return normalizeSemanticJudgments(
+        memberId,
+        { judgments: [] },
+        calibration,
+        evidenceSemantics,
+        evidence,
+        true,
+      );
+    },
+
+    async revisionPass(
+      memberId,
+      evidence,
+      own,
+      ownDebate,
+      _peers,
+      calibration,
+      _evidenceSemantics,
+      _semanticJudgments,
+    ) {
       const cal =
         calibration ??
         ({ memberId, claims: [] } satisfies ClaimCalibration);
@@ -571,6 +592,7 @@ export function createMockReviewBoardLlm(options?: {
       revisions,
       claimCalibrations,
       _evidenceSemantics,
+      _semanticJudgments,
     ): Promise<CriticReport> {
       const revs = revisions ?? [];
       const cals = claimCalibrations ?? [];
@@ -644,10 +666,12 @@ export function createMockReviewBoardLlm(options?: {
       revisions,
       claimCalibrations,
       evidenceSemantics,
+      semanticJudgments,
     ): Promise<FinalReport> {
       const revs = revisions ?? [];
       const cals = claimCalibrations ?? [];
       const sems = evidenceSemantics ?? [];
+      const judgments = semanticJudgments ?? [];
       const improvements = independent.flatMap((i) => i.improvements).slice(0, 5);
       const allClaims = cals.flatMap((c) => c.claims);
       const allSem = sems.flatMap((s) => s.claims);
@@ -695,6 +719,14 @@ export function createMockReviewBoardLlm(options?: {
           `DOES_NOT_SUPPORT=${allSem.filter((c) => c.evidenceRelation === 'DOES_NOT_SUPPORT').length}`,
           `unsupportedLeap=${allSem.filter((c) => c.unsupportedLeap).length}`,
         ],
+        semanticJudgeFindings: [
+          `judgments=${judgments.length}`,
+          `leaps=${judgments.filter((j) => j.semanticLeap.detected).length}`,
+          `disagreeCal=${judgments.filter((j) => j.calibrationAgreement === 'DISAGREE').length}`,
+        ],
+        semanticRisks: judgments
+          .filter((j) => j.semanticLeap.detected)
+          .map((j) => `${j.memberId}/${j.claimId}: ${j.semanticLeap.type}`),
         directlySupportedClaims: allSem
           .filter((c) => c.evidenceRelation === 'DIRECTLY_SUPPORTS')
           .map((c) => c.claimText)

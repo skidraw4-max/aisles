@@ -264,7 +264,7 @@ describe('claim calibration → revision wiring (mock)', () => {
     assert.equal(r.confidenceAfter, r.confidenceBefore);
   });
 
-  it('pipeline runs 27 calls and persists claim-calibrations.json', async () => {
+  it('pipeline runs 32 calls and persists claim-calibrations.json', async () => {
     const root = await fs.mkdtemp(path.join(os.tmpdir(), 'arb-v5-'));
     const evidence = buildStubEvidencePack();
     const llm = createMockReviewBoardLlm({
@@ -280,7 +280,7 @@ describe('claim calibration → revision wiring (mock)', () => {
     });
     assert.equal(run.status, 'completed');
     assert.equal(run.budget.usedCalls, EXPECTED_PIPELINE_LLM_CALLS);
-    assert.equal(EXPECTED_PIPELINE_LLM_CALLS, 27);
+    assert.equal(EXPECTED_PIPELINE_LLM_CALLS, 32);
     assert.equal(run.claimCalibrations?.length, 5);
     assert.equal(run.revisions?.length, 5);
     await fs.access(path.join(root, 'run-v5-test', 'claim-calibrations.json'));

@@ -85,6 +85,10 @@ v7 — when Evidence Semantics is provided:
 - If evidenceRelation is DOES_NOT_SUPPORT or UNKNOWN with HIGH/CRITICAL semanticRisk, do not keep strong factual wording without caveat.
 - If unsupportedLeap=true, prefer NARROW / ADD_CAVEAT / REWORD, or UNCHANGED only with explicit retainReason addressing the leap.
 - Never treat null/unknown metrics as proof of low activity in finalOpinion.
+
+v8 — when Semantic Judge is provided:
+- Review leap + recommendedAction per claimId.
+- UNCHANGED after HIGH overclaim/leap requires retainReason citing that claimId and why wording stays.
 `;
 
 export const REVISION_Q_CHECKLIST = `
@@ -162,6 +166,24 @@ DIRECT | STRONG_INFERENCE | WEAK_INFERENCE | UNSUPPORTED | UNKNOWN
 
 unsupportedLeap=true when claim jumps beyond what refs justify.
 semanticRisk: LOW|MEDIUM|HIGH|CRITICAL
+`;
+
+/** v8 Semantic Judge */
+export const SEMANTIC_JUDGE_RULES = `
+Semantic Judge Rules (independent adjudication; EvidencePack only):
+
+Ask only: how far does EvidencePack support this claim wording?
+Peer majority / other AI opinions are NEVER grounds.
+
+Rules:
+1. Read metric meaning first (null ≠ 0; UNKNOWN ≠ low/bad).
+2. 0 = measured absence; null = not measured.
+3. Separate direct fact vs interpretation vs causality.
+4. Causal language (때문에/원인/due to/failed) needs causal evidence.
+5. Trend language needs prior-period evidence.
+6. Global platform conclusions need more than one sparse metric.
+7. Tech stack ≠ verified quality/scalability/performance.
+8. Prefer NARROW/REWORD/ADD_CAVEAT recommendations; do not invent TP/FP verdicts.
 `;
 
 export const MEMBER_FOCUS: Record<Exclude<CommitteeMemberId, 'F' | 'Chairman'>, string> = {

@@ -15,6 +15,7 @@ const TABS = [
   'Overview',
   'Independent',
   'Debate',
+  'Semantic Judge',
   'Critic',
   'Final',
   'Scores',
@@ -45,7 +46,17 @@ function ListBlock({ title, items }: { title: string; items: string[] }) {
 
 export function AiReviewBoardDetailClient({ run }: { run: ReviewBoardRun }) {
   const [tab, setTab] = useState<Tab>('Debate');
+  const [verdictFilter, setVerdictFilter] = useState<string>('ALL');
+  const [leapFilter, setLeapFilter] = useState<string>('ALL');
   const obs = useMemo(() => computeRunObservationMetrics(run), [run]);
+  const judgments = run.semanticJudgments ?? [];
+  const filteredJudgments = useMemo(() => {
+    return judgments.filter((j) => {
+      if (verdictFilter !== 'ALL' && j.verdict !== verdictFilter) return false;
+      if (leapFilter !== 'ALL' && j.semanticLeap.type !== leapFilter) return false;
+      return true;
+    });
+  }, [judgments, verdictFilter, leapFilter]);
 
   return (
     <div className={styles.detail}>
@@ -400,6 +411,82 @@ export function AiReviewBoardDetailClient({ run }: { run: ReviewBoardRun }) {
         </section>
       )}
 
+      {tab === 'Semantic Judge' && (
+        <section className={styles.panel}>
+          {!run.semanticJudgments || run.semanticJudgments.length === 0 ? (
+            <p className={styles.muted}>Semantic Judge —</p>
+          ) : (
+            <>
+              <div className={styles.flagGrid}>
+                <label>
+                  Verdict{' '}
+                  <select
+                    value={verdictFilter}
+                    onChange={(e) => setVerdictFilter(e.target.value)}
+                  >
+                    <option value="ALL">ALL</option>
+                    <option value="TRUE_POSITIVE">TRUE_POSITIVE</option>
+                    <option value="FALSE_POSITIVE">FALSE_POSITIVE</option>
+                    <option value="TRUE_NEGATIVE">TRUE_NEGATIVE</option>
+                    <option value="FALSE_NEGATIVE">FALSE_NEGATIVE</option>
+                    <option value="SEMANTICALLY_AMBIGUOUS">SEMANTICALLY_AMBIGUOUS</option>
+                  </select>
+                </label>
+                <label>
+                  Leap{' '}
+                  <select value={leapFilter} onChange={(e) => setLeapFilter(e.target.value)}>
+                    <option value="ALL">ALL</option>
+                    <option value="UNKNOWN_AS_NEGATIVE_EVIDENCE">
+                      UNKNOWN_AS_NEGATIVE_EVIDENCE
+                    </option>
+                    <option value="FACT_TO_CAUSALITY">FACT_TO_CAUSALITY</option>
+                    <option value="FACT_TO_TREND">FACT_TO_TREND</option>
+                    <option value="FACT_TO_GLOBAL_CONCLUSION">FACT_TO_GLOBAL_CONCLUSION</option>
+                    <option value="TECH_STACK_TO_QUALITY">TECH_STACK_TO_QUALITY</option>
+                    <option value="NONE">NONE</option>
+                  </select>
+                </label>
+                <span className={styles.muted}>
+                  showing {filteredJudgments.length}/{judgments.length}
+                </span>
+              </div>
+              {filteredJudgments.map((j) => (
+                <article key={`${j.memberId}-${j.claimId}`} className={styles.timelineItem}>
+                  <header>
+                    <strong>
+                      AI-{j.memberId} / {j.claimId}
+                    </strong>
+                    <span className={styles.muted}>
+                      {j.verdict} · agree={j.calibrationAgreement ?? '—'} · leap=
+                      {j.semanticLeap.type} · risk=
+                      {j.judgeClassification.overclaimRisk} · {j.recommendedAction}
+                    </span>
+                  </header>
+                  <p>{j.claimText}</p>
+                  <p className={styles.muted}>
+                    refs: {j.evidenceRefs.join(', ') || '—'} · missing:{' '}
+                    {j.missingEvidence.join(', ') || '—'}
+                  </p>
+                  <p>
+                    <strong>Calibration:</strong> {j.originalSemanticClassification.evidenceType}/
+                    {j.originalSemanticClassification.supportLevel}/
+                    {j.originalSemanticClassification.evidenceRelation}
+                  </p>
+                  <p>
+                    <strong>Judge:</strong> {j.judgeClassification.evidenceType}/
+                    {j.judgeClassification.supportLevel}/{j.judgeClassification.evidenceRelation}
+                  </p>
+                  <p>
+                    <strong>Reason:</strong> {j.judgeReason || '—'}
+                  </p>
+                  <p className={styles.muted}>confidence {j.confidence}</p>
+                </article>
+              ))}
+            </>
+          )}
+        </section>
+      )}
+
       {tab === 'Critic' && (
         <section className={styles.panel}>
           {run.critic ? (
@@ -448,6 +535,14 @@ export function AiReviewBoardDetailClient({ run }: { run: ReviewBoardRun }) {
                   'unsupportedLeapFlags',
                   'contextMistakenAsEvidenceFlags',
                   'peerOpinionAsEvidenceFlags',
+                  'falsePositiveFlags',
+                  'falseNegativeFlags',
+                  'semanticLeapFlags',
+                  'causalClaimFlags',
+                  'trendClaimFlags',
+                  'techQualityLeapFlags',
+                  'majorityDrivenJudgeFlags',
+                  'judgeRevisionMismatchFlags',
                 ] as const
               ).map((key) => {
                 const check = run.critic?.[key];
@@ -476,6 +571,14 @@ export function AiReviewBoardDetailClient({ run }: { run: ReviewBoardRun }) {
                       ))}
                     </ul>
                   ) : null}
+                </div>
+              )}
+              {run.critic.semanticJudgeIntegrity && (
+                <div className={styles.listBlock}>
+                  <h4>
+                    semanticJudgeIntegrity: {run.critic.semanticJudgeIntegrity.status}
+                  </h4>
+                  <p className={styles.muted}>{run.critic.semanticJudgeIntegrity.summary}</p>
                 </div>
               )}
               {run.critic.evidenceSemanticsIntegrity && (
@@ -593,6 +696,22 @@ export function AiReviewBoardDetailClient({ run }: { run: ReviewBoardRun }) {
               <ListBlock title="" items={run.final.calibrationRevisionFindings ?? []} />
               <h3>Evidence Semantics Findings</h3>
               <ListBlock title="" items={run.final.evidenceSemanticsFindings ?? []} />
+              <h3>Semantic Judge Findings</h3>
+              <ListBlock title="" items={run.final.semanticJudgeFindings ?? []} />
+              <h3>Semantic Risks</h3>
+              <ListBlock title="" items={run.final.semanticRisks ?? []} />
+              {run.final.semanticJudgeSummary && (
+                <p className={styles.muted}>
+                  Judge summary: reviewed={run.final.semanticJudgeSummary.judgeReviewedClaims} ·
+                  ambiguous={run.final.semanticJudgeSummary.ambiguous} · leaps=
+                  {run.final.semanticJudgeSummary.semanticLeapCount} · mismatch=
+                  {run.final.semanticJudgeSummary.judgeRevisionMismatchCount} · TP/FP/TN/FN=
+                  {run.final.semanticJudgeSummary.truePositive ?? '—'}/
+                  {run.final.semanticJudgeSummary.falsePositive ?? '—'}/
+                  {run.final.semanticJudgeSummary.trueNegative ?? '—'}/
+                  {run.final.semanticJudgeSummary.falseNegative ?? '—'}
+                </p>
+              )}
               <h3>Directly Supported Claims</h3>
               <ListBlock title="" items={run.final.directlySupportedClaims ?? []} />
               <h3>Supported Inferences</h3>

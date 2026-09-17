@@ -21,12 +21,19 @@ import {
   formatEvidenceSemanticsFindings,
   runEvidenceSemanticsChecks,
 } from './evidence-claim-entailment';
+import {
+  buildCriticJudgeOverlay,
+  formatSemanticJudgeFindings,
+  runJudgeRevisionConsistency,
+  summarizeSemanticJudgments,
+} from './semantic-judge';
 import type {
   ClaimCalibration,
   EvidencePack,
   EvidenceSemanticsMember,
   ReviewBoardRun,
   RevisionRecord,
+  SemanticJudgment,
 } from './types';
 
 export type OrchestratorOptions = {
@@ -62,6 +69,7 @@ export async function runReviewBoardPipeline(
     debate: [],
     claimCalibrations: [],
     evidenceSemantics: [],
+    semanticJudgments: [],
     revisions: [],
     calibrationRevisionChecks: [],
     critic: null,
@@ -204,6 +212,39 @@ export async function runReviewBoardPipeline(
       await touch();
     }
 
+    // v8: Semantic Judge (LLM ×5) before Revision
+    run.status = 'semantic_judge';
+    await touch();
+    const judgmentResults: SemanticJudgment[] = [];
+    for (const memberId of COMMITTEE_ANALYSTS) {
+      budget = recordCall(budget);
+      const own = run.independent.find((i) => i.memberId === memberId)!;
+      const ownDebate = run.debate.find((d) => d.memberId === memberId)!;
+      const cal = run.claimCalibrations!.find((c) => c.memberId === memberId)!;
+      const sem = run.evidenceSemantics!.find((s) => s.memberId === memberId)!;
+      const judgments = await options.llm.semanticJudgePass(
+        memberId,
+        options.evidence,
+        own,
+        ownDebate,
+        cal,
+        sem,
+      );
+      judgmentResults.push(...judgments);
+      run.semanticJudgments = [...judgmentResults];
+      await appendHistory(options.rootDir, runId, {
+        at: now(),
+        type: 'semantic_judge',
+        actor: memberId,
+        payload: {
+          claimCount: judgments.length,
+          leaps: judgments.filter((j) => j.semanticLeap.detected).length,
+          disagree: judgments.filter((j) => j.calibrationAgreement === 'DISAGREE').length,
+        },
+      });
+      await touch();
+    }
+
     run.status = 'revision';
     await touch();
 
@@ -214,6 +255,9 @@ export async function runReviewBoardPipeline(
       const ownDebate = run.debate.find((d) => d.memberId === memberId)!;
       const cal = run.claimCalibrations!.find((c) => c.memberId === memberId)!;
       const sem = run.evidenceSemantics!.find((s) => s.memberId === memberId)!;
+      const memberJudgments = (run.semanticJudgments ?? []).filter(
+        (j) => j.memberId === memberId,
+      );
       const rev = await options.llm.revisionPass(
         memberId,
         options.evidence,
@@ -222,6 +266,7 @@ export async function runReviewBoardPipeline(
         run.independent,
         cal,
         sem,
+        memberJudgments,
       );
       revisionResults.push(rev);
       run.revisions = [...revisionResults];
@@ -236,6 +281,7 @@ export async function runReviewBoardPipeline(
           confidenceAfter: rev.confidenceAfter,
           calibrationClaimCount: cal.claims.length,
           semanticsClaimCount: sem.claims.length,
+          judgeClaimCount: memberJudgments.length,
         },
       });
       await touch();
@@ -270,6 +316,7 @@ export async function runReviewBoardPipeline(
       run.revisions,
       run.claimCalibrations,
       run.evidenceSemantics,
+      run.semanticJudgments,
     );
     const overlay = buildCriticConsistencyOverlay(consistencyResults);
     const semanticsChecks = runEvidenceSemanticsChecks(
@@ -279,6 +326,11 @@ export async function runReviewBoardPipeline(
       run.revisions ?? [],
     );
     const semOverlay = buildCriticSemanticsOverlay(semanticsChecks);
+    const judgeChecks = runJudgeRevisionConsistency(
+      run.semanticJudgments ?? [],
+      run.revisions ?? [],
+    );
+    const judgeOverlay = buildCriticJudgeOverlay(run.semanticJudgments ?? [], judgeChecks);
     run.critic = {
       ...run.critic,
       calibrationRevisionIntegrity: overlay.calibrationRevisionIntegrity,
@@ -295,16 +347,27 @@ export async function runReviewBoardPipeline(
       unsupportedLeapFlags: semOverlay.unsupportedLeapFlags,
       contextMistakenAsEvidenceFlags: semOverlay.contextMistakenAsEvidenceFlags,
       peerOpinionAsEvidenceFlags: semOverlay.peerOpinionAsEvidenceFlags,
+      semanticJudgeIntegrity: judgeOverlay.semanticJudgeIntegrity,
+      falsePositiveFlags: judgeOverlay.falsePositiveFlags,
+      falseNegativeFlags: judgeOverlay.falseNegativeFlags,
+      semanticLeapFlags: judgeOverlay.semanticLeapFlags,
+      causalClaimFlags: judgeOverlay.causalClaimFlags,
+      trendClaimFlags: judgeOverlay.trendClaimFlags,
+      techQualityLeapFlags: judgeOverlay.techQualityLeapFlags,
+      majorityDrivenJudgeFlags: judgeOverlay.majorityDrivenJudgeFlags,
+      judgeRevisionMismatchFlags: judgeOverlay.judgeRevisionMismatchFlags,
       causalClaimWithoutEvidenceFlags: {
         ok:
           (run.critic.causalClaimWithoutEvidenceFlags?.ok ?? true) &&
           overlay.causalClaimWithoutEvidenceFlags.ok &&
-          semOverlay.unsupportedCausalClaimFlags.ok,
+          semOverlay.unsupportedCausalClaimFlags.ok &&
+          judgeOverlay.causalClaimFlags.ok,
         flags: [
           ...new Set([
             ...(run.critic.causalClaimWithoutEvidenceFlags?.flags ?? []),
             ...overlay.causalClaimWithoutEvidenceFlags.flags,
             ...semOverlay.unsupportedCausalClaimFlags.flags,
+            ...judgeOverlay.causalClaimFlags.flags,
           ]),
         ],
       },
@@ -312,23 +375,27 @@ export async function runReviewBoardPipeline(
         ok:
           (run.critic.unknownAsEvidenceFlags?.ok ?? true) &&
           overlay.unknownAsNegativeEvidenceFlags.ok &&
-          semOverlay.unknownAsNegativeEvidenceFlags.ok,
+          semOverlay.unknownAsNegativeEvidenceFlags.ok &&
+          judgeOverlay.unknownAsNegativeEvidenceFlags.ok,
         flags: [
           ...new Set([
             ...(run.critic.unknownAsEvidenceFlags?.flags ?? []),
             ...overlay.unknownAsNegativeEvidenceFlags.flags,
             ...semOverlay.unknownAsNegativeEvidenceFlags.flags,
+            ...judgeOverlay.unknownAsNegativeEvidenceFlags.flags,
           ]),
         ],
       },
       unknownAsNegativeEvidenceFlags: {
         ok:
           overlay.unknownAsNegativeEvidenceFlags.ok &&
-          semOverlay.unknownAsNegativeEvidenceFlags.ok,
+          semOverlay.unknownAsNegativeEvidenceFlags.ok &&
+          judgeOverlay.unknownAsNegativeEvidenceFlags.ok,
         flags: [
           ...new Set([
             ...overlay.unknownAsNegativeEvidenceFlags.flags,
             ...semOverlay.unknownAsNegativeEvidenceFlags.flags,
+            ...judgeOverlay.unknownAsNegativeEvidenceFlags.flags,
           ]),
         ],
       },
@@ -336,6 +403,7 @@ export async function runReviewBoardPipeline(
         ...(run.critic.notes ?? []),
         `v6 consistency: ${overlay.calibrationRevisionIntegrity.summary}`,
         `v7 semantics: ${semOverlay.evidenceSemanticsIntegrity.summary}`,
+        `v8 judge: ${judgeOverlay.semanticJudgeIntegrity.summary}`,
       ],
     };
     await appendHistory(options.rootDir, runId, {
@@ -357,11 +425,18 @@ export async function runReviewBoardPipeline(
       run.revisions,
       run.claimCalibrations,
       run.evidenceSemantics,
+      run.semanticJudgments,
     );
     run.final = enrichFinalReport(run.final, run.independent, run.critic);
     const findings = formatCalibrationRevisionFindings(consistencyResults);
     const semFindings = formatEvidenceSemanticsFindings(semanticsChecks);
+    const judgeSummary = summarizeSemanticJudgments(run.semanticJudgments ?? []);
+    const judgeFindings = formatSemanticJudgeFindings(
+      run.semanticJudgments ?? [],
+      judgeChecks.filter((c) => c.flags.includes('JUDGE_REVISION_MISMATCH')).length,
+    );
     const allSemRows = (run.evidenceSemantics ?? []).flatMap((s) => s.claims);
+    const leaps = (run.semanticJudgments ?? []).filter((j) => j.semanticLeap.detected);
     run.final = {
       ...run.final,
       calibrationRevisionFindings: [
@@ -372,6 +447,19 @@ export async function runReviewBoardPipeline(
         ...(run.final.evidenceSemanticsFindings ?? []),
         ...semFindings,
       ],
+      semanticJudgeFindings: [
+        ...(run.final.semanticJudgeFindings ?? []),
+        ...judgeFindings,
+      ],
+      semanticRisks: leaps.map(
+        (j) => `${j.memberId}/${j.claimId}: ${j.semanticLeap.type} — ${j.claimText.slice(0, 80)}`,
+      ),
+      semanticJudgeSummary: {
+        ...judgeSummary,
+        judgeRevisionMismatchCount: judgeChecks.filter((c) =>
+          c.flags.includes('JUDGE_REVISION_MISMATCH'),
+        ).length,
+      },
       directlySupportedClaims: [
         ...(run.final.directlySupportedClaims ?? []),
         ...allSemRows

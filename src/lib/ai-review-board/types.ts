@@ -12,6 +12,7 @@ export type ReviewBoardPhase =
   | 'debate'
   | 'claim_calibration'
   | 'evidence_semantics'
+  | 'semantic_judge'
   | 'revision'
   | 'consistency_check'
   | 'critic'
@@ -336,6 +337,94 @@ export type EvidenceSemanticsMember = {
   claims: EvidenceSemanticsRow[];
 };
 
+/** v8 Semantic Judge */
+export const JUDGE_VERDICTS = [
+  'TRUE_POSITIVE',
+  'FALSE_POSITIVE',
+  'TRUE_NEGATIVE',
+  'FALSE_NEGATIVE',
+  'SEMANTICALLY_AMBIGUOUS',
+] as const;
+export type JudgeVerdict = (typeof JUDGE_VERDICTS)[number];
+
+export function isJudgeVerdict(v: unknown): v is JudgeVerdict {
+  return (JUDGE_VERDICTS as readonly string[]).includes(String(v));
+}
+
+export const SEMANTIC_LEAP_TYPES = [
+  'UNKNOWN_AS_NEGATIVE_EVIDENCE',
+  'FACT_TO_CAUSALITY',
+  'FACT_TO_TREND',
+  'FACT_TO_GLOBAL_CONCLUSION',
+  'TECH_STACK_TO_QUALITY',
+  'NONE',
+] as const;
+export type SemanticLeapType = (typeof SEMANTIC_LEAP_TYPES)[number];
+
+export function isSemanticLeapType(v: unknown): v is SemanticLeapType {
+  return (SEMANTIC_LEAP_TYPES as readonly string[]).includes(String(v));
+}
+
+export const JUDGE_RECOMMENDED_ACTIONS = [
+  'NO_CHANGE',
+  'REWORD',
+  'NARROW',
+  'DOWNGRADE_SUPPORT',
+  'DOWNGRADE_CONFIDENCE',
+  'ADD_CAVEAT',
+  'REQUEST_MORE_EVIDENCE',
+] as const;
+export type JudgeRecommendedAction = (typeof JUDGE_RECOMMENDED_ACTIONS)[number];
+
+export function isJudgeRecommendedAction(v: unknown): v is JudgeRecommendedAction {
+  return (JUDGE_RECOMMENDED_ACTIONS as readonly string[]).includes(String(v));
+}
+
+export type SemanticJudgeClassification = {
+  evidenceType: ClaimEvidenceType;
+  supportLevel: ClaimSupportLevel;
+  evidenceRelation: EvidenceRelation;
+  overclaimRisk: OverclaimRisk;
+};
+
+export type SemanticJudgment = {
+  memberId: CommitteeAnalystId;
+  claimId: string;
+  claimText: string;
+  evidenceRefs: string[];
+  originalSemanticClassification: SemanticJudgeClassification;
+  judgeClassification: SemanticJudgeClassification;
+  /** Live Gemini: typically SEMANTICALLY_AMBIGUOUS; TP/FP/TN/FN only with regression reference */
+  verdict: JudgeVerdict;
+  /** Operational: Judge vs Calibration/Semantics agreement (not classic FP/FN) */
+  calibrationAgreement?: 'AGREE' | 'DISAGREE' | 'PARTIAL';
+  judgeReason: string;
+  missingEvidence: string[];
+  semanticLeap: {
+    detected: boolean;
+    type: SemanticLeapType;
+  };
+  confidence: number;
+  recommendedAction: JudgeRecommendedAction;
+};
+
+export type SemanticJudgeSummary = {
+  totalClaims: number;
+  judgeReviewedClaims: number;
+  truePositive: number | null;
+  falsePositive: number | null;
+  trueNegative: number | null;
+  falseNegative: number | null;
+  ambiguous: number;
+  semanticLeapCount: number;
+  unknownAsNegativeEvidenceCount: number;
+  causalLeapCount: number;
+  trendLeapCount: number;
+  techQualityLeapCount: number;
+  judgeRevisionMismatchCount: number;
+  disagreeWithCalibration?: number;
+};
+
 export type CriticCheck = {
   ok: boolean;
   flags: string[];
@@ -395,6 +484,20 @@ export type CriticReport = {
   unsupportedLeapFlags?: CriticCheck;
   contextMistakenAsEvidenceFlags?: CriticCheck;
   peerOpinionAsEvidenceFlags?: CriticCheck;
+  /** v8+ semantic judge */
+  semanticJudgeIntegrity?: {
+    status: 'PASS' | 'WARN' | 'FAIL';
+    issues: string[];
+    summary: string;
+  };
+  falsePositiveFlags?: CriticCheck;
+  falseNegativeFlags?: CriticCheck;
+  semanticLeapFlags?: CriticCheck;
+  causalClaimFlags?: CriticCheck;
+  trendClaimFlags?: CriticCheck;
+  techQualityLeapFlags?: CriticCheck;
+  majorityDrivenJudgeFlags?: CriticCheck;
+  judgeRevisionMismatchFlags?: CriticCheck;
 };
 
 export type RevisionSummaryBlock = {
@@ -437,6 +540,10 @@ export type FinalReport = {
   directlySupportedClaims?: string[];
   supportedInferences?: string[];
   weakLimitedInferences?: string[];
+  /** v8+ */
+  semanticJudgeFindings?: string[];
+  semanticRisks?: string[];
+  semanticJudgeSummary?: SemanticJudgeSummary;
 };
 
 export type EvidenceAggregates = {
@@ -531,6 +638,8 @@ export type ReviewBoardRun = {
   claimCalibrations?: ClaimCalibration[];
   /** v7+ Evidence Semantics / Claim Entailment */
   evidenceSemantics?: EvidenceSemanticsMember[];
+  /** v8+ Semantic Judge (before Revision) */
+  semanticJudgments?: SemanticJudgment[];
   /** v4+ Revision Quality Pass results */
   revisions?: RevisionRecord[];
   /** v6+ deterministic consistency rows */
@@ -555,6 +664,7 @@ export type LlmContext = {
     | 'debate'
     | 'claim_calibration'
     | 'evidence_semantics'
+    | 'semantic_judge'
     | 'revision'
     | 'consistency_check'
     | 'critic'

@@ -1,38 +1,26 @@
 # AI 운영위원회 (AI Review Board)
 
 ## 목적
-분석 → 토론 → Claim Calibration → **Evidence Semantics** → Revision → Consistency Check → Critic → Chairman. **코드 자동 수정·배포·Cron 없음.**
+Independent → Debate → Claim Calibration → Evidence Semantics → **Semantic Judge** → Revision → Consistency → Critic → Chairman.
 
-호출 수(v7): **27** LLM (5+5+5+5+5+1+1) + deterministic checkers, max 기본 40.
+호출 수(v8): **32** LLM (+ chairman resume 시 33) ≤40.
 
 ## 실행
 ```bash
 npx tsx scripts/run-ai-review-board.ts
+# chairman만 재시도(실패 run)
+npx tsx scripts/resume-ai-review-board-chairman.ts [runId]
 ```
 
 ## 기준 샘플 (삭제·덮어쓰기 금지)
-- v1 `run-2026-09-17T07-53-24-323Z`
-- v2 `run-2026-09-17T09-27-13-078Z`
-- v3 `run-2026-09-17T10-09-59-178Z`
-- v4 `run-2026-09-17T10-34-21-451Z`
-- v5 `run-2026-09-17T10-55-31-639Z` (Claim Calibration)
-- v6 `run-2026-09-17T11-15-53-412Z` (Calibration → Revision Consistency)
-- v7 `run-2026-09-17T11-33-12-976Z` (Evidence Semantics & Claim Entailment)
+- v7 `run-2026-09-17T11-33-12-976Z`
+- v8 `run-2026-09-17T11-52-42-008Z` — Semantic Judge
 
-## v7 Evidence → Claim Entailment
-Calibration 직후 각 claim에 대해 EvidencePack만으로 entailment 판단:
-`evidenceRelation` DIRECTLY_SUPPORTS|PARTIALLY_SUPPORTS|CONTEXT_ONLY|DOES_NOT_SUPPORT|CONTRADICTS|UNKNOWN  
-`entailmentLevel` DIRECT|STRONG_INFERENCE|WEAK_INFERENCE|UNSUPPORTED|UNKNOWN (숫자 score 없음)  
-**UNKNOWN/null ≠ negative evidence.** Absence of evidence ≠ evidence of absence.
+## v8 Semantic Judge
+Revision **이전** 독립 Judge ×5 + deterministic overlay. EvidencePack만으로 claim entailment 재판정.
+- Live: verdict=`SEMANTICALLY_AMBIGUOUS` (TP/FP는 regression 전용)
+- `calibrationAgreement` AGREE|DISAGREE|PARTIAL
+- leap: UNKNOWN_AS_NEGATIVE / FACT_TO_CAUSALITY / TREND / GLOBAL / TECH_STACK_TO_QUALITY
+- Admin: **Semantic Judge** 탭 (없으면 —)
 
-## v1–v7 요약
-
-| | v5 | v6 | v7 |
-|--|--|--|--|
-| calls | 22 | 22 | **27** |
-| claimCalibrations | ✓ | ✓ | ✓ |
-| evidenceSemantics | — | — | **✓** |
-| consistency checks | — | ✓ | ✓ |
-| 성공 기준 | claim 분해 | cal↔rev 연결 | **Evidence→Claim 의미** |
-
-성공 기준(v7): revision rate가 아니라 Evidence of Absence vs Absence of Evidence 구분.
+성공 기준: 정확한 의미 판정 (revision rate 아님).

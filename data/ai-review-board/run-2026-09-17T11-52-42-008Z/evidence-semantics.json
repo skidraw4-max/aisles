@@ -1,0 +1,630 @@
+[
+  {
+    "memberId": "A",
+    "claims": [
+      {
+        "claimId": "C001",
+        "claimText": "The platform exhibits a critical lack of user acquisition, as evidenced by zero new users in the last 7 days.",
+        "evidenceRelation": "DIRECTLY_SUPPORTS",
+        "entailmentLevel": "DIRECT",
+        "directEvidenceRefs": [
+          "aggregates.newUsersLast7d"
+        ],
+        "supportingEvidenceRefs": [],
+        "missingEvidence": [],
+        "inferenceSteps": [
+          "The claim states a lack of user acquisition, evidenced by zero new users in the last 7 days.",
+          "The EvidencePack provides the metric `newUsersLast7d` with a value of 0.",
+          "The `metricDefinitions` confirm that `newUsersLast7d` represents '최근 7일 신규 가입자 수'.",
+          "Therefore, the metric directly supports the claim."
+        ],
+        "unsupportedLeap": false,
+        "semanticRisk": "LOW",
+        "explanation": "The metric `newUsersLast7d` directly measures new users in the last 7 days and its value is 0, directly supporting the claim of a lack of user acquisition."
+      },
+      {
+        "claimId": "C002",
+        "claimText": "User engagement is severely limited, indicated by zero comments created in the last 7 days.",
+        "evidenceRelation": "DIRECTLY_SUPPORTS",
+        "entailmentLevel": "DIRECT",
+        "directEvidenceRefs": [
+          "aggregates.commentsLast7d"
+        ],
+        "supportingEvidenceRefs": [],
+        "missingEvidence": [],
+        "inferenceSteps": [
+          "The claim states limited user engagement, indicated by zero comments in the last 7 days.",
+          "The EvidencePack provides the metric `commentsLast7d` with a value of 0.",
+          "The `metricDefinitions` confirm that `commentsLast7d` represents '최근 7일 작성 댓글 수'.",
+          "Therefore, the metric directly supports the claim."
+        ],
+        "unsupportedLeap": false,
+        "semanticRisk": "LOW",
+        "explanation": "The metric `commentsLast7d` directly measures comments created in the last 7 days and its value is 0, directly supporting the claim of limited user engagement."
+      },
+      {
+        "claimId": "C003",
+        "claimText": "There is no measurable data for recent user activity or content consumption because `activeUsersLast7d` and `viewsLast7d` are not available.",
+        "evidenceRelation": "DOES_NOT_SUPPORT",
+        "entailmentLevel": "UNSUPPORTED",
+        "directEvidenceRefs": [
+          "aggregates.activeUsersLast7d",
+          "aggregates.viewsLast7d"
+        ],
+        "supportingEvidenceRefs": [
+          "metricDefinitions.activeUsersLast7d",
+          "metricDefinitions.viewsLast7d"
+        ],
+        "missingEvidence": [],
+        "inferenceSteps": [
+          "The claim states that measurable data for recent user activity and content consumption is unavailable due to `activeUsersLast7d` and `viewsLast7d` not being available.",
+          "The EvidencePack shows `aggregates.activeUsersLast7d` and `aggregates.viewsLast7d` are both null.",
+          "The `metricDefinitions` for both metrics explicitly state they are unavailable or null ('현재 신뢰 가능한 활동 정의 없음 → 반드시 null', 'Post.views 는 누적만 존재 → 현재 null').",
+          "This directly supports the claim that data is not available for these metrics."
+        ],
+        "unsupportedLeap": true,
+        "semanticRisk": "HIGH",
+        "explanation": "The null values for `activeUsersLast7d` and `viewsLast7d` in the aggregates, along with their definitions indicating unavailability, directly support the claim that this data is not measurable. | heuristic: Causal claim lacks direct causal evidence in pack"
+      },
+      {
+        "claimId": "C004",
+        "claimText": "The platform's user base is very small, with only 14 total registered users.",
+        "evidenceRelation": "DIRECTLY_SUPPORTS",
+        "entailmentLevel": "DIRECT",
+        "directEvidenceRefs": [
+          "aggregates.userCount"
+        ],
+        "supportingEvidenceRefs": [],
+        "missingEvidence": [],
+        "inferenceSteps": [
+          "The claim states the platform's user base is very small, with 14 total registered users.",
+          "The EvidencePack provides the metric `userCount` with a value of 14.",
+          "The `metricDefinitions` confirm that `userCount` represents '전체 회원 수'.",
+          "Therefore, the metric directly supports the claim."
+        ],
+        "unsupportedLeap": false,
+        "semanticRisk": "LOW",
+        "explanation": "The `userCount` metric directly measures the total number of registered users, and its value of 14 directly supports the claim."
+      },
+      {
+        "claimId": "C005",
+        "claimText": "Despite a large volume of existing posts, the lack of recent user acquisition and engagement suggests a significant usability or value proposition problem.",
+        "evidenceRelation": "PARTIALLY_SUPPORTS",
+        "entailmentLevel": "WEAK_INFERENCE",
+        "directEvidenceRefs": [
+          "aggregates.postCount"
+        ],
+        "supportingEvidenceRefs": [
+          "aggregates.newUsersLast7d",
+          "aggregates.commentsLast7d",
+          "aggregates.activeUsersLast7d",
+          "aggregates.viewsLast7d"
+        ],
+        "missingEvidence": [
+          "Specific usability testing results or user feedback.",
+          "Data on user retention or churn.",
+          "Metrics related to user task completion rates."
+        ],
+        "inferenceSteps": [
+          "The claim posits a problem due to a large volume of posts combined with a lack of recent user acquisition and engagement.",
+          "The EvidencePack shows a high `postCount` (3372).",
+          "It also shows `newUsersLast7d` is 0 and `commentsLast7d` is 0.",
+          "Furthermore, `activeUsersLast7d` and `viewsLast7d` are null, indicating no measurable recent activity or consumption data.",
+          "These metrics directly support the 'lack of recent user acquisition and engagement' part of the claim.",
+          "However, inferring a 'significant usability or value proposition problem' is a leap beyond the provided data. While the lack of engagement might suggest such a problem, the data itself does not directly prove it.",
+          "The evidence supports the observed metrics but not the causal inference of the problem."
+        ],
+        "unsupportedLeap": true,
+        "semanticRisk": "MEDIUM",
+        "explanation": "The evidence directly supports the observation of a large number of posts and a lack of recent user acquisition and engagement. However, the claim that this *suggests* a significant usability or value proposition problem is an inference that goes beyond the directly measurable data, making it an unsupported leap."
+      }
+    ]
+  },
+  {
+    "memberId": "B",
+    "claims": [
+      {
+        "claimId": "C001",
+        "claimText": "AIsle의 사용자 참여는 최근 7일간 신규 사용자 및 댓글 활동이 전무하여 극도로 저조합니다.",
+        "evidenceRelation": "DIRECTLY_SUPPORTS",
+        "entailmentLevel": "DIRECT",
+        "directEvidenceRefs": [
+          "aggregates.newUsersLast7d",
+          "aggregates.commentsLast7d"
+        ],
+        "supportingEvidenceRefs": [],
+        "missingEvidence": [],
+        "inferenceSteps": [
+          "The claim states that user engagement is extremely low due to zero new users and zero comments in the last 7 days.",
+          "EvidencePack shows `newUsersLast7d` is 0 and `commentsLast7d` is 0.",
+          "These direct metrics directly support the claim of extremely low engagement in the specified period."
+        ],
+        "unsupportedLeap": false,
+        "semanticRisk": "LOW",
+        "explanation": "The evidence directly shows zero new users and zero comments in the last 7 days, which are key indicators of user engagement. Therefore, the claim is directly supported."
+      },
+      {
+        "claimId": "C002",
+        "claimText": "최근 7일간 활성 사용자 및 조회수 지표가 측정되지 않아 사용자 활동성을 정확히 파악할 수 없습니다.",
+        "evidenceRelation": "DIRECTLY_SUPPORTS",
+        "entailmentLevel": "DIRECT",
+        "directEvidenceRefs": [
+          "aggregates.activeUsersLast7d",
+          "aggregates.viewsLast7d"
+        ],
+        "supportingEvidenceRefs": [
+          "metricDefinitions.activeUsersLast7d",
+          "metricDefinitions.viewsLast7d"
+        ],
+        "missingEvidence": [],
+        "inferenceSteps": [
+          "The claim asserts that active user and view metrics for the last 7 days are not measured, preventing accurate assessment of user activity.",
+          "EvidencePack provides `activeUsersLast7d` as null and `viewsLast7d` as null.",
+          "The `metricDefinitions` for both `activeUsersLast7d` and `viewsLast7d` explicitly state they are currently null due to lack of reliable definitions or data availability.",
+          "This directly supports the claim that these metrics are not measured."
+        ],
+        "unsupportedLeap": false,
+        "semanticRisk": "LOW",
+        "explanation": "The `activeUsersLast7d` and `viewsLast7d` metrics are explicitly null in the EvidencePack, and their definitions confirm they are not measured. This directly supports the claim."
+      },
+      {
+        "claimId": "C003",
+        "claimText": "AIsle은 Next.js 15, React 19 등 최신 웹 기술 스택을 활용하고 있어 기술적 기반이 탄탄합니다.",
+        "evidenceRelation": "DIRECTLY_SUPPORTS",
+        "entailmentLevel": "DIRECT",
+        "directEvidenceRefs": [
+          "site.stackNotes"
+        ],
+        "supportingEvidenceRefs": [],
+        "missingEvidence": [],
+        "inferenceSteps": [
+          "The claim states that AIsle utilizes the latest web technologies like Next.js 15 and React 19, indicating a strong technical foundation.",
+          "The `site.stackNotes` field in the EvidencePack lists 'Next.js 15 App Router + React 19'.",
+          "This directly confirms the use of these specific technologies."
+        ],
+        "unsupportedLeap": false,
+        "semanticRisk": "LOW",
+        "explanation": "The `site.stackNotes` directly lists Next.js 15 and React 19, confirming the claim about the technology stack."
+      },
+      {
+        "claimId": "C004",
+        "claimText": "전체 사용자 수가 14명으로 매우 적어 커뮤니티 규모가 작습니다.",
+        "evidenceRelation": "DIRECTLY_SUPPORTS",
+        "entailmentLevel": "DIRECT",
+        "directEvidenceRefs": [
+          "aggregates.userCount"
+        ],
+        "supportingEvidenceRefs": [],
+        "missingEvidence": [],
+        "inferenceSteps": [
+          "The claim asserts that the total user count is very low at 14, indicating a small community size.",
+          "The EvidencePack shows `userCount` as 14.",
+          "This direct numerical value supports the claim."
+        ],
+        "unsupportedLeap": false,
+        "semanticRisk": "LOW",
+        "explanation": "The `userCount` is directly provided as 14, which supports the claim that the community size is small based on this number."
+      },
+      {
+        "claimId": "C005",
+        "claimText": "AI 기능(Gemini)을 활용하고 있음에도 불구하고, 사용자 참여를 유도하는 데는 효과적이지 못합니다.",
+        "evidenceRelation": "DOES_NOT_SUPPORT",
+        "entailmentLevel": "UNSUPPORTED",
+        "directEvidenceRefs": [
+          "site.stackNotes"
+        ],
+        "supportingEvidenceRefs": [
+          "aggregates.newUsersLast7d",
+          "aggregates.commentsLast7d"
+        ],
+        "missingEvidence": [
+          "Specific metrics on AI feature usage and its correlation with user engagement.",
+          "ai_feature_usage",
+          "conversion",
+          "retention"
+        ],
+        "inferenceSteps": [
+          "The claim suggests that despite using AI (Gemini), user engagement is not being driven.",
+          "EvidencePack shows 'Gemini (@google/generative-ai)' in `site.stackNotes`, confirming AI usage.",
+          "EvidencePack also shows `newUsersLast7d` is 0 and `commentsLast7d` is 0.",
+          "The inference is that the presence of AI does not correlate with increased engagement, as indicated by the zero engagement metrics.",
+          "However, the evidence does not directly link AI usage to engagement or lack thereof; it only shows both exist concurrently with low engagement.",
+          "Therefore, the support is partial and the inference is weak, as other factors could be at play."
+        ],
+        "unsupportedLeap": true,
+        "semanticRisk": "HIGH",
+        "explanation": "While the EvidencePack confirms the use of Gemini and also shows zero new users and comments, it doesn't provide a direct causal link between the AI feature and the lack of engagement. The claim makes an inferential leap by attributing the low engagement solely to the ineffectiveness of the AI feature without direct evidence of this relationship. Thus, it partially supports the claim with a weak inference and an unsupported leap. | heuristic: Integration existence ≠ engagement increase"
+      },
+      {
+        "claimId": "C006",
+        "claimText": "AIsle은 2025-2026년 웹 트렌드에서 중요하게 여겨질 사용자 참여 증대 및 커뮤니티 활성화 측면에서 심각한 격차를 보입니다.",
+        "evidenceRelation": "PARTIALLY_SUPPORTS",
+        "entailmentLevel": "WEAK_INFERENCE",
+        "directEvidenceRefs": [],
+        "supportingEvidenceRefs": [
+          "aggregates.newUsersLast7d",
+          "aggregates.commentsLast7d",
+          "aggregates.activeUsersLast7d",
+          "aggregates.viewsLast7d"
+        ],
+        "missingEvidence": [
+          "Specific analysis of 2025-2026 web trends regarding user engagement and community activation.",
+          "Direct metrics showing AIsle's performance against these specific trends."
+        ],
+        "inferenceSteps": [
+          "The claim posits that AIsle has a significant gap in user engagement and community activation, which are important for 2025-2026 web trends.",
+          "The EvidencePack shows `newUsersLast7d` is 0 and `commentsLast7d` is 0, indicating extremely low recent activity.",
+          "It also shows `activeUsersLast7d` and `viewsLast7d` are null, meaning these key engagement indicators are not measured.",
+          "This data strongly suggests a lack of current user engagement and activity.",
+          "However, the EvidencePack does not contain any explicit information about '2025-2026 web trends' or how user engagement and community activation are defined within those trends.",
+          "Therefore, the claim that AIsle shows a 'significant gap' specifically *against those future trends* cannot be directly supported by the provided evidence.",
+          "The evidence supports the premise of low engagement, but the connection to future trends is an inference without direct backing."
+        ],
+        "unsupportedLeap": true,
+        "semanticRisk": "HIGH",
+        "explanation": "The evidence directly supports the claim that user engagement metrics (new users, comments) are extremely low and other key metrics (active users, views) are unmeasured. However, the claim also asserts this constitutes a 'significant gap' concerning '2025-2026 web trends'. The EvidencePack lacks any data or analysis regarding these future trends. Thus, the leap to connect current low engagement to a specific gap against future trends is unsupported by the provided evidence, making the semantic risk high."
+      }
+    ]
+  },
+  {
+    "memberId": "C",
+    "claims": [
+      {
+        "claimId": "C001",
+        "claimText": "AIsle의 최근 7일 신규 가입자 수는 0명이며, 이는 신규 사용자 유입이 전무함을 나타냅니다.",
+        "evidenceRelation": "DIRECTLY_SUPPORTS",
+        "entailmentLevel": "DIRECT",
+        "directEvidenceRefs": [
+          "aggregates.newUsersLast7d"
+        ],
+        "supportingEvidenceRefs": [],
+        "missingEvidence": [],
+        "inferenceSteps": [
+          "The claim states that the number of new users in the last 7 days is 0.",
+          "The EvidencePack provides the metric 'aggregates.newUsersLast7d' with a value of 0.",
+          "The claim interprets this as 'no new user inflow'. While the metric is 0, stating it as 'no inflow' is a direct interpretation of the provided number."
+        ],
+        "unsupportedLeap": false,
+        "semanticRisk": "LOW",
+        "explanation": "The evidence directly states the number of new users in the last 7 days is 0, which directly supports the claim's assertion."
+      },
+      {
+        "claimId": "C002",
+        "claimText": "AIsle의 최근 7일 댓글 수는 0개이며, 이는 커뮤니티 활동이 매우 저조함을 시사합니다.",
+        "evidenceRelation": "DIRECTLY_SUPPORTS",
+        "entailmentLevel": "STRONG_INFERENCE",
+        "directEvidenceRefs": [
+          "aggregates.commentsLast7d"
+        ],
+        "supportingEvidenceRefs": [],
+        "missingEvidence": [],
+        "inferenceSteps": [
+          "The claim states that the number of comments in the last 7 days is 0.",
+          "The EvidencePack provides the metric 'aggregates.commentsLast7d' with a value of 0.",
+          "The claim interprets this as 'community activity is very low'. While the metric is 0, inferring 'very low activity' from 0 comments in 7 days is a reasonable inference, though 'very low' is subjective. The core fact of 0 comments is directly supported."
+        ],
+        "unsupportedLeap": false,
+        "semanticRisk": "LOW",
+        "explanation": "The evidence directly states that 'commentsLast7d' is 0. Inferring 'very low community activity' from this is a reasonable interpretation, making the claim strongly supported."
+      },
+      {
+        "claimId": "C003",
+        "claimText": "AIsle은 최근 7일 활성 사용자 수(activeUsersLast7d) 및 최근 7일 조회수(viewsLast7d)에 대한 신뢰할 수 있는 측정값을 보유하고 있지 않습니다.",
+        "evidenceRelation": "DIRECTLY_SUPPORTS",
+        "entailmentLevel": "DIRECT",
+        "directEvidenceRefs": [
+          "aggregates.activeUsersLast7d",
+          "aggregates.viewsLast7d",
+          "metricDefinitions.activeUsersLast7d",
+          "metricDefinitions.viewsLast7d",
+          "docsHints"
+        ],
+        "supportingEvidenceRefs": [],
+        "missingEvidence": [
+          "사용자 활동을 측정할 수 있는 구체적인 활동 정의"
+        ],
+        "inferenceSteps": [
+          "The claim asserts that reliable measurements for 'activeUsersLast7d' and 'viewsLast7d' are not available.",
+          "The EvidencePack shows 'aggregates.activeUsersLast7d' as null and 'aggregates.viewsLast7d' as null.",
+          "The 'metricDefinitions' for both explicitly state that 'activeUsersLast7d' has no reliable definition and 'viewsLast7d' is currently null because only cumulative views exist.",
+          "The 'docsHints' also explicitly state that 'activeUsersLast7d' and 'viewsLast7d' are null and should not be invented.",
+          "This directly supports the claim that reliable measurements are not available."
+        ],
+        "unsupportedLeap": false,
+        "semanticRisk": "LOW",
+        "explanation": "The evidence directly confirms that 'activeUsersLast7d' and 'viewsLast7d' are null and explicitly states they are not reliably measured, directly supporting the claim."
+      },
+      {
+        "claimId": "C004",
+        "claimText": "AIsle은 최신 웹 기술 스택을 활용하고 있어 기술적인 기반은 탄탄합니다.",
+        "evidenceRelation": "DIRECTLY_SUPPORTS",
+        "entailmentLevel": "DIRECT",
+        "directEvidenceRefs": [
+          "site.stackNotes"
+        ],
+        "supportingEvidenceRefs": [],
+        "missingEvidence": [],
+        "inferenceSteps": [
+          "The claim states that AIsle uses a modern web technology stack, implying a solid technical foundation.",
+          "The EvidencePack lists 'site.stackNotes' which includes 'Next.js 15 App Router + React 19', 'Prisma 7 + PostgreSQL', and 'Gemini (@google/generative-ai)'.",
+          "These are generally considered modern and up-to-date technologies.",
+          "The claim's assertion about using a modern stack is directly supported by the listed technologies."
+        ],
+        "unsupportedLeap": false,
+        "semanticRisk": "LOW",
+        "explanation": "The 'site.stackNotes' directly lists modern technologies, which directly supports the claim that AIsle utilizes a modern web technology stack."
+      },
+      {
+        "claimId": "C005",
+        "claimText": "AIsle은 'LOUNGE' 카테고리에 가장 많은 게시글을 보유하고 있으나, 전반적인 커뮤니티 활동성은 낮습니다.",
+        "evidenceRelation": "DIRECTLY_SUPPORTS",
+        "entailmentLevel": "STRONG_INFERENCE",
+        "directEvidenceRefs": [
+          "aggregates.postsByCategory"
+        ],
+        "supportingEvidenceRefs": [
+          "aggregates.commentsLast7d",
+          "aggregates.newUsersLast7d"
+        ],
+        "missingEvidence": [
+          "카테고리별 사용자 참여 지표"
+        ],
+        "inferenceSteps": [
+          "The claim has two parts: 1) 'LOUNGE' has the most posts, and 2) overall community activity is low.",
+          "Evidence for part 1: 'aggregates.postsByCategory' shows 'LOUNGE': 3284, which is the highest among all categories.",
+          "Evidence for part 2: 'aggregates.commentsLast7d' is 0 and 'aggregates.newUsersLast7d' is 0.",
+          "Combining these, the fact that 'LOUNGE' has the most posts is directly supported. Inferring 'overall community activity is low' from 0 comments and 0 new users in the last 7 days is a strong inference.",
+          "The claim is supported by direct evidence for the first part and strong inference for the second part."
+        ],
+        "unsupportedLeap": false,
+        "semanticRisk": "MEDIUM",
+        "explanation": "The evidence directly shows 'LOUNGE' has the most posts. The inference of low overall community activity is strongly supported by the 0 values for recent comments and new users."
+      },
+      {
+        "claimId": "C006",
+        "claimText": "전체 회원 수가 14명으로 매우 적어 플랫폼의 현재 규모가 작습니다.",
+        "evidenceRelation": "DIRECTLY_SUPPORTS",
+        "entailmentLevel": "STRONG_INFERENCE",
+        "directEvidenceRefs": [
+          "aggregates.userCount"
+        ],
+        "supportingEvidenceRefs": [],
+        "missingEvidence": [],
+        "inferenceSteps": [
+          "The claim states that the total number of members is 14, and this is 'very small', indicating a small platform size.",
+          "The EvidencePack provides 'aggregates.userCount' with a value of 14.",
+          "The claim's interpretation that 14 is 'very small' and indicates a 'small platform size' is an inference.",
+          "While the number 14 is directly provided, the qualitative judgment ('very small', 'small platform size') is an interpretation based on that number.",
+          "This is a strong inference because 14 is objectively a small number for a platform's total user count."
+        ],
+        "unsupportedLeap": false,
+        "semanticRisk": "LOW",
+        "explanation": "The evidence directly provides the total user count as 14. The interpretation of this number as 'very small' and indicative of a 'small platform size' is a strong inference, directly supported by the provided metric."
+      }
+    ]
+  },
+  {
+    "memberId": "D",
+    "claims": [
+      {
+        "claimId": "C001",
+        "claimText": "최근 7일 신규 가입자가 0명입니다.",
+        "evidenceRelation": "DIRECTLY_SUPPORTS",
+        "entailmentLevel": "DIRECT",
+        "directEvidenceRefs": [
+          "aggregates.newUsersLast7d"
+        ],
+        "supportingEvidenceRefs": [],
+        "missingEvidence": [],
+        "inferenceSteps": [],
+        "unsupportedLeap": false,
+        "semanticRisk": "LOW",
+        "explanation": "EvidencePack의 aggregates 섹션에서 'newUsersLast7d' 값이 0으로 직접적으로 명시되어 있어, 최근 7일 신규 가입자가 0명이라는 주장을 직접적으로 뒷받침합니다."
+      },
+      {
+        "claimId": "C002",
+        "claimText": "최근 7일 댓글 작성 수가 0건입니다.",
+        "evidenceRelation": "DIRECTLY_SUPPORTS",
+        "entailmentLevel": "DIRECT",
+        "directEvidenceRefs": [
+          "aggregates.commentsLast7d"
+        ],
+        "supportingEvidenceRefs": [],
+        "missingEvidence": [],
+        "inferenceSteps": [],
+        "unsupportedLeap": false,
+        "semanticRisk": "LOW",
+        "explanation": "EvidencePack의 aggregates 섹션에서 'commentsLast7d' 값이 0으로 직접적으로 명시되어 있어, 최근 7일 댓글 작성 수가 0건이라는 주장을 직접적으로 뒷받침합니다."
+      },
+      {
+        "claimId": "C003",
+        "claimText": "최근 7일 활성 사용자 수 및 조회수 데이터는 측정되지 않았습니다.",
+        "evidenceRelation": "DIRECTLY_SUPPORTS",
+        "entailmentLevel": "DIRECT",
+        "directEvidenceRefs": [
+          "aggregates.activeUsersLast7d",
+          "aggregates.viewsLast7d"
+        ],
+        "supportingEvidenceRefs": [
+          "metricDefinitions.activeUsersLast7d",
+          "metricDefinitions.viewsLast7d"
+        ],
+        "missingEvidence": [],
+        "inferenceSteps": [],
+        "unsupportedLeap": false,
+        "semanticRisk": "LOW",
+        "explanation": "EvidencePack의 aggregates 섹션에서 'activeUsersLast7d'와 'viewsLast7d'가 null이며, metricDefinitions에서도 이 지표들에 대한 신뢰할 수 있는 정의가 없음을 명시하고 있어, 해당 데이터가 측정되지 않았다는 주장을 직접적으로 뒷받침합니다."
+      },
+      {
+        "claimId": "C004",
+        "claimText": "AIsle 플랫폼은 Next.js 15 App Router, React 19, Prisma 7, PostgreSQL 등 현대적인 웹 기술 스택을 사용합니다.",
+        "evidenceRelation": "DIRECTLY_SUPPORTS",
+        "entailmentLevel": "DIRECT",
+        "directEvidenceRefs": [
+          "site.stackNotes"
+        ],
+        "supportingEvidenceRefs": [],
+        "missingEvidence": [],
+        "inferenceSteps": [],
+        "unsupportedLeap": false,
+        "semanticRisk": "LOW",
+        "explanation": "EvidencePack의 site.stackNotes 섹션에 Next.js 15 App Router, React 19, Prisma 7, PostgreSQL 등 사용된 기술 스택이 명시되어 있어, 해당 주장을 직접적으로 뒷받침합니다."
+      },
+      {
+        "claimId": "C005",
+        "claimText": "플랫폼의 전반적인 사용자 참여도가 낮을 것으로 추론됩니다.",
+        "evidenceRelation": "PARTIALLY_SUPPORTS",
+        "entailmentLevel": "WEAK_INFERENCE",
+        "directEvidenceRefs": [],
+        "supportingEvidenceRefs": [
+          "aggregates.newUsersLast7d",
+          "aggregates.commentsLast7d"
+        ],
+        "missingEvidence": [
+          "aggregates.activeUsersLast7d",
+          "aggregates.viewsLast7d"
+        ],
+        "inferenceSteps": [
+          "최근 7일 신규 가입자 수가 0명이고 (aggregates.newUsersLast7d = 0), 최근 7일 댓글 작성 수가 0건이라는 점 (aggregates.commentsLast7d = 0)은 사용자 참여가 저조함을 시사합니다.",
+          "그러나 'activeUsersLast7d'와 'viewsLast7d' 지표가 null로 측정되지 않아, 사용자 참여도에 대한 포괄적인 판단을 내리기 어렵습니다. 따라서 참여도가 낮다는 추론은 부분적으로만 지지됩니다."
+        ],
+        "unsupportedLeap": true,
+        "semanticRisk": "MEDIUM",
+        "explanation": "신규 가입자 0명과 댓글 0건은 참여도가 낮음을 시사하지만, 활성 사용자 및 조회수 데이터가 없어 참여도에 대한 완전한 판단이 불가능합니다. 따라서 '낮을 것'이라는 추론은 부분적으로만 지지되며, 'activeUsersLast7d'와 'viewsLast7d'의 부재로 인해 추론의 비약이 존재합니다."
+      },
+      {
+        "claimId": "C006",
+        "claimText": "최근 7일 동안 작성된 게시글은 141건으로, 특히 'LOUNGE' 카테고리에 집중되어 있습니다.",
+        "evidenceRelation": "DIRECTLY_SUPPORTS",
+        "entailmentLevel": "DIRECT",
+        "directEvidenceRefs": [
+          "aggregates.postsLast7d"
+        ],
+        "supportingEvidenceRefs": [
+          "aggregates.postsByCategory.LOUNGE"
+        ],
+        "missingEvidence": [],
+        "inferenceSteps": [],
+        "unsupportedLeap": false,
+        "semanticRisk": "LOW",
+        "explanation": "EvidencePack의 aggregates 섹션에서 'postsLast7d'가 141로 명시되어 있고, 'postsByCategory' 내 'LOUNGE' 카테고리의 게시글 수가 포함되어 있어, 해당 주장을 직접적으로 뒷받침합니다."
+      }
+    ]
+  },
+  {
+    "memberId": "E",
+    "claims": [
+      {
+        "claimId": "C001",
+        "claimText": "최근 7일 동안 신규 사용자가 전혀 유입되지 않았습니다.",
+        "evidenceRelation": "DIRECTLY_SUPPORTS",
+        "entailmentLevel": "DIRECT",
+        "directEvidenceRefs": [
+          "aggregates.newUsersLast7d"
+        ],
+        "supportingEvidenceRefs": [],
+        "missingEvidence": [],
+        "inferenceSteps": [],
+        "unsupportedLeap": false,
+        "semanticRisk": "LOW",
+        "explanation": "The evidence 'aggregates.newUsersLast7d' is 0, which directly supports the claim that no new users have joined in the last 7 days."
+      },
+      {
+        "claimId": "C002",
+        "claimText": "최근 7일간 커뮤니티 참여가 전혀 이루어지지 않았습니다.",
+        "evidenceRelation": "DIRECTLY_SUPPORTS",
+        "entailmentLevel": "DIRECT",
+        "directEvidenceRefs": [
+          "aggregates.commentsLast7d"
+        ],
+        "supportingEvidenceRefs": [],
+        "missingEvidence": [],
+        "inferenceSteps": [],
+        "unsupportedLeap": false,
+        "semanticRisk": "LOW",
+        "explanation": "The evidence 'aggregates.commentsLast7d' is 0, which directly supports the claim that no community participation (in terms of comments) occurred in the last 7 days."
+      },
+      {
+        "claimId": "C003",
+        "claimText": "최근 7일간의 활성 사용자 수와 조회수는 측정되지 않았습니다.",
+        "evidenceRelation": "DIRECTLY_SUPPORTS",
+        "entailmentLevel": "DIRECT",
+        "directEvidenceRefs": [
+          "aggregates.activeUsersLast7d",
+          "aggregates.viewsLast7d"
+        ],
+        "supportingEvidenceRefs": [],
+        "missingEvidence": [
+          "활성 사용자 정의에 대한 명확한 기준이 필요합니다.",
+          "조회수 측정 방식에 대한 검토가 필요합니다."
+        ],
+        "inferenceSteps": [],
+        "unsupportedLeap": false,
+        "semanticRisk": "LOW",
+        "explanation": "The evidence 'aggregates.activeUsersLast7d' and 'aggregates.viewsLast7d' are both null, directly supporting the claim that these metrics were not measured."
+      },
+      {
+        "claimId": "C004",
+        "claimText": "최근 7일간 상당한 양의 콘텐츠가 생성되었습니다.",
+        "evidenceRelation": "DIRECTLY_SUPPORTS",
+        "entailmentLevel": "DIRECT",
+        "directEvidenceRefs": [
+          "aggregates.postsLast7d"
+        ],
+        "supportingEvidenceRefs": [],
+        "missingEvidence": [],
+        "inferenceSteps": [],
+        "unsupportedLeap": false,
+        "semanticRisk": "LOW",
+        "explanation": "The evidence 'aggregates.postsLast7d' is 141, which directly supports the claim that a significant amount of content (141 posts) was generated in the last 7 days. The term 'significant' is subjective but the absolute number provides direct support."
+      },
+      {
+        "claimId": "C005",
+        "claimText": "전체 사용자 기반은 작지만, 최근 7일간 신규 사용자 유입이 없어 성장이 정체되어 있습니다.",
+        "evidenceRelation": "DIRECTLY_SUPPORTS",
+        "entailmentLevel": "STRONG_INFERENCE",
+        "directEvidenceRefs": [],
+        "supportingEvidenceRefs": [
+          "aggregates.userCount",
+          "aggregates.newUsersLast7d"
+        ],
+        "missingEvidence": [
+          "신규 사용자 유입이 없는 근본적인 원인 분석이 필요합니다."
+        ],
+        "inferenceSteps": [
+          "The total user count is 14 ('aggregates.userCount').",
+          "The number of new users in the last 7 days is 0 ('aggregates.newUsersLast7d').",
+          "A small total user base combined with zero new users in the last week implies stagnation in growth."
+        ],
+        "unsupportedLeap": false,
+        "semanticRisk": "MEDIUM",
+        "explanation": "The claim infers growth stagnation from a small user base (14) and zero new users in the last 7 days. While the data supports the components, the interpretation of 'stagnation' and 'growth' is an inference."
+      },
+      {
+        "claimId": "C006",
+        "claimText": "콘텐츠 생성은 활발하지만, 사용자 참여 및 상호작용이 부족하여 콘텐츠 루프가 형성되지 못하고 있습니다.",
+        "evidenceRelation": "DIRECTLY_SUPPORTS",
+        "entailmentLevel": "STRONG_INFERENCE",
+        "directEvidenceRefs": [],
+        "supportingEvidenceRefs": [
+          "aggregates.postsLast7d",
+          "aggregates.commentsLast7d",
+          "aggregates.newUsersLast7d"
+        ],
+        "missingEvidence": [
+          "콘텐츠의 질과 사용자 참여 간의 상관관계 분석이 필요합니다.",
+          "사용자 참여를 유도할 수 있는 콘텐츠 전략 검토가 필요합니다."
+        ],
+        "inferenceSteps": [
+          "141 posts were created in the last 7 days ('aggregates.postsLast7d'), indicating active content creation.",
+          "0 comments were made in the last 7 days ('aggregates.commentsLast7d'), indicating a lack of user interaction.",
+          "0 new users joined in the last 7 days ('aggregates.newUsersLast7d'), suggesting that the content is not attracting new users.",
+          "The combination of high content creation, low interaction, and no new user acquisition strongly suggests a broken content loop."
+        ],
+        "unsupportedLeap": false,
+        "semanticRisk": "MEDIUM",
+        "explanation": "The claim infers a lack of content loop formation from active content creation (141 posts) contrasted with zero user interaction (0 comments) and zero new user acquisition (0 newUsersLast7d). This is a strong inference based on the provided metrics."
+      }
+    ]
+  }
+]

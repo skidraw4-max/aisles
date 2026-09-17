@@ -48,6 +48,9 @@ export async function saveRunSnapshot(root: string, run: ReviewBoardRun): Promis
   if (run.evidenceSemantics && run.evidenceSemantics.length > 0) {
     await writeJson(path.join(dir, 'evidence-semantics.json'), run.evidenceSemantics);
   }
+  if (run.semanticJudgments && run.semanticJudgments.length > 0) {
+    await writeJson(path.join(dir, 'semantic-judgments.json'), run.semanticJudgments);
+  }
   if (run.revisions && run.revisions.length > 0) {
     await writeJson(path.join(dir, 'revisions.json'), run.revisions);
   }

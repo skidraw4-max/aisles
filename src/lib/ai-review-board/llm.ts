@@ -9,6 +9,7 @@ import type {
   IndependentAnalysis,
   LlmContext,
   RevisionRecord,
+  SemanticJudgment,
 } from './types';
 
 export type ReviewBoardLlm = {
@@ -17,27 +18,32 @@ export type ReviewBoardLlm = {
     evidence: EvidencePack,
     ctx: LlmContext,
   ): Promise<IndependentAnalysis>;
-  /** v4: rebuttal only — no revisionStatus decision */
   debateTurn(
     memberId: CommitteeAnalystId,
     evidence: EvidencePack,
     peers: IndependentAnalysis[],
     own: IndependentAnalysis,
   ): Promise<DebateTurn>;
-  /** v5: Claim Calibration (once; EvidencePack is final ground for supportLevel) */
   claimCalibrate(
     memberId: CommitteeAnalystId,
     evidence: EvidencePack,
     own: IndependentAnalysis,
     ownDebate: DebateTurn,
   ): Promise<ClaimCalibration>;
-  /** v7: Evidence Semantics / Claim Entailment per calibrated claim */
   evidenceSemanticsPass(
     memberId: CommitteeAnalystId,
     evidence: EvidencePack,
     calibration: ClaimCalibration,
   ): Promise<EvidenceSemanticsMember>;
-  /** v4/v5/v7: Revision — receives calibration + optional semantics */
+  /** v8: Semantic Judge before Revision */
+  semanticJudgePass(
+    memberId: CommitteeAnalystId,
+    evidence: EvidencePack,
+    own: IndependentAnalysis,
+    ownDebate: DebateTurn,
+    calibration: ClaimCalibration,
+    evidenceSemantics: EvidenceSemanticsMember,
+  ): Promise<SemanticJudgment[]>;
   revisionPass(
     memberId: CommitteeAnalystId,
     evidence: EvidencePack,
@@ -46,6 +52,7 @@ export type ReviewBoardLlm = {
     peers: IndependentAnalysis[],
     calibration?: ClaimCalibration,
     evidenceSemantics?: EvidenceSemanticsMember,
+    semanticJudgments?: SemanticJudgment[],
   ): Promise<RevisionRecord>;
   critic(
     evidence: EvidencePack,
@@ -54,6 +61,7 @@ export type ReviewBoardLlm = {
     revisions?: RevisionRecord[],
     claimCalibrations?: ClaimCalibration[],
     evidenceSemantics?: EvidenceSemanticsMember[],
+    semanticJudgments?: SemanticJudgment[],
   ): Promise<CriticReport>;
   chairman(
     evidence: EvidencePack,
@@ -63,5 +71,6 @@ export type ReviewBoardLlm = {
     revisions?: RevisionRecord[],
     claimCalibrations?: ClaimCalibration[],
     evidenceSemantics?: EvidenceSemanticsMember[],
+    semanticJudgments?: SemanticJudgment[],
   ): Promise<FinalReport>;
 };

@@ -32,7 +32,7 @@ async function main() {
   console.log('[ai-review-board] starting', {
     stubEvidence,
     mockLlm,
-    expectedLlmCalls: 27,
+    expectedLlmCalls: 32,
     maxCalls: Number(process.env.AI_REVIEW_BOARD_MAX_CALLS_PER_RUN || 40),
   });
 
