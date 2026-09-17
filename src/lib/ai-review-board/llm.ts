@@ -1,4 +1,5 @@
 import type {
+  ClaimCalibration,
   CommitteeAnalystId,
   CriticReport,
   DebateTurn,
@@ -22,19 +23,28 @@ export type ReviewBoardLlm = {
     peers: IndependentAnalysis[],
     own: IndependentAnalysis,
   ): Promise<DebateTurn>;
-  /** v4: separate Revision Quality Pass */
+  /** v5: Claim Calibration (once; EvidencePack is final ground for supportLevel) */
+  claimCalibrate(
+    memberId: CommitteeAnalystId,
+    evidence: EvidencePack,
+    own: IndependentAnalysis,
+    ownDebate: DebateTurn,
+  ): Promise<ClaimCalibration>;
+  /** v4/v5: Revision Quality Pass — receives calibration when available */
   revisionPass(
     memberId: CommitteeAnalystId,
     evidence: EvidencePack,
     own: IndependentAnalysis,
     ownDebate: DebateTurn,
     peers: IndependentAnalysis[],
+    calibration?: ClaimCalibration,
   ): Promise<RevisionRecord>;
   critic(
     evidence: EvidencePack,
     independent: IndependentAnalysis[],
     debate: DebateTurn[],
     revisions?: RevisionRecord[],
+    claimCalibrations?: ClaimCalibration[],
   ): Promise<CriticReport>;
   chairman(
     evidence: EvidencePack,
@@ -42,5 +52,6 @@ export type ReviewBoardLlm = {
     debate: DebateTurn[],
     critic: CriticReport,
     revisions?: RevisionRecord[],
+    claimCalibrations?: ClaimCalibration[],
   ): Promise<FinalReport>;
 };

@@ -219,5 +219,5 @@ export function normalizeRevisionRecord(input: NormalizeRevisionInput): Revision
   };
 }
 
-/** Expected Gemini/mock pipeline LLM calls: 5 ind + 5 debate + 5 revision + critic + chairman */
-export const EXPECTED_PIPELINE_LLM_CALLS = 17;
+/** Expected Gemini/mock pipeline LLM calls — see claim-calibration.ts (v5 = 22) */
+export { EXPECTED_PIPELINE_LLM_CALLS } from './claim-calibration';

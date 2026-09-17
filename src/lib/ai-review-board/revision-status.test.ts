@@ -35,7 +35,8 @@ describe('mock revisionPass revisionStatus', () => {
       evidence,
     });
     const debate = await llm.debateTurn('A', evidence, [own], own);
-    const rev = await llm.revisionPass('A', evidence, own, debate, [own]);
+    const cal = await llm.claimCalibrate('A', evidence, own, debate);
+    const rev = await llm.revisionPass('A', evidence, own, debate, [own], cal);
     assert.equal(rev.revisionStatus, 'UNCHANGED');
     assert.equal(rev.revised, false);
     assert.ok(rev.retainReason);
@@ -50,7 +51,8 @@ describe('mock revisionPass revisionStatus', () => {
       evidence,
     });
     const debate = await llm.debateTurn('B', evidence, [own], own);
-    const rev = await llm.revisionPass('B', evidence, own, debate, [own]);
+    const cal = await llm.claimCalibrate('B', evidence, own, debate);
+    const rev = await llm.revisionPass('B', evidence, own, debate, [own], cal);
     assert.equal(rev.revisionStatus, 'PARTIAL');
     assert.equal(rev.revised, true);
     assert.ok(rev.changedClaims.length >= 1);

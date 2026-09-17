@@ -447,6 +447,29 @@ Content generation / Gemini copy changes
 
 **Result:** 5/5 UNCHANGED with explicit keep-reasons; PARTIAL/FULL = 0. Mechanism works; this evidence pack + peer consensus did not produce opinion-overturning rebuttals.
 
+# Plan: AI Review Board v5 — Claim Calibration Experiment
+
+**Status:** Shipped. Sample `run-2026-09-17T10-55-31-639Z` (v1–v4 untouched).
+
+**Result (honest):** Claims decomposed (23 SUPPORTED / 3 PARTIALLY_SUPPORTED). Revision still 5/5 UNCHANGED, conf flat. Critic flagged unknown-as-evidence (E) and causal-without-evidence (A). Calibration→Revision wiring present; soft PARTIAL did not emerge.
+
+**승인 결정 (2026-09-17):**
+1. `memberId` A–E (UI: AI-A…)
+2. Calibration 입력 = own Independent + Debate + EvidencePack; supportLevel 최종 근거 = EvidencePack only (peer≠evidence)
+3. Claim 추출 Calibration 1회만; Revision 후 재추출 없음
+4. UNKNOWN≠negative evidence; no force PARTIAL/FULL/confidence↓; 22 calls ≤40; v1–v4 untouched
+
+## Goal
+Claim → Evidence → supportLevel first; Revision follows naturally.
+
+## Architecture
+EvidencePack → Independent → Debate → ClaimCalibration×5 → Revision×5 → Critic → Chairman (22 calls)
+
+## Out of scope
+Force revision rates, Cron, Prisma, rewriting old runs, unrelated dirty commits, force push.
+
+---
+
 # Plan: AI Review Board v4 — Revision quality (UNCHANGED vs PARTIAL vs FULL discrimination)
 
 **Status:** Shipped. Sample run `run-2026-09-17T10-34-21-451Z` preserved (v1–v3 untouched).
@@ -455,7 +478,98 @@ Content generation / Gemini copy changes
 
 **Result (honest):** 5/5 UNCHANGED; PARTIAL/FULL=0; confidence 0.9→0.9 all. Mechanism+answers recorded; claim-softening PARTIAL and confidence drop did not occur on this EvidencePack.
 
-## Problem (from v3)
+## Problem (from v4)
+- A–E all UNCHANGED; confidence 0.9→0.9
+- WeakEvidence / NeedsVerification found but claim strength barely changed
+- Gap *detection* exists; gap *impact on own claims* under-evaluated
+- Some treat `activeUsersLast7d`/`viewsLast7d` = null as reinforcing “bad engagement”
+
+## Goal
+Not “did they revise?” first — **“how far does EvidencePack justify each claim?”**  
+Claim → Evidence → supportLevel. Revision follows naturally; **never force revision.**
+
+## Success criteria (not revision rate)
+- DIRECT_FACT vs INFERENCE vs HYPOTHESIS vs UNKNOWN
+- UNKNOWN ≠ “low/absent/worse”
+- Overclaim / causal-without-evidence detection
+- evidenceImpact on core claims
+- PARTIAL when core claims PARTIALLY_SUPPORTED/NOT_SUPPORTED require softening
+- confidence tracks evidence quality; majority≠↑conf / ≠revision ground
+- UNCHANGED when claims truly SUPPORTED; FULL only when core claim incompatible
+
+## Architecture
+
+```
+EvidencePack
+→ A–E Independent
+→ A–E Debate (rebuttal only)
+→ A–E Claim Calibration (new LLM ×5)
+→ A–E Revision (receives calibration + debate)
+→ F Critic (incl. claimCalibrationIntegrity …)
+→ Chairman (Fact / Interpretation / Hypothesis separated)
+```
+
+**Expected calls: 22** (5+5+5+5+1+1) ≤ max 40. Log expected vs max before run.
+
+### Data (backward compatible)
+
+`run.claimCalibrations: ClaimCalibration[]` (+ `claim-calibrations.json`)
+
+```ts
+ClaimCalibration {
+  memberId: 'A'|'B'|…   // JSON may also echo reviewer label in docs; code uses memberId
+  claims: CalibratedClaim[]  // 3–7
+}
+CalibratedClaim {
+  claimId, claimText, evidenceRefs[],
+  evidenceType: DIRECT_FACT|INFERENCE|HYPOTHESIS|UNKNOWN,
+  supportLevel: SUPPORTED|PARTIALLY_SUPPORTED|NOT_SUPPORTED,
+  reason, missingEvidence[],
+  evidenceImpact: NONE|LOW|MEDIUM|HIGH|CRITICAL,
+  riskOfOverclaiming: LOW|MEDIUM|HIGH
+}
+```
+
+Keep `debate[]`, `revisions[]`. **Never mutate v1–v4 JSON.**
+
+### Prompt rules (calibration)
+- DIRECT_FACT only from EvidencePack numbers/defs
+- null metrics → UNKNOWN; never “low engagement” evidence
+- Platform-wide engagement / stagnant → at best INFERENCE + PARTIALLY_SUPPORTED
+- UX-as-cause / Gemini-boosts-engagement → HYPOTHESIS + NOT_SUPPORTED (unless direct evidence)
+- Anti-herding: majority phrases banned as support ground
+
+### Revision link
+Pass each member’s `ClaimCalibration` into `revisionPass`. Guidance (not force):
+- UNCHANGED if core claims SUPPORTED (or PARTIAL with low impact)
+- PARTIAL if ≥1 core claim PARTIALLY_SUPPORTED/NOT_SUPPORTED needs scope/strength/conf change
+- FULL only if core claim incompatible with evidence  
+HIGH/CRITICAL evidenceImpact + unchanged confidence → require explicit `confidenceChangeReason`
+
+### Critic additives
+`claimCalibrationIntegrity`, `evidenceMappingIntegrity`, `unsupportedClaimFlags`, `overclaimingFlags`, `unknownAsEvidenceFlags`, `causalClaimWithoutEvidenceFlags`, `confidenceCalibrationFlags`, `herdingFlags` (+ keep v4 checks)
+
+### Chairman additives
+Confirmed Facts / Unknown / Supported / Partially Supported / Unsupported·Hypothesis / Disputed / Validated Improvements / Needs Verification / Revision Summary — no inventing missing cases
+
+### Admin
+Same tabs. Debate/Revision area shows claim table when present; else `—`. revisions-first fallback for old runs.
+
+### TDD (before Gemini)
+User list 1–20 + existing suite green. Fixtures for DIRECT_FACT SUPPORTED, UNKNOWN misuse flag, INFERENCE PARTIAL, HYPOTHESIS NOT_SUPPORTED, calibration→PARTIAL path (mock), v1–v4 load unchanged.
+
+### Execution
+Tests green → real Gemini (no stub/mock) → compare v1–v5 → commit `feat: add AI review board claim calibration experiment` → push origin/main (no force; no unrelated dirty).
+
+## Out of scope
+Force PARTIAL/FULL, Cron, Prisma, rewriting old runs, inventing FULL without conflict.
+
+## Defaults (confirm or override)
+1. **memberId** `A`–`E` in JSON (not string `"AI-A"`); Admin can display `AI-{id}`
+2. Calibration input = **own Independent + own Debate + EvidencePack** (no peer revision peek; peers only as rebuttal context if needed — prefer EvidencePack-only for supportLevel)
+3. Claims extracted **once** in Claim Calibration stage (not re-extracted after Revision)
+
+---
 - All A–E chose UNCHANGED, but often justified by peer consensus (“other reviewers agree”).
 - Evidence gaps (`activeUsersLast7d`/`viewsLast7d` null) + overclaim risk (“platform engagement crisis”) did not lower confidence (~0.95).
 - Goal is **not** higher revision rate — it is honest discrimination + confidence integrity.

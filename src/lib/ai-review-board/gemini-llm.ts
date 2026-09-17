@@ -8,11 +8,16 @@ import {
   GEMINI_API_VERSION_CHAIN,
   GEMINI_GEEKNEWS_MODEL_CHAIN,
 } from '@/lib/gemini-models';
-import { ANTI_HERDING_DEBATE_RULES, MEMBER_FOCUS, PERSONA_SYSTEM, REVISION_QUALITY_RULES, REVISION_Q_CHECKLIST } from './personas';
+import { ANTI_HERDING_DEBATE_RULES, CLAIM_CALIBRATION_RULES, MEMBER_FOCUS, PERSONA_SYSTEM, REVISION_QUALITY_RULES, REVISION_Q_CHECKLIST } from './personas';
 import { formatEvidencePackForPrompt } from './format-evidence-prompt';
 import { SCORE_DIMENSIONS } from './score-dimensions';
 import { listScoresLackingHardEvidence, normalizeDimensionScores } from './scoring';
 import { assertIndependentContext } from './independence';
+import {
+  formatCalibrationForRevisionPrompt,
+  listClaimFlags,
+  normalizeClaimCalibration,
+} from './claim-calibration';
 import { listRevisionIntegrityIssues, normalizeRevisionRecord } from './revision-quality';
 import type { ReviewBoardLlm } from './llm';
 import type {
@@ -28,7 +33,6 @@ import type {
   IndependentAnalysis,
   ImprovementItem,
   LlmContext,
-  RevisionRecord,
   RevisionSummaryBlock,
 } from './types';
 
@@ -237,8 +241,45 @@ Return JSON ONLY (no revisionStatus — revision is a later phase):
       return turn;
     },
 
-    async revisionPass(memberId, evidence, own, ownDebate, peers) {
+    async claimCalibrate(memberId, evidence, own, ownDebate) {
+      const system = `${PERSONA_SYSTEM[memberId]}\n${CLAIM_CALIBRATION_RULES}`;
+      const user = `EvidencePack:\n${evidenceBlock(evidence)}
+
+Your independent analysis:
+${JSON.stringify(own, null, 2)}
+
+Your debate turn (for candidate claims / gaps only — NOT evidence for supportLevel):
+${JSON.stringify(ownDebate, null, 2)}
+
+Return JSON:
+{
+  "memberId": "${memberId}",
+  "claims": [
+    {
+      "claimId": "C001",
+      "claimText": string,
+      "evidenceRefs": string[],
+      "evidenceType": "DIRECT_FACT" | "INFERENCE" | "HYPOTHESIS" | "UNKNOWN",
+      "supportLevel": "SUPPORTED" | "PARTIALLY_SUPPORTED" | "NOT_SUPPORTED",
+      "reason": string,
+      "missingEvidence": string[],
+      "evidenceImpact": "NONE" | "LOW" | "MEDIUM" | "HIGH" | "CRITICAL",
+      "riskOfOverclaiming": "LOW" | "MEDIUM" | "HIGH"
+    }
+  ]
+}
+
+Extract 3–7 claims. Final supportLevel/evidenceType/evidenceImpact must be grounded in EvidencePack only.`;
+      const res = await geminiJson(key, system, user);
+      if (!res.ok) throw new Error(res.error);
+      return normalizeClaimCalibration(memberId, res.parsed);
+    },
+
+    async revisionPass(memberId, evidence, own, ownDebate, peers, calibration) {
       const system = `${PERSONA_SYSTEM[memberId]}\n${REVISION_QUALITY_RULES}\n${REVISION_Q_CHECKLIST}`;
+      const calBlock = calibration
+        ? formatCalibrationForRevisionPrompt(calibration)
+        : '(no claim calibration provided)';
       const user = `EvidencePack:\n${evidenceBlock(evidence)}
 
 Your independent analysis (originalOpinion is immutable history):
@@ -246,6 +287,9 @@ ${JSON.stringify(own, null, 2)}
 
 Your debate turn (rebuttals / gaps):
 ${JSON.stringify(ownDebate, null, 2)}
+
+Claim Calibration (use as input; do NOT force PARTIAL/FULL):
+${calBlock}
 
 Peer independent analyses (arguments only — do NOT use majority agreement as retain/revision/confidence ground):
 ${JSON.stringify(peers.filter((p) => p.memberId !== memberId), null, 2)}
@@ -302,49 +346,38 @@ Return JSON:
       });
     },
 
-    async critic(evidence, independent, debate, revisions): Promise<CriticReport> {
+    async critic(evidence, independent, debate, revisions, claimCalibrations): Promise<CriticReport> {
       const lacking = independent.flatMap((i) =>
         listScoresLackingHardEvidence(i.scores).map((d) => `${i.memberId}:${d}`),
       );
       const revs = revisions ?? [];
+      const cals = claimCalibrations ?? [];
       const preFlags = revs.flatMap((r) =>
         listRevisionIntegrityIssues(r).map((i) => `${r.memberId}:${i}`),
+      );
+      const claimFlags = cals.flatMap((cal) =>
+        cal.claims.flatMap((c) =>
+          listClaimFlags(c, evidence).map((f) => `${cal.memberId}:${c.claimId}:${f}`),
+        ),
       );
       const system = PERSONA_SYSTEM.F;
       const user = `EvidencePack:\n${evidenceBlock(evidence)}
 
 Independent:\n${JSON.stringify(independent, null, 2)}
-
 Debate:\n${JSON.stringify(debate, null, 2)}
-
+ClaimCalibrations:\n${JSON.stringify(cals, null, 2)}
 Revisions:\n${JSON.stringify(revs, null, 2)}
 
-Precomputed scoresWithoutEvidence candidates: ${JSON.stringify(lacking)}
+Precomputed scoresWithoutEvidence: ${JSON.stringify(lacking)}
 Precomputed revision integrity flags: ${JSON.stringify(preFlags)}
+Precomputed claim flags: ${JSON.stringify(claimFlags)}
 
-Return JSON:
-{
-  "factVsSpeculationOk": boolean,
-  "evidenceSufficient": boolean,
-  "scoresWithoutEvidence": string[],
-  "herdingDetected": boolean,
-  "dominantMemberInfluence": string|null,
-  "trendEvidenceOk": boolean,
-  "userBenefitLikely": boolean,
-  "existingFeatureRisk": boolean,
-  "overEngineering": boolean,
-  "notes": string[],
-  "confidence": number,
-  "revisionIntegrity": {"ok": boolean, "flags": string[]},
-  "evidenceGrounding": {"ok": boolean, "flags": string[]},
-  "overclaiming": {"ok": boolean, "flags": string[]},
-  "herding": {"ok": boolean, "flags": string[]},
-  "confidenceIntegrity": {"ok": boolean, "flags": string[]},
-  "fabrication": {"ok": boolean, "flags": string[]},
-  "statusConsistency": {"ok": boolean, "flags": string[]}
-}
-
-Flag UNCHANGED+changed final opinion, PARTIAL with identical opinions, majority-as-ground, fabricated metrics, confidence jumps without reason.`;
+Return JSON with boolean fields plus CriticCheck objects {ok, flags[]} for:
+revisionIntegrity, evidenceGrounding, overclaiming, herding, confidenceIntegrity, fabrication, statusConsistency,
+claimCalibrationIntegrity, evidenceMappingIntegrity, unsupportedClaimFlags, overclaimingFlags,
+unknownAsEvidenceFlags, causalClaimWithoutEvidenceFlags, confidenceCalibrationFlags, herdingFlags,
+plus notes[], confidence, herdingDetected, factVsSpeculationOk, evidenceSufficient, scoresWithoutEvidence,
+dominantMemberInfluence, trendEvidenceOk, userBenefitLikely, existingFeatureRisk, overEngineering.`;
       const res = await geminiJson(key, system, user);
       if (!res.ok) throw new Error(res.error);
       const o = res.parsed as Record<string, unknown>;
@@ -358,6 +391,9 @@ Flag UNCHANGED+changed final opinion, PARTIAL with identical opinions, majority-
         }
         return { ok: fallbackFlags.length === 0, flags: fallbackFlags };
       };
+      const unknownFlags = claimFlags.filter((f) => f.includes('unknown_as_evidence'));
+      const causalFlags = claimFlags.filter((f) => f.includes('causal_without_evidence'));
+      const overclaimFlags = claimFlags.filter((f) => f.includes('overclaim_risk'));
       return {
         factVsSpeculationOk: Boolean(o.factVsSpeculationOk),
         evidenceSufficient: Boolean(o.evidenceSufficient),
@@ -375,55 +411,51 @@ Flag UNCHANGED+changed final opinion, PARTIAL with identical opinions, majority-
         confidence: typeof o.confidence === 'number' ? o.confidence : 0.5,
         revisionIntegrity: parseCheck(o.revisionIntegrity, preFlags),
         evidenceGrounding: parseCheck(o.evidenceGrounding),
-        overclaiming: parseCheck(o.overclaiming),
+        overclaiming: parseCheck(o.overclaiming, overclaimFlags),
         herding: parseCheck(o.herding),
         confidenceIntegrity: parseCheck(o.confidenceIntegrity),
         fabrication: parseCheck(o.fabrication),
         statusConsistency: parseCheck(o.statusConsistency),
+        claimCalibrationIntegrity: parseCheck(o.claimCalibrationIntegrity),
+        evidenceMappingIntegrity: parseCheck(o.evidenceMappingIntegrity),
+        unsupportedClaimFlags: parseCheck(o.unsupportedClaimFlags),
+        overclaimingFlags: parseCheck(o.overclaimingFlags, overclaimFlags),
+        unknownAsEvidenceFlags: parseCheck(o.unknownAsEvidenceFlags, unknownFlags),
+        causalClaimWithoutEvidenceFlags: parseCheck(
+          o.causalClaimWithoutEvidenceFlags,
+          causalFlags,
+        ),
+        confidenceCalibrationFlags: parseCheck(o.confidenceCalibrationFlags),
+        herdingFlags: parseCheck(o.herdingFlags),
       };
     },
 
-    async chairman(evidence, independent, debate, critic, revisions): Promise<FinalReport> {
+    async chairman(
+      evidence,
+      independent,
+      debate,
+      critic,
+      revisions,
+      claimCalibrations,
+    ): Promise<FinalReport> {
       const revs = revisions ?? [];
+      const cals = claimCalibrations ?? [];
       const system = PERSONA_SYSTEM.Chairman;
       const user = `EvidencePack:\n${evidenceBlock(evidence)}
 
 Independent:\n${JSON.stringify(independent, null, 2)}
 Debate:\n${JSON.stringify(debate, null, 2)}
+ClaimCalibrations:\n${JSON.stringify(cals, null, 2)}
 Revisions:\n${JSON.stringify(revs, null, 2)}
 Critic:\n${JSON.stringify(critic, null, 2)}
 
-Do NOT use simple average/majority only. Weight evidence and confidence.
-Do NOT invent revision cases that did not occur.
+Separate Fact / Interpretation / Hypothesis. Do NOT invent cases that did not occur. No majority-only conclusions.
 
-Return JSON:
-{
-  "statusSummary": string,
-  "overallTrendScore": number|null,
-  "dimensionScores": [...],
-  "topProblems": string[],
-  "improvements": [...],
-  "expectedUserEffect": string,
-  "expectedDifficulty": string,
-  "risk": string,
-  "improvementEvidence": string[],
-  "opinionDifferences": string[],
-  "confidence": number,
-  "needsFurtherVerification": string[],
-  "confirmedFacts": string[],
-  "unknownMissingData": string[],
-  "hypotheses": string[],
-  "disputedPoints": string[],
-  "validatedImprovements": string[],
-  "revisionSummary": {
-    "unchanged": string[],
-    "partial": string[],
-    "full": string[],
-    "confidenceShifts": string[],
-    "claimSofteningFromEvidenceGap": string[],
-    "herdingRisks": string[]
-  }
-}`;
+Return JSON including statusSummary, overallTrendScore, dimensionScores, topProblems, improvements,
+expectedUserEffect, expectedDifficulty, risk, improvementEvidence, opinionDifferences, confidence,
+needsFurtherVerification, confirmedFacts, unknownMissingData, hypotheses, disputedPoints,
+validatedImprovements, supportedClaims, partiallySupportedClaims, unsupportedHypothesisClaims,
+revisionSummary { unchanged, partial, full, confidenceShifts, claimSofteningFromEvidenceGap, herdingRisks }.`;
       const res = await geminiJson(key, system, user);
       if (!res.ok) throw new Error(res.error);
       const o = res.parsed as Record<string, unknown>;
@@ -456,6 +488,9 @@ Return JSON:
         hypotheses: asStringArray(o.hypotheses),
         disputedPoints: asStringArray(o.disputedPoints),
         validatedImprovements: asStringArray(o.validatedImprovements),
+        supportedClaims: asStringArray(o.supportedClaims),
+        partiallySupportedClaims: asStringArray(o.partiallySupportedClaims),
+        unsupportedHypothesisClaims: asStringArray(o.unsupportedHypothesisClaims),
         revisionSummary,
       };
     },

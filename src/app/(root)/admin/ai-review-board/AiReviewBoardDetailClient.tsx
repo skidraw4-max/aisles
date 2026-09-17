@@ -241,6 +241,36 @@ export function AiReviewBoardDetailClient({ run }: { run: ReviewBoardRun }) {
                   </div>
                   <ListBlock title="Needs verification" items={d.needsVerification} />
 
+                  {(() => {
+                    const cal = (run.claimCalibrations ?? []).find(
+                      (c) => c.memberId === d.memberId,
+                    );
+                    if (!cal) {
+                      return <p className={styles.muted}>Claim Calibration —</p>;
+                    }
+                    return (
+                      <div className={styles.listBlock}>
+                        <h4>
+                          Claim Calibration{' '}
+                          <span className={styles.countBadge}>{cal.claims.length}</span>
+                        </h4>
+                        <ul>
+                          {cal.claims.map((c) => (
+                            <li key={c.claimId}>
+                              <strong>{c.claimId}</strong> [{c.evidenceType}/{c.supportLevel}/impact=
+                              {c.evidenceImpact}/overclaim={c.riskOfOverclaiming}] {c.claimText}
+                              <br />
+                              <span className={styles.muted}>
+                                refs: {c.evidenceRefs.join(', ') || '—'} · missing:{' '}
+                                {c.missingEvidence.join(', ') || '—'} · {c.reason || '—'}
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    );
+                  })()}
+
                   <div className={styles.revision}>
                     <p>
                       <strong>Revision status:</strong> {rev.revisionStatus ?? '—'}
@@ -317,13 +347,23 @@ export function AiReviewBoardDetailClient({ run }: { run: ReviewBoardRun }) {
                   'confidenceIntegrity',
                   'fabrication',
                   'statusConsistency',
+                  'claimCalibrationIntegrity',
+                  'evidenceMappingIntegrity',
+                  'unsupportedClaimFlags',
+                  'overclaimingFlags',
+                  'unknownAsEvidenceFlags',
+                  'causalClaimWithoutEvidenceFlags',
+                  'confidenceCalibrationFlags',
+                  'herdingFlags',
                 ] as const
               ).map((key) => {
                 const check = run.critic?.[key];
                 return (
                   <p key={key}>
                     <strong>{key}:</strong>{' '}
-                    {check ? `${check.ok ? 'ok' : 'FLAG'} · ${(check.flags || []).join('; ') || '—'}` : '—'}
+                    {check
+                      ? `${check.ok ? 'ok' : 'FLAG'} · ${(check.flags || []).join('; ') || '—'}`
+                      : '—'}
                   </p>
                 );
               })}
@@ -414,6 +454,12 @@ export function AiReviewBoardDetailClient({ run }: { run: ReviewBoardRun }) {
               <ListBlock title="" items={run.final.disputedPoints ?? []} />
               <h3>Validated Improvements</h3>
               <ListBlock title="" items={run.final.validatedImprovements ?? []} />
+              <h3>Supported Claims</h3>
+              <ListBlock title="" items={run.final.supportedClaims ?? []} />
+              <h3>Partially Supported Claims</h3>
+              <ListBlock title="" items={run.final.partiallySupportedClaims ?? []} />
+              <h3>Unsupported / Hypothesis Claims</h3>
+              <ListBlock title="" items={run.final.unsupportedHypothesisClaims ?? []} />
               <h3>Revision Summary</h3>
               {run.final.revisionSummary ? (
                 <>

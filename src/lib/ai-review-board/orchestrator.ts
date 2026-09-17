@@ -8,8 +8,13 @@ import {
 import { createBudget, defaultMaxCallsFromEnv, recordCall } from './call-budget';
 import { assertDebateReady, stripPeersForIndependent } from './independence';
 import { enrichFinalReport } from './finalize-report';
-import { EXPECTED_PIPELINE_LLM_CALLS } from './revision-quality';
-import type { EvidencePack, ReviewBoardRun, RevisionRecord } from './types';
+import { EXPECTED_PIPELINE_LLM_CALLS } from './claim-calibration';
+import type {
+  ClaimCalibration,
+  EvidencePack,
+  ReviewBoardRun,
+  RevisionRecord,
+} from './types';
 
 export type OrchestratorOptions = {
   rootDir: string;
@@ -17,7 +22,6 @@ export type OrchestratorOptions = {
   evidence: EvidencePack;
   maxCalls?: number;
   runId?: string;
-  /** independent 호출을 순차로 (기본 true — 예산·관찰 용이) */
   sequentialIndependent?: boolean;
 };
 
@@ -43,6 +47,7 @@ export async function runReviewBoardPipeline(
     evidence: options.evidence,
     independent: [],
     debate: [],
+    claimCalibrations: [],
     revisions: [],
     critic: null,
     final: null,
@@ -124,8 +129,34 @@ export async function runReviewBoardPipeline(
           agreement: turn.agreement,
           disagreement: turn.disagreement,
           weakEvidence: turn.weakEvidence,
-          missed: turn.missed,
-          needsVerification: turn.needsVerification,
+        },
+      });
+      await touch();
+    }
+
+    run.status = 'claim_calibration';
+    await touch();
+
+    const calibrationResults: ClaimCalibration[] = [];
+    for (const memberId of COMMITTEE_ANALYSTS) {
+      budget = recordCall(budget);
+      const own = run.independent.find((i) => i.memberId === memberId)!;
+      const ownDebate = run.debate.find((d) => d.memberId === memberId)!;
+      const cal = await options.llm.claimCalibrate(
+        memberId,
+        options.evidence,
+        own,
+        ownDebate,
+      );
+      calibrationResults.push(cal);
+      run.claimCalibrations = [...calibrationResults];
+      await appendHistory(options.rootDir, runId, {
+        at: now(),
+        type: 'claim_calibration',
+        actor: memberId,
+        payload: {
+          claimCount: cal.claims.length,
+          supportLevels: cal.claims.map((c) => c.supportLevel),
         },
       });
       await touch();
@@ -139,12 +170,14 @@ export async function runReviewBoardPipeline(
       budget = recordCall(budget);
       const own = run.independent.find((i) => i.memberId === memberId)!;
       const ownDebate = run.debate.find((d) => d.memberId === memberId)!;
+      const cal = run.claimCalibrations!.find((c) => c.memberId === memberId)!;
       const rev = await options.llm.revisionPass(
         memberId,
         options.evidence,
         own,
         ownDebate,
         run.independent,
+        cal,
       );
       revisionResults.push(rev);
       run.revisions = [...revisionResults];
@@ -155,11 +188,9 @@ export async function runReviewBoardPipeline(
         payload: {
           revisionStatus: rev.revisionStatus,
           revised: rev.revised,
-          retainReason: rev.retainReason,
-          revisionReason: rev.revisionReason,
           confidenceBefore: rev.confidenceBefore,
           confidenceAfter: rev.confidenceAfter,
-          changedClaims: rev.changedClaims,
+          calibrationClaimCount: cal.claims.length,
         },
       });
       await touch();
@@ -173,6 +204,7 @@ export async function runReviewBoardPipeline(
       run.independent,
       run.debate,
       run.revisions,
+      run.claimCalibrations,
     );
     await appendHistory(options.rootDir, runId, {
       at: now(),
@@ -191,6 +223,7 @@ export async function runReviewBoardPipeline(
       run.debate,
       run.critic,
       run.revisions,
+      run.claimCalibrations,
     );
     run.final = enrichFinalReport(run.final, run.independent, run.critic);
     await appendHistory(options.rootDir, runId, {

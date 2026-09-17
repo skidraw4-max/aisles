@@ -42,6 +42,9 @@ export async function saveRunSnapshot(root: string, run: ReviewBoardRun): Promis
   }
   await writeJson(path.join(dir, 'independent-analysis.json'), run.independent);
   await writeJson(path.join(dir, 'debate.json'), run.debate);
+  if (run.claimCalibrations && run.claimCalibrations.length > 0) {
+    await writeJson(path.join(dir, 'claim-calibrations.json'), run.claimCalibrations);
+  }
   if (run.revisions && run.revisions.length > 0) {
     await writeJson(path.join(dir, 'revisions.json'), run.revisions);
   }

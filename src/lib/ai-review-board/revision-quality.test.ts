@@ -181,7 +181,7 @@ describe('revision quality helpers', () => {
 });
 
 describe('mock pipeline revision phase', () => {
-  it('runs independent → debate → revision → critic → chairman (17 calls)', async () => {
+  it('runs independent → debate → revision → critic → chairman (22 calls)', async () => {
     const root = await fs.mkdtemp(path.join(os.tmpdir(), 'arb-v4-'));
     const evidence = buildStubEvidencePack();
     const llm = createMockReviewBoardLlm({ revisionStatus: 'PARTIAL' });
@@ -221,7 +221,8 @@ describe('mock pipeline revision phase', () => {
     });
     const debate = await llm.debateTurn('A', evidence, [own], own);
     assert.equal(debate.revisionStatus, undefined);
-    const rev = await llm.revisionPass!('A', evidence, own, debate, [own]);
+    const cal = await llm.claimCalibrate('A', evidence, own, debate);
+    const rev = await llm.revisionPass('A', evidence, own, debate, [own], cal);
     assert.equal(rev.revisionStatus, 'UNCHANGED');
     assert.equal(rev.revised, false);
     assert.ok(rev.retainReason && !textUsesMajorityAsGround(rev.retainReason));

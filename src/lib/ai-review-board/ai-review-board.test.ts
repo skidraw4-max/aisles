@@ -187,13 +187,14 @@ describe('orchestrator pipeline (mock llm)', () => {
     assert.equal(run.independent.length, 5);
     assert.equal(run.debate.length, 5);
     assert.equal(run.revisions?.length, 5);
-    assert.equal(run.budget.usedCalls, 17);
+    assert.equal(run.budget.usedCalls, 22);
     assert.ok(run.critic);
     assert.ok(run.final);
 
     for (const a of run.independent) {
       assert.ok(a.originalOpinion.length > 0);
     }
+    assert.equal(run.claimCalibrations?.length, 5);
     for (const r of run.revisions!) {
       if (r.revised) {
         assert.ok(r.revisionReason);
@@ -208,12 +209,14 @@ describe('orchestrator pipeline (mock llm)', () => {
     assert.equal(loaded!.runId, 'run-test-1');
     assert.equal(loaded!.independent.length, 5);
     assert.equal(loaded!.revisions?.length, 5);
+    assert.equal(loaded!.claimCalibrations?.length, 5);
 
     const dir = path.join(root, 'run-test-1');
     for (const f of [
       'evidence.json',
       'independent-analysis.json',
       'debate.json',
+      'claim-calibrations.json',
       'revisions.json',
       'critic.json',
       'final.json',

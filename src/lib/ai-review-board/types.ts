@@ -10,6 +10,7 @@ export type ReviewBoardPhase =
   | 'collecting_evidence'
   | 'independent'
   | 'debate'
+  | 'claim_calibration'
   | 'revision'
   | 'critic'
   | 'chairman'
@@ -127,6 +128,72 @@ export type RevisionRecord = {
   revisionAnswers: RevisionAnswers;
 };
 
+export const CLAIM_EVIDENCE_TYPES = [
+  'DIRECT_FACT',
+  'INFERENCE',
+  'HYPOTHESIS',
+  'UNKNOWN',
+] as const;
+export type ClaimEvidenceType = (typeof CLAIM_EVIDENCE_TYPES)[number];
+
+export function isClaimEvidenceType(v: unknown): v is ClaimEvidenceType {
+  return (
+    v === 'DIRECT_FACT' || v === 'INFERENCE' || v === 'HYPOTHESIS' || v === 'UNKNOWN'
+  );
+}
+
+export const CLAIM_SUPPORT_LEVELS = [
+  'SUPPORTED',
+  'PARTIALLY_SUPPORTED',
+  'NOT_SUPPORTED',
+] as const;
+export type ClaimSupportLevel = (typeof CLAIM_SUPPORT_LEVELS)[number];
+
+export function isClaimSupportLevel(v: unknown): v is ClaimSupportLevel {
+  return (
+    v === 'SUPPORTED' || v === 'PARTIALLY_SUPPORTED' || v === 'NOT_SUPPORTED'
+  );
+}
+
+export const EVIDENCE_IMPACTS = ['NONE', 'LOW', 'MEDIUM', 'HIGH', 'CRITICAL'] as const;
+export type EvidenceImpact = (typeof EVIDENCE_IMPACTS)[number];
+
+export function isEvidenceImpact(v: unknown): v is EvidenceImpact {
+  return (
+    v === 'NONE' ||
+    v === 'LOW' ||
+    v === 'MEDIUM' ||
+    v === 'HIGH' ||
+    v === 'CRITICAL'
+  );
+}
+
+export const OVERCLAIM_RISKS = ['LOW', 'MEDIUM', 'HIGH'] as const;
+export type OverclaimRisk = (typeof OVERCLAIM_RISKS)[number];
+
+export function isOverclaimRisk(v: unknown): v is OverclaimRisk {
+  return v === 'LOW' || v === 'MEDIUM' || v === 'HIGH';
+}
+
+/** v5 Claim Calibration — one claim row */
+export type CalibratedClaim = {
+  claimId: string;
+  claimText: string;
+  evidenceRefs: string[];
+  evidenceType: ClaimEvidenceType;
+  supportLevel: ClaimSupportLevel;
+  reason: string;
+  missingEvidence: string[];
+  evidenceImpact: EvidenceImpact;
+  riskOfOverclaiming: OverclaimRisk;
+};
+
+/** v5 per-member claim calibration result */
+export type ClaimCalibration = {
+  memberId: CommitteeAnalystId;
+  claims: CalibratedClaim[];
+};
+
 export type CriticCheck = {
   ok: boolean;
   flags: string[];
@@ -152,6 +219,15 @@ export type CriticReport = {
   confidenceIntegrity?: CriticCheck;
   fabrication?: CriticCheck;
   statusConsistency?: CriticCheck;
+  /** v5+ claim calibration checks */
+  claimCalibrationIntegrity?: CriticCheck;
+  evidenceMappingIntegrity?: CriticCheck;
+  unsupportedClaimFlags?: CriticCheck;
+  overclaimingFlags?: CriticCheck;
+  unknownAsEvidenceFlags?: CriticCheck;
+  causalClaimWithoutEvidenceFlags?: CriticCheck;
+  confidenceCalibrationFlags?: CriticCheck;
+  herdingFlags?: CriticCheck;
 };
 
 export type RevisionSummaryBlock = {
@@ -183,6 +259,10 @@ export type FinalReport = {
   disputedPoints?: string[];
   validatedImprovements?: string[];
   revisionSummary?: RevisionSummaryBlock;
+  /** v5+ */
+  supportedClaims?: string[];
+  partiallySupportedClaims?: string[];
+  unsupportedHypothesisClaims?: string[];
 };
 
 export type EvidenceAggregates = {
@@ -273,6 +353,8 @@ export type ReviewBoardRun = {
   evidence: EvidencePack | null;
   independent: IndependentAnalysis[];
   debate: DebateTurn[];
+  /** v5+ Claim Calibration */
+  claimCalibrations?: ClaimCalibration[];
   /** v4+ Revision Quality Pass results */
   revisions?: RevisionRecord[];
   critic: CriticReport | null;
@@ -290,7 +372,13 @@ export type HistoryEvent = {
 
 /** LLM에 넘기는 컨텍스트 — 독립 단계에서는 peerAnalyses 금지 */
 export type LlmContext = {
-  phase: 'independent' | 'debate' | 'revision' | 'critic' | 'chairman';
+  phase:
+    | 'independent'
+    | 'debate'
+    | 'claim_calibration'
+    | 'revision'
+    | 'critic'
+    | 'chairman';
   memberId?: CommitteeMemberId;
   evidence: EvidencePack;
   /** independent에서는 반드시 undefined/빈 배열 */

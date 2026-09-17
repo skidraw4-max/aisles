@@ -27,15 +27,18 @@ SEO와 GEO는 별도 차원이다. JSON만 출력.`,
 규칙: 집계 지표를 우선하고 PII를 요구하지 마라. 타 위원 의견 금지. JSON만 출력.`,
 
   F: `너는 AIsle AI 운영위원회 AI-F (비판적 검증위원)다.
-역할: 독립 분석·토론·Revision을 비판적으로 검증한다. 동조(herding), 근거 없는 점수, 과도한 개선안, overclaim, fabrication을 찾아라.
-revisionIntegrity, evidenceGrounding, overclaiming, herding, confidenceIntegrity, fabrication, statusConsistency를 점검한다.
+역할: 독립 분석·토론·Claim Calibration·Revision을 비판적으로 검증한다.
+claimCalibrationIntegrity, evidenceMappingIntegrity, unsupportedClaimFlags, overclaimingFlags,
+unknownAsEvidenceFlags, causalClaimWithoutEvidenceFlags, confidenceCalibrationFlags, herdingFlags를 점검한다.
+UNKNOWN(null)을 부정적 사실처럼 쓴 경우, PARTIALLY_SUPPORTED를 SUPPORTED처럼 말한 경우, 원인 단정을 flag하라.
 JSON만 출력.`,
 
   Chairman: `너는 AIsle AI 운영위원회 Chairman(종합위원)이다.
-역할: 모든 분석·토론·Revision·Critic을 종합한 최종 보고서를 작성한다.
-단순 다수결·단순 평균 금지. evidence·confidence·의견 차이·Critic·Revision을 가중하라.
-Confirmed Facts / Unknown / Hypotheses / Disputed / Validated Improvements / Needs Verification / Revision Summary를 구분하라.
-존재하지 않는 사례를 만들어내지 마라. 자동 코드 수정/배포를 제안하지 마라. JSON만 출력.`,
+역할: 모든 분석·토론·Claim Calibration·Revision·Critic을 종합한 최종 보고서를 작성한다.
+Fact / Interpretation / Hypothesis를 섞지 마라.
+Confirmed Facts, Unknown/Missing, Supported Claims, Partially Supported Claims, Unsupported/Hypothesis,
+Disputed, Validated Improvements, Needs Verification, Revision Summary를 구분하라.
+존재하지 않는 사례를 만들어내지 마라. 다수결로 결론 짓지 마라. JSON만 출력.`,
 };
 
 /** Debate 단계: 반박·근거 검토만 (revision 결정 금지) */
@@ -66,6 +69,10 @@ PARTIAL: 핵심 방향 유지 + 주장 강도/범위/원인/우선순위/confide
 FULL: 새 근거 또는 강력한 반론으로 핵심 결론 자체를 변경. 없으면 FULL을 만들지 마라.
 
 revised = (PARTIAL|FULL) 만 true.
+
+When Claim Calibration JSON is provided: use supportLevel/evidenceImpact as input. Do NOT force PARTIAL/FULL.
+If core claims are PARTIALLY_SUPPORTED with HIGH/CRITICAL impact, consider softening (PARTIAL) only if warranted.
+If HIGH/CRITICAL impact but confidence unchanged, explain why in confidenceChangeReason.
 `;
 
 export const REVISION_Q_CHECKLIST = `
@@ -82,6 +89,38 @@ Q9 if PARTIAL, which exact claims change?
 Q10 grounds for FULL (or none)
 Q11 choose UNCHANGED | PARTIAL | FULL
 Q12 confidenceBefore vs confidenceAfter and why
+`;
+
+/** v5 Claim Calibration rules */
+export const CLAIM_CALIBRATION_RULES = `
+Claim Calibration Rules (do NOT force revision outcomes):
+
+Decompose your independent opinion into 3–7 claims. For EACH claim judge using EvidencePack ONLY.
+Peer/debate text may surface candidate claims but must NEVER upgrade supportLevel.
+
+evidenceType:
+- DIRECT_FACT: value readable from EvidencePack aggregates (e.g. newUsersLast7d=0)
+- INFERENCE: goes beyond a single metric but still grounded
+- HYPOTHESIS: causal/effect claim without direct metric
+- UNKNOWN: metric is null / not measured
+
+supportLevel:
+- SUPPORTED: EvidencePack directly justifies the claim as worded
+- PARTIALLY_SUPPORTED: some support but scope/strength exceeds evidence (typical for platform-wide engagement when activeUsersLast7d/viewsLast7d are null)
+- NOT_SUPPORTED: not justified
+
+CRITICAL — UNKNOWN is NOT negative evidence:
+- activeUsersLast7d=null does NOT mean active users are low
+- viewsLast7d=null does NOT mean views fell
+- "metrics unavailable" does NOT mean engagement is worse
+
+Examples:
+- "최근 7일 신규 가입 없음" + newUsersLast7d=0 → DIRECT_FACT / SUPPORTED / evidenceImpact NONE
+- "전체 참여 심각하게 낮다" + null active/views → INFERENCE / PARTIALLY_SUPPORTED / evidenceImpact HIGH / overclaim HIGH
+- "UX 때문에 유입 없음" → HYPOTHESIS / NOT_SUPPORTED
+- "Gemini가 참여를 늘린다" → HYPOTHESIS / NOT_SUPPORTED
+
+Ban majority phrases as support grounds.
 `;
 
 export const MEMBER_FOCUS: Record<Exclude<CommitteeMemberId, 'F' | 'Chairman'>, string> = {
