@@ -14,8 +14,11 @@ export const AI_REVIEW_BOARD_LIVE_VERSIONS: Record<
   'run-2026-09-17T11-33-12-976Z': { label: 'v7' },
   'run-2026-09-17T11-52-42-008Z': { label: 'v8 · Semantic Judge' },
   'run-2026-09-17T12-25-17-531Z': {
-    label: 'v9 · Live (latest Gemini)',
-    note: 'v9.1 = CASE-01…10 regression only — no new Live run',
+    label: 'v9 · Live',
+  },
+  'run-2026-09-17T12-58-30-257Z': {
+    label: 'v9.1 · Live (latest)',
+    note: 'CASE-01…10 regression + Live Gemini with mismatchType / reliability flags',
   },
 };
 

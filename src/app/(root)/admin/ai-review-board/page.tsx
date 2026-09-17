@@ -54,8 +54,9 @@ export default async function AiReviewBoardPage() {
         <header className={styles.header}>
           <h1 className={styles.title}>AI 운영위원회</h1>
           <p className={styles.lead}>
-            관찰 전용 대시보드. Live Gemini run은 목록에 표시됩니다. v9.1은 Live를 추가하지
-            않았고, 아래 Regression Validation으로 CASE-01…10을 확인합니다.
+            관찰 전용 대시보드. Live Gemini run은 목록에 표시됩니다. 최신 Live는{' '}
+            <strong>v9.1</strong>입니다. 상단 Regression Validation은 CASE-01…10
+            fixture 결과입니다.
           </p>
         </header>
 
@@ -84,8 +85,8 @@ export default async function AiReviewBoardPage() {
           )}
           <p className={styles.leadInline}>
             최신 Live Gemini는{' '}
-            <Link href="/admin/ai-review-board/run-2026-09-17T12-25-17-531Z">
-              v9 · run-2026-09-17T12-25-17-531Z
+            <Link href="/admin/ai-review-board/run-2026-09-17T12-58-30-257Z">
+              v9.1 · run-2026-09-17T12-58-30-257Z
             </Link>
             . 상세의 Semantic Judge 탭에서도 Regression Reference를 볼 수 있습니다.
           </p>

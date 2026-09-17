@@ -480,7 +480,7 @@ Content generation / Gemini copy changes
 
 # Plan: AI Review Board v9.1 — Live-issue Reference Expansion & Reliability Flags
 
-**Status:** Done — CASE-01…10 regression + reliability UX (no new Gemini live).
+**Status:** Done — CASE-01…10 regression + Live Gemini `run-2026-09-17T12-58-30-257Z` (32 calls).
 
 **승인 결정:**
 1. v9.1 증분 only (CASE-01…10 + reliability UX); no full rewrite

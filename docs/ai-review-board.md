@@ -14,11 +14,10 @@ node --import tsx --test src/lib/ai-review-board/*.test.ts
 ## 기준 샘플 (삭제·덮어쓰기 금지)
 - v8 `run-2026-09-17T11-52-42-008Z`
 - v9 `run-2026-09-17T12-25-17-531Z`
-- SEM-001…015 + **CASE-01…10** (v9.1) in `tests/fixtures/ai-review-board/semantic-reference-cases.json`
+- **v9.1 Live** `run-2026-09-17T12-58-30-257Z`
+- SEM-001…015 + CASE-01…10 in `tests/fixtures/ai-review-board/semantic-reference-cases.json`
 
 ## v9.1
-- CASE-01/02: null 측정 불가 vs null→dormant 분리
-- CASE-04/06/08: benchmark / 범위 과잉 / 단일지표→전체 참여
-- `NO_ACTION_NEEDED` ≡ `NO_CHANGE` alias
+- Live Gemini + CASE regression
+- CASE-01/02 null 측정 vs dormant 분리 등
 - `mismatchType`, `chairmanReliabilityFlags`, Admin Claim Table
-- Live TP/FP 금지
