@@ -24,7 +24,9 @@ mobile/android/keystore.properties
 .vercel
 .env*
 
-# AI 운영위원회 — 일반 런은 무시, 1차 기준 샘플만 추적
+# AI 운영위원회 — 일반 런은 무시, 기준 실험 샘플만 추적
 data/ai-review-board/run-*/
 !data/ai-review-board/run-2026-09-17T07-53-24-323Z/
 !data/ai-review-board/run-2026-09-17T07-53-24-323Z/**
+!data/ai-review-board/run-2026-09-17T09-27-13-078Z/
+!data/ai-review-board/run-2026-09-17T09-27-13-078Z/**

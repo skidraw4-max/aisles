@@ -41,8 +41,9 @@ const DOCS_HINTS = [
   'docs/performance-seo.md',
   'docs/cron-operations.md',
   '복도형 커뮤니티 + AI Work/Fortune/Games',
-  'usersLast7d/newUsersLast7d = new signups in 7d (NOT active users/DAU)',
-  'activeUsersLast7d/viewsLast7d = not computed (see metricDefinitions)',
+  'CRITICAL: newUsersLast7d/usersLast7d = signups only, NEVER active users/DAU',
+  'CRITICAL: activeUsersLast7d and viewsLast7d are null (unsupported); do not invent',
+  'commentsLast7d = Comment.createdAt last 7d; totalViews is all-time only',
 ] as const;
 
 function daysAgo(n: number): Date {

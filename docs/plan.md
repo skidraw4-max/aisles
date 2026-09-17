@@ -437,9 +437,18 @@ Content generation / Gemini copy changes
 
 **Hard rules (1차):** 서비스 코드 자동 수정·자동 배포·광고 변경·사용자 데이터 삭제 금지. 기존 Prisma 스키마 변경 금지. Gemini는 CLI 수동 실행 + 호출 상한만.
 
-# Plan: AI Review Board admin observation UI
+# Plan: AI Review Board v2 — EvidencePack metric clarity experiment
 
-**Status:** Shipped (observation UI — no pipeline/prompt/cron changes)
+**Status:** Implementing
+
+## Goals
+1. Preserve `run-2026-09-17T07-53-24-323Z` untouched
+2. Strengthen metricDefinitions + prompt guard (no debate/persona/critic/chairman redesign)
+3. Run new Gemini experiment with corrected EvidencePack semantics for comparison
+
+## Out of scope
+Debate revision UX overhaul, automation, Cron, code auto-fix of product
+
 
 ## Scope
 1. `/admin/ai-review-board` list: when, calls, cost, status, debate observation counts from existing run JSON

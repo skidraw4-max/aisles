@@ -8,4 +8,5 @@ export * from './call-budget';
 export * from './orchestrator';
 export * from './mock-llm';
 export * from './run-observation';
+export * from './format-evidence-prompt';
 export { createGeminiReviewBoardLlm } from './gemini-llm';

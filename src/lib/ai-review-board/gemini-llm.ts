@@ -9,6 +9,7 @@ import {
   GEMINI_GEEKNEWS_MODEL_CHAIN,
 } from '@/lib/gemini-models';
 import { ANTI_HERDING_DEBATE_RULES, MEMBER_FOCUS, PERSONA_SYSTEM } from './personas';
+import { formatEvidencePackForPrompt } from './format-evidence-prompt';
 import { SCORE_DIMENSIONS } from './score-dimensions';
 import { listScoresLackingHardEvidence, normalizeDimensionScores } from './scoring';
 import { assertIndependentContext } from './independence';
@@ -147,7 +148,7 @@ function parseScores(raw: unknown): DimensionScore[] {
 }
 
 function evidenceBlock(evidence: EvidencePack): string {
-  return JSON.stringify(evidence, null, 2);
+  return formatEvidencePackForPrompt(evidence);
 }
 
 export function createGeminiReviewBoardLlm(apiKey?: string): ReviewBoardLlm {
