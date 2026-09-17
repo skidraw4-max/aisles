@@ -327,16 +327,16 @@ export function compareToReference(
 ): JudgeVerdict {
   const supportOk = judge.supportLevel === expected.supportLevel;
   const relationOk = judge.evidenceRelation === expected.evidenceRelation;
-  const leapOk =
-    !expected.semanticLeapType ||
-    expected.semanticLeapType === 'NONE' ||
-    leapType === expected.semanticLeapType ||
-    (expected.semanticLeapType !== 'NONE' && leapType !== 'NONE');
+  const expectedLeap = expected.semanticLeapType;
+  let leapOk = true;
+  if (expectedLeap && expectedLeap !== 'NONE') {
+    leapOk = leapType === expectedLeap || leapType !== 'NONE';
+  }
 
   const expectedRisky =
     expected.supportLevel === 'NOT_SUPPORTED' ||
     expected.supportLevel === 'PARTIALLY_SUPPORTED' ||
-    (expected.semanticLeapType && expected.semanticLeapType !== 'NONE');
+    Boolean(expectedLeap && expectedLeap !== 'NONE');
   const judgeFlagsRisky =
     judge.supportLevel === 'NOT_SUPPORTED' ||
     judge.overclaimRisk === 'HIGH' ||
