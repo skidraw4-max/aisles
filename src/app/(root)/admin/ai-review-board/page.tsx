@@ -4,6 +4,10 @@ import { redirect } from 'next/navigation';
 import { SiteFooter } from '@/components/SiteFooter';
 import { getViewerIsAdmin } from '@/lib/auth/require-admin';
 import { SEO_ROBOTS_PRIVATE } from '@/lib/seo-robots';
+import {
+  computeRunObservationMetrics,
+  formatRunWhen,
+} from '@/lib/ai-review-board/run-observation';
 import { DEFAULT_REVIEW_BOARD_ROOT, listRuns, loadRun } from '@/lib/ai-review-board/store';
 import styles from './board.module.css';
 
@@ -13,6 +17,10 @@ export const metadata: Metadata = {
 };
 
 export const dynamic = 'force-dynamic';
+
+function fmtCount(n: number | null): string {
+  return n === null ? '—' : String(n);
+}
 
 export default async function AiReviewBoardPage() {
   const isAdmin = await getViewerIsAdmin();
@@ -29,8 +37,9 @@ export default async function AiReviewBoardPage() {
         <header className={styles.header}>
           <h1 className={styles.title}>AI 운영위원회</h1>
           <p className={styles.lead}>
-            1차: 분석·토론·검증 결과 관찰 전용. 실행은 로컬 CLI만 (
-            <code>npx tsx scripts/run-ai-review-board.ts</code>).
+            관찰 전용 대시보드. 실행은 로컬 CLI만 (
+            <code>npx tsx scripts/run-ai-review-board.ts</code>). 파이프라인·자동 실행은 변경하지
+            않습니다.
           </p>
         </header>
 
@@ -41,17 +50,37 @@ export default async function AiReviewBoardPage() {
           </p>
         ) : (
           <ul className={styles.list}>
-            {runs.map(({ id, run }) => (
-              <li key={id}>
-                <Link href={`/admin/ai-review-board/${id}`} className={styles.card}>
-                  <span className={styles.runId}>{id}</span>
-                  <span className={styles.meta}>
-                    {run!.status} · score {run!.final?.overallTrendScore ?? '—'} · conf{' '}
-                    {run!.final?.confidence?.toFixed?.(2) ?? '—'}
-                  </span>
-                </Link>
-              </li>
-            ))}
+            {runs.map(({ id, run }) => {
+              const r = run!;
+              const obs = computeRunObservationMetrics(r);
+              return (
+                <li key={id}>
+                  <Link href={`/admin/ai-review-board/${id}`} className={styles.card}>
+                    <div className={styles.cardTop}>
+                      <span className={styles.runWhen}>{formatRunWhen(r)}</span>
+                      <span className={styles.statusPill}>{r.status}</span>
+                    </div>
+                    <span className={styles.runId}>{id}</span>
+                    <div className={styles.cardStats}>
+                      <span>
+                        calls {r.budget?.usedCalls ?? '—'}/{r.budget?.maxCalls ?? '—'}
+                      </span>
+                      <span>est ${r.budget?.estimatedCostUsd ?? '—'}</span>
+                      <span>score {r.final?.overallTrendScore ?? '—'}</span>
+                    </div>
+                    <div className={styles.obsRow} aria-label="관찰 지표">
+                      <span title="agreement items">agree {fmtCount(obs.agreementCount)}</span>
+                      <span title="disagreement items">disagree {fmtCount(obs.disagreementCount)}</span>
+                      <span title="weakEvidence items">weakEv {fmtCount(obs.weakEvidenceCount)}</span>
+                      <span title="revised turns">rev {fmtCount(obs.revisionCount)}</span>
+                      <span title={`avg confidence (${obs.confidenceSource ?? 'n/a'})`}>
+                        conf {obs.averageConfidence ?? '—'}
+                      </span>
+                    </div>
+                  </Link>
+                </li>
+              );
+            })}
           </ul>
         )}
       </main>

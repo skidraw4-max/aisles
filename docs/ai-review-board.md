@@ -85,6 +85,6 @@ node --import tsx --test src/lib/ai-review-board/ai-review-board.test.ts
 ---
 
 ## Admin UI 관찰 메모
-- Debate 탭: agreement / disagreement / revision 블록은 표시됨.
-- **누락(대규모 개편 없이 보고):** Debate에서 `weakEvidence`, `missed`, `needsVerification` 미표시 → 관찰성이 떨어짐.
-- Independent 탭과 Debate를 오가며 비교해야 함 (Debate에 initial 요약 병치 없음).
+- Debate 탭: agreement / disagreement / **weakEvidence / missed / needsVerification** / revision / initial opinion 표시
+- 목록: when, calls, cost, status, agree/disagree/weakEv/rev/conf (debate 없으면 count는 `—`)
+- Critic: 플래그·notes 구조화 뷰 (Raw 탭 유지)

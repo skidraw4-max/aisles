@@ -37,7 +37,7 @@
 .card {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.4rem;
   padding: 1rem 1.1rem;
   border: 1px solid #2a3140;
   border-radius: 8px;
@@ -49,6 +49,105 @@
 .card:hover {
   border-color: #4a5568;
 }
+
+.cardTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.runWhen {
+  color: #c5cad3;
+  font-size: 0.85rem;
+}
+
+.statusPill {
+  font-size: 0.75rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  background: #1c2430;
+  border: 1px solid #3a4558;
+  color: #d7dde8;
+}
+
+.cardStats,
+.obsRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem 1rem;
+  color: #9aa3b2;
+  font-size: 0.8rem;
+}
+
+.obsRow span {
+  font-variant-numeric: tabular-nums;
+}
+
+.detailSummary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  margin-bottom: 0.85rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid #2a3140;
+  border-radius: 8px;
+  background: #0f131a;
+  color: #a8b0bc;
+  font-size: 0.85rem;
+}
+
+.obsInline {
+  color: #9aa3b2;
+  font-size: 0.85rem;
+  margin: 0 0 1rem;
+}
+
+.initialBox {
+  margin: 0.5rem 0 0.75rem;
+  padding: 0.55rem 0.65rem;
+  background: #161b24;
+  border-radius: 6px;
+  border-left: 3px solid #5b6b82;
+  color: #c5cad3;
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.listBlock {
+  margin-bottom: 0.75rem;
+}
+
+.listBlock h4 {
+  margin: 0 0 0.35rem;
+  font-size: 0.9rem;
+}
+
+.listBlock ul {
+  margin: 0;
+  padding-left: 1.1rem;
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.countBadge {
+  display: inline-block;
+  margin-left: 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #9aa3b2;
+}
+
+.flagGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.4rem 0.75rem;
+  margin-bottom: 1rem;
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+}
+
 
 .runId {
   font-family: ui-monospace, monospace;

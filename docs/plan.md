@@ -431,11 +431,23 @@ Content generation / Gemini copy changes
 - Backfill script/API range 2026-08-W5 .. current week; run locally with Gemini+DB
 # Plan: AI Review Board (AI 운영위원회) — 1차
 
-**Status:** Approved (2026-09-17). Implementing 1차.
+**Status:** Approved / shipped (`612f683`). Sample run `run-2026-09-17T07-53-24-323Z` preserved.
 
 **승인 결정:** 파일 JSON (`data/ai-review-board/`) · 로컬 CLI만 · EvidencePack DB 집계 읽기 허용(쓰기 금지) · SEO/GEO 분리 · Admin은 결과 관찰만 · Cron 미연결.
 
 **Hard rules (1차):** 서비스 코드 자동 수정·자동 배포·광고 변경·사용자 데이터 삭제 금지. 기존 Prisma 스키마 변경 금지. Gemini는 CLI 수동 실행 + 호출 상한만.
+
+# Plan: AI Review Board admin observation UI
+
+**Status:** Shipped (observation UI — no pipeline/prompt/cron changes)
+
+## Scope
+1. `/admin/ai-review-board` list: when, calls, cost, status, debate observation counts from existing run JSON
+2. `/admin/ai-review-board/[runId]` Debate: show weakEvidence/missed/needsVerification + initial opinion
+3. Critic structured view; keep existing tabs
+
+## Out of scope
+Pipeline, prompts, automation, Prisma, force rewrite of sample run
 
 ---
 
