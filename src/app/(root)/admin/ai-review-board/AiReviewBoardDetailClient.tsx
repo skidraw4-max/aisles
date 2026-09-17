@@ -7,7 +7,7 @@ import {
   computeRunObservationMetrics,
   formatRunWhen,
 } from '@/lib/ai-review-board/run-observation';
-import styles from '../board.module.css';
+import styles from './board.module.css';
 
 /** 관찰 핵심 탭을 앞에 두고, 기존 Overview/Members/Scores도 유지 */
 const TABS = [
