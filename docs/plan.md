@@ -1464,3 +1464,133 @@ Then: mock-ga run → live GA run (local with SA) → git diff → commit only r
 4. Calibration evidenceRefs: `GA_ACTIVE_USERS_7D` 형식 allowlist OK?
 5. Default CLI: env 있으면 auto-attach 유지 + `--mock-ga` / `--with-ga` 추가 OK?
 6. 승인 후 TDD→구현→mock run→regression→live GA→관련만 commit 진행해도 되는가?
+
+---
+
+# Plan: Verify live GA4 → EvidencePack wiring (post Vercel env)
+
+**Status:** Verified live + local `.env.local` smoke OK; `analysisPeriod` shared DB+GA4 implemented.
+
+**Premise:** CLI login OK · Vercel GA4 env set · prod redeployed. Goal: confirm real Data API → EvidencePack path; propose remaining work only.
+
+## Verification results (2026-09-18)
+
+### 1. Auth / env usage in code
+- `attachGa4Evidence` (`ga4-evidence.ts`):
+  - `GA4_PROPERTY_ID`
+  - `GA4_SERVICE_ACCOUNT_JSON` or `GA4_SERVICE_ACCOUNT_JSON_BASE64`
+  - else file at `GOOGLE_APPLICATION_CREDENTIALS`
+- CLI: `run-ai-review-board.ts` loads `.env.local` then `attachGa4Evidence(evidence)` (or `--mock-ga`).
+- Measurement ID `G-BH4L4PYCJT` (`src/lib/ga4.ts`) is **client gtag only** — not used for Data API.
+- Property ID expected: numeric `532497280` via env (hardcoded nowhere in fetcher).
+
+### 2–4. Live Data API call
+| Check | Result |
+|-------|--------|
+| Local `.env.local` GA4_* | **없음** (`GA4_PROPERTY_ID` / SA JSON unset) |
+| API with Downloads SA JSON + property `532497280` | **성공** `available: true` |
+| Period | `2026-09-11` ~ `2026-09-17` Asia/Seoul |
+| Sample | activeUsers=45, newUsers=40, sessions=66, screenPageViews=175, engagementRate≈0.35 |
+
+**Failure taxonomy for this verify:**
+- 인증 실패: N/A (SA key worked)
+- 권한 부족: N/A
+- Property ID 오류: N/A (532497280 OK)
+- API 미활성: N/A
+- metric/dimension 오류: N/A (totals/pages/channels/device/geo/events OK)
+- 데이터 없음: N/A (rows present; tablet=null = dimension 미관측, 0 대체 안 함)
+- 코드 문제: N/A for explicit creds path
+- **환경변수 전달(로컬):** **갭** — default CLI without local env → `errorCode: NOT_CONFIGURED`, `available: false` (Vercel env ≠ local CLI)
+
+### 5. EvidencePack structure (current)
+- `aggregates` (DB) + optional `ga4` + optional `evidenceItems`
+- `ga4`: available, propertyId, range, period, error/errorCode, metrics (flat), users/engagement/views/acquisition/device/geography/events
+- Pipeline: DB/stub → **one** `attachGa4Evidence` → Independent…Chairman (AI never calls GA)
+
+### 6. Safest attach point (confirmed)
+Keep: **only** `EvidencePack.ga4` (+ `evidenceItems`) after DB pack, before pipeline. Never merge into `aggregates`.
+
+### 7. Impact on v1–v9.1
+- Additive optional fields; orchestrator phases unchanged.
+- Prompt guards + persona one-liners already present.
+- Existing fixtures without `ga4` remain valid.
+
+### 8. Regression protection
+- Keep `ga4` optional; fixtures omit it.
+- Unit suite + v9.1 CASE/SEM already green (141).
+- New runs: `--mock-ga` for offline; live only with local creds.
+
+### 9. Failure / empty / null / zero distinction (current design)
+| State | Representation |
+|-------|----------------|
+| API/config fail | `available:false` + `errorCode` (`NOT_CONFIGURED`\|`INVALID_CREDENTIALS`\|`API_ERROR`\|`PROPERTY_ACCESS`) + `error` string; metrics null/empty |
+| Metric not returned | field `null` (not 0) |
+| Real zero | numeric `0` (e.g. newUsers=0) |
+| Event not fired | omitted from `eventCountByName` (not invented 0) |
+| Dimension missing (e.g. tablet) | `null` |
+
+### 10. Sample Evidence (live, abbreviated)
+
+```json
+{
+  "ga4": {
+    "available": true,
+    "propertyId": "532497280",
+    "period": { "start": "2026-09-11", "end": "2026-09-17", "timezone": "Asia/Seoul" },
+    "error": null,
+    "errorCode": null,
+    "metrics": {
+      "activeUsers": 45,
+      "sessions": 66,
+      "screenPageViews": 175,
+      "engagedSessions": 23,
+      "averageSessionDurationSec": 689.07,
+      "eventCountByName": {
+        "feed_post_click": 12,
+        "corridor_tab_select": 9,
+        "digest_modal_subscribe": 1
+      }
+    },
+    "users": { "totalUsers": 46, "activeUsers": 45, "newUsers": 40, "returningUsers": 9 },
+    "engagement": { "sessions": 66, "engagedSessions": 23, "engagementRate": 0.348, "averageEngagementTime": 34.2 }
+  },
+  "evidenceItems": [
+    { "id": "GA_ACTIVE_USERS_7D", "source": "GA4", "metric": "activeUsers", "value": 45 },
+    { "id": "GA_NEW_USERS_7D", "source": "GA4", "metric": "newUsers", "value": 40 },
+    { "id": "DB_NEW_USERS_7D", "source": "DATABASE", "metric": "newUsersLast7d", "value": 0 }
+  ]
+}
+```
+
+Divergence hint already generated: GA newUsers=40 vs DB newUsersLast7d=0 → needsVerification (no auto-cause).
+
+## Gap vs “실연결” goal
+
+| Layer | Status |
+|-------|--------|
+| Code path (v2 commit) | Done |
+| Vercel env + redeploy | Done (do not redo) |
+| Live API with SA | **Works** |
+| Local CLI auto-attach | **Blocked** until `.env.local` (or `GOOGLE_APPLICATION_CREDENTIALS`) has property + SA |
+| Full board run with live GA + real Gemini | Not yet (needs local env + API key) |
+
+## Proposed next steps (approve before code)
+
+**A. Config only (preferred first):**  
+Document + set local `.env.local` (not committed):
+- `GA4_PROPERTY_ID=532497280`
+- `GA4_SERVICE_ACCOUNT_JSON=...` or `GOOGLE_APPLICATION_CREDENTIALS=C:\Users\User\Downloads\aisle-508915-….json`  
+Then: `npx tsx scripts/run-ai-review-board.ts --stub-evidence --mock-llm --with-ga` (or full Gemini run).
+
+**B. Optional small code (only if approved):**  
+- CLI flag `--ga-credentials <path>` for local SA without stuffing JSON into env  
+- Persist verify script under `scripts/verify-ga4-evidence.mjs` (no secrets)  
+- Align DB aggregate window explicitly to same Seoul `period` dates (today DB uses `Date.now()-7d`)
+
+**C. Out of scope this round:** Vercel re-login, redeploy, Measurement ID changes, pipeline redesign.
+
+## Approval questions
+
+1. 로컬 `.env.local`에 GA4 자격증명만 넣고 **코드 변경 없이** live board 스모크부터 할까?
+2. DB 집계 기간을 Seoul `period`와 맞추는 코드 변경을 이번 범위에 넣을까? (기본 제안: 예, 작음)
+3. `--ga-credentials <path>` CLI 헬퍼가 필요한가? (기본: 선택)

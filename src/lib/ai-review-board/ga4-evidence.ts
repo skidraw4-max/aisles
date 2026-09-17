@@ -221,12 +221,40 @@ export function addCalendarDays(ymd: string, days: number): string {
 
 /**
  * Shared Review Board window: end = yesterday (Asia/Seoul), start = end − 6 days (7 inclusive).
+ * Alias: analysisPeriod — DB aggregates and GA4 must share this.
  */
 export function resolveReviewBoardPeriod(now: Date = new Date()): Ga4Period {
   const today = seoulYmd(now);
   const end = addCalendarDays(today, -1);
   const start = addCalendarDays(end, -6);
   return { start, end, timezone: 'Asia/Seoul' };
+}
+
+export const resolveAnalysisPeriod = resolveReviewBoardPeriod;
+
+/** Instant bounds [start 00:00 KST, end+1 00:00 KST) for createdAt filters. */
+export function analysisPeriodInstantBounds(period: Ga4Period): {
+  gte: Date;
+  lt: Date;
+} {
+  return {
+    gte: new Date(`${period.start}T00:00:00+09:00`),
+    lt: new Date(`${addCalendarDays(period.end, 1)}T00:00:00+09:00`),
+  };
+}
+
+/**
+ * PostViewDaily day-key bounds using YYYY-MM-DD as UTC midnights
+ * (same calendar labels as analysisPeriod start/end).
+ */
+export function analysisPeriodUtcDayBounds(period: Ga4Period): {
+  gte: Date;
+  lt: Date;
+} {
+  return {
+    gte: new Date(`${period.start}T00:00:00.000Z`),
+    lt: new Date(`${addCalendarDays(period.end, 1)}T00:00:00.000Z`),
+  };
 }
 
 export function emptyGa4EvidenceUnavailable(
@@ -596,7 +624,12 @@ function readEnvConfig(overrides?: AttachGa4Options): {
 }
 
 function finalizePack(pack: EvidencePack, ga4: Ga4EvidenceBlock): EvidencePack {
-  const withGa4: EvidencePack = { ...pack, ga4 };
+  const analysisPeriod = ga4.period ?? pack.analysisPeriod ?? resolveReviewBoardPeriod();
+  const withGa4: EvidencePack = {
+    ...pack,
+    analysisPeriod,
+    ga4: { ...ga4, period: analysisPeriod },
+  };
   const evidenceItems = buildEvidenceItems(withGa4);
   const divergence = gaDbDivergenceHints(withGa4);
   const docsHints =
@@ -614,13 +647,29 @@ export async function attachGa4Evidence(
   options?: AttachGa4Options,
 ): Promise<EvidencePack> {
   if (options?.mockGa4) {
+    const period =
+      options.period ??
+      pack.analysisPeriod ??
+      options.mockGa4.period ??
+      resolveReviewBoardPeriod();
     return finalizePack(pack, {
       ...options.mockGa4,
+      period,
+      range: {
+        startDate: period.start,
+        endDate: period.end,
+      },
       metricDefinitions: GA4_EVIDENCE_METRIC_DEFINITIONS,
     });
   }
 
-  const { propertyId, credentialsJson, period, range } = readEnvConfig(options);
+  const period =
+    options?.period ?? pack.analysisPeriod ?? resolveReviewBoardPeriod();
+  const { propertyId, credentialsJson, range } = readEnvConfig({
+    ...options,
+    period,
+    range: options?.range ?? { startDate: period.start, endDate: period.end },
+  });
 
   if (!propertyId || !credentialsJson) {
     return finalizePack(

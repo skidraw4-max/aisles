@@ -8,71 +8,84 @@ export const ACTIVE_USER_ACTIVITY_KINDS = [
   'gameScore',
 ] as const;
 
+type TimeWindow = { gte: Date; lt?: Date };
+
 export type ActiveUsersDb = {
   post: {
     findMany: (args: {
-      where: { createdAt: { gte: Date } };
+      where: { createdAt: TimeWindow };
       select: { authorId: true };
       distinct: ['authorId'];
     }) => Promise<{ authorId: string }[]>;
   };
   comment: {
     findMany: (args: {
-      where: { createdAt: { gte: Date } };
+      where: { createdAt: TimeWindow };
       select: { authorId: true };
       distinct: ['authorId'];
     }) => Promise<{ authorId: string }[]>;
   };
   postLike: {
     findMany: (args: {
-      where: { createdAt: { gte: Date } };
+      where: { createdAt: TimeWindow };
       select: { userId: true };
       distinct: ['userId'];
     }) => Promise<{ userId: string }[]>;
   };
   bookmark: {
     findMany: (args: {
-      where: { createdAt: { gte: Date } };
+      where: { createdAt: TimeWindow };
       select: { userId: true };
       distinct: ['userId'];
     }) => Promise<{ userId: string }[]>;
   };
   gameScore: {
     findMany: (args: {
-      where: { updatedAt: { gte: Date } };
+      where: { updatedAt: TimeWindow };
       select: { userId: true };
       distinct: ['userId'];
     }) => Promise<{ userId: string }[]>;
   };
 };
 
+function windowFilter(since: Date, untilExclusive?: Date): TimeWindow {
+  return untilExclusive != null ? { gte: since, lt: untilExclusive } : { gte: since };
+}
+
+/**
+ * Distinct active users since `since`.
+ * Optional `untilExclusive` aligns with shared analysisPeriod (Asia/Seoul).
+ */
 export async function countActiveUsersLast7d(
   db: ActiveUsersDb,
   since: Date,
+  untilExclusive?: Date,
 ): Promise<number> {
+  const createdAt = windowFilter(since, untilExclusive);
+  const updatedAt = windowFilter(since, untilExclusive);
   const [posts, comments, likes, bookmarks, scores] = await Promise.all([
     db.post.findMany({
-      where: { createdAt: { gte: since } },
+      where: { createdAt },
       select: { authorId: true },
       distinct: ['authorId'],
     }),
     db.comment.findMany({
-      where: { createdAt: { gte: since } },
+      where: { createdAt },
       select: { authorId: true },
       distinct: ['authorId'],
     }),
     db.postLike.findMany({
-      where: { createdAt: { gte: since } },
+      where: { createdAt },
       select: { userId: true },
       distinct: ['userId'],
     }),
     db.bookmark.findMany({
-      where: { createdAt: { gte: since } },
+      where: { createdAt },
       select: { userId: true },
       distinct: ['userId'],
     }),
     db.gameScore.findMany({
-      where: { updatedAt: { gte: since } },
+      where: { updatedAt },
       select: { userId: true },
       distinct: ['userId'],
     }),

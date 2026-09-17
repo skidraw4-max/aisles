@@ -613,14 +613,14 @@ export const EVIDENCE_METRIC_DEFINITIONS = {
   usersLast7d:
     'DEPRECATED. newUsersLast7d 와 동일한 값(최근 7일 신규 가입). 활성 사용자/DAU/WAU/방문자가 아님. 절대 active users 로 해석하지 말 것.',
   newUsersLast7d:
-    '최근 7일 신규 가입자 수 (User.createdAt >= now-7d). NOT active users, NOT DAU/WAU, NOT visitors.',
+    'analysisPeriod 내 신규 가입자 수 (User.createdAt in Asia/Seoul window). NOT active users, NOT DAU/WAU, NOT GA4 newUsers.',
   activeUsersLast7d:
-    '최근 7일 활성 사용자 수. 정의: 해당 기간에 Post 작성·Comment 작성·PostLike·Bookmark·GameScore(updatedAt) 중 하나 이상. 신규 가입(newUsersLast7d)과 동일시 금지. null이면 집계 실패.',
+    'analysisPeriod 내 활성 사용자 수. 정의: 해당 기간에 Post 작성·Comment 작성·PostLike·Bookmark·GameScore(updatedAt) 중 하나 이상. 신규 가입(newUsersLast7d)·GA4 activeUsers와 동일시 금지. null이면 집계 실패.',
   postCount: '전체 게시글 수 (Post count).',
-  postsLast7d: '최근 7일 작성 게시글 수 (Post.createdAt >= now-7d).',
-  commentsLast7d: '최근 7일 작성 댓글 수 (Comment.createdAt >= now-7d).',
+  postsLast7d: 'analysisPeriod 내 작성 게시글 수 (Post.createdAt in Asia/Seoul window).',
+  commentsLast7d: 'analysisPeriod 내 작성 댓글 수 (Comment.createdAt in Asia/Seoul window).',
   viewsLast7d:
-    '최근 7일 조회수 합 (PostViewDaily.count where day >= now-7d UTC). Post.views(누적 totalViews)로 추정 금지. 버킷이 비면 0일 수 있음(배포 이후부터 적재).',
+    'analysisPeriod 내 조회수 합 (PostViewDaily.count for day keys matching analysisPeriod start..end). Post.views(누적 totalViews)로 추정 금지. 버킷이 비면 0일 수 있음(배포 이후부터 적재).',
   totalViews: '전체 기간 게시글 조회수 합 (Post.views sum). 최근 7일 조회수가 아님.',
   commentCount: '전체 댓글 수 (Comment count).',
   postsByCategory: '카테고리별 게시글 수.',
@@ -641,6 +641,15 @@ export const EVIDENCE_METRIC_PROMPT_GUARD = `METRIC INTERPRETATION RULES (must f
 
 export type EvidencePack = {
   generatedAt: string;
+  /**
+   * Shared Asia/Seoul window for DB aggregates + GA4 (inclusive calendar days).
+   * Same start/end as ga4.period when GA is attached.
+   */
+  analysisPeriod?: {
+    start: string;
+    end: string;
+    timezone: 'Asia/Seoul';
+  };
   site: {
     name: string;
     corridors: string[];

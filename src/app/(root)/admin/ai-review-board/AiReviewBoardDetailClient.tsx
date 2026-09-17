@@ -118,9 +118,11 @@ export function AiReviewBoardDetailClient({ run }: { run: ReviewBoardRun }) {
               ) : null}
               <p className={styles.muted}>
                 기간:{' '}
-                {run.evidence.ga4.period
-                  ? `${run.evidence.ga4.period.start} ~ ${run.evidence.ga4.period.end} (${run.evidence.ga4.period.timezone})`
-                  : `${run.evidence.ga4.range.startDate} → ${run.evidence.ga4.range.endDate}`}
+                {run.evidence.analysisPeriod
+                  ? `${run.evidence.analysisPeriod.start} ~ ${run.evidence.analysisPeriod.end} (${run.evidence.analysisPeriod.timezone})`
+                  : run.evidence.ga4.period
+                    ? `${run.evidence.ga4.period.start} ~ ${run.evidence.ga4.period.end} (${run.evidence.ga4.period.timezone})`
+                    : `${run.evidence.ga4.range.startDate} → ${run.evidence.ga4.range.endDate}`}
                 {' · '}
                 property {run.evidence.ga4.propertyId ?? '—'} · fetched{' '}
                 {run.evidence.ga4.fetchedAt ?? '—'}

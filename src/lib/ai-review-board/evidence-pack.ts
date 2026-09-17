@@ -3,7 +3,12 @@
  */
 import type { PrismaClient } from '@prisma/client';
 import { countActiveUsersLast7d } from '@/lib/community-metrics/active-users';
-import { countViewsLast7d, utcDayStart } from '@/lib/community-metrics/views-last-7d';
+import { countViewsLast7d } from '@/lib/community-metrics/views-last-7d';
+import {
+  analysisPeriodInstantBounds,
+  analysisPeriodUtcDayBounds,
+  resolveAnalysisPeriod,
+} from './ga4-evidence';
 import {
   EVIDENCE_METRIC_DEFINITIONS,
   type EvidenceAggregates,
@@ -47,15 +52,12 @@ const DOCS_HINTS = [
   'docs/cron-operations.md',
   '복도형 커뮤니티 + AI Work/Fortune/Games',
   'CRITICAL: newUsersLast7d/usersLast7d = signups only, NEVER active users/DAU',
-  'activeUsersLast7d = Post|Comment|PostLike|Bookmark|GameScore activity last 7d',
-  'viewsLast7d = PostViewDaily sum last 7d UTC; totalViews is all-time Post.views only',
-  'commentsLast7d = Comment.createdAt last 7d',
+  'activeUsersLast7d = Post|Comment|PostLike|Bookmark|GameScore activity in analysisPeriod',
+  'viewsLast7d = PostViewDaily sum for analysisPeriod day keys; totalViews is all-time Post.views only',
+  'commentsLast7d = Comment.createdAt within analysisPeriod (Asia/Seoul)',
   'GA4 block (EvidencePack.ga4) is separate from DB aggregates — never equate GA activeUsers with DB activeUsersLast7d',
+  'analysisPeriod is shared by DB aggregates and GA4 (Asia/Seoul inclusive start/end)',
 ] as const;
-
-function daysAgo(n: number): Date {
-  return new Date(Date.now() - n * 24 * 60 * 60 * 1000);
-}
 
 function emptyAggregates(): EvidencePack['aggregates'] {
   return {
@@ -75,8 +77,10 @@ function emptyAggregates(): EvidencePack['aggregates'] {
 
 /** 테스트용 — DB 없이 고정 스냅샷 */
 export function buildStubEvidencePack(overrides?: StubEvidencePackOverrides): EvidencePack {
+  const analysisPeriod = overrides?.analysisPeriod ?? resolveAnalysisPeriod();
   const base: EvidencePack = {
     generatedAt: new Date().toISOString(),
+    analysisPeriod,
     site: {
       name: 'AIsle',
       corridors: [...CORRIDORS],
@@ -91,6 +95,7 @@ export function buildStubEvidencePack(overrides?: StubEvidencePackOverrides): Ev
   return {
     ...base,
     ...overrides,
+    analysisPeriod: overrides?.analysisPeriod ?? analysisPeriod,
     aggregates: { ...base.aggregates, ...(overrides?.aggregates ?? {}) },
     metricDefinitions: EVIDENCE_METRIC_DEFINITIONS,
     piiExcluded: true,
@@ -100,10 +105,12 @@ export function buildStubEvidencePack(overrides?: StubEvidencePackOverrides): Ev
 
 /**
  * 프로덕션 DB 집계 읽기 전용.
+ * Window = shared analysisPeriod (Asia/Seoul), same as GA4.
  */
 export async function buildEvidencePackFromDb(db: EvidenceDb): Promise<EvidencePack> {
-  const since7d = daysAgo(7);
-  const sinceDay = utcDayStart(since7d);
+  const analysisPeriod = resolveAnalysisPeriod();
+  const { gte, lt } = analysisPeriodInstantBounds(analysisPeriod);
+  const dayBounds = analysisPeriodUtcDayBounds(analysisPeriod);
 
   const [
     userCount,
@@ -118,18 +125,18 @@ export async function buildEvidencePackFromDb(db: EvidenceDb): Promise<EvidenceP
     viewsLast7d,
   ] = await Promise.all([
     db.user.count(),
-    db.user.count({ where: { createdAt: { gte: since7d } } }),
+    db.user.count({ where: { createdAt: { gte, lt } } }),
     db.post.count(),
-    db.post.count({ where: { createdAt: { gte: since7d } } }),
+    db.post.count({ where: { createdAt: { gte, lt } } }),
     db.comment.count(),
-    db.comment.count({ where: { createdAt: { gte: since7d } } }),
+    db.comment.count({ where: { createdAt: { gte, lt } } }),
     db.post.aggregate({ _sum: { views: true } }),
     db.post.groupBy({
       by: ['category'],
       _count: { _all: true },
     }),
-    countActiveUsersLast7d(db, since7d),
-    countViewsLast7d(db, sinceDay),
+    countActiveUsersLast7d(db, gte, lt),
+    countViewsLast7d(db, dayBounds.gte, dayBounds.lt),
   ]);
 
   const postsByCategory: Record<string, number> = {};
@@ -139,6 +146,7 @@ export async function buildEvidencePackFromDb(db: EvidenceDb): Promise<EvidenceP
 
   return {
     generatedAt: new Date().toISOString(),
+    analysisPeriod,
     site: {
       name: 'AIsle',
       corridors: [...CORRIDORS],

@@ -48,6 +48,29 @@ describe('resolveReviewBoardPeriod', () => {
   });
 });
 
+describe('analysisPeriod shared by DB stub and GA4', () => {
+  it('attach keeps pack.analysisPeriod aligned with ga4.period', async () => {
+    const period = {
+      start: '2026-09-10',
+      end: '2026-09-16',
+      timezone: 'Asia/Seoul' as const,
+    };
+    const pack = buildStubEvidencePack({
+      analysisPeriod: period,
+      aggregates: { newUsersLast7d: 0 },
+    });
+    const out = await attachGa4Evidence(pack, {
+      mockGa4: buildMockGa4Evidence({
+        users: { totalUsers: null, activeUsers: 10, newUsers: 35, returningUsers: null },
+      }),
+    });
+    assert.deepEqual(out.analysisPeriod, period);
+    assert.deepEqual(out.ga4?.period, period);
+    assert.equal(out.ga4?.range.startDate, period.start);
+    assert.equal(out.ga4?.range.endDate, period.end);
+  });
+});
+
 describe('parseGa4ServiceAccountJson', () => {
   it('parses raw JSON', () => {
     const raw = JSON.stringify({
