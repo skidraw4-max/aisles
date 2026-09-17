@@ -98,6 +98,68 @@ export function AiReviewBoardDetailClient({ run }: { run: ReviewBoardRun }) {
             <strong>Status:</strong> {run.status}
           </p>
           <p>
+            <strong>Run ID:</strong> {run.runId}
+          </p>
+          {run.evidence?.ga4 ? (
+            <div className={styles.listBlock} style={{ marginTop: '1rem' }}>
+              <h4>
+                GA4 Evidence{' '}
+                <span className={styles.countBadge}>
+                  {run.evidence.ga4.available ? 'available' : 'unavailable'}
+                </span>
+              </h4>
+              {run.evidence.ga4.error ? (
+                <p className={styles.muted}>error: {run.evidence.ga4.error}</p>
+              ) : null}
+              <p className={styles.muted}>
+                property {run.evidence.ga4.propertyId ?? '—'} · range{' '}
+                {run.evidence.ga4.range.startDate} → {run.evidence.ga4.range.endDate} · fetched{' '}
+                {run.evidence.ga4.fetchedAt ?? '—'}
+              </p>
+              {run.evidence.ga4.available ? (
+                <>
+                  <ul>
+                    <li>activeUsers (GA4): {run.evidence.ga4.metrics.activeUsers ?? '—'}</li>
+                    <li>sessions: {run.evidence.ga4.metrics.sessions ?? '—'}</li>
+                    <li>screenPageViews: {run.evidence.ga4.metrics.screenPageViews ?? '—'}</li>
+                    <li>engagedSessions: {run.evidence.ga4.metrics.engagedSessions ?? '—'}</li>
+                    <li>
+                      avgSessionDurationSec:{' '}
+                      {run.evidence.ga4.metrics.averageSessionDurationSec ?? '—'}
+                    </li>
+                  </ul>
+                  <h4>
+                    Tracked events{' '}
+                    <span className={styles.countBadge}>
+                      {Object.keys(run.evidence.ga4.metrics.eventCountByName).length}
+                    </span>
+                  </h4>
+                  {Object.keys(run.evidence.ga4.metrics.eventCountByName).length === 0 ? (
+                    <p className={styles.muted}>—</p>
+                  ) : (
+                    <ul>
+                      {Object.entries(run.evidence.ga4.metrics.eventCountByName)
+                        .sort((a, b) => b[1] - a[1])
+                        .map(([name, count]) => (
+                          <li key={name}>
+                            {name}: {count}
+                          </li>
+                        ))}
+                    </ul>
+                  )}
+                  <p className={styles.muted}>
+                    GA4 수치는 DB aggregates와 별개입니다. activeUsers(GA4) ≠
+                    activeUsersLast7d(DB).
+                  </p>
+                </>
+              ) : null}
+            </div>
+          ) : (
+            <p className={styles.muted} style={{ marginTop: '1rem' }}>
+              이 런에는 EvidencePack.ga4 블록이 없습니다 (배포 이전 런이거나 GA 미연결).
+            </p>
+          )}
+          <p>
             <strong>When:</strong> {formatRunWhen(run)}
           </p>
           <p>

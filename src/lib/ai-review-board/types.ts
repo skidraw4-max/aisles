@@ -633,7 +633,8 @@ export const EVIDENCE_METRIC_PROMPT_GUARD = `METRIC INTERPRETATION RULES (must f
 3. viewsLast7d comes from PostViewDaily buckets when present. Do not estimate it from totalViews.
 4. commentsLast7d is last-7-day comment creations when present; commentCount is all-time.
 5. If a metric is null, say "unknown / not measured" — do not treat null as zero engagement proof by itself.
-6. Prefer citing newUsersLast7d by name; avoid relying on deprecated usersLast7d.`;
+6. Prefer citing newUsersLast7d by name; avoid relying on deprecated usersLast7d.
+7. If EvidencePack.ga4 is present: GA4 activeUsers/sessions/screenPageViews are NOT DB activeUsersLast7d/viewsLast7d. Always cite "GA4" vs "DB" as the source. Do not merge or substitute across sources.`;
 
 
 export type EvidencePack = {
@@ -647,6 +648,11 @@ export type EvidencePack = {
   /** 지표 의미 (AI 오해 방지) */
   metricDefinitions: typeof EVIDENCE_METRIC_DEFINITIONS;
   docsHints: string[];
+  /**
+   * Optional GA4 Data API snapshot (separate from DB aggregates).
+   * Never overwrite aggregates with these values.
+   */
+  ga4?: import('./ga4-evidence').Ga4EvidenceBlock;
   /** PII 미포함 보장용 메타 */
   piiExcluded: true;
   readOnly: true;

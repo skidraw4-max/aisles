@@ -50,6 +50,7 @@ const DOCS_HINTS = [
   'activeUsersLast7d = Post|Comment|PostLike|Bookmark|GameScore activity last 7d',
   'viewsLast7d = PostViewDaily sum last 7d UTC; totalViews is all-time Post.views only',
   'commentsLast7d = Comment.createdAt last 7d',
+  'GA4 block (EvidencePack.ga4) is separate from DB aggregates — never equate GA activeUsers with DB activeUsersLast7d',
 ] as const;
 
 function daysAgo(n: number): Date {

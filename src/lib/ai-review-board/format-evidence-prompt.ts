@@ -11,9 +11,22 @@ import {
  */
 export function formatEvidencePackForPrompt(evidence: EvidencePack): string {
   const defs = evidence.metricDefinitions ?? EVIDENCE_METRIC_DEFINITIONS;
-  return `${EVIDENCE_METRIC_PROMPT_GUARD}
+  const ga4Defs = evidence.ga4?.metricDefinitions;
+  const ga4Guard = evidence.ga4
+    ? `
 
-metricDefinitions (authoritative):
+GA4 BLOCK RULES:
+- EvidencePack.ga4 metrics come from Google Analytics Data API when available=true.
+- GA4 activeUsers ≠ DB aggregates.activeUsersLast7d.
+- GA4 screenPageViews ≠ DB aggregates.viewsLast7d / totalViews.
+- If ga4.available=false, treat GA metrics as unknown; do not invent from DB.
+- When citing, say "GA4 …" or "DB …" explicitly.
+${ga4Defs ? `ga4.metricDefinitions:\n${JSON.stringify(ga4Defs, null, 2)}` : ''}`
+    : '';
+
+  return `${EVIDENCE_METRIC_PROMPT_GUARD}${ga4Guard}
+
+metricDefinitions (authoritative DB):
 ${JSON.stringify(defs, null, 2)}
 
 EvidencePack JSON (read-only, no PII):

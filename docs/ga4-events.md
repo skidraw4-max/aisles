@@ -83,3 +83,17 @@ LOUNGE 다이제스트(Resend) 본문 링크는 URL 쿼리로 GA4에 유입을 �
 - `TagsHubGalleryBanner.tsx` — `tags_hub_gallery_click`
 - `PostContentGroupAnalytics.tsx` — 상세 `content_group` / `post_category`
 - `src/app/api/cron/news-digest/route.ts` — 메일 UTM (`fortune_week` 포함)
+- `PostEngagement.tsx` — `comment_submit`, `share_click`
+- `PostStanceStrip.tsx` — `stance_vote`
+
+## AI Review Board → GA4 Data API (읽기)
+
+보드 EvidencePack에 `ga4` 블록을 붙이려면 (쓰기/gtag와 별개):
+
+| Env | 설명 |
+|-----|------|
+| `GA4_PROPERTY_ID` | GA4 **속성 ID**(숫자). 측정 ID `G-…` 아님 |
+| `GA4_SERVICE_ACCOUNT_JSON` | 서비스 계정 JSON 문자열 |
+| 또는 `GA4_SERVICE_ACCOUNT_JSON_BASE64` | 위 JSON의 base64 |
+
+서비스 계정 이메일을 GA4 속성 **뷰어**로 추가하고, GCP에서 **Google Analytics Data API**를 활성화한다. 미설정·실패 시 보드는 GA 없이 계속 실행된다 (`ga4.available=false`).

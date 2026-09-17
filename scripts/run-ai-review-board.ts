@@ -8,6 +8,7 @@
  * Env: GOOGLE_GENERATIVE_AI_API_KEY / GEMINI_API_KEY
  *      AI_REVIEW_BOARD_MAX_CALLS_PER_RUN (default 40)
  *      DATABASE_URL (EvidencePack DB 집계; --stub-evidence 시 불필요)
+ *      GA4_PROPERTY_ID + GA4_SERVICE_ACCOUNT_JSON(_BASE64) optional — EvidencePack.ga4
  */
 import { config as loadEnv } from 'dotenv';
 import path from 'node:path';
@@ -58,6 +59,14 @@ async function main() {
     evidence = await buildEvidencePackFromDb(prisma);
     await prisma.$disconnect();
   }
+
+  const { attachGa4Evidence } = await import('../src/lib/ai-review-board');
+  evidence = await attachGa4Evidence(evidence);
+  console.log('[ai-review-board] ga4', {
+    available: evidence.ga4?.available ?? false,
+    error: evidence.ga4?.error ?? null,
+    activeUsers: evidence.ga4?.metrics.activeUsers ?? null,
+  });
 
   const llm = mockLlm ? createMockReviewBoardLlm() : createGeminiReviewBoardLlm();
   const rootDir = path.resolve(DEFAULT_REVIEW_BOARD_ROOT);

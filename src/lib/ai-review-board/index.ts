@@ -9,6 +9,7 @@ export * from './orchestrator';
 export * from './mock-llm';
 export * from './run-observation';
 export * from './format-evidence-prompt';
+export * from './ga4-evidence';
 export * from './revision-quality';
 export * from './claim-calibration';
 export * from './calibration-revision-consistency';

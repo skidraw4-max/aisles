@@ -1232,3 +1232,67 @@ evidence: { kind: 'observation'|'metric'|'doc'|'external_ref'|'inference'; text;
 2. 댓글 알림: 이메일만 OK? (기본: 이메일만)
 3. 비로그인 댓글 허용? (기본: 불가)
 4. 시스템 계정 username 목록? (기본: Nedai + env author usernames)
+---
+
+# Plan: GA4 metrics into AI Review Board EvidencePack
+
+**Status:** Implemented. Set `GA4_PROPERTY_ID` + service account env to populate EvidencePack.ga4.
+
+**Ask:** GA4에서 분석된 지표를 AI 분석위원 실행 시 EvidencePack에 가져와 참고·Admin에 표시.
+
+## Feasibility
+
+가능. Google Analytics **Data API** (`runReport`)로 property 집계를 읽어 EvidencePack에 **별도 블록**으로 붙인다. 기존 DB `aggregates`와 수치를 섞거나 overwrite 하지 않는다 (정의 충돌·semantic leap 방지).
+
+현재: 클라이언트 gtag 수집만 있음. Data API / Admin GA 뷰어 / `EvidencePack.ga4` 필드 **없음**.
+
+## Architecture (recommended)
+
+1. **Auth:** GCP 서비스 계정 JSON → env `GA4_SERVICE_ACCOUNT_JSON` (또는 base64) + GA4 property에 Viewer 권한. Measurement ID `G-…`와 별개로 **Property ID** (`GA4_PROPERTY_ID`, 숫자) 필요.
+2. **Client:** `@google-analytics/data` RunReport (서버/CLI 전용, 브라우저 노출 금지).
+3. **EvidencePack 확장:**
+
+```ts
+ga4?: {
+  available: boolean;
+  propertyId: string | null;
+  range: { startDate: string; endDate: string }; // default last 7 days
+  fetchedAt: string | null;
+  error: string | null; // missing creds / API fail — do not invent metrics
+  metrics: {
+    activeUsers: number | null;
+    sessions: number | null;
+    screenPageViews: number | null;
+    engagedSessions: number | null;
+    averageSessionDurationSec: number | null;
+    eventCountByName: Record<string, number>; // comment_submit, stance_vote, …
+  };
+  metricDefinitions: Record<string, string>; // GA vs DB 혼동 금지 문구
+};
+```
+
+4. **Pipeline:** `buildEvidencePackFromDb` 이후 `attachGa4Evidence(pack)` — 실패 시 `available:false` + error, 런은 계속.
+5. **Prompt guard:** GA4 `activeUsers` ≠ DB `activeUsersLast7d`; GA page views ≠ `PostViewDaily` `viewsLast7d`. 인용 시 소스 명시.
+6. **Admin:** 런 상세에 GA4 카드 (available/error + 메트릭 테이블 + top events).
+7. **TDD:** mock Data API → pack.ga4 채움; 자격증명 없으면 available:false; prompt에 ga4 섹션 포함; 혼동 금지 정의 테스트.
+
+## Out of scope (1차)
+
+- Realtime API / BigQuery export
+- 사용자 단위 PII / clientId
+- GA로 DB 지표 overwrite
+- Admin에서 GA 콘솔 임베드
+
+## Defaults if approved as-is
+
+- Window: last 7 days
+- Metrics: activeUsers, sessions, screenPageViews, engagedSessions, avg session duration + event counts (`docs/ga4-events.md` + `comment_submit` / `stance_vote`)
+- Auth: service account JSON env
+- Fail open: board runs without GA if unset
+
+## Approval questions
+
+1. GA4 **Property ID**(숫자)와 서비스 계정 Viewer 권한을 준비할 수 있는가?
+2. 1차 기간: **최근 7일** OK?
+3. Admin 런 상세에 GA4 카드 표시까지 포함 OK?
+4. 자격증명 없을 때: 런 실패 vs **GA 없이 계속**(기본: 계속)?
