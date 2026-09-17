@@ -665,7 +665,7 @@ export type EvidencePack = {
    */
   ga4?: import('./ga4-evidence').Ga4EvidenceBlock;
   /** Explicit catalog for claim evidenceRefs (GA4 vs DATABASE). */
-  evidenceItems?: import('./ga4-evidence').EvidenceItem[];
+  evidenceItems?: import('./ga4-evidence').Ga4CatalogEvidenceItem[];
   /** PII 미포함 보장용 메타 */
   piiExcluded: true;
   readOnly: true;

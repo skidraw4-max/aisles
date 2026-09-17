@@ -8,7 +8,7 @@ import {
   analysisPeriodInstantBounds,
   analysisPeriodUtcDayBounds,
   resolveAnalysisPeriod,
-} from './ga4-evidence';
+} from './analysis-period';
 import {
   EVIDENCE_METRIC_DEFINITIONS,
   type EvidenceAggregates,

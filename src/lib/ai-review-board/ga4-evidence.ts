@@ -1,9 +1,26 @@
 /**
  * GA4 Data API → EvidencePack.ga4 (read-only). Never overwrites DB aggregates.
  * Additive v2: period (Asia/Seoul), nested slices, evidenceItems, errorCode.
+ *
+ * CLI / Node only — do not import from Client Components (pulls @google-analytics/data / grpc).
  */
 import fs from 'node:fs';
+import {
+  resolveAnalysisPeriod,
+  resolveReviewBoardPeriod,
+  type AnalysisPeriod,
+} from './analysis-period';
 import type { EvidencePack } from './types';
+
+export type Ga4Period = AnalysisPeriod;
+export {
+  addCalendarDays,
+  analysisPeriodInstantBounds,
+  analysisPeriodUtcDayBounds,
+  resolveAnalysisPeriod,
+  resolveReviewBoardPeriod,
+  seoulYmd,
+} from './analysis-period';
 
 /** Events we always request counts for (docs/ga4-events.md + Phase 1). */
 export const TRACKED_GA4_EVENT_NAMES = [
@@ -43,12 +60,6 @@ export type Ga4ErrorCode =
   | 'API_ERROR'
   | 'PROPERTY_ACCESS'
   | null;
-
-export type Ga4Period = {
-  start: string;
-  end: string;
-  timezone: 'Asia/Seoul';
-};
 
 export type Ga4EvidenceMetrics = {
   activeUsers: number | null;
@@ -115,7 +126,7 @@ export type Ga4EvidenceBlock = {
   events?: { topEvents: Ga4TopEvent[] };
 };
 
-export type EvidenceItem = {
+export type Ga4CatalogEvidenceItem = {
   id: string;
   source: 'GA4' | 'DATABASE';
   metric: string;
@@ -195,65 +206,6 @@ function emptyNestedUnavailable(): Pick<
     device: { mobile: null, desktop: null, tablet: null },
     geography: [],
     events: { topEvents: [] },
-  };
-}
-
-/** YYYY-MM-DD in Asia/Seoul for an instant. */
-export function seoulYmd(date: Date): string {
-  return new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Asia/Seoul',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).format(date);
-}
-
-/** Add calendar days to a YYYY-MM-DD (UTC noon anchor avoids DST edge cases for date-only). */
-export function addCalendarDays(ymd: string, days: number): string {
-  const [y, m, d] = ymd.split('-').map(Number);
-  const dt = new Date(Date.UTC(y, m - 1, d, 12, 0, 0));
-  dt.setUTCDate(dt.getUTCDate() + days);
-  const yy = dt.getUTCFullYear();
-  const mm = String(dt.getUTCMonth() + 1).padStart(2, '0');
-  const dd = String(dt.getUTCDate()).padStart(2, '0');
-  return `${yy}-${mm}-${dd}`;
-}
-
-/**
- * Shared Review Board window: end = yesterday (Asia/Seoul), start = end − 6 days (7 inclusive).
- * Alias: analysisPeriod — DB aggregates and GA4 must share this.
- */
-export function resolveReviewBoardPeriod(now: Date = new Date()): Ga4Period {
-  const today = seoulYmd(now);
-  const end = addCalendarDays(today, -1);
-  const start = addCalendarDays(end, -6);
-  return { start, end, timezone: 'Asia/Seoul' };
-}
-
-export const resolveAnalysisPeriod = resolveReviewBoardPeriod;
-
-/** Instant bounds [start 00:00 KST, end+1 00:00 KST) for createdAt filters. */
-export function analysisPeriodInstantBounds(period: Ga4Period): {
-  gte: Date;
-  lt: Date;
-} {
-  return {
-    gte: new Date(`${period.start}T00:00:00+09:00`),
-    lt: new Date(`${addCalendarDays(period.end, 1)}T00:00:00+09:00`),
-  };
-}
-
-/**
- * PostViewDaily day-key bounds using YYYY-MM-DD as UTC midnights
- * (same calendar labels as analysisPeriod start/end).
- */
-export function analysisPeriodUtcDayBounds(period: Ga4Period): {
-  gte: Date;
-  lt: Date;
-} {
-  return {
-    gte: new Date(`${period.start}T00:00:00.000Z`),
-    lt: new Date(`${addCalendarDays(period.end, 1)}T00:00:00.000Z`),
   };
 }
 
@@ -453,8 +405,8 @@ export function summarizeGa4RowsToEvidence(input: {
   };
 }
 
-export function buildEvidenceItems(pack: EvidencePack): EvidenceItem[] {
-  const items: EvidenceItem[] = [
+export function buildEvidenceItems(pack: EvidencePack): Ga4CatalogEvidenceItem[] {
+  const items: Ga4CatalogEvidenceItem[] = [
     {
       id: 'DB_USER_COUNT',
       source: 'DATABASE',
