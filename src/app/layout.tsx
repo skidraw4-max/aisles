@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import Script from 'next/script';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import { Syne, DM_Sans, Roboto_Mono } from 'next/font/google';
-import { AdMobCapacitorInit } from '@/components/AdMobCapacitorInit';
+import { AdSenseScript } from '@/components/AdSenseScript';
 import { CapacitorSafeArea } from '@/components/CapacitorSafeArea';
 import { HomeSupabaseRedirectHandler } from '@/components/HomeSupabaseRedirectHandler';
 import { getCanonicalSiteUrl } from '@/lib/canonical-site-url';
@@ -30,8 +30,6 @@ const mono = Roboto_Mono({
   weight: ['400', '500', '700'],
   display: 'swap',
 });
-
-const ADSENSE_CLIENT_ID = 'ca-pub-2237287742271246';
 
 const siteUrl = getCanonicalSiteUrl();
 
@@ -153,7 +151,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={body.className}>
         <CapacitorSafeArea />
         <>
-          <AdMobCapacitorInit />
           <script
             type="application/ld+json"
             // eslint-disable-next-line react/no-danger
@@ -175,11 +172,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               </Script>
             </>
           ) : null}
-          <Script
-            src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT_ID}`}
-            strategy="lazyOnload"
-            crossOrigin="anonymous"
-          />
+          <AdSenseScript />
           <HomeSupabaseRedirectHandler />
           {children}
           <SpeedInsights />
