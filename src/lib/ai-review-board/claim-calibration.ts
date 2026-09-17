@@ -37,14 +37,57 @@ export const EVIDENCE_REF_KEYS = [
   'postsByCategory',
 ] as const;
 
+/** Explicit GA4 / DB catalog ids (EvidencePack.evidenceItems). */
+export const GA_EVIDENCE_REF_KEYS = [
+  'GA_ACTIVE_USERS_7D',
+  'GA_NEW_USERS_7D',
+  'GA_SESSIONS_7D',
+  'GA_ENGAGED_SESSIONS_7D',
+  'GA_ENGAGEMENT_RATE_7D',
+  'GA_SCREEN_PAGE_VIEWS_7D',
+] as const;
+
+export const DB_EVIDENCE_REF_KEYS = [
+  'DB_USER_COUNT',
+  'DB_NEW_USERS_7D',
+  'DB_ACTIVE_USERS_7D',
+  'DB_POSTS_7D',
+  'DB_COMMENTS_7D',
+  'DB_VIEWS_7D',
+] as const;
+
 export type EvidenceRefKey = (typeof EVIDENCE_REF_KEYS)[number];
 
 export function isKnownEvidenceRef(ref: string): boolean {
-  return (EVIDENCE_REF_KEYS as readonly string[]).includes(ref);
+  return (
+    (EVIDENCE_REF_KEYS as readonly string[]).includes(ref) ||
+    (GA_EVIDENCE_REF_KEYS as readonly string[]).includes(ref) ||
+    (DB_EVIDENCE_REF_KEYS as readonly string[]).includes(ref)
+  );
 }
 
 /** Metrics that are currently null/unknown by contract (or null in pack) */
 export function isUnknownMetricInPack(ref: string, evidence: EvidencePack): boolean {
+  if (ref.startsWith('GA_') || (GA_EVIDENCE_REF_KEYS as readonly string[]).includes(ref)) {
+    if (!evidence.ga4 || evidence.ga4.available === false) return true;
+    const item = evidence.evidenceItems?.find((i) => i.id === ref);
+    if (item) return item.value == null;
+    return false;
+  }
+  if (ref.startsWith('DB_')) {
+    const item = evidence.evidenceItems?.find((i) => i.id === ref);
+    if (item) return item.value == null;
+    const map: Record<string, keyof EvidencePack['aggregates']> = {
+      DB_USER_COUNT: 'userCount',
+      DB_NEW_USERS_7D: 'newUsersLast7d',
+      DB_ACTIVE_USERS_7D: 'activeUsersLast7d',
+      DB_POSTS_7D: 'postsLast7d',
+      DB_COMMENTS_7D: 'commentsLast7d',
+      DB_VIEWS_7D: 'viewsLast7d',
+    };
+    const key = map[ref];
+    if (key) return evidence.aggregates[key] == null;
+  }
   if (ref === 'activeUsersLast7d' || ref === 'viewsLast7d') {
     const v = evidence.aggregates[ref as 'activeUsersLast7d' | 'viewsLast7d'];
     return v == null;
@@ -55,10 +98,10 @@ export function isUnknownMetricInPack(ref: string, evidence: EvidencePack): bool
 }
 
 const UNKNOWN_AS_NEGATIVE_RE =
-  /\b(activeUsersLast7d|viewsLast7d)\b[^\n.]{0,80}\b(low|absent|zero|none|declin|stagnant|worse|심각|낮|없|악화|정체)/i;
+  /\b(activeUsersLast7d|viewsLast7d|GA_ACTIVE_USERS_7D|GA_ENGAGEMENT_RATE_7D|ga4)\b[^\n.]{0,80}\b(low|absent|zero|none|declin|stagnant|worse|심각|낮|없|악화|정체)/i;
 
 const NEGATIVE_FROM_NULL_RE =
-  /\b(null|unavailable|unknown|not measured|측정\s*불가)\b[^\n.]{0,60}\b(engagement|활성|조회|참여).{0,40}\b(low|심각|낮|crisis|정체)/i;
+  /\b(null|unavailable|unknown|not measured|측정\s*불가|available\s*=\s*false)\b[^\n.]{0,80}\b(engagement|활성|조회|참여|users?|사용자|활동).{0,40}\b(low|심각|낮|crisis|정체|없|no\s+users?)/i;
 
 /** Treats UNKNOWN/null metrics as proof that engagement is low/bad. */
 export function usesUnknownAsNegativeEvidence(
@@ -69,7 +112,9 @@ export function usesUnknownAsNegativeEvidence(
 ): boolean {
   const blob = `${claimText}\n${reason}`;
   const refsUnknownish =
-    evidenceRefs.includes('activeUsersLast7d') || evidenceRefs.includes('viewsLast7d');
+    evidenceRefs.includes('activeUsersLast7d') ||
+    evidenceRefs.includes('viewsLast7d') ||
+    evidenceRefs.some((r) => r.startsWith('GA_'));
   if (evidenceType === 'UNKNOWN' && /낮|없|low|zero|crisis|정체|심각/.test(blob)) {
     return true;
   }
@@ -92,9 +137,24 @@ export function isCausalClaimWithoutEvidence(
   if (evidenceType === 'DIRECT_FACT' && supportLevel === 'SUPPORTED') return false;
   const hasBehavior =
     evidenceRefs.some((r) =>
-      ['newUsersLast7d', 'commentsLast7d', 'postsLast7d', 'activeUsersLast7d', 'viewsLast7d'].includes(
-        r,
-      ),
+      [
+        'newUsersLast7d',
+        'commentsLast7d',
+        'postsLast7d',
+        'activeUsersLast7d',
+        'viewsLast7d',
+        'GA_ACTIVE_USERS_7D',
+        'GA_NEW_USERS_7D',
+        'GA_SESSIONS_7D',
+        'GA_ENGAGED_SESSIONS_7D',
+        'GA_ENGAGEMENT_RATE_7D',
+        'GA_SCREEN_PAGE_VIEWS_7D',
+        'DB_NEW_USERS_7D',
+        'DB_ACTIVE_USERS_7D',
+        'DB_COMMENTS_7D',
+        'DB_POSTS_7D',
+        'DB_VIEWS_7D',
+      ].includes(r),
     ) && evidenceType === 'DIRECT_FACT';
   if (hasBehavior && supportLevel === 'SUPPORTED') return false;
   // UX/UI/Gemini causal without direct metrics

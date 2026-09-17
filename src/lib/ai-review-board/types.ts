@@ -634,7 +634,9 @@ export const EVIDENCE_METRIC_PROMPT_GUARD = `METRIC INTERPRETATION RULES (must f
 4. commentsLast7d is last-7-day comment creations when present; commentCount is all-time.
 5. If a metric is null, say "unknown / not measured" — do not treat null as zero engagement proof by itself.
 6. Prefer citing newUsersLast7d by name; avoid relying on deprecated usersLast7d.
-7. If EvidencePack.ga4 is present: GA4 activeUsers/sessions/screenPageViews are NOT DB activeUsersLast7d/viewsLast7d. Always cite "GA4" vs "DB" as the source. Do not merge or substitute across sources.`;
+7. If EvidencePack.ga4 is present: GA4 activeUsers/sessions/screenPageViews are NOT DB activeUsersLast7d/viewsLast7d. Always cite "GA4" vs "DB" as the source. Do not merge or substitute across sources.
+8. UNKNOWN ≠ 0 ≠ LOW ACTIVITY ≠ NEGATIVE EVIDENCE. ga4.available=false or a null metric is not proof of no users. A real 0 is a DIRECT_FACT zero only for that metric/source.
+9. GA+DB differences (e.g. GA newUsers vs DB newUsersLast7d) are verification items / hypotheses — never auto-conclude cause.`;
 
 
 export type EvidencePack = {
@@ -653,6 +655,8 @@ export type EvidencePack = {
    * Never overwrite aggregates with these values.
    */
   ga4?: import('./ga4-evidence').Ga4EvidenceBlock;
+  /** Explicit catalog for claim evidenceRefs (GA4 vs DATABASE). */
+  evidenceItems?: import('./ga4-evidence').EvidenceItem[];
   /** PII 미포함 보장용 메타 */
   piiExcluded: true;
   readOnly: true;

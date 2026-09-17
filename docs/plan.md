@@ -1296,3 +1296,171 @@ ga4?: {
 2. 1차 기간: **최근 7일** OK?
 3. Admin 런 상세에 GA4 카드 표시까지 포함 OK?
 4. 자격증명 없을 때: 런 실패 vs **GA 없이 계속**(기본: 계속)?
+
+---
+
+# Plan: GA4 EvidencePack v2 (additive — preserve v1~v9.1)
+
+**Status:** Implemented (approved). Live GA smoke OK (property 532497280).
+
+**Ask:** GA4를 EvidencePack 공식 분석 소스로 강화. 기존 Board 분석/판정 로직·JSON schema·fixture·Calibration/Semantics/Judge/Revision/Chairman **재설계 금지**. additive만.
+
+## Baseline (이미 구현됨 — v1)
+
+| Area | 현재 |
+|------|------|
+| EvidencePack 생성 | `buildEvidencePackFromDb` / `buildStubEvidencePack` (`evidence-pack.ts`) |
+| GA attach | `attachGa4Evidence` after DB/stub in `scripts/run-ai-review-board.ts` (fail-open) |
+| Schema | `EvidencePack.ga4?: Ga4EvidenceBlock` — flat metrics + eventCountByName |
+| Auth | `GA4_PROPERTY_ID` + `GA4_SERVICE_ACCOUNT_JSON`(_BASE64); Data API `@google-analytics/data` |
+| Prompt | `formatEvidencePackForPrompt` + `EVIDENCE_METRIC_PROMPT_GUARD` rule 7 + GA4 BLOCK RULES |
+| Admin | `AiReviewBoardDetailClient` GA4 Evidence 카드 (available/error/metrics) |
+| Tests | `ga4-evidence.test.ts` (parse, summarize, fail-open, prompt embed) |
+| Env (prod) | Vercel Production/Preview에 Property `532497280` + SA JSON 이미 설정·재배포됨 |
+| Out of board | CLI Measurement ID `src/lib/ga4.ts` = client gtag only (Data API와 무관) |
+
+## Gap vs 이번 요구사항
+
+1. **Schema 깊이:** users/engagement/views/acquisition/device/geography 중첩 + `period{start,end,timezone}` 없음. 현재 `range: {7daysAgo,today}` + flat metrics.
+2. **기간 정렬:** DB는 `Date.now()-7d` (로컬/서버 TZ 모호), GA는 relative date. **Asia/Seoul calendar 공유 period 없음.**
+3. **Evidence ID/source:** `GA_ACTIVE_USERS_7D` / `DB_NEW_USERS_7D` 명시 리스트 없음. Calibration `EVIDENCE_REF_KEYS`는 DB 키만 → GA ref는 `unknown_ref` flag.
+4. **Semantics/Judge:** GA unavailable·GA=0·DB vs GA divergence를 규칙으로 다루는 코드 없음 (prompt guard만).
+5. **Persona 렌즈:** AI-A~E에 GA 해석 관점 문구 없음 (공통 EvidencePack만 전달).
+6. **CLI:** `--with-ga` / `--mock-ga` 없음 (env 있으면 항상 attach).
+7. **Admin:** Top pages / channels / device / source badge(GA4|DB) / 전용 Evidence 탭 부족.
+8. **테스트 12항:** null≠0, GA vs DB 구분, PII, fixture regression, mock run 등 일부만 커버.
+9. **메타:** `errorCode` / `dataFreshness` / “tracking 없음 vs metric 0” 구분 약함.
+10. **Creds path:** `GOOGLE_APPLICATION_CREDENTIALS` 파일 경로 미지원 (JSON env만).
+
+## Architecture (additive only)
+
+```
+[optional] GA4 Data API (1× per run)
+        ↓ attachGa4Evidence / mock
+EvidencePack { aggregates(DB), ga4?, evidenceItems? }
+        ↓ formatEvidencePackForPrompt (기존 경로)
+Independent A~E → Debate → Calibration → Semantics → Judge → Revision → Critic → Chairman
+```
+
+- Orchestrator/JSON phase 구조 **불변**.
+- AI가 GA API 직접 호출 **금지**.
+- GA API 호출은 LLM budget에 **미포함**.
+- Fail-open: `ga4.available=false` + reason; 수치 0 대체 금지.
+- 기존 run JSON 마이그레이션 **없음** (ga4 없으면 UI "GA4 unavailable").
+
+## Schema change (backward compatible)
+
+기존 `ga4.metrics.*` **유지**. 아래에 additive 필드만 추가:
+
+```ts
+ga4?: {
+  available: boolean;
+  propertyId: string | null;
+  // keep existing:
+  range: { startDate: string; endDate: string };
+  fetchedAt: string | null;
+  error: string | null;
+  metrics: { /* existing flat */ };
+  metricDefinitions: …;
+  // NEW additive:
+  period?: { start: string; end: string; timezone: 'Asia/Seoul' };
+  errorCode?: 'NOT_CONFIGURED' | 'INVALID_CREDENTIALS' | 'API_ERROR' | 'PROPERTY_ACCESS' | null;
+  dataFreshness?: string | null;
+  queriedAt?: string | null;
+  users?: { totalUsers, activeUsers, newUsers, returningUsers }; // null if not fetched
+  engagement?: { sessions, engagedSessions, engagementRate, averageEngagementTime };
+  views?: { screenPageViews, topPages: { path, views }[] };
+  acquisition?: { channels, sourceMedium }; // aggregates only
+  device?: { mobile, desktop, tablet };
+  geography?: { country, activeUsers }[]; // top-N, no PII
+  events?: { topEvents: { name, count }[] }; // + keep eventCountByName
+};
+// Optional pack-level catalog for Calibration refs:
+evidenceItems?: Array<{ id: string; source: 'GA4'|'DATABASE'; metric: string; value: number|null }>;
+```
+
+조회 실패 필드는 **null / unavailable**; 절대 0으로 채우지 않음. 실제 0만 0.
+
+## Period alignment
+
+- Shared helper: Asia/Seoul `end = yesterday`, `start = end-6d` (7 inclusive days) — DB window와 동일 문자열을 EvidencePack에 기록.
+- GA `dateRanges`에 동일 YYYY-MM-DD 전달 (relative `7daysAgo` 폐기 또는 period와 dual-write).
+
+## Semantics / Calibration / Judge (최소 침습)
+
+1. `EVIDENCE_REF_KEYS` + `GA_*` / `DB_*` id allowlist.
+2. Prompt + Critic flags: `UNKNOWN_AS_NEGATIVE`에 GA unavailable 포함; GA=0 ≠ “유저 없음 단정”.
+3. Divergence hint (deterministic, non-LLM): if `ga4.newUsers` vs `aggregates.newUsersLast7d` differ → `docsHints` 또는 `evidenceItems` note + `needsVerification` 후보 문구 (원인 단정 금지).
+4. Persona 1줄씩: A 행동/이벤트, B 획득·채널, C 전환 갭, D device, E 참여 — **평가 대상은 AIsle, GA 자체 아님**.
+5. Semantic Judge deterministic rules: GA DIRECT_FACT vs GA+DB INFERENCE 구분; fixture 변경 최소화.
+
+## CLI
+
+```
+npx tsx scripts/run-ai-review-board.ts
+npx tsx scripts/run-ai-review-board.ts --with-ga     # require GA or mark unavailable explicitly
+npx tsx scripts/run-ai-review-board.ts --mock-ga     # inject fixture snapshot
+# keep: --stub-evidence --mock-llm
+```
+
+Default: env 있으면 attach (현행 유지). `--mock-ga`는 테스트/오프라인.
+
+## Admin UI
+
+- 기존 Independent/Debate/Critic/Final/Raw/Semantic Judge **탭 유지**.
+- Evidence/Overview에 **GA4 Summary** 강화: period, metrics, top pages/channels/device + **GA4|DB badge**.
+- Legacy run: "GA4 unavailable" / "—".
+
+## TDD (승인 후 순서)
+
+1. GA ok → pack.ga4.available
+2. API fail → available=false, errorCode set, aggregates intact
+3. null stays null; 0 stays 0
+4. UNKNOWN ≠ 0 / ≠ LOW ACTIVITY
+5. GA activeUsers ≠ DB newUsers / activeUsersLast7d
+6. Divergence → verification hint, no auto causal claim
+7. source=GA4 on GA items
+8. No PII fields in pack
+9. v1~v9.1 fixture / semantic-case / claim-calibration / revision regression pass
+10. Existing run JSON shape still loads (optional ga4)
+11. Unavailable still completes pipeline (--mock-llm)
+12. Admin renders unavailable safely
+
+Then: mock-ga run → live GA run (local with SA) → git diff → commit only related files.
+
+## Env
+
+| Var | Role |
+|-----|------|
+| `GA4_PROPERTY_ID` | Numeric property (prod: 532497280) |
+| `GA4_SERVICE_ACCOUNT_JSON` / `_BASE64` | SA JSON (current) |
+| `GOOGLE_APPLICATION_CREDENTIALS` | Optional file path (add) |
+| Never commit | SA private_key / JSON files |
+
+## Files to touch (expected)
+
+- `src/lib/ai-review-board/ga4-evidence.ts` (+test)
+- `src/lib/ai-review-board/evidence-pack.ts` (shared period / evidenceItems helper)
+- `src/lib/ai-review-board/types.ts` (additive types only)
+- `src/lib/ai-review-board/format-evidence-prompt.ts` (+test)
+- `src/lib/ai-review-board/claim-calibration.ts` (GA ref allowlist + unknown-as-negative)
+- `src/lib/ai-review-board/personas.ts` (short GA lenses)
+- `src/lib/ai-review-board/semantic-judge.ts` / entailment (minimal GA rules + tests)
+- `scripts/run-ai-review-board.ts` (--with-ga / --mock-ga)
+- `src/app/(root)/admin/ai-review-board/AiReviewBoardDetailClient.tsx`
+- fixtures/tests as needed
+- **Not:** orchestrator phase order, chairman schema redesign, unrelated dirty tree
+
+## Commit (after approval + green)
+
+`feat: add GA4 evidence to AI review board`  
+(related files only; no secrets; no unrelated dirty)
+
+## Approval questions
+
+1. Schema: **기존 flat `ga4.metrics` 유지 + nested additive** OK? (breaking rename 금지)
+2. Period: **Asia/Seoul yesterday-based 7d**로 DB·GA 정렬 OK?
+3. 1차 API 범위: users/engagement/views(+topPages)/acquisition/device/events — **geography top-N 포함?** (기본: 포함, country only)
+4. Calibration evidenceRefs: `GA_ACTIVE_USERS_7D` 형식 allowlist OK?
+5. Default CLI: env 있으면 auto-attach 유지 + `--mock-ga` / `--with-ga` 추가 OK?
+6. 승인 후 TDD→구현→mock run→regression→live GA→관련만 commit 진행해도 되는가?

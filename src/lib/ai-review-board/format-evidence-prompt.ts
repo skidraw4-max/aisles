@@ -18,9 +18,12 @@ export function formatEvidencePackForPrompt(evidence: EvidencePack): string {
 GA4 BLOCK RULES:
 - EvidencePack.ga4 metrics come from Google Analytics Data API when available=true.
 - GA4 activeUsers ≠ DB aggregates.activeUsersLast7d.
+- GA4 newUsers ≠ DB newUsersLast7d (signups). Definitions differ.
 - GA4 screenPageViews ≠ DB aggregates.viewsLast7d / totalViews.
-- If ga4.available=false, treat GA metrics as unknown; do not invent from DB.
-- When citing, say "GA4 …" or "DB …" explicitly.
+- If ga4.available=false, treat GA metrics as UNKNOWN; do not invent from DB; do not treat as 0 or low activity.
+- Real metric value 0 is DIRECT_FACT zero for that GA metric only — not proof the product has no users.
+- Prefer evidenceItems ids (GA_* / DB_*) in evidenceRefs. Source must be cited as GA4 or DATABASE.
+- GA vs DB gaps → needsVerification / HYPOTHESIS only; never auto-causal.
 ${ga4Defs ? `ga4.metricDefinitions:\n${JSON.stringify(ga4Defs, null, 2)}` : ''}`
     : '';
 

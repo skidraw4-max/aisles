@@ -103,31 +103,106 @@ export function AiReviewBoardDetailClient({ run }: { run: ReviewBoardRun }) {
           {run.evidence?.ga4 ? (
             <div className={styles.listBlock} style={{ marginTop: '1rem' }}>
               <h4>
-                GA4 Evidence{' '}
+                GA4 Summary{' '}
                 <span className={styles.countBadge}>
                   {run.evidence.ga4.available ? 'available' : 'unavailable'}
                 </span>
               </h4>
               {run.evidence.ga4.error ? (
-                <p className={styles.muted}>error: {run.evidence.ga4.error}</p>
+                <p className={styles.muted}>
+                  error: {run.evidence.ga4.error}
+                  {run.evidence.ga4.errorCode
+                    ? ` (${run.evidence.ga4.errorCode})`
+                    : ''}
+                </p>
               ) : null}
               <p className={styles.muted}>
-                property {run.evidence.ga4.propertyId ?? '—'} · range{' '}
-                {run.evidence.ga4.range.startDate} → {run.evidence.ga4.range.endDate} · fetched{' '}
+                기간:{' '}
+                {run.evidence.ga4.period
+                  ? `${run.evidence.ga4.period.start} ~ ${run.evidence.ga4.period.end} (${run.evidence.ga4.period.timezone})`
+                  : `${run.evidence.ga4.range.startDate} → ${run.evidence.ga4.range.endDate}`}
+                {' · '}
+                property {run.evidence.ga4.propertyId ?? '—'} · fetched{' '}
                 {run.evidence.ga4.fetchedAt ?? '—'}
               </p>
               {run.evidence.ga4.available ? (
                 <>
                   <ul>
-                    <li>activeUsers (GA4): {run.evidence.ga4.metrics.activeUsers ?? '—'}</li>
-                    <li>sessions: {run.evidence.ga4.metrics.sessions ?? '—'}</li>
-                    <li>screenPageViews: {run.evidence.ga4.metrics.screenPageViews ?? '—'}</li>
-                    <li>engagedSessions: {run.evidence.ga4.metrics.engagedSessions ?? '—'}</li>
                     <li>
-                      avgSessionDurationSec:{' '}
-                      {run.evidence.ga4.metrics.averageSessionDurationSec ?? '—'}
+                      <span className={styles.countBadge}>GA4</span> Active Users:{' '}
+                      {run.evidence.ga4.metrics.activeUsers ??
+                        run.evidence.ga4.users?.activeUsers ??
+                        '—'}
+                    </li>
+                    <li>
+                      <span className={styles.countBadge}>GA4</span> New Users:{' '}
+                      {run.evidence.ga4.users?.newUsers ?? '—'}
+                    </li>
+                    <li>
+                      <span className={styles.countBadge}>GA4</span> Sessions:{' '}
+                      {run.evidence.ga4.metrics.sessions ?? '—'}
+                    </li>
+                    <li>
+                      <span className={styles.countBadge}>GA4</span> Engagement Rate:{' '}
+                      {run.evidence.ga4.engagement?.engagementRate ?? '—'}
+                    </li>
+                    <li>
+                      <span className={styles.countBadge}>GA4</span> Page Views:{' '}
+                      {run.evidence.ga4.metrics.screenPageViews ?? '—'}
+                    </li>
+                    <li>
+                      <span className={styles.countBadge}>GA4</span> Engaged Sessions:{' '}
+                      {run.evidence.ga4.metrics.engagedSessions ?? '—'}
+                    </li>
+                    <li>
+                      <span className={styles.countBadge}>DB</span> newUsersLast7d:{' '}
+                      {run.evidence.aggregates.newUsersLast7d ?? '—'}
+                    </li>
+                    <li>
+                      <span className={styles.countBadge}>DB</span> activeUsersLast7d:{' '}
+                      {run.evidence.aggregates.activeUsersLast7d ?? '—'}
                     </li>
                   </ul>
+                  {(run.evidence.ga4.views?.topPages?.length ?? 0) > 0 ? (
+                    <>
+                      <h4>
+                        Top Pages <span className={styles.countBadge}>GA4</span>
+                      </h4>
+                      <ul>
+                        {run.evidence.ga4.views!.topPages.slice(0, 8).map((p) => (
+                          <li key={p.path}>
+                            {p.path}: {p.views}
+                          </li>
+                        ))}
+                      </ul>
+                    </>
+                  ) : null}
+                  {(run.evidence.ga4.acquisition?.channels?.length ?? 0) > 0 ? (
+                    <>
+                      <h4>
+                        Acquisition Channels <span className={styles.countBadge}>GA4</span>
+                      </h4>
+                      <ul>
+                        {run.evidence.ga4.acquisition!.channels.slice(0, 8).map((c) => (
+                          <li key={c.channel}>
+                            {c.channel}: {c.sessions}
+                          </li>
+                        ))}
+                      </ul>
+                    </>
+                  ) : null}
+                  {run.evidence.ga4.device ? (
+                    <>
+                      <h4>
+                        Device <span className={styles.countBadge}>GA4</span>
+                      </h4>
+                      <ul>
+                        <li>mobile: {run.evidence.ga4.device.mobile ?? '—'}</li>
+                        <li>desktop: {run.evidence.ga4.device.desktop ?? '—'}</li>
+                        <li>tablet: {run.evidence.ga4.device.tablet ?? '—'}</li>
+                      </ul>
+                    </>
+                  ) : null}
                   <h4>
                     Tracked events{' '}
                     <span className={styles.countBadge}>
@@ -149,14 +224,16 @@ export function AiReviewBoardDetailClient({ run }: { run: ReviewBoardRun }) {
                   )}
                   <p className={styles.muted}>
                     GA4 수치는 DB aggregates와 별개입니다. activeUsers(GA4) ≠
-                    activeUsersLast7d(DB).
+                    activeUsersLast7d(DB). UNKNOWN ≠ 0.
                   </p>
                 </>
-              ) : null}
+              ) : (
+                <p className={styles.muted}>GA4 unavailable</p>
+              )}
             </div>
           ) : (
             <p className={styles.muted} style={{ marginTop: '1rem' }}>
-              이 런에는 EvidencePack.ga4 블록이 없습니다 (배포 이전 런이거나 GA 미연결).
+              GA4 unavailable — 이 런에는 EvidencePack.ga4 블록이 없습니다.
             </p>
           )}
           <p>

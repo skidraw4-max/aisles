@@ -1,6 +1,8 @@
 /**
  * GA4 Data API → EvidencePack.ga4 (read-only). Never overwrites DB aggregates.
+ * Additive v2: period (Asia/Seoul), nested slices, evidenceItems, errorCode.
  */
+import fs from 'node:fs';
 import type { EvidencePack } from './types';
 
 /** Events we always request counts for (docs/ga4-events.md + Phase 1). */
@@ -22,15 +24,31 @@ export const TRACKED_GA4_EVENT_NAMES = [
 export const GA4_EVIDENCE_METRIC_DEFINITIONS = {
   activeUsers:
     'GA4 activeUsers (reporting API, selected date range). NOT the same as DB aggregates.activeUsersLast7d (Post|Comment|Like|Bookmark|GameScore). Do not equate or substitute. Cite source as GA4.',
+  newUsers:
+    'GA4 newUsers in the selected date range. NOT the same as DB newUsersLast7d (signups). Cite source as GA4.',
   sessions: 'GA4 sessions in the selected date range. Not DB signups or posts.',
   screenPageViews:
     'GA4 screenPageViews (web page views). NOT the same as DB viewsLast7d (PostViewDaily) or totalViews (Post.views sum). Cite source as GA4.',
   engagedSessions: 'GA4 engagedSessions in the selected date range.',
+  engagementRate: 'GA4 engagementRate in the selected date range (0–1). DIRECT_FACT only; "low engagement" is INFERENCE.',
   averageSessionDurationSec:
     'GA4 averageSessionDuration in seconds (API metric averageSessionDuration).',
   eventCountByName:
-    'GA4 eventCount keyed by eventName for tracked custom events only. Missing key = 0 or not fired in range.',
+    'GA4 eventCount keyed by eventName for tracked custom events only. Missing key = not observed in range (do not invent). Actual 0 means zero events.',
 } as const;
+
+export type Ga4ErrorCode =
+  | 'NOT_CONFIGURED'
+  | 'INVALID_CREDENTIALS'
+  | 'API_ERROR'
+  | 'PROPERTY_ACCESS'
+  | null;
+
+export type Ga4Period = {
+  start: string;
+  end: string;
+  timezone: 'Asia/Seoul';
+};
 
 export type Ga4EvidenceMetrics = {
   activeUsers: number | null;
@@ -41,14 +59,67 @@ export type Ga4EvidenceMetrics = {
   eventCountByName: Record<string, number>;
 };
 
+export type Ga4UsersSlice = {
+  totalUsers: number | null;
+  activeUsers: number | null;
+  newUsers: number | null;
+  returningUsers: number | null;
+};
+
+export type Ga4EngagementSlice = {
+  sessions: number | null;
+  engagedSessions: number | null;
+  engagementRate: number | null;
+  averageEngagementTime: number | null;
+};
+
+export type Ga4ViewsSlice = {
+  screenPageViews: number | null;
+  topPages: Array<{ path: string; views: number }>;
+};
+
+export type Ga4AcquisitionSlice = {
+  channels: Array<{ channel: string; sessions: number }>;
+  sourceMedium: Array<{ sourceMedium: string; sessions: number }>;
+};
+
+export type Ga4DeviceSlice = {
+  mobile: number | null;
+  desktop: number | null;
+  tablet: number | null;
+};
+
+export type Ga4GeographyRow = { country: string; activeUsers: number };
+export type Ga4TopEvent = { name: string; count: number };
+
 export type Ga4EvidenceBlock = {
   available: boolean;
   propertyId: string | null;
+  /** GA API dateRanges (YYYY-MM-DD preferred; legacy relative still accepted) */
   range: { startDate: string; endDate: string };
+  /** Calendar window aligned with DB (Asia/Seoul) */
+  period?: Ga4Period;
   fetchedAt: string | null;
+  queriedAt?: string | null;
+  dataFreshness?: string | null;
   error: string | null;
+  errorCode?: Ga4ErrorCode;
   metrics: Ga4EvidenceMetrics;
   metricDefinitions: typeof GA4_EVIDENCE_METRIC_DEFINITIONS;
+  users?: Ga4UsersSlice;
+  engagement?: Ga4EngagementSlice;
+  views?: Ga4ViewsSlice;
+  acquisition?: Ga4AcquisitionSlice;
+  device?: Ga4DeviceSlice;
+  geography?: Ga4GeographyRow[];
+  events?: { topEvents: Ga4TopEvent[] };
+};
+
+export type EvidenceItem = {
+  id: string;
+  source: 'GA4' | 'DATABASE';
+  metric: string;
+  value: number | null;
 };
 
 export type Ga4ServiceAccountCreds = {
@@ -60,10 +131,14 @@ export type Ga4ServiceAccountCreds = {
 
 export type Ga4TotalsRow = {
   activeUsers: number | null;
+  newUsers?: number | null;
+  totalUsers?: number | null;
   sessions: number | null;
   screenPageViews: number | null;
   engagedSessions: number | null;
+  engagementRate?: number | null;
   averageSessionDuration: number | null;
+  averageEngagementTime?: number | null;
 };
 
 export type Ga4EventRow = { eventName: string; eventCount: number };
@@ -74,12 +149,18 @@ export type Ga4FetchInput = {
   credentials: Ga4ServiceAccountCreds;
 };
 
-export type Ga4ReportFetcher = (input: Ga4FetchInput) => Promise<{
+export type Ga4ReportBundle = {
   totals: Ga4TotalsRow;
   eventRows: Ga4EventRow[];
-}>;
+  topPages?: Array<{ path: string; views: number }>;
+  channels?: Array<{ channel: string; sessions: number }>;
+  sourceMedium?: Array<{ sourceMedium: string; sessions: number }>;
+  device?: Ga4DeviceSlice;
+  geography?: Ga4GeographyRow[];
+  returningUsers?: number | null;
+};
 
-const DEFAULT_RANGE = { startDate: '7daysAgo', endDate: 'today' } as const;
+export type Ga4ReportFetcher = (input: Ga4FetchInput) => Promise<Ga4ReportBundle>;
 
 function emptyMetrics(): Ga4EvidenceMetrics {
   return {
@@ -92,15 +173,81 @@ function emptyMetrics(): Ga4EvidenceMetrics {
   };
 }
 
-export function emptyGa4EvidenceUnavailable(error: string): Ga4EvidenceBlock {
+function emptyNestedUnavailable(): Pick<
+  Ga4EvidenceBlock,
+  'users' | 'engagement' | 'views' | 'acquisition' | 'device' | 'geography' | 'events'
+> {
+  return {
+    users: {
+      totalUsers: null,
+      activeUsers: null,
+      newUsers: null,
+      returningUsers: null,
+    },
+    engagement: {
+      sessions: null,
+      engagedSessions: null,
+      engagementRate: null,
+      averageEngagementTime: null,
+    },
+    views: { screenPageViews: null, topPages: [] },
+    acquisition: { channels: [], sourceMedium: [] },
+    device: { mobile: null, desktop: null, tablet: null },
+    geography: [],
+    events: { topEvents: [] },
+  };
+}
+
+/** YYYY-MM-DD in Asia/Seoul for an instant. */
+export function seoulYmd(date: Date): string {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Seoul',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(date);
+}
+
+/** Add calendar days to a YYYY-MM-DD (UTC noon anchor avoids DST edge cases for date-only). */
+export function addCalendarDays(ymd: string, days: number): string {
+  const [y, m, d] = ymd.split('-').map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d, 12, 0, 0));
+  dt.setUTCDate(dt.getUTCDate() + days);
+  const yy = dt.getUTCFullYear();
+  const mm = String(dt.getUTCMonth() + 1).padStart(2, '0');
+  const dd = String(dt.getUTCDate()).padStart(2, '0');
+  return `${yy}-${mm}-${dd}`;
+}
+
+/**
+ * Shared Review Board window: end = yesterday (Asia/Seoul), start = end − 6 days (7 inclusive).
+ */
+export function resolveReviewBoardPeriod(now: Date = new Date()): Ga4Period {
+  const today = seoulYmd(now);
+  const end = addCalendarDays(today, -1);
+  const start = addCalendarDays(end, -6);
+  return { start, end, timezone: 'Asia/Seoul' };
+}
+
+export function emptyGa4EvidenceUnavailable(
+  error: string,
+  errorCode: Ga4ErrorCode = 'NOT_CONFIGURED',
+  period?: Ga4Period,
+): Ga4EvidenceBlock {
+  const p = period ?? resolveReviewBoardPeriod();
   return {
     available: false,
     propertyId: null,
-    range: { ...DEFAULT_RANGE },
+    range: { startDate: p.start, endDate: p.end },
+    period: p,
     fetchedAt: null,
+    queriedAt: null,
+    dataFreshness: null,
     error,
+    errorCode,
     metrics: emptyMetrics(),
     metricDefinitions: GA4_EVIDENCE_METRIC_DEFINITIONS,
+    ...emptyNestedUnavailable(),
   };
 }
 
@@ -138,11 +285,80 @@ export function parseGa4ServiceAccountJson(
   }
 }
 
+export function buildMockGa4Evidence(
+  overrides?: Partial<Ga4EvidenceBlock>,
+): Ga4EvidenceBlock {
+  const period = overrides?.period ?? resolveReviewBoardPeriod();
+  const base: Ga4EvidenceBlock = {
+    available: true,
+    propertyId: overrides?.propertyId ?? 'mock',
+    range: overrides?.range ?? { startDate: period.start, endDate: period.end },
+    period,
+    fetchedAt: new Date().toISOString(),
+    queriedAt: new Date().toISOString(),
+    dataFreshness: period.end,
+    error: null,
+    errorCode: null,
+    metrics: {
+      activeUsers: 10,
+      sessions: 20,
+      screenPageViews: 100,
+      engagedSessions: 8,
+      averageSessionDurationSec: 30,
+      eventCountByName: {},
+    },
+    metricDefinitions: GA4_EVIDENCE_METRIC_DEFINITIONS,
+    users: {
+      totalUsers: null,
+      activeUsers: 10,
+      newUsers: 3,
+      returningUsers: null,
+    },
+    engagement: {
+      sessions: 20,
+      engagedSessions: 8,
+      engagementRate: 0.4,
+      averageEngagementTime: null,
+    },
+    views: { screenPageViews: 100, topPages: [] },
+    acquisition: { channels: [], sourceMedium: [] },
+    device: { mobile: null, desktop: null, tablet: null },
+    geography: [],
+    events: { topEvents: [] },
+  };
+  return {
+    ...base,
+    ...overrides,
+    metrics: { ...base.metrics, ...(overrides?.metrics ?? {}) },
+    users: { ...base.users!, ...(overrides?.users ?? {}) },
+    engagement: { ...base.engagement!, ...(overrides?.engagement ?? {}) },
+    views: {
+      screenPageViews:
+        overrides?.views?.screenPageViews ?? base.views!.screenPageViews,
+      topPages: overrides?.views?.topPages ?? base.views!.topPages,
+    },
+    acquisition: {
+      channels: overrides?.acquisition?.channels ?? base.acquisition!.channels,
+      sourceMedium:
+        overrides?.acquisition?.sourceMedium ?? base.acquisition!.sourceMedium,
+    },
+    device: { ...base.device!, ...(overrides?.device ?? {}) },
+    metricDefinitions: GA4_EVIDENCE_METRIC_DEFINITIONS,
+  };
+}
+
 export function summarizeGa4RowsToEvidence(input: {
   propertyId: string;
   range: { startDate: string; endDate: string };
+  period?: Ga4Period;
   totals: Ga4TotalsRow;
   eventRows: Ga4EventRow[];
+  topPages?: Array<{ path: string; views: number }>;
+  channels?: Array<{ channel: string; sessions: number }>;
+  sourceMedium?: Array<{ sourceMedium: string; sessions: number }>;
+  device?: Ga4DeviceSlice;
+  geography?: Ga4GeographyRow[];
+  returningUsers?: number | null;
 }): Ga4EvidenceBlock {
   const tracked = new Set<string>(TRACKED_GA4_EVENT_NAMES);
   const eventCountByName: Record<string, number> = {};
@@ -151,12 +367,29 @@ export function summarizeGa4RowsToEvidence(input: {
     eventCountByName[row.eventName] = row.eventCount;
   }
 
+  const period =
+    input.period ??
+    ({
+      start: input.range.startDate,
+      end: input.range.endDate,
+      timezone: 'Asia/Seoul',
+    } as Ga4Period);
+
+  const topEvents: Ga4TopEvent[] = Object.entries(eventCountByName)
+    .map(([name, count]) => ({ name, count }))
+    .sort((a, b) => b.count - a.count);
+
+  const nowIso = new Date().toISOString();
   return {
     available: true,
     propertyId: input.propertyId,
     range: input.range,
-    fetchedAt: new Date().toISOString(),
+    period,
+    fetchedAt: nowIso,
+    queriedAt: nowIso,
+    dataFreshness: period.end,
     error: null,
+    errorCode: null,
     metrics: {
       activeUsers: input.totals.activeUsers,
       sessions: input.totals.sessions,
@@ -166,36 +399,211 @@ export function summarizeGa4RowsToEvidence(input: {
       eventCountByName,
     },
     metricDefinitions: GA4_EVIDENCE_METRIC_DEFINITIONS,
+    users: {
+      totalUsers: input.totals.totalUsers ?? null,
+      activeUsers: input.totals.activeUsers,
+      newUsers: input.totals.newUsers ?? null,
+      returningUsers: input.returningUsers ?? null,
+    },
+    engagement: {
+      sessions: input.totals.sessions,
+      engagedSessions: input.totals.engagedSessions,
+      engagementRate: input.totals.engagementRate ?? null,
+      averageEngagementTime: input.totals.averageEngagementTime ?? null,
+    },
+    views: {
+      screenPageViews: input.totals.screenPageViews,
+      topPages: input.topPages ?? [],
+    },
+    acquisition: {
+      channels: input.channels ?? [],
+      sourceMedium: input.sourceMedium ?? [],
+    },
+    device: input.device ?? { mobile: null, desktop: null, tablet: null },
+    geography: input.geography ?? [],
+    events: { topEvents },
   };
+}
+
+export function buildEvidenceItems(pack: EvidencePack): EvidenceItem[] {
+  const items: EvidenceItem[] = [
+    {
+      id: 'DB_USER_COUNT',
+      source: 'DATABASE',
+      metric: 'userCount',
+      value: pack.aggregates.userCount,
+    },
+    {
+      id: 'DB_NEW_USERS_7D',
+      source: 'DATABASE',
+      metric: 'newUsersLast7d',
+      value: pack.aggregates.newUsersLast7d,
+    },
+    {
+      id: 'DB_ACTIVE_USERS_7D',
+      source: 'DATABASE',
+      metric: 'activeUsersLast7d',
+      value: pack.aggregates.activeUsersLast7d,
+    },
+    {
+      id: 'DB_POSTS_7D',
+      source: 'DATABASE',
+      metric: 'postsLast7d',
+      value: pack.aggregates.postsLast7d,
+    },
+    {
+      id: 'DB_COMMENTS_7D',
+      source: 'DATABASE',
+      metric: 'commentsLast7d',
+      value: pack.aggregates.commentsLast7d,
+    },
+    {
+      id: 'DB_VIEWS_7D',
+      source: 'DATABASE',
+      metric: 'viewsLast7d',
+      value: pack.aggregates.viewsLast7d,
+    },
+  ];
+
+  const g = pack.ga4;
+  if (g?.available) {
+    items.push(
+      {
+        id: 'GA_ACTIVE_USERS_7D',
+        source: 'GA4',
+        metric: 'activeUsers',
+        value: g.metrics.activeUsers ?? g.users?.activeUsers ?? null,
+      },
+      {
+        id: 'GA_NEW_USERS_7D',
+        source: 'GA4',
+        metric: 'newUsers',
+        value: g.users?.newUsers ?? null,
+      },
+      {
+        id: 'GA_SESSIONS_7D',
+        source: 'GA4',
+        metric: 'sessions',
+        value: g.metrics.sessions ?? g.engagement?.sessions ?? null,
+      },
+      {
+        id: 'GA_ENGAGED_SESSIONS_7D',
+        source: 'GA4',
+        metric: 'engagedSessions',
+        value: g.metrics.engagedSessions ?? g.engagement?.engagedSessions ?? null,
+      },
+      {
+        id: 'GA_ENGAGEMENT_RATE_7D',
+        source: 'GA4',
+        metric: 'engagementRate',
+        value: g.engagement?.engagementRate ?? null,
+      },
+      {
+        id: 'GA_SCREEN_PAGE_VIEWS_7D',
+        source: 'GA4',
+        metric: 'screenPageViews',
+        value: g.metrics.screenPageViews ?? g.views?.screenPageViews ?? null,
+      },
+    );
+  }
+
+  return items;
+}
+
+/** Deterministic notes only — never asserts cause. */
+export function gaDbDivergenceHints(pack: EvidencePack): string[] {
+  const hints: string[] = [];
+  if (!pack.ga4?.available) return hints;
+
+  const gaNew = pack.ga4.users?.newUsers ?? null;
+  const dbNew = pack.aggregates.newUsersLast7d;
+  if (gaNew != null && dbNew != null && gaNew !== dbNew) {
+    hints.push(
+      `최근 7일 GA4 newUsers=${gaNew}, DB newUsersLast7d(가입)=${dbNew}. 정의가 다름 — 원인을 단정하지 말고 needsVerification으로 두라.`,
+    );
+  }
+
+  const gaActive = pack.ga4.metrics.activeUsers ?? pack.ga4.users?.activeUsers ?? null;
+  const dbActive = pack.aggregates.activeUsersLast7d;
+  if (gaActive != null && dbActive != null && gaActive !== dbActive) {
+    hints.push(
+      `GA4 activeUsers=${gaActive} ≠ DB activeUsersLast7d=${dbActive}. 동일 지표가 아님 — 혼동·대체 금지.`,
+    );
+  }
+
+  if (gaActive === 0) {
+    hints.push(
+      'GA4 activeUsers=0 은 tracking/설정 이슈 가능성과 실제 무방문을 구분해야 함. 사용자=0 단정 금지.',
+    );
+  }
+
+  return hints;
 }
 
 export type AttachGa4Options = {
   propertyId?: string | null;
   credentialsJson?: string | null;
   range?: { startDate: string; endDate: string };
-  /** Injected for tests; default uses Data API when package + creds present */
+  period?: Ga4Period;
+  /** Inject full block (CLI --mock-ga / tests) — skips API */
+  mockGa4?: Ga4EvidenceBlock;
   fetchSnapshot?: (input: Ga4FetchInput) => Promise<Ga4EvidenceBlock>;
   fetchReport?: Ga4ReportFetcher;
 };
 
+function readCredentialsJson(overrides?: AttachGa4Options): string | null {
+  if (overrides?.credentialsJson !== undefined) {
+    return overrides.credentialsJson;
+  }
+  const fromEnv =
+    process.env.GA4_SERVICE_ACCOUNT_JSON?.trim() ||
+    process.env.GA4_SERVICE_ACCOUNT_JSON_BASE64?.trim() ||
+    null;
+  if (fromEnv) return fromEnv;
+
+  const credPath = process.env.GOOGLE_APPLICATION_CREDENTIALS?.trim();
+  if (credPath) {
+    try {
+      if (fs.existsSync(credPath)) {
+        return fs.readFileSync(credPath, 'utf8');
+      }
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
+
 function readEnvConfig(overrides?: AttachGa4Options): {
   propertyId: string | null;
   credentialsJson: string | null;
+  period: Ga4Period;
   range: { startDate: string; endDate: string };
 } {
+  const period = overrides?.period ?? resolveReviewBoardPeriod();
+  const range =
+    overrides?.range ??
+    ({ startDate: period.start, endDate: period.end } as const);
   return {
     propertyId:
       overrides?.propertyId !== undefined
         ? overrides.propertyId
         : process.env.GA4_PROPERTY_ID?.trim() || null,
-    credentialsJson:
-      overrides?.credentialsJson !== undefined
-        ? overrides.credentialsJson
-        : process.env.GA4_SERVICE_ACCOUNT_JSON?.trim() ||
-          process.env.GA4_SERVICE_ACCOUNT_JSON_BASE64?.trim() ||
-          null,
-    range: overrides?.range ?? { ...DEFAULT_RANGE },
+    credentialsJson: readCredentialsJson(overrides),
+    period,
+    range,
   };
+}
+
+function finalizePack(pack: EvidencePack, ga4: Ga4EvidenceBlock): EvidencePack {
+  const withGa4: EvidencePack = { ...pack, ga4 };
+  const evidenceItems = buildEvidenceItems(withGa4);
+  const divergence = gaDbDivergenceHints(withGa4);
+  const docsHints =
+    divergence.length > 0
+      ? [...pack.docsHints, ...divergence]
+      : pack.docsHints;
+  return { ...withGa4, evidenceItems, docsHints };
 }
 
 /**
@@ -205,27 +613,38 @@ export async function attachGa4Evidence(
   pack: EvidencePack,
   options?: AttachGa4Options,
 ): Promise<EvidencePack> {
-  const { propertyId, credentialsJson, range } = readEnvConfig(options);
+  if (options?.mockGa4) {
+    return finalizePack(pack, {
+      ...options.mockGa4,
+      metricDefinitions: GA4_EVIDENCE_METRIC_DEFINITIONS,
+    });
+  }
+
+  const { propertyId, credentialsJson, period, range } = readEnvConfig(options);
 
   if (!propertyId || !credentialsJson) {
-    return {
-      ...pack,
-      ga4: emptyGa4EvidenceUnavailable(
-        'GA4_PROPERTY_ID or GA4_SERVICE_ACCOUNT_JSON(_BASE64) not configured',
+    return finalizePack(
+      pack,
+      emptyGa4EvidenceUnavailable(
+        'GA4_PROPERTY_ID or GA4_SERVICE_ACCOUNT_JSON(_BASE64) / GOOGLE_APPLICATION_CREDENTIALS not configured',
+        'NOT_CONFIGURED',
+        period,
       ),
-    };
+    );
   }
 
   const credentials = parseGa4ServiceAccountJson(credentialsJson);
   if (!credentials) {
-    return {
-      ...pack,
-      ga4: {
-        ...emptyGa4EvidenceUnavailable('Invalid GA4 service account JSON'),
-        propertyId,
-        range,
-      },
-    };
+    return finalizePack(pack, {
+      ...emptyGa4EvidenceUnavailable(
+        'Invalid GA4 service account JSON',
+        'INVALID_CREDENTIALS',
+        period,
+      ),
+      propertyId,
+      range,
+      period,
+    });
   }
 
   try {
@@ -234,25 +653,37 @@ export async function attachGa4Evidence(
       ga4 = await options.fetchSnapshot({ propertyId, range, credentials });
     } else {
       const fetchReport = options?.fetchReport ?? defaultGa4ReportFetcher;
-      const { totals, eventRows } = await fetchReport({
+      const bundle = await fetchReport({ propertyId, range, credentials });
+      ga4 = summarizeGa4RowsToEvidence({
         propertyId,
         range,
-        credentials,
+        period,
+        totals: bundle.totals,
+        eventRows: bundle.eventRows,
+        topPages: bundle.topPages,
+        channels: bundle.channels,
+        sourceMedium: bundle.sourceMedium,
+        device: bundle.device,
+        geography: bundle.geography,
+        returningUsers: bundle.returningUsers,
       });
-      ga4 = summarizeGa4RowsToEvidence({ propertyId, range, totals, eventRows });
     }
-    return { ...pack, ga4 };
+    return finalizePack(pack, ga4);
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
-    return {
-      ...pack,
-      ga4: {
-        ...emptyGa4EvidenceUnavailable(msg),
-        propertyId,
-        range,
-        fetchedAt: new Date().toISOString(),
-      },
-    };
+    const lower = msg.toLowerCase();
+    const errorCode: Ga4ErrorCode =
+      lower.includes('permission') || lower.includes('403')
+        ? 'PROPERTY_ACCESS'
+        : 'API_ERROR';
+    return finalizePack(pack, {
+      ...emptyGa4EvidenceUnavailable(msg, errorCode, period),
+      propertyId,
+      range,
+      period,
+      fetchedAt: new Date().toISOString(),
+      queriedAt: new Date().toISOString(),
+    });
   }
 }
 
@@ -266,10 +697,15 @@ function metricValue(
   return Number.isFinite(n) ? n : null;
 }
 
-/** Default Data API fetcher — dynamic import so unit tests need no package. */
+type Ga4Row = {
+  dimensionValues?: Array<{ value?: string | null }> | null;
+  metricValues?: Array<{ value?: string | null }> | null;
+};
+
+/** Default Data API fetcher — dynamic import so unit tests need no live network. */
 export async function defaultGa4ReportFetcher(
   input: Ga4FetchInput,
-): Promise<{ totals: Ga4TotalsRow; eventRows: Ga4EventRow[] }> {
+): Promise<Ga4ReportBundle> {
   const { BetaAnalyticsDataClient } = await import('@google-analytics/data');
   const client = new BetaAnalyticsDataClient({
     credentials: {
@@ -279,31 +715,47 @@ export async function defaultGa4ReportFetcher(
   });
 
   const property = `properties/${input.propertyId}`;
+  const dateRanges = [input.range];
 
   const [totalsRes] = await client.runReport({
     property,
-    dateRanges: [input.range],
+    dateRanges,
     metrics: [
       { name: 'activeUsers' },
+      { name: 'newUsers' },
+      { name: 'totalUsers' },
       { name: 'sessions' },
       { name: 'screenPageViews' },
       { name: 'engagedSessions' },
+      { name: 'engagementRate' },
       { name: 'averageSessionDuration' },
+      { name: 'userEngagementDuration' },
     ],
   });
 
-  const totalsRow = totalsRes.rows?.[0];
+  const totalsRow = totalsRes.rows?.[0] as Ga4Row | undefined;
+  const sessions = metricValue(totalsRow, 3);
+  const engagementDuration = metricValue(totalsRow, 8);
+  const averageEngagementTime =
+    sessions != null && sessions > 0 && engagementDuration != null
+      ? engagementDuration / sessions
+      : null;
+
   const totals: Ga4TotalsRow = {
     activeUsers: metricValue(totalsRow, 0),
-    sessions: metricValue(totalsRow, 1),
-    screenPageViews: metricValue(totalsRow, 2),
-    engagedSessions: metricValue(totalsRow, 3),
-    averageSessionDuration: metricValue(totalsRow, 4),
+    newUsers: metricValue(totalsRow, 1),
+    totalUsers: metricValue(totalsRow, 2),
+    sessions,
+    screenPageViews: metricValue(totalsRow, 4),
+    engagedSessions: metricValue(totalsRow, 5),
+    engagementRate: metricValue(totalsRow, 6),
+    averageSessionDuration: metricValue(totalsRow, 7),
+    averageEngagementTime,
   };
 
   const [eventsRes] = await client.runReport({
     property,
-    dateRanges: [input.range],
+    dateRanges,
     dimensions: [{ name: 'eventName' }],
     metrics: [{ name: 'eventCount' }],
     dimensionFilter: {
@@ -317,10 +769,114 @@ export async function defaultGa4ReportFetcher(
     limit: 100,
   });
 
-  const eventRows: Ga4EventRow[] = (eventsRes.rows ?? []).map((row) => ({
-    eventName: row.dimensionValues?.[0]?.value ?? '',
-    eventCount: metricValue(row, 0) ?? 0,
-  })).filter((r) => r.eventName);
+  const eventRows: Ga4EventRow[] = ((eventsRes.rows ?? []) as Ga4Row[])
+    .map((row) => ({
+      eventName: row.dimensionValues?.[0]?.value ?? '',
+      eventCount: metricValue(row, 0) ?? 0,
+    }))
+    .filter((r) => r.eventName);
 
-  return { totals, eventRows };
+  const [pagesRes] = await client.runReport({
+    property,
+    dateRanges,
+    dimensions: [{ name: 'pagePath' }],
+    metrics: [{ name: 'screenPageViews' }],
+    orderBys: [{ metric: { metricName: 'screenPageViews' }, desc: true }],
+    limit: 10,
+  });
+  const topPages = ((pagesRes.rows ?? []) as Ga4Row[])
+    .map((row) => ({
+      path: row.dimensionValues?.[0]?.value ?? '',
+      views: metricValue(row, 0) ?? 0,
+    }))
+    .filter((r) => r.path);
+
+  const [channelRes] = await client.runReport({
+    property,
+    dateRanges,
+    dimensions: [{ name: 'sessionDefaultChannelGroup' }],
+    metrics: [{ name: 'sessions' }],
+    orderBys: [{ metric: { metricName: 'sessions' }, desc: true }],
+    limit: 10,
+  });
+  const channels = ((channelRes.rows ?? []) as Ga4Row[])
+    .map((row) => ({
+      channel: row.dimensionValues?.[0]?.value ?? '',
+      sessions: metricValue(row, 0) ?? 0,
+    }))
+    .filter((r) => r.channel);
+
+  const [smRes] = await client.runReport({
+    property,
+    dateRanges,
+    dimensions: [{ name: 'sessionSourceMedium' }],
+    metrics: [{ name: 'sessions' }],
+    orderBys: [{ metric: { metricName: 'sessions' }, desc: true }],
+    limit: 10,
+  });
+  const sourceMedium = ((smRes.rows ?? []) as Ga4Row[])
+    .map((row) => ({
+      sourceMedium: row.dimensionValues?.[0]?.value ?? '',
+      sessions: metricValue(row, 0) ?? 0,
+    }))
+    .filter((r) => r.sourceMedium);
+
+  const [deviceRes] = await client.runReport({
+    property,
+    dateRanges,
+    dimensions: [{ name: 'deviceCategory' }],
+    metrics: [{ name: 'activeUsers' }],
+  });
+  const device: Ga4DeviceSlice = { mobile: null, desktop: null, tablet: null };
+  for (const row of (deviceRes.rows ?? []) as Ga4Row[]) {
+    const cat = (row.dimensionValues?.[0]?.value ?? '').toLowerCase();
+    const n = metricValue(row, 0);
+    if (cat === 'mobile') device.mobile = n;
+    else if (cat === 'desktop') device.desktop = n;
+    else if (cat === 'tablet') device.tablet = n;
+  }
+
+  const [geoRes] = await client.runReport({
+    property,
+    dateRanges,
+    dimensions: [{ name: 'country' }],
+    metrics: [{ name: 'activeUsers' }],
+    orderBys: [{ metric: { metricName: 'activeUsers' }, desc: true }],
+    limit: 10,
+  });
+  const geography: Ga4GeographyRow[] = ((geoRes.rows ?? []) as Ga4Row[])
+    .map((row) => ({
+      country: row.dimensionValues?.[0]?.value ?? '',
+      activeUsers: metricValue(row, 0) ?? 0,
+    }))
+    .filter((r) => r.country);
+
+  let returningUsers: number | null = null;
+  try {
+    const [nvRes] = await client.runReport({
+      property,
+      dateRanges,
+      dimensions: [{ name: 'newVsReturning' }],
+      metrics: [{ name: 'activeUsers' }],
+    });
+    for (const row of (nvRes.rows ?? []) as Ga4Row[]) {
+      const label = (row.dimensionValues?.[0]?.value ?? '').toLowerCase();
+      if (label.includes('returning')) {
+        returningUsers = metricValue(row, 0);
+      }
+    }
+  } catch {
+    returningUsers = null;
+  }
+
+  return {
+    totals,
+    eventRows,
+    topPages,
+    channels,
+    sourceMedium,
+    device,
+    geography,
+    returningUsers,
+  };
 }
