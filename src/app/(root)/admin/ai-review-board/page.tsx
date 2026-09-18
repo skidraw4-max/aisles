@@ -13,7 +13,10 @@ import {
   liveVersionLabel,
   liveVersionNote,
 } from '@/lib/ai-review-board/live-run-versions';
+import { reviewBoardPhaseLabelKo } from '@/lib/ai-review-board/phase-label';
+import { findInProgressRunId } from '@/lib/ai-review-board/start-run';
 import { DEFAULT_REVIEW_BOARD_ROOT, listRuns, loadRun } from '@/lib/ai-review-board/store';
+import { AiReviewBoardStartClient } from './AiReviewBoardStartClient';
 import styles from './board.module.css';
 
 export const metadata: Metadata = {
@@ -41,6 +44,11 @@ export default async function AiReviewBoardPage() {
     await Promise.all(ids.map(async (id) => ({ id, run: await loadRun(DEFAULT_REVIEW_BOARD_ROOT, id) })))
   ).filter((x) => x.run);
 
+  const inProgressRunId = await findInProgressRunId(DEFAULT_REVIEW_BOARD_ROOT);
+  const inProgressRun = inProgressRunId
+    ? (runs.find((r) => r.id === inProgressRunId)?.run ?? null)
+    : null;
+
   const ref = runSemanticReferenceEvaluation();
   const semCount = ref.results.filter((r) => r.id.startsWith('SEM-')).length;
   const caseCount = ref.results.filter((r) => r.id.startsWith('CASE-')).length;
@@ -56,8 +64,12 @@ export default async function AiReviewBoardPage() {
           <p className={styles.lead}>
             관찰 전용 대시보드. Live Gemini run은 목록에 표시됩니다. 최신 Live는{' '}
             <strong>v9.1</strong>입니다. 상단 Regression Validation은 CASE-01…10
-            fixture 결과입니다.
+            fixture 결과입니다. 로컬에서만 「운영위원회 일시키기」로 새 런을 시작할 수 있습니다.
           </p>
+          <AiReviewBoardStartClient
+            inProgressRunId={inProgressRunId}
+            inProgressStatus={inProgressRun?.status ?? null}
+          />
         </header>
 
         <section className={styles.panel} aria-label="v9.1 Regression Validation">
@@ -96,8 +108,9 @@ export default async function AiReviewBoardPage() {
 
         {runs.length === 0 ? (
           <p className={styles.empty}>
-            아직 저장된 런이 없습니다. CLI로 실행하면 <code>data/ai-review-board/</code>에
-            결과가 쌓입니다. (프로덕션에서는 배포 번들에 포함된 baseline run만 보입니다.)
+            아직 저장된 런이 없습니다. 「운영위원회 일시키기」또는 CLI로 실행하면{' '}
+            <code>data/ai-review-board/</code>에 결과가 쌓입니다. (프로덕션에서는 배포 번들에
+            포함된 baseline run만 보입니다.)
           </p>
         ) : (
           <ul className={styles.list}>
@@ -106,12 +119,15 @@ export default async function AiReviewBoardPage() {
               const obs = computeRunObservationMetrics(r);
               const ver = liveVersionLabel(id);
               const note = liveVersionNote(id);
+              const phaseKo = reviewBoardPhaseLabelKo(r.status);
               return (
                 <li key={id}>
                   <Link href={`/admin/ai-review-board/${id}`} className={styles.card}>
                     <div className={styles.cardTop}>
                       <span className={styles.runWhen}>{formatRunWhen(r)}</span>
-                      <span className={styles.statusPill}>{r.status}</span>
+                      <span className={styles.statusPill} title={r.status}>
+                        {phaseKo}
+                      </span>
                       {ver ? <span className={styles.versionPill}>{ver}</span> : null}
                     </div>
                     <span className={styles.runId}>{id}</span>

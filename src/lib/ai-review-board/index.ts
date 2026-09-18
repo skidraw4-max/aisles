@@ -19,4 +19,6 @@ export * from './live-run-versions';
 export * from './semantic-judge';
 export * from './semantic-reference-eval';
 export * from './finalize-report';
+export * from './phase-label';
+export * from './start-run';
 export { createGeminiReviewBoardLlm } from './gemini-llm';

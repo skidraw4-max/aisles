@@ -8,6 +8,12 @@ Evidence → … → Semantic Judge → Revision → Critic → Chairman.
 ## Roles
 실행 시 AI-A~E / F / Chairman 역할·focus의 **SSOT**는 `src/lib/ai-review-board/personas.ts` (`PERSONA_SYSTEM`, `MEMBER_FOCUS`)다. 역할 전문은 여기에 복제하지 않는다.
 
+## Admin 로컬 실행
+`/admin/ai-review-board` 상단 **「운영위원회 일시키기」** (로컬 `next dev`만).
+- Evidence: DB 집계 + GA4 attach(기본, fail-open)
+- 클릭 후 해당 run 상세로 이동 · phase별 한글 상태(토론 단계 = 「위원회 토론 중」) · 폴링
+- Vercel/prod에서는 실행 거부. CLI `scripts/run-ai-review-board.ts`도 유지.
+
 ## 실행
 ```bash
 npx tsx scripts/run-ai-review-board.ts

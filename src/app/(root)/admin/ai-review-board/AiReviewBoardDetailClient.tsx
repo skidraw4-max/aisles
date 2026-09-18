@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import type { ReviewBoardRun } from '@/lib/ai-review-board/types';
+import { reviewBoardPhaseLabelKo } from '@/lib/ai-review-board/phase-label';
 import { SCORE_DIMENSION_LABELS } from '@/lib/ai-review-board/score-dimensions';
 import {
   computeRunObservationMetrics,
@@ -65,7 +66,9 @@ export function AiReviewBoardDetailClient({ run }: { run: ReviewBoardRun }) {
     <div className={styles.detail}>
       <div className={styles.detailSummary}>
         <span>{formatRunWhen(run)}</span>
-        <span className={styles.statusPill}>{run.status}</span>
+        <span className={styles.statusPill} title={run.status}>
+          {reviewBoardPhaseLabelKo(run.status)}
+        </span>
         <span>
           calls {run.budget.usedCalls}/{run.budget.maxCalls} · est ${run.budget.estimatedCostUsd}
         </span>
@@ -95,7 +98,8 @@ export function AiReviewBoardDetailClient({ run }: { run: ReviewBoardRun }) {
       {tab === 'Overview' && (
         <section className={styles.panel}>
           <p>
-            <strong>Status:</strong> {run.status}
+            <strong>Status:</strong> {reviewBoardPhaseLabelKo(run.status)}{' '}
+            <span className={styles.muted}>({run.status})</span>
           </p>
           <p>
             <strong>Run ID:</strong> {run.runId}

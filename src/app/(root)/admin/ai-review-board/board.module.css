@@ -9,6 +9,61 @@
   margin-bottom: 1.5rem;
 }
 
+.startRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0.75rem 0 1rem;
+}
+
+.startButton {
+  appearance: none;
+  border: 1px solid #3d7ea6;
+  background: #1a3a4d;
+  color: #e8f4fc;
+  font-weight: 600;
+  font-size: 0.95rem;
+  padding: 0.55rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.startButton:hover:not(:disabled) {
+  background: #234a62;
+}
+
+.startButton:disabled {
+  opacity: 0.75;
+  cursor: wait;
+  border-color: #5a6a7a;
+  background: #2a3140;
+}
+
+.linkButton {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: #8cb4d4;
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: 0.9rem;
+  padding: 0;
+}
+
+.startError {
+  width: 100%;
+  margin: 0;
+  color: #f0a0a0;
+  font-size: 0.9rem;
+}
+
+.phaseBusy {
+  border-color: #c4a035;
+  background: #3a3218;
+  color: #f5e6a8;
+}
+
 .title {
   font-size: 1.75rem;
   font-weight: 700;

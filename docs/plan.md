@@ -1594,3 +1594,100 @@ Then: `npx tsx scripts/run-ai-review-board.ts --stub-evidence --mock-llm --with-
 1. 로컬 `.env.local`에 GA4 자격증명만 넣고 **코드 변경 없이** live board 스모크부터 할까?
 2. DB 집계 기간을 Seoul `period`와 맞추는 코드 변경을 이번 범위에 넣을까? (기본 제안: 예, 작음)
 3. `--ga-credentials <path>` CLI 헬퍼가 필요한가? (기본: 선택)
+
+---
+
+# Plan: Admin “운영위원회 일시키기” (로컬 전용) — approved
+
+**Status:** Approved 2026-09-18 — phase별 한글 라벨 · GA4 fail-open · 구현 중
+
+**확정 요구사항 (2026-09-18):**
+1. 실행 환경: **로컬 `next dev`만** (Vercel/prod Admin 실행 금지)
+2. 완료 후: 해당 **run 상세**로 이동 (진행 중에도 상세에서 상태 확인)
+3. Evidence: **GA4 기본 attach** (`attachGa4Evidence`, fail-open 유지 — CLI `--with-ga` 강제 exit와 달리 Admin은 available=false여도 파이프라인 계속, UI에 GA 상태 표시)
+
+## 0. 현황
+
+- Admin `/admin/ai-review-board` = 관찰 전용 (시작 버튼 없음)
+- 실행 SSOT 파이프라인: `runReviewBoardPipeline` + CLI `scripts/run-ai-review-board.ts`
+- `run.status` 단계 이미 존재 (`queued`…`debate`…`completed`/`failed`)
+- `saveRunSnapshot`이 단계마다 디스크에 기록 → **폴링으로 진행 표시 가능**
+- 역할 freeze: `personas.ts` (이번 작업에서 변경 금지)
+
+## 1. UX
+
+`/admin/ai-review-board` 헤더:
+- 버튼 라벨 **「운영위원회 일시키기」**
+- 진행 중(다른 non-terminal run 존재 또는 방금 시작한 run): 버튼 비활성 + 문구 **「위원회 토론중」**
+- 클릭 성공 → **즉시** `/admin/ai-review-board/[runId]` 로 이동
+- 상세 페이지: `status !== completed|failed` 이면 **「위원회 토론중」** 배지(+ 선택: 영문 phase 보조) + 수초 간격 폴링(refresh/router.refresh 또는 JSON status API)
+- `completed` → 폴링 중지, 기존 상세 UI로 결과 확인
+- `failed` → 실패 표시, 버튼 다시 활성
+
+동시 실행: **최대 1개**. 이미 in-progress run이 있으면 시작 거부 + 안내.
+
+## 2. 아키텍처 (로컬)
+
+```
+[Admin 버튼]
+  → Server Action startAiReviewBoardRun (requireAdminAction)
+       · local-only guard (VERCEL=1 또는 NODE_ENV=production → 거부)
+       · in-progress lock
+       · buildEvidencePackFromDb + attachGa4Evidence (default)
+       · createGeminiReviewBoardLlm
+       · createRunId → 초기 snapshot (queued/collecting_evidence)
+       · background: runReviewBoardPipeline({ runId, evidence, llm })  // Action은 runId만 반환
+  → Client: router.push(/admin/ai-review-board/[runId])
+  → Detail: poll until completed|failed
+```
+
+- **동기 await 전체 파이프라인은 Action에서 하지 않음** (수분·타임아웃). 백그라운드 + 디스크 스냅샷.
+- prod/Vercel: Action이 명시적으로 에러 메시지 반환 (UI에서 비활성 또는 안내).
+- CLI는 유지 (변경 최소). Admin 경로가 CLI와 동일 파이프라인 함수를 호출.
+
+### Local-only guard (제안)
+- `process.env.VERCEL === '1'` → 거부
+- 또는 `AI_REVIEW_BOARD_ALLOW_ADMIN_RUN !== '1'` 이고 production → 거부  
+권장: **둘 다** — Vercel 무조건 거부 + 로컬은 기본 허용(`next dev`).
+
+## 3. 파일 (예상)
+
+| 파일 | 변경 |
+|------|------|
+| `src/lib/ai-review-board/phase-label.ts` (+test) | status → 한글 라벨 (`debate`/진행중 → 위원회 토론중) |
+| `src/lib/ai-review-board/start-run.ts` (+test) | evidence+GA4+lock+pipeline kickoff 순수 로직 |
+| `src/app/(root)/admin/ai-review-board/actions.ts` | `startAiReviewBoardRun` Server Action |
+| `src/app/(root)/admin/ai-review-board/AiReviewBoardStartClient.tsx` | 버튼 + 이동 |
+| `page.tsx` / `[runId]/page.tsx` / DetailClient | 버튼 배치, 폴링, 배지 |
+| `board.module.css` | 버튼·배지 최소 스타일 |
+| `docs/ai-review-board.md` | 로컬 Admin 실행 1절 (역할 전문 복제 금지) |
+
+**비변경:** personas, GA4 fetch 로직, EvidencePack 스키마, Calibration/Judge/Revision, orchestrator phase 순서, v1–v9.1 fixtures/runs, unrelated dirty.
+
+## 4. TDD (실패 테스트 먼저)
+
+1. `phaseLabel`: in-progress → 「위원회 토론중」; completed/failed는 구분 라벨
+2. `canStartReviewBoardRun`: in-progress 있으면 false; completed만 있으면 true
+3. local guard: VERCEL=1 → reject
+4. (가능 시) start helper가 attachGa4를 호출하는지 mock
+
+## 5. 보안·성능 (자체 리뷰 예정)
+
+- Admin only (`requireAdminAction`)
+- Prod에서 파이프라인 기동 불가
+- 동시 1 run
+- Gemini 비용: 수동 클릭만, 기존 maxCalls env 유지
+- 백그라운드 실패 시 `status=failed` 스냅샷
+
+## 6. Out of scope
+
+- Vercel/prod에서 위원회 실행
+- Cron / Prisma run 테이블
+- 새 Review Board Live run을 이번 작업에서 “검증용으로” 강제 실행 (구현 후 로컬 스모크는 승인 시)
+- GA4 자격증명 자동 설정
+
+## Approval questions
+
+1. 위 계획 **승인**하면 구현 착수해도 되는가?
+2. 진행 중 배지: **모든 in-progress phase를 「위원회 토론중」으로 통일**해도 되는가? (아니면 debate만 그 문구, 나머지는 「독립 분석중」 등 세분?)
+3. GA4 unavailable이어도 파이프라인 **계속**(fail-open) — OK? (권장: 예)
