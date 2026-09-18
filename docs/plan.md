@@ -1325,7 +1325,7 @@ ga4?: {
 2. **기간 정렬:** DB는 `Date.now()-7d` (로컬/서버 TZ 모호), GA는 relative date. **Asia/Seoul calendar 공유 period 없음.**
 3. **Evidence ID/source:** `GA_ACTIVE_USERS_7D` / `DB_NEW_USERS_7D` 명시 리스트 없음. Calibration `EVIDENCE_REF_KEYS`는 DB 키만 → GA ref는 `unknown_ref` flag.
 4. **Semantics/Judge:** GA unavailable·GA=0·DB vs GA divergence를 규칙으로 다루는 코드 없음 (prompt guard만).
-5. **Persona 렌즈:** AI-A~E에 GA 해석 관점 문구 없음 (공통 EvidencePack만 전달).
+5. **Persona 렌즈:** ~~없음~~ → **해소.** `personas.ts`의 `PERSONA_SYSTEM`에 AI-A~E별 GA 해석 1줄 렌즈 있음(공통 EvidencePack + 역할별 렌즈). v10 전 A~E 역할 경계 freeze SSOT도 동일 파일.
 6. **CLI:** `--with-ga` / `--mock-ga` 없음 (env 있으면 항상 attach).
 7. **Admin:** Top pages / channels / device / source badge(GA4|DB) / 전용 Evidence 탭 부족.
 8. **테스트 12항:** null≠0, GA vs DB 구분, PII, fixture regression, mock run 등 일부만 커버.

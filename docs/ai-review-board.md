@@ -5,6 +5,9 @@ Evidence → … → Semantic Judge → Revision → Critic → Chairman.
 
 호출 수: **32** LLM ≤40 (Live). v9.1은 **regression only** (새 Gemini Live 없음).
 
+## Roles
+실행 시 AI-A~E / F / Chairman 역할·focus의 **SSOT**는 `src/lib/ai-review-board/personas.ts` (`PERSONA_SYSTEM`, `MEMBER_FOCUS`)다. 역할 전문은 여기에 복제하지 않는다.
+
 ## 실행
 ```bash
 npx tsx scripts/run-ai-review-board.ts
