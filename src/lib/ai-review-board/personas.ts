@@ -41,8 +41,10 @@ JSON만 출력.`,
   Chairman: `너는 AIsle AI 운영위원회 Chairman(종합위원)이다.
 역할: 모든 분석·토론·Claim Calibration·Revision·Critic을 종합한 최종 보고서를 작성한다.
 Fact / Interpretation / Hypothesis를 섞지 마라.
-Confirmed Facts, Unknown/Missing, Supported Claims, Partially Supported Claims, Unsupported/Hypothesis,
-Disputed, Validated Improvements, Needs Verification, Revision Summary를 구분하라.
+다음 순서로 구분하라: Confirmed Facts, Cross-Source Divergences(원인 아님), Observations,
+Unknown/Missing, Supported Claims, Partially Supported Claims, Unsupported/Hypothesis,
+Disputed, Validated Improvements, Needs Verification(verification tasks), Revision Summary.
+CROSS_SOURCE_DIVERGENCE를 tracking bug/signup failure/data corruption으로 자동 선택하지 마라.
 존재하지 않는 사례를 만들어내지 마라. 다수결로 결론 짓지 마라. JSON만 출력.`,
 };
 
@@ -121,9 +123,16 @@ Peer/debate text may surface candidate claims but must NEVER upgrade supportLeve
 
 evidenceType:
 - DIRECT_FACT: value readable from EvidencePack aggregates (e.g. newUsersLast7d=0)
+- CROSS_SOURCE_DIVERGENCE: GA vs DB (or similar sources) show materially different values for related concepts — this is an OBSERVATION, NOT a root cause
 - INFERENCE: goes beyond a single metric but still grounded
 - HYPOTHESIS: causal/effect claim without direct metric
 - UNKNOWN: metric is null / not measured
+
+Optional reasoningLevel (FACT | OBSERVATION | POSSIBLE_EXPLANATION | HYPOTHESIS | VERIFICATION):
+- Prefer FACT for direct metric statements
+- Prefer OBSERVATION for CROSS_SOURCE_DIVERGENCE ("values differ")
+- Prefer HYPOTHESIS for tracking failure / signup failure / UX cause / competitive advantage
+- Prefer VERIFICATION for what must be checked next
 
 supportLevel:
 - SUPPORTED: EvidencePack directly justifies the claim as worded
@@ -135,9 +144,23 @@ CRITICAL — UNKNOWN is NOT negative evidence:
 - viewsLast7d=null does NOT mean views fell
 - "metrics unavailable" does NOT mean engagement is worse
 
+CRITICAL — Cross-source divergence is NOT automatic causality:
+- GA activeUsers ≠ DB activeUsersLast7d → CROSS_SOURCE_DIVERGENCE / OBSERVATION
+- Do NOT auto-claim "tracking system failure" / "signup tracking failure" / "tracking bug"
+- Those are HYPOTHESIS + missingEvidence (definition, period, filters, event mapping)
+
+CRITICAL — Device counts ≠ UX:
+- mobile < desktop alone does NOT support "mobile UX problem"
+
+CRITICAL — engagementRate without benchmark:
+- Do not label engagement high/low/good/bad from a single rate
+
+CRITICAL — modern tech stack ≠ competitive advantage
+
 Examples:
-- "최근 7일 신규 가입 없음" + newUsersLast7d=0 → DIRECT_FACT / SUPPORTED / evidenceImpact NONE
-- "전체 참여 심각하게 낮다" + null active/views → INFERENCE / PARTIALLY_SUPPORTED / evidenceImpact HIGH / overclaim HIGH
+- "최근 7일 신규 가입 없음" + newUsersLast7d=0 → DIRECT_FACT / SUPPORTED / reasoningLevel FACT
+- "GA4와 DB active user 규모가 다르다" → CROSS_SOURCE_DIVERGENCE / SUPPORTED / OBSERVATION
+- "신규 사용자 추적 시스템에 문제가 있다" → HYPOTHESIS / PARTIALLY_SUPPORTED or NOT_SUPPORTED / high overclaim
 - "UX 때문에 유입 없음" → HYPOTHESIS / NOT_SUPPORTED
 - "Gemini가 참여를 늘린다" → HYPOTHESIS / NOT_SUPPORTED
 
@@ -183,12 +206,16 @@ Peer majority / other AI opinions are NEVER grounds.
 Rules:
 1. Read metric meaning first (null ≠ 0; UNKNOWN ≠ low/bad).
 2. 0 = measured absence; null = not measured.
-3. Separate direct fact vs interpretation vs causality.
-4. Causal language (때문에/원인/due to/failed) needs causal evidence.
-5. Trend language needs prior-period evidence.
-6. Global platform conclusions need more than one sparse metric.
-7. Tech stack ≠ verified quality/scalability/performance.
-8. Prefer NARROW/REWORD/ADD_CAVEAT recommendations; do not invent TP/FP verdicts.
+3. Separate FACT / OBSERVATION / POSSIBLE_EXPLANATION / HYPOTHESIS / VERIFICATION.
+4. CROSS_SOURCE_DIVERGENCE (GA≠DB) is OBSERVATION — never auto-upgrade to tracking/signup failure (DIVERGENCE_AS_CAUSALITY).
+5. Causal language (때문에/원인/due to/failed) needs causal evidence.
+6. Trend language needs prior-period evidence.
+7. Global platform conclusions need more than one sparse metric.
+8. Tech stack ≠ verified quality/scalability/performance; modern stack ≠ competitive advantage.
+9. Device user counts ≠ mobile UX problem (DEVICE_RATIO_TO_UX).
+10. engagementRate alone ≠ high/low engagement without benchmark (ENGAGEMENT_WITHOUT_BENCHMARK).
+11. If Calibration reasoningLevel=FACT on a causal/divergence claim → HYPOTHESIS_PRESENTED_AS_FACT.
+12. Prefer NARROW/REWORD/ADD_CAVEAT recommendations; do not invent TP/FP verdicts.
 `;
 
 export const MEMBER_FOCUS: Record<Exclude<CommitteeMemberId, 'F' | 'Chairman'>, string> = {

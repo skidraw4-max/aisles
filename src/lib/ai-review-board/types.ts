@@ -220,13 +220,27 @@ export const CLAIM_EVIDENCE_TYPES = [
   'INFERENCE',
   'HYPOTHESIS',
   'UNKNOWN',
+  /** v10: GA vs DB (or similar) scale mismatch — not a root cause */
+  'CROSS_SOURCE_DIVERGENCE',
 ] as const;
 export type ClaimEvidenceType = (typeof CLAIM_EVIDENCE_TYPES)[number];
 
 export function isClaimEvidenceType(v: unknown): v is ClaimEvidenceType {
-  return (
-    v === 'DIRECT_FACT' || v === 'INFERENCE' || v === 'HYPOTHESIS' || v === 'UNKNOWN'
-  );
+  return (CLAIM_EVIDENCE_TYPES as readonly string[]).includes(String(v));
+}
+
+/** v10 optional reasoning layer (Calibration additive; Judge validates) */
+export const REASONING_LEVELS = [
+  'FACT',
+  'OBSERVATION',
+  'POSSIBLE_EXPLANATION',
+  'HYPOTHESIS',
+  'VERIFICATION',
+] as const;
+export type ReasoningLevel = (typeof REASONING_LEVELS)[number];
+
+export function isReasoningLevel(v: unknown): v is ReasoningLevel {
+  return (REASONING_LEVELS as readonly string[]).includes(String(v));
 }
 
 export const CLAIM_SUPPORT_LEVELS = [
@@ -273,6 +287,8 @@ export type CalibratedClaim = {
   missingEvidence: string[];
   evidenceImpact: EvidenceImpact;
   riskOfOverclaiming: OverclaimRisk;
+  /** v10 optional — FACT…VERIFICATION boundary */
+  reasoningLevel?: ReasoningLevel;
 };
 
 /** v5 per-member claim calibration result */
@@ -357,6 +373,13 @@ export const SEMANTIC_LEAP_TYPES = [
   'FACT_TO_TREND',
   'FACT_TO_GLOBAL_CONCLUSION',
   'TECH_STACK_TO_QUALITY',
+  /** v10 evidence-boundary leaps */
+  'DIVERGENCE_AS_CAUSALITY',
+  'DEVICE_RATIO_TO_UX',
+  'ENGAGEMENT_WITHOUT_BENCHMARK',
+  'TECH_STACK_TO_COMPETITIVE_ADVANTAGE',
+  'MAJORITY_AS_EVIDENCE',
+  'HYPOTHESIS_PRESENTED_AS_FACT',
   'NONE',
 ] as const;
 export type SemanticLeapType = (typeof SEMANTIC_LEAP_TYPES)[number];
@@ -555,6 +578,10 @@ export type FinalReport = {
   needsFurtherVerification: string[];
   /** v4+ optional structured sections */
   confirmedFacts?: string[];
+  /** v10: GA≠DB etc. as observation — not root cause */
+  crossSourceDivergences?: string[];
+  /** v10: non-causal observations */
+  observations?: string[];
   unknownMissingData?: string[];
   hypotheses?: string[];
   disputedPoints?: string[];

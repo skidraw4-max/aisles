@@ -31,7 +31,10 @@ import {
   isSemanticLeapType,
 } from './types';
 import { evaluateEvidenceClaimEntailment } from './evidence-claim-entailment';
+import { adjudicateEvidenceBoundary } from './evidence-boundary';
 import { textUsesMajorityAsGround } from './revision-quality';
+import type { ReasoningLevel } from './types';
+import { isReasoningLevel } from './types';
 
 export function textUsesMajorityAsJudgeGround(text: string): boolean {
   if (textUsesMajorityAsGround(text)) return true;
@@ -58,7 +61,7 @@ export type JudgeClassification = {
 const MEASUREMENT_GAP_RE =
   /(측정.*(없|불가)|알\s*수\s*없|확인\s*할\s*수\s*없|확인할\s*수\s*없|측정할\s*수\s*없|not\s+measured|unavailable|null이므로.{0,40}측정|데이터가\s*없|측정되지)/i;
 const LOW_ACTIVITY_RE =
-  /(활성도가\s*낮|활성\s*사용자[가이]?\s*적|활동량이\s*낮|참여도가\s*(심각히\s*|심각하게\s*)?낮|휴면|dormant|non-?existent|존재하지\s*않|low\s+activity|low\s+engagement|severely\s+low)/i;
+  /(활성도가\s*낮|활성\s*사용자[가이]?\s*(매우\s*|심각히\s*|심각하게\s*)?적|활동량이\s*낮|참여도가\s*(심각히\s*|심각하게\s*)?낮|휴면|dormant|non-?existent|존재하지\s*않|low\s+activity|low\s+engagement|severely\s+low)/i;
 const CAUSAL_FAIL_RE =
   /(전략이\s*실패|마케팅이\s*실패|효과가\s*없|때문에|원인|로\s*인해|caused by|due to|failed|failure|저해|유발)/i;
 const ACQUISITION_FAIL_RE = /(획득\s*전략|유입\s*전략|acquisition).{0,30}(실패|효과\s*없|failed)/i;
@@ -79,11 +82,12 @@ const POSTS_CONTINUITY_RE =
   /(게시글\s*\d+|postsLast7d|콘텐츠\s*생성이\s*지속|생성이\s*지속)/i;
 const LOUNGE_RATIO_RE = /(LOUNGE|라운지).{0,40}(\d+\s*%|집중)|전체\s*게시글\s*중.{0,20}(LOUNGE|라운지)/i;
 
-/** Deterministic adjudication of a single claim against EvidencePack (Rules R1–R8). */
+/** Deterministic adjudication of a single claim against EvidencePack (Rules R1–R8 + v10 boundary). */
 export function adjudicateClaimDeterministic(
   claimText: string,
   evidence: EvidencePack,
   evidenceRefs: string[] = [],
+  options?: { reasoningLevel?: ReasoningLevel },
 ): {
   classification: JudgeClassification;
   semanticLeap: { detected: boolean; type: SemanticLeapType };
@@ -94,6 +98,10 @@ export function adjudicateClaimDeterministic(
   const text = claimText.trim();
   const a = evidence.aggregates;
   const missing: string[] = [];
+  const reasoningLevel =
+    options?.reasoningLevel && isReasoningLevel(options.reasoningLevel)
+      ? options.reasoningLevel
+      : undefined;
 
   // Measurement gap claim (null metrics stated as unmeasured) — DIRECT
   if (
@@ -135,6 +143,18 @@ export function adjudicateClaimDeterministic(
       recommendedAction: 'REWORD',
       missingEvidence: missing,
       judgeReason: 'null/UNKNOWN metrics do not entail low/dormant/non-existent activity',
+    };
+  }
+
+  // v10 Evidence Interpretation Boundary (CROSS_SOURCE_DIVERGENCE, device≠UX, …)
+  const boundary = adjudicateEvidenceBoundary(text, evidence, reasoningLevel);
+  if (boundary) {
+    return {
+      classification: boundary.classification,
+      semanticLeap: boundary.semanticLeap,
+      recommendedAction: boundary.recommendedAction,
+      missingEvidence: boundary.missingEvidence,
+      judgeReason: boundary.judgeReason,
     };
   }
 

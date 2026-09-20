@@ -8,6 +8,11 @@
 import embeddedFixture from '../../../tests/fixtures/ai-review-board/semantic-reference-cases.json';
 import { buildStubEvidencePack } from './evidence-pack';
 import {
+  buildEvidenceItems,
+  buildMockGa4Evidence,
+  gaDbDivergenceHints,
+} from './ga4-evidence';
+import {
   adjudicateClaimDeterministic,
   collectOverlayFlags,
   compareToReference,
@@ -120,7 +125,7 @@ function recallForLeap(
   return hit / expected.length;
 }
 
-/** Apply fixture evidence entries onto a stub EvidencePack. */
+/** Apply fixture evidence entries onto a stub EvidencePack (DB + optional GA4). */
 export function evidencePackFromReferenceEntries(
   entries: ReferenceEvidenceEntry[],
 ): EvidencePack {
@@ -138,6 +143,14 @@ export function evidencePackFromReferenceEntries(
     postsByCategory: {},
   };
   const postsByCategory: Record<string, number> = {};
+  let gaActive: number | null | undefined;
+  let gaNew: number | null | undefined;
+  let gaViews: number | null | undefined;
+  let gaEngagement: number | null | undefined;
+  let gaMobile: number | null | undefined;
+  let gaDesktop: number | null | undefined;
+  let hasGa = false;
+
   for (const e of entries) {
     if (e.ref.startsWith('aggregates.postsByCategory.')) {
       const cat = e.ref.slice('aggregates.postsByCategory.'.length);
@@ -147,14 +160,73 @@ export function evidencePackFromReferenceEntries(
     if (e.ref.startsWith('aggregates.')) {
       const key = e.ref.slice('aggregates.'.length);
       aggregates[key] = e.value as number | null;
+      continue;
+    }
+    if (e.ref === 'ga4.activeUsers' || e.ref === 'GA_ACTIVE_USERS_7D') {
+      hasGa = true;
+      gaActive = e.value as number | null;
+    } else if (e.ref === 'ga4.newUsers' || e.ref === 'GA_NEW_USERS_7D') {
+      hasGa = true;
+      gaNew = e.value as number | null;
+    } else if (e.ref === 'ga4.screenPageViews' || e.ref === 'GA_SCREEN_PAGE_VIEWS_7D') {
+      hasGa = true;
+      gaViews = e.value as number | null;
+    } else if (e.ref === 'ga4.engagementRate' || e.ref === 'GA_ENGAGEMENT_RATE_7D') {
+      hasGa = true;
+      gaEngagement = e.value as number | null;
+    } else if (e.ref === 'ga4.device.mobile') {
+      hasGa = true;
+      gaMobile = e.value as number | null;
+    } else if (e.ref === 'ga4.device.desktop') {
+      hasGa = true;
+      gaDesktop = e.value as number | null;
     }
   }
   if (Object.keys(postsByCategory).length) {
     aggregates.postsByCategory = postsByCategory;
   }
-  return buildStubEvidencePack({
+  let pack = buildStubEvidencePack({
     aggregates: aggregates as EvidencePack['aggregates'],
   });
+  if (hasGa) {
+    const mock = buildMockGa4Evidence({
+      metrics: {
+        activeUsers: gaActive ?? 10,
+        sessions: 20,
+        screenPageViews: gaViews ?? 100,
+        engagedSessions: 8,
+        averageSessionDurationSec: 30,
+        eventCountByName: {},
+      },
+      users: {
+        totalUsers: null,
+        activeUsers: gaActive ?? 10,
+        newUsers: gaNew ?? 3,
+        returningUsers: null,
+      },
+      engagement: {
+        sessions: 20,
+        engagedSessions: 8,
+        engagementRate: gaEngagement ?? 0.4,
+        averageEngagementTime: null,
+      },
+      views: { screenPageViews: gaViews ?? 100, topPages: [] },
+      device: {
+        mobile: gaMobile ?? null,
+        desktop: gaDesktop ?? null,
+        tablet: null,
+      },
+    });
+    const withGa4 = { ...pack, ga4: mock };
+    const evidenceItems = buildEvidenceItems(withGa4);
+    const divergence = gaDbDivergenceHints(withGa4);
+    pack = {
+      ...withGa4,
+      evidenceItems,
+      docsHints: divergence.length > 0 ? [...pack.docsHints, ...divergence] : pack.docsHints,
+    };
+  }
+  return pack;
 }
 
 export function loadSemanticReferenceCases(

@@ -62,6 +62,18 @@ export function AiReviewBoardDetailClient({ run }: { run: ReviewBoardRun }) {
     });
   }, [judgments, verdictFilter, leapFilter]);
 
+  const calibrationReasoningByKey = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const cal of run.claimCalibrations ?? []) {
+      for (const c of cal.claims) {
+        if (c.reasoningLevel) {
+          map.set(`${cal.memberId}:${c.claimId}`, c.reasoningLevel);
+        }
+      }
+    }
+    return map;
+  }, [run.claimCalibrations]);
+
   return (
     <div className={styles.detail}>
       <div className={styles.detailSummary}>
@@ -601,6 +613,8 @@ export function AiReviewBoardDetailClient({ run }: { run: ReviewBoardRun }) {
                   <thead>
                     <tr>
                       <th>Claim</th>
+                      <th>Reasoning</th>
+                      <th>EvType</th>
                       <th>Calibration</th>
                       <th>Judge</th>
                       <th>Support</th>
@@ -618,6 +632,10 @@ export function AiReviewBoardDetailClient({ run }: { run: ReviewBoardRun }) {
                           {j.memberId}/{j.claimId}: {j.claimText.slice(0, 60)}
                           {j.claimText.length > 60 ? '…' : ''}
                         </td>
+                        <td>
+                          {calibrationReasoningByKey.get(`${j.memberId}:${j.claimId}`) ?? '—'}
+                        </td>
+                        <td>{j.judgeClassification.evidenceType}</td>
                         <td>{j.originalSemanticClassification.supportLevel}</td>
                         <td>{j.judgeClassification.supportLevel}</td>
                         <td>{j.judgeClassification.evidenceRelation}</td>
@@ -964,14 +982,12 @@ export function AiReviewBoardDetailClient({ run }: { run: ReviewBoardRun }) {
                   <li key={x}>{x}</li>
                 ))}
               </ul>
-              <h3>Needs verification</h3>
-              <ul>
-                {run.final.needsFurtherVerification.map((x) => (
-                  <li key={x}>{x}</li>
-                ))}
-              </ul>
               <h3>Confirmed Facts</h3>
               <ListBlock title="" items={run.final.confirmedFacts ?? []} />
+              <h3>Cross-Source Divergences</h3>
+              <ListBlock title="" items={run.final.crossSourceDivergences ?? []} />
+              <h3>Observations</h3>
+              <ListBlock title="" items={run.final.observations ?? []} />
               <h3>Unknown / Missing Data</h3>
               <ListBlock title="" items={run.final.unknownMissingData ?? []} />
               <h3>Hypotheses</h3>
@@ -980,6 +996,8 @@ export function AiReviewBoardDetailClient({ run }: { run: ReviewBoardRun }) {
               <ListBlock title="" items={run.final.disputedPoints ?? []} />
               <h3>Validated Improvements</h3>
               <ListBlock title="" items={run.final.validatedImprovements ?? []} />
+              <h3>Needs verification (verification tasks)</h3>
+              <ListBlock title="" items={run.final.needsFurtherVerification ?? []} />
               <h3>Supported Claims</h3>
               <ListBlock title="" items={run.final.supportedClaims ?? []} />
               <h3>Partially Supported Claims</h3>

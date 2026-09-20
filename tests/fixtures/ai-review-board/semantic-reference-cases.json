@@ -418,6 +418,93 @@
       },
       "expectedAction": "NARROW",
       "rationale": "기술적 존재 ≠ 참여 증가 효과."
+    },
+    {
+      "id": "DIV-001",
+      "category": "V10_CROSS_SOURCE_DIVERGENCE",
+      "evidence": [
+        { "ref": "aggregates.activeUsersLast7d", "value": 1 },
+        { "ref": "ga4.activeUsers", "value": 47 }
+      ],
+      "claim": "GA4와 DB의 active user 규모가 크게 다르다.",
+      "expected": {
+        "evidenceType": "CROSS_SOURCE_DIVERGENCE",
+        "supportLevel": "SUPPORTED",
+        "evidenceRelation": "DIRECTLY_SUPPORTS",
+        "overclaimRisk": "LOW",
+        "semanticLeap": "NONE"
+      },
+      "expectedAction": "NO_CHANGE",
+      "rationale": "Cross-source scale difference is OBSERVATION, not root cause."
+    },
+    {
+      "id": "DIV-002",
+      "category": "V10_CROSS_SOURCE_DIVERGENCE",
+      "evidence": [
+        { "ref": "aggregates.newUsersLast7d", "value": 0 },
+        { "ref": "ga4.newUsers", "value": 39 }
+      ],
+      "claim": "GA4 newUsers와 DB newUsersLast7d(가입) 값이 서로 다르다.",
+      "expected": {
+        "evidenceType": "CROSS_SOURCE_DIVERGENCE",
+        "supportLevel": "SUPPORTED",
+        "evidenceRelation": "DIRECTLY_SUPPORTS",
+        "overclaimRisk": "LOW",
+        "semanticLeap": "NONE"
+      },
+      "expectedAction": "NO_CHANGE",
+      "rationale": "Divergence observation; signup tracking failure would be HYPOTHESIS."
+    },
+    {
+      "id": "DIV-003",
+      "category": "V10_CROSS_SOURCE_DIVERGENCE",
+      "evidence": [
+        { "ref": "aggregates.viewsLast7d", "value": 6981 },
+        { "ref": "ga4.screenPageViews", "value": 221 }
+      ],
+      "claim": "GA4 screenPageViews와 DB viewsLast7d 수치에 큰 차이가 있다.",
+      "expected": {
+        "evidenceType": "CROSS_SOURCE_DIVERGENCE",
+        "supportLevel": "SUPPORTED",
+        "evidenceRelation": "DIRECTLY_SUPPORTS",
+        "overclaimRisk": "LOW",
+        "semanticLeap": "NONE"
+      },
+      "expectedAction": "NO_CHANGE",
+      "rationale": "Metric definition may differ; divergence ≠ tracking bug."
+    },
+    {
+      "id": "DIV-004",
+      "category": "V10_DEVICE_RATIO",
+      "evidence": [
+        { "ref": "ga4.device.mobile", "value": 8 },
+        { "ref": "ga4.device.desktop", "value": 39 }
+      ],
+      "claim": "모바일 사용자가 데스크톱보다 적으므로 mobile UX에 문제가 있다.",
+      "expected": {
+        "evidenceType": "HYPOTHESIS",
+        "supportLevel": "NOT_SUPPORTED",
+        "evidenceRelation": "DOES_NOT_SUPPORT",
+        "overclaimRisk": "HIGH",
+        "semanticLeap": "DEVICE_RATIO_TO_UX"
+      },
+      "expectedAction": "REWORD",
+      "rationale": "Device counts alone do not entail UX problems."
+    },
+    {
+      "id": "DIV-005",
+      "category": "V10_UNKNOWN",
+      "evidence": [{ "ref": "aggregates.activeUsersLast7d", "value": null }],
+      "claim": "activeUsersLast7d가 null이므로 활성 사용자가 매우 적다.",
+      "expected": {
+        "evidenceType": "INFERENCE",
+        "supportLevel": "NOT_SUPPORTED",
+        "evidenceRelation": "DOES_NOT_SUPPORT",
+        "overclaimRisk": "HIGH",
+        "semanticLeap": "UNKNOWN_AS_NEGATIVE_EVIDENCE"
+      },
+      "expectedAction": "REWORD",
+      "rationale": "UNKNOWN/null ≠ low activity."
     }
   ]
 }

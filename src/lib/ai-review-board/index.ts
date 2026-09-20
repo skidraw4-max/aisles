@@ -21,4 +21,5 @@ export * from './semantic-reference-eval';
 export * from './finalize-report';
 export * from './phase-label';
 export * from './start-run';
+export * from './evidence-boundary';
 export { createGeminiReviewBoardLlm } from './gemini-llm';

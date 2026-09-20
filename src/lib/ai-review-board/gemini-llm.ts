@@ -366,17 +366,19 @@ Return JSON:
       "claimId": "C001",
       "claimText": string,
       "evidenceRefs": string[],
-      "evidenceType": "DIRECT_FACT" | "INFERENCE" | "HYPOTHESIS" | "UNKNOWN",
+      "evidenceType": "DIRECT_FACT" | "CROSS_SOURCE_DIVERGENCE" | "INFERENCE" | "HYPOTHESIS" | "UNKNOWN",
       "supportLevel": "SUPPORTED" | "PARTIALLY_SUPPORTED" | "NOT_SUPPORTED",
       "reason": string,
       "missingEvidence": string[],
       "evidenceImpact": "NONE" | "LOW" | "MEDIUM" | "HIGH" | "CRITICAL",
-      "riskOfOverclaiming": "LOW" | "MEDIUM" | "HIGH"
+      "riskOfOverclaiming": "LOW" | "MEDIUM" | "HIGH",
+      "reasoningLevel": "FACT" | "OBSERVATION" | "POSSIBLE_EXPLANATION" | "HYPOTHESIS" | "VERIFICATION" (optional)
     }
   ]
 }
 
-Extract 3–7 claims. Final supportLevel/evidenceType/evidenceImpact must be grounded in EvidencePack only.`;
+Extract 3–7 claims. Final supportLevel/evidenceType/evidenceImpact must be grounded in EvidencePack only.
+GA≠DB → prefer CROSS_SOURCE_DIVERGENCE + reasoningLevel OBSERVATION; never auto-claim tracking failure.`;
       const res = await geminiJson(key, system, user);
       if (!res.ok) throw new Error(res.error);
       return normalizeClaimCalibration(memberId, res.parsed);
@@ -443,7 +445,7 @@ Return JSON:
     {
       "claimId": "C001",
       "judgeClassification": {
-        "evidenceType": "DIRECT_FACT" | "INFERENCE" | "HYPOTHESIS" | "UNKNOWN",
+        "evidenceType": "DIRECT_FACT" | "CROSS_SOURCE_DIVERGENCE" | "INFERENCE" | "HYPOTHESIS" | "UNKNOWN",
         "supportLevel": "SUPPORTED" | "PARTIALLY_SUPPORTED" | "NOT_SUPPORTED",
         "evidenceRelation": "DIRECTLY_SUPPORTS" | "PARTIALLY_SUPPORTS" | "DOES_NOT_SUPPORT" | "UNKNOWN" | "CONTEXT_ONLY" | "CONTRADICTS",
         "overclaimRisk": "LOW" | "MEDIUM" | "HIGH"
@@ -452,7 +454,7 @@ Return JSON:
       "missingEvidence": string[],
       "semanticLeap": {
         "detected": boolean,
-        "type": "UNKNOWN_AS_NEGATIVE_EVIDENCE" | "FACT_TO_CAUSALITY" | "FACT_TO_TREND" | "FACT_TO_GLOBAL_CONCLUSION" | "TECH_STACK_TO_QUALITY" | "NONE"
+        "type": "UNKNOWN_AS_NEGATIVE_EVIDENCE" | "FACT_TO_CAUSALITY" | "FACT_TO_TREND" | "FACT_TO_GLOBAL_CONCLUSION" | "TECH_STACK_TO_QUALITY" | "DIVERGENCE_AS_CAUSALITY" | "DEVICE_RATIO_TO_UX" | "ENGAGEMENT_WITHOUT_BENCHMARK" | "TECH_STACK_TO_COMPETITIVE_ADVANTAGE" | "MAJORITY_AS_EVIDENCE" | "HYPOTHESIS_PRESENTED_AS_FACT" | "NONE"
       },
       "confidence": number,
       "recommendedAction": "NO_CHANGE" | "REWORD" | "NARROW" | "DOWNGRADE_SUPPORT" | "DOWNGRADE_CONFIDENCE" | "ADD_CAVEAT" | "REQUEST_MORE_EVIDENCE"
@@ -460,7 +462,8 @@ Return JSON:
   ]
 }
 
-Do NOT invent TP/FP/TN/FN. Leave verdict unset. null ≠ 0. UNKNOWN ≠ low activity.`;
+Do NOT invent TP/FP/TN/FN. Leave verdict unset. null ≠ 0. UNKNOWN ≠ low activity.
+GA≠DB divergence ≠ tracking failure. Device counts ≠ UX. Stack ≠ competitive advantage.`;
       const res = await geminiJson(key, system, user);
       if (!res.ok) throw new Error(res.error);
       return normalizeSemanticJudgments(
@@ -731,11 +734,13 @@ Do NOT invent TP/FP counts for live runs — report ambiguous + leap counts + ca
 Return ONE compact JSON object (no markdown). Prefer short string arrays (max 8 items each).
 Include: statusSummary, overallTrendScore, dimensionScores, topProblems, improvements,
 expectedUserEffect, expectedDifficulty, risk, improvementEvidence, opinionDifferences, confidence,
-needsFurtherVerification, confirmedFacts, unknownMissingData, hypotheses, disputedPoints,
-validatedImprovements, supportedClaims, partiallySupportedClaims, unsupportedHypothesisClaims,
-directlySupportedClaims, supportedInferences, weakLimitedInferences,
+needsFurtherVerification, confirmedFacts, crossSourceDivergences, observations, unknownMissingData,
+hypotheses, disputedPoints, validatedImprovements, supportedClaims, partiallySupportedClaims,
+unsupportedHypothesisClaims, directlySupportedClaims, supportedInferences, weakLimitedInferences,
 calibrationRevisionFindings, evidenceSemanticsFindings, semanticJudgeFindings, semanticRisks,
-revisionSummary { unchanged, partial, full, confidenceShifts, claimSofteningFromEvidenceGap, herdingRisks }.`;
+revisionSummary { unchanged, partial, full, confidenceShifts, claimSofteningFromEvidenceGap, herdingRisks }.
+crossSourceDivergences = GA≠DB style observations only (never root-cause labels).
+needsFurtherVerification holds verification tasks (no separate verificationTasks field).`;
       const res = await geminiJson(key, system, user);
       if (!res.ok) throw new Error(res.error);
       const o = res.parsed as Record<string, unknown>;
@@ -764,6 +769,8 @@ revisionSummary { unchanged, partial, full, confidenceShifts, claimSofteningFrom
         confidence: typeof o.confidence === 'number' ? o.confidence : 0.5,
         needsFurtherVerification: asStringArray(o.needsFurtherVerification),
         confirmedFacts: asStringArray(o.confirmedFacts),
+        crossSourceDivergences: asStringArray(o.crossSourceDivergences),
+        observations: asStringArray(o.observations),
         unknownMissingData: asStringArray(o.unknownMissingData),
         hypotheses: asStringArray(o.hypotheses),
         disputedPoints: asStringArray(o.disputedPoints),

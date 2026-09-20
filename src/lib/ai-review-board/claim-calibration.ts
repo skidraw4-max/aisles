@@ -17,7 +17,17 @@ import {
   isClaimSupportLevel,
   isEvidenceImpact,
   isOverclaimRisk,
+  isReasoningLevel,
 } from './types';
+import type { ReasoningLevel } from './types';
+import {
+  isCrossSourceDivergenceObservation,
+  isDeviceRatioToUxClaim,
+  isDivergenceAsCausalityClaim,
+  isEngagementWithoutBenchmarkClaim,
+  isTechStackToCompetitiveClaim,
+  suggestReasoningLevelForClaim,
+} from './evidence-boundary';
 
 /** 5×5 stages + critic + chairman = 32 (v8: +semanticJudge×5) */
 export const EXPECTED_PIPELINE_LLM_CALLS = 32;
@@ -205,6 +215,25 @@ export function listClaimFlags(
   ) {
     flags.push('overclaim_risk');
   }
+  if (isDivergenceAsCausalityClaim(claim.claimText)) {
+    flags.push('divergence_as_causality');
+  }
+  if (isDeviceRatioToUxClaim(claim.claimText)) {
+    flags.push('device_ratio_to_ux');
+  }
+  if (isEngagementWithoutBenchmarkClaim(claim.claimText)) {
+    flags.push('engagement_without_benchmark');
+  }
+  if (isTechStackToCompetitiveClaim(claim.claimText)) {
+    flags.push('tech_stack_to_competitive');
+  }
+  if (
+    claim.reasoningLevel === 'FACT' &&
+    (claim.evidenceType === 'CROSS_SOURCE_DIVERGENCE' ||
+      isDivergenceAsCausalityClaim(claim.claimText))
+  ) {
+    flags.push('reasoning_level_overclaim');
+  }
   return flags;
 }
 
@@ -224,9 +253,12 @@ export function normalizeCalibratedClaim(
   index: number,
 ): CalibratedClaim {
   const o = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
+  const claimText = asString(o.claimText, '');
   const evidenceType: ClaimEvidenceType = isClaimEvidenceType(o.evidenceType)
     ? o.evidenceType
-    : 'INFERENCE';
+    : isCrossSourceDivergenceObservation(claimText) && !isDivergenceAsCausalityClaim(claimText)
+      ? 'CROSS_SOURCE_DIVERGENCE'
+      : 'INFERENCE';
   const supportLevel: ClaimSupportLevel = isClaimSupportLevel(o.supportLevel)
     ? o.supportLevel
     : 'PARTIALLY_SUPPORTED';
@@ -237,9 +269,13 @@ export function normalizeCalibratedClaim(
     ? o.riskOfOverclaiming
     : 'LOW';
 
+  const reasoningLevel: ReasoningLevel | undefined = isReasoningLevel(o.reasoningLevel)
+    ? o.reasoningLevel
+    : undefined;
+
   return {
     claimId: asString(o.claimId, `C${String(index + 1).padStart(3, '0')}`),
-    claimText: asString(o.claimText, ''),
+    claimText,
     evidenceRefs: asStringArray(o.evidenceRefs),
     evidenceType,
     supportLevel,
@@ -247,6 +283,7 @@ export function normalizeCalibratedClaim(
     missingEvidence: asStringArray(o.missingEvidence),
     evidenceImpact,
     riskOfOverclaiming,
+    ...(reasoningLevel ? { reasoningLevel } : {}),
   };
 }
 
@@ -274,8 +311,9 @@ export function formatCalibrationForRevisionPrompt(cal: ClaimCalibration): strin
         riskOfOverclaiming: c.riskOfOverclaiming,
         missingEvidence: c.missingEvidence,
         evidenceRefs: c.evidenceRefs,
+        reasoningLevel: c.reasoningLevel ?? suggestReasoningLevelForClaim(c.claimText, c.evidenceType),
       })),
-      note: 'Use EvidencePack as final ground. Do not force PARTIAL/FULL. Soften only if calibration warrants.',
+      note: 'Use EvidencePack as final ground. Do not force PARTIAL/FULL. Soften only if calibration warrants. CROSS_SOURCE_DIVERGENCE ≠ root cause.',
     },
     null,
     2,

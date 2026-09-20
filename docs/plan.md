@@ -1691,3 +1691,110 @@ Then: `npx tsx scripts/run-ai-review-board.ts --stub-evidence --mock-llm --with-
 1. 위 계획 **승인**하면 구현 착수해도 되는가?
 2. 진행 중 배지: **모든 in-progress phase를 「위원회 토론중」으로 통일**해도 되는가? (아니면 debate만 그 문구, 나머지는 「독립 분석중」 등 세분?)
 3. GA4 unavailable이어도 파이프라인 **계속**(fail-open) — OK? (권장: 예)
+
+---
+
+# Plan: AI Review Board v10 — Evidence Interpretation Boundary & Cross-Source Divergence
+
+**Status:** Approved 2026-09-20 — implementing (no Live Gemini until tests green + separate approval)
+
+**목적:** FACT→OBSERVATION→POSSIBLE_EXPLANATION→HYPOTHESIS→VERIFICATION 계층을 Calibration→Judge→Revision→Chairman에 일관 적용. `CROSS_SOURCE_DIVERGENCE`를 원인 아닌 독립 evidence 상태로 취급. v1–v9.1·SEM/CASE·기존 run **불변**.
+
+## [현재 구조]
+
+| 영역 | 현황 |
+|------|------|
+| EvidencePack | `aggregates`(DB) + optional `ga4` + `evidenceItems` + `docsHints`; source 분리 유지 |
+| GA4 | `attachGa4Evidence` fail-open; `gaDbDivergenceHints`가 docsHints에 **원인 단정 금지** 문구 이미 있음 |
+| Claim Calibration | `evidenceType`: DIRECT_FACT\|INFERENCE\|HYPOTHESIS\|UNKNOWN — **CROSS_SOURCE_DIVERGENCE 없음**; `reasoningLevel` 없음 |
+| Semantic Judge | leap types: UNKNOWN_AS_NEGATIVE, FACT_TO_CAUSALITY/TREND/GLOBAL, TECH_STACK_TO_QUALITY, NONE — **DIVERGENCE_AS_CAUSALITY / DEVICE_RATIO_TO_UX / ENGAGEMENT_WITHOUT_BENCHMARK / TECH_STACK_TO_COMPETITIVE / MAJORITY_AS_EVIDENCE / FACT_TO_OBSERVATION 계열 없음**; severity는 detected+type (WEAK/MEDIUM/HIGH 등급 필드 없음) |
+| Revision | REVISION_QUALITY + Q1–12; leap 시 REWORD/ADD_CAVEAT/NARROW 권고; **강제 PARTIAL 없음**; UNCHANGED+retainReason 규칙 일부 존재 |
+| Critic | calibration/judge integrity overlays |
+| Chairman | confirmedFacts / unknown / hypotheses 등 optional 배열 — **crossSourceDivergences / observations / verificationTasks 전용 필드 없음** (needsFurtherVerification으로 일부 흡수) |
+| Admin Claim Table | Calibration/Judge/Support/Risk/Leap/Action/Mismatch — **Reasoning Level / Evidence Type 컬럼 없음** |
+| Fixtures | `SEM-*` + `CASE-*` in `tests/fixtures/.../semantic-reference-cases.json`; **DIV-* 없음** |
+| LLM calls | `EXPECTED_PIPELINE_LLM_CALLS = 32` ≤ max 40 |
+| Persona | A–E freeze (`personas.ts`) — v10에서 역할 경계 재작성 **금지**(가드 문구만 additive 가능) |
+
+## [변경이 필요한 파일] (예상)
+
+- `types.ts` — additive: `CROSS_SOURCE_DIVERGENCE`, `reasoningLevel?`, leap types+, FinalReport sections?
+- `claim-calibration.ts` (+test) — classify divergence / overclaim heuristics
+- `semantic-judge.ts` (+test) — DIV/DEVICE/ENGAGEMENT/STACK/MAJORITY leaps
+- `evidence-claim-entailment.ts` — 필요 시 divergence relation
+- `personas.ts` — CLAIM_CALIBRATION / SEMANTIC_JUDGE / REVISION / Chairman **가드 문구만** additive
+- `gemini-llm.ts` — prompt JSON 스키마에 reasoningLevel·chairman 섹션 요청 (호출 수 불변)
+- `mock-llm.ts` — DIV 시나리오
+- `calibration-revision-consistency.ts` (+test) — leap→revision / bad UNCHANGED fail
+- `format-evidence-prompt.ts` — boundary rules 보강 (선택)
+- `ga4-evidence.ts` — divergence hints를 structured optional로? (기본: hints 유지, 분류는 calibration)
+- `AiReviewBoardDetailClient.tsx` — Claim Table columns additive
+- `tests/fixtures/...` — **DIV-001…005** additive (SEM/CASE 수정 금지)
+- `docs/ai-review-board.md` + 본 plan
+- **비변경:** orchestrator phase 수, EvidencePack DB/GA 스키마 breaking, personas 역할 축, 기존 run JSON, SEM/CASE 본문
+
+## [추가할 타입]
+
+```ts
+// ClaimEvidenceType += 'CROSS_SOURCE_DIVERGENCE'
+reasoningLevel?: 'FACT' | 'OBSERVATION' | 'POSSIBLE_EXPLANATION' | 'HYPOTHESIS' | 'VERIFICATION'
+
+// SemanticLeapType += 
+//   'DIVERGENCE_AS_CAUSALITY' | 'DEVICE_RATIO_TO_UX' | 'ENGAGEMENT_WITHOUT_BENCHMARK'
+//   | 'TECH_STACK_TO_COMPETITIVE_ADVANTAGE' | 'MAJORITY_AS_EVIDENCE'
+//   | 'HYPOTHESIS_PRESENTED_AS_FACT' | 'OBSERVATION_TO_HYPOTHESIS' (필요 시)
+
+// FinalReport additive optional:
+crossSourceDivergences?: string[];
+observations?: string[];
+verificationTasks?: string[]; // 또는 needsFurtherVerification 재사용 + prompt 순서만
+```
+
+`semanticLeap.severity`는 기존 `detected`+`type` 유지; 등급이 필요하면 `severity?: 'NONE'|'WEAK'|'MEDIUM'|'HIGH'` **optional additive**.
+
+## [추가할 테스트]
+
+- DIV-001…005 fixture + adjudicator expectations
+- cross-source divergence classification
+- unknown ≠ 0 / ≠ negative
+- GA≠DB signup/active/views → divergence not bug
+- device count ≠ UX
+- engagementRate without benchmark
+- modern stack ≠ competitive advantage
+- majority ≠ confidence↑
+- revision reacts to HIGH leap (mock)
+- UNCHANGED without retainReason addressing leap → consistency FAIL
+- 기존 SEM/CASE/v9.1 suite green
+
+## [호출 수 변화]
+
+**없음.** 단계·멤버 수 동일 → 32 calls. 프롬프트/검증 규칙만 강화.
+
+## [Backward Compatibility]
+
+- 기존 JSON에 새 필드 없으면 `—` / default / omit
+- `isClaimEvidenceType` 등 파서는 unknown 값 fail-soft 또는 fallback INFERENCE
+- SEM/CASE expected schema에 없는 leap type은 DIV fixture에서만 강제
+- 구 run Admin 깨짐 없음
+
+## [기존 데이터 영향]
+
+**없음** (재생성·수정 금지)
+
+## [실제 Live Run에서 확인할 항목]
+
+1. GA≠DB를 CROSS_SOURCE_DIVERGENCE/OBSERVATION로 표현하는지
+2. tracking failure / signup failure가 HYPOTHESIS+missingEvidence인지
+3. mobile count→UX leap 억제
+4. engagementRate 단독 평가 자제
+5. stack→competitive 억제
+6. HIGH leap → Revision REWORD/ADD_CAVEAT/NARROW 또는 정당한 retainReason
+7. Chairman에 Divergence ≠ Root Cause 분리
+8. v9.1 run과 비교(표현 경계, revision 강제율 아님)
+
+## Approval questions
+
+1. v10 계획 승인 여부?
+2. `reasoningLevel`을 Calibration에 **optional**로 둘지, Judge에만 둘지? (권장: Calibration optional + Judge 검증)
+3. Chairman `crossSourceDivergences`/`observations`를 **새 optional 배열**로 둘지, 기존 배열+prompt 순서만으로 할지? (권장: additive 배열)
+4. Live Gemini run은 구현+테스트 green 후 **승인 시** 실행?

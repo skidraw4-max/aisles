@@ -5,6 +5,13 @@ Evidence → … → Semantic Judge → Revision → Critic → Chairman.
 
 호출 수: **32** LLM ≤40 (Live). v9.1은 **regression only** (새 Gemini Live 없음).
 
+## v10 Evidence Boundary
+- `CROSS_SOURCE_DIVERGENCE` evidence type + optional `reasoningLevel` on Calibration
+- Semantic Judge leaps: DIVERGENCE_AS_CAUSALITY, DEVICE_RATIO_TO_UX, ENGAGEMENT_WITHOUT_BENCHMARK, TECH_STACK_TO_COMPETITIVE_ADVANTAGE, MAJORITY_AS_EVIDENCE, …
+- Chairman optional: `crossSourceDivergences`, `observations` (verification → `needsFurtherVerification`)
+- Fixtures: DIV-001…005 (SEM/CASE 보존)
+- LLM calls unchanged (32)
+
 ## Roles
 실행 시 AI-A~E / F / Chairman 역할·focus의 **SSOT**는 `src/lib/ai-review-board/personas.ts` (`PERSONA_SYSTEM`, `MEMBER_FOCUS`)다. 역할 전문은 여기에 복제하지 않는다.
 
