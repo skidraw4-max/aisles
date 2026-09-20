@@ -14,6 +14,14 @@ const FORBIDDEN_PATTERNS = [
   { re: /import\s+(?!type\s)[^;]*from\s+['"]@\/lib\/ugc-hub\.server['"]/, label: '@/lib/ugc-hub.server' },
   { re: /import\s+(?!type\s)[^;]*from\s+['"][^'"]+\.server['"]/, label: '*.server module' },
   { re: /require\s*\(\s*['"]@\/lib\/prisma['"]\s*\)/, label: 'require(@/lib/prisma)' },
+  {
+    re: /import\s+(?!type\s)[^;]*from\s+['"]@\/lib\/ai-review-board\/ga4-evidence['"]/,
+    label: '@/lib/ai-review-board/ga4-evidence (Node/gRPC)',
+  },
+  {
+    re: /import\s+(?!type\s)[^;]*from\s+['"]@\/lib\/ai-review-board\/semantic-reference-eval['"]/,
+    label: '@/lib/ai-review-board/semantic-reference-eval (may pull GA4)',
+  },
 ];
 
 function walk(dir, out = []) {

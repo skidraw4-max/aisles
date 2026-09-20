@@ -10,6 +10,7 @@ import {
   isInProgressReviewBoardPhase,
   reviewBoardPhaseLabelKo,
 } from '@/lib/ai-review-board/phase-label';
+import { runSemanticReferenceEvaluation } from '@/lib/ai-review-board/semantic-reference-eval';
 import { AiReviewBoardDetailClient } from '../AiReviewBoardDetailClient';
 import { AiReviewBoardRunPoller } from '../AiReviewBoardRunPoller';
 import styles from '../board.module.css';
@@ -37,6 +38,7 @@ export default async function AiReviewBoardRunPage({ params }: Props) {
 
   const ver = liveVersionLabel(runId);
   const note = liveVersionNote(runId);
+  const referenceEval = runSemanticReferenceEvaluation();
 
   return (
     <>
@@ -64,7 +66,7 @@ export default async function AiReviewBoardRunPage({ params }: Props) {
           {note ? <p className={styles.lead}>{note}</p> : null}
         </header>
         <AiReviewBoardRunPoller status={run.status} />
-        <AiReviewBoardDetailClient run={run} />
+        <AiReviewBoardDetailClient run={run} referenceEval={referenceEval} />
       </main>
       <SiteFooter />
     </>

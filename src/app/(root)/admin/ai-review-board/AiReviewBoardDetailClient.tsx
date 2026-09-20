@@ -9,7 +9,7 @@ import {
   formatRunWhen,
   resolveMemberRevisionView,
 } from '@/lib/ai-review-board/run-observation';
-import { runSemanticReferenceEvaluation } from '@/lib/ai-review-board/semantic-reference-eval';
+import type { ReferenceEvalReport } from '@/lib/ai-review-board/semantic-reference-eval';
 import styles from './board.module.css';
 
 /** 관찰 핵심 탭을 앞에 두고, 기존 Overview/Members/Scores도 유지 */
@@ -46,13 +46,19 @@ function ListBlock({ title, items }: { title: string; items: string[] }) {
   );
 }
 
-export function AiReviewBoardDetailClient({ run }: { run: ReviewBoardRun }) {
+export function AiReviewBoardDetailClient({
+  run,
+  referenceEval,
+}: {
+  run: ReviewBoardRun;
+  /** Server-computed — do not call runSemanticReferenceEvaluation in the client (GA4/grpc). */
+  referenceEval: ReferenceEvalReport;
+}) {
   const [tab, setTab] = useState<Tab>('Debate');
   const [verdictFilter, setVerdictFilter] = useState<string>('ALL');
   const [leapFilter, setLeapFilter] = useState<string>('ALL');
   const obs = useMemo(() => computeRunObservationMetrics(run), [run]);
   const judgments = run.semanticJudgments ?? [];
-  const referenceEval = useMemo(() => runSemanticReferenceEvaluation(), []);
   const liveSummary = run.final?.semanticJudgeSummary;
   const filteredJudgments = useMemo(() => {
     return judgments.filter((j) => {
