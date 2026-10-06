@@ -420,6 +420,26 @@ function evidenceFromRow(row: {
   };
 }
 
+function reviewStartedAudit(actorUserId: string, tenantId: string, evidence: JuryEvidence, requestId: string) {
+  return {
+    id: randomUUID(),
+    tenantId,
+    timestamp: new Date(),
+    actor: actorUserId,
+    action: 'REVIEW_STARTED' as const,
+    evidenceId: evidence.id,
+    reviewId: requestId,
+    provenance: {
+      purpose: evidence.purpose,
+      reviewType: 'FULL_REVIEW' as const,
+      adapterKey: evidence.adapterKey,
+      contentHash: evidence.contentHash ?? null,
+      readOnly: true,
+      piiExcluded: true,
+    },
+  };
+}
+
 async function markReviewFailed(requestId: string, tenantId: string): Promise<void> {
   const prisma = await loadPrisma();
   await prisma.juryReviewRequest.updateMany({
@@ -486,6 +506,15 @@ export async function runConnectedServiceReview(
     if (existing?.result && existing.result.tenantId === actor.tenantId) {
       return { kind: 'reused' as const, resultId: existing.result.id, decision: existing.result.expectedDecision };
     }
+    if (existing?.status === 'FAILED') {
+      const reclaimed = await tx.juryReviewRequest.updateMany({
+        where: { id: requestId, tenantId: actor.tenantId, status: 'FAILED' },
+        data: { status: 'RUNNING' },
+      });
+      if (reclaimed.count !== 1) return { kind: 'busy' as const };
+      await tx.juryAuditEvent.create({ data: reviewStartedAudit(actor.userId, actor.tenantId, evidence, requestId) });
+      return { kind: 'claimed' as const };
+    }
     if (existing) return { kind: 'busy' as const };
     await tx.juryReviewRequest.create({
       data: {
@@ -501,23 +530,7 @@ export async function runConnectedServiceReview(
       },
     });
     await tx.juryAuditEvent.create({
-      data: {
-        id: randomUUID(),
-        tenantId: actor.tenantId,
-        timestamp: new Date(),
-        actor: actor.userId,
-        action: 'REVIEW_STARTED',
-        evidenceId: evidence.id,
-        reviewId: requestId,
-        provenance: {
-          purpose: evidence.purpose,
-          reviewType: 'FULL_REVIEW',
-          adapterKey: evidence.adapterKey,
-          contentHash: evidence.contentHash ?? null,
-          readOnly: true,
-          piiExcluded: true,
-        },
-      },
+      data: reviewStartedAudit(actor.userId, actor.tenantId, evidence, requestId),
     });
     return { kind: 'claimed' as const };
   });

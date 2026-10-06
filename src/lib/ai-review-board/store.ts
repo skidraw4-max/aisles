@@ -1,11 +1,32 @@
 import fs from 'node:fs/promises';
+import os from 'node:os';
 import path from 'node:path';
 import type { HistoryEvent, ReviewBoardRun } from './types';
 
 export const DEFAULT_REVIEW_BOARD_ROOT = path.join(process.cwd(), 'data', 'ai-review-board');
 
+const JURY_PRODUCT_RUN_ROOT = 'data/jury-product';
+
+function vercelRuntime(): boolean {
+  const flag = process.env.VERCEL;
+  return flag != null && flag !== '';
+}
+
+function isJuryProductRunRoot(root: string): boolean {
+  const normalized = path.normalize(root).replace(/\\/g, '/').replace(/\/+$/, '');
+  return normalized === JURY_PRODUCT_RUN_ROOT || normalized.endsWith(`/${JURY_PRODUCT_RUN_ROOT}`);
+}
+
+/** Logical root stays data/jury-product. Vercel remaps only the physical directory. */
+export function resolveRunRoot(root: string): string {
+  if (vercelRuntime() && isJuryProductRunRoot(root)) {
+    return path.join(os.tmpdir(), 'jury-product');
+  }
+  return root;
+}
+
 export function runDir(root: string, runId: string): string {
-  return path.join(root, runId);
+  return path.join(resolveRunRoot(root), runId);
 }
 
 export async function ensureRunDir(root: string, runId: string): Promise<string> {
@@ -69,7 +90,7 @@ export async function loadRun(root: string, runId: string): Promise<ReviewBoardR
 
 export async function listRuns(root: string): Promise<string[]> {
   try {
-    const entries = await fs.readdir(root, { withFileTypes: true });
+    const entries = await fs.readdir(resolveRunRoot(root), { withFileTypes: true });
     return entries
       .filter((e) => e.isDirectory() && e.name.startsWith('run-'))
       .map((e) => e.name)

@@ -3,6 +3,7 @@
  * Run: node --import tsx --test src/lib/jury-product/connected-service-review.test.ts
  */
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
@@ -17,7 +18,7 @@ import {
 } from './connected-service-review';
 import type { JuryConsoleView } from './console-view';
 import type { ProductReviewCore } from './review-boundary';
-import type { JuryMembership } from './records';
+import { JURY_CORE_CONTRACT_VERSION, JURY_PRODUCT_DATA_ROOT, type JuryFinalSurface, type JuryMembership } from './records';
 import {
   persistOnboardingDiscovery,
   persistOnboardingScopeDecision,
@@ -368,6 +369,250 @@ test('owner collects mock evidence and runs the existing Jury Core once', { time
     await removeFixture(prisma);
   }
 });
+
+test('failed review without a result retries once and preserves finished results', { timeout: 180_000 }, async () => {
+  loadEnv();
+  const { prisma } = await import('@/lib/prisma');
+  const retryTenant = 'phase73-retry';
+  const retryForeign = 'phase73-retry-foreign';
+  const retryOwner = membership('phase73-retry-owner-m', retryTenant, 'phase73-retry-owner', 'OWNER');
+  const retryMember = membership('phase73-retry-member-m', retryTenant, 'phase73-retry-member', 'MEMBER');
+  const retryAuditor = membership('phase73-retry-auditor-m', retryTenant, 'phase73-retry-auditor', 'AUDITOR');
+  const retryForeignOwner = membership('phase73-retry-foreign-m', retryForeign, 'phase73-retry-foreign', 'OWNER');
+  const retryOwnerActor = actor(retryOwner);
+  const retryMemberActor = actor(retryMember);
+  const retryAuditorActor = actor(retryAuditor);
+  const retryForeignActor = actor(retryForeignOwner);
+  const surface: JuryFinalSurface = {
+    statusSummary: 'measured',
+    topProblems: [],
+    expectedUserEffect: '',
+    risk: '',
+    dimensionEvidence: [],
+    supportedClaims: [],
+    partiallySupportedClaims: [],
+    hypotheses: [],
+  };
+  const reading = {
+    boardRunId: 'run-phase73-retry',
+    evidenceStrength: 'moderate',
+    claimStrength: 'weak',
+    conflictDetected: false,
+    overclaimDetected: false,
+    revisionRequired: false,
+    expectedDecision: 'VERIFY',
+    finalSurface: surface,
+    completedAt: NOW,
+  };
+  let calls = 0;
+  let failOnce = true;
+  let pauseNext = false;
+  let releaseCore: (() => void) | null = null;
+  let markCoreEntered: (() => void) | null = null;
+  const coreEntered = new Promise<void>((resolve) => {
+    markCoreEntered = resolve;
+  });
+  const core: ProductReviewCore = async () => {
+    calls += 1;
+    if (failOnce) {
+      failOnce = false;
+      throw new Error('disk failed');
+    }
+    if (pauseNext) {
+      pauseNext = false;
+      markCoreEntered?.();
+      await new Promise<void>((resolve) => {
+        releaseCore = resolve;
+      });
+    }
+    return reading;
+  };
+  try {
+    await removeRetryFixture(prisma, retryTenant, retryForeign);
+    for (const row of [retryOwner, retryMember, retryAuditor, retryForeignOwner]) {
+      await prisma.user.create({ data: { id: row.userId, username: row.userId, email: `${row.userId}@example.invalid` } });
+    }
+    await prisma.juryTenant.create({ data: { id: retryTenant, name: retryTenant } });
+    await prisma.juryTenant.create({ data: { id: retryForeign, name: retryForeign } });
+    for (const row of [retryOwner, retryMember, retryAuditor, retryForeignOwner]) {
+      await prisma.juryMembership.create({
+        data: { id: row.id, tenantId: row.tenantId, userId: row.userId, role: row.role, createdAt: new Date(NOW) },
+      });
+    }
+    const shop = await connect(retryOwnerActor, 'phase73-retry-shop');
+    const collected = await runConnectedServiceEvidenceCollection(collectCommand(retryOwnerActor, shop, PERIOD_A));
+    assert.equal(collected.ok, true);
+    if (!collected.ok) return;
+    const failed = await runConnectedServiceReview({
+      actor: retryOwnerActor,
+      connectionId: shop,
+      evidenceId: collected.evidenceId,
+      clientTenantId: retryForeign,
+      core,
+    });
+    assert.equal(failed.ok, false);
+    if (!failed.ok) assert.equal(failed.reason, 'REVIEW_NOT_EXECUTED');
+    assert.equal(calls, 1);
+    const failedRequest = await prisma.juryReviewRequest.findFirst({
+      where: { tenantId: retryTenant, evidenceId: collected.evidenceId },
+    });
+    assert.equal(failedRequest?.status, 'FAILED');
+    assert.equal(await prisma.juryReviewResult.count({ where: { reviewRequestId: failedRequest?.id ?? 'missing' } }), 0);
+    const startedBefore = await prisma.juryAuditEvent.count({
+      where: { tenantId: retryTenant, action: 'REVIEW_STARTED', reviewId: failedRequest?.id ?? 'missing' },
+    });
+    assert.equal(startedBefore, 1);
+
+    const auditorRetry = await runConnectedServiceReview({
+      actor: retryAuditorActor,
+      connectionId: shop,
+      evidenceId: collected.evidenceId,
+      core,
+    });
+    assert.equal(auditorRetry.ok, false);
+    if (!auditorRetry.ok) assert.equal(auditorRetry.reason, 'FORBIDDEN');
+    const foreignRetry = await runConnectedServiceReview({
+      actor: retryForeignActor,
+      connectionId: shop,
+      evidenceId: collected.evidenceId,
+      core,
+    });
+    assert.equal(foreignRetry.ok, false);
+    if (!foreignRetry.ok) assert.equal(foreignRetry.reason, 'NOT_FOUND');
+    assert.equal(calls, 1);
+    assert.equal(
+      (await prisma.juryReviewRequest.findFirst({ where: { id: failedRequest?.id ?? 'missing' } }))?.status,
+      'FAILED',
+    );
+
+    pauseNext = true;
+    const firstRetry = runConnectedServiceReview({
+      actor: retryMemberActor,
+      connectionId: shop,
+      evidenceId: collected.evidenceId,
+      core,
+    });
+    const secondRetry = runConnectedServiceReview({
+      actor: retryOwnerActor,
+      connectionId: shop,
+      evidenceId: collected.evidenceId,
+      core,
+    });
+    await coreEntered;
+    const blockedWhileRunning = await runConnectedServiceReview({
+      actor: retryOwnerActor,
+      connectionId: shop,
+      evidenceId: collected.evidenceId,
+      core,
+    });
+    releaseCore?.();
+    const [left, right] = await Promise.all([firstRetry, secondRetry]);
+    assert.equal(blockedWhileRunning.ok, false);
+    if (!blockedWhileRunning.ok) assert.equal(blockedWhileRunning.reason, 'REVIEW_ALREADY_EXISTS');
+    const succeeded = [left, right].filter((row) => row.ok);
+    assert.equal(succeeded.length >= 1, true);
+    assert.equal(calls, 2);
+    assert.equal(await prisma.juryReviewRequest.count({ where: { tenantId: retryTenant, evidenceId: collected.evidenceId } }), 1);
+    assert.equal(await prisma.juryReviewResult.count({ where: { tenantId: retryTenant, reviewRequestId: failedRequest?.id ?? 'missing' } }), 1);
+    const completed = await prisma.juryReviewRequest.findFirst({ where: { id: failedRequest?.id ?? 'missing' } });
+    assert.equal(completed?.status, 'COMPLETED');
+    const replay = await runConnectedServiceReview({
+      actor: retryOwnerActor,
+      connectionId: shop,
+      evidenceId: collected.evidenceId,
+      core,
+    });
+    assert.equal(replay.ok, true);
+    if (replay.ok) assert.equal(replay.reused, true);
+    assert.equal(calls, 2);
+
+    const preserved = await runConnectedServiceEvidenceCollection(collectCommand(retryOwnerActor, shop, PERIOD_B));
+    assert.equal(preserved.ok, true);
+    if (!preserved.ok) return;
+    const preservedId = createHash('sha256')
+      .update([retryTenant, preserved.evidenceId, 'FULL_REVIEW', ''].join('\n'))
+      .digest('hex');
+    await prisma.juryReviewRequest.create({
+      data: {
+        id: preservedId,
+        tenantId: retryTenant,
+        connectionId: shop,
+        evidenceId: preserved.evidenceId,
+        reviewType: 'FULL_REVIEW',
+        mode: 'AISLE_SELF',
+        status: 'FAILED',
+        coreRootDir: JURY_PRODUCT_DATA_ROOT,
+        requestedByUserId: retryOwner.userId,
+      },
+    });
+    await prisma.juryReviewResult.create({
+      data: {
+        id: `${preservedId}-result`,
+        tenantId: retryTenant,
+        reviewRequestId: preservedId,
+        boardRunId: 'run-preserved',
+        evidenceStrength: 'moderate',
+        claimStrength: 'weak',
+        conflictDetected: false,
+        overclaimDetected: false,
+        revisionRequired: false,
+        expectedDecision: 'REWORD',
+        finalSurface: surface,
+        contractVersion: JURY_CORE_CONTRACT_VERSION,
+        completedAt: new Date(NOW),
+      },
+    });
+    const kept = await runConnectedServiceReview({
+      actor: retryOwnerActor,
+      connectionId: shop,
+      evidenceId: preserved.evidenceId,
+      core,
+    });
+    assert.equal(kept.ok, true);
+    if (kept.ok) {
+      assert.equal(kept.reused, true);
+      assert.equal(kept.decision, 'REWORD');
+      assert.equal(kept.resultId, `${preservedId}-result`);
+    }
+    assert.equal(calls, 2);
+    assert.equal(
+      (await prisma.juryReviewRequest.findFirst({ where: { id: preservedId } }))?.status,
+      'FAILED',
+    );
+
+    const audits = await prisma.juryAuditEvent.findMany({ where: { tenantId: retryTenant } });
+    assert.equal(audits.some((row) => row.action === 'REVIEW_COMPLETED'), true);
+    assert.equal(JSON.stringify(audits).includes('disk failed'), false);
+    assert.equal(JSON.stringify(audits).toLowerCase().includes('password'), false);
+  } finally {
+    await removeRetryFixture(prisma, retryTenant, retryForeign);
+  }
+});
+
+async function removeRetryFixture(
+  prisma: Awaited<typeof import('@/lib/prisma')>['prisma'],
+  tenantId: string,
+  foreignTenantId: string,
+): Promise<void> {
+  const where = { tenantId: { in: [tenantId, foreignTenantId] } };
+  await prisma.juryReviewResult.deleteMany({ where });
+  await prisma.juryReviewRequest.deleteMany({ where });
+  await prisma.juryNormalizedMetric.deleteMany({ where });
+  await prisma.juryEvidence.deleteMany({ where });
+  await prisma.juryAuditEvent.deleteMany({ where });
+  await prisma.juryDiscoveryResult.deleteMany({ where });
+  await prisma.juryAccessScope.deleteMany({ where });
+  await prisma.juryServiceConnection.deleteMany({ where });
+  await prisma.juryMembership.deleteMany({ where });
+  await prisma.juryTenant.deleteMany({ where: { id: { in: [tenantId, foreignTenantId] } } });
+  await prisma.user.deleteMany({
+    where: {
+      username: {
+        in: ['phase73-retry-owner', 'phase73-retry-member', 'phase73-retry-auditor', 'phase73-retry-foreign'],
+      },
+    },
+  });
+}
 
 function collectCommand(
   actor: Extract<JuryActor, { ok: true }>,
