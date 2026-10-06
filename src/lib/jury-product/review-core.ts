@@ -31,7 +31,7 @@ export async function callFrozenReviewPipeline(input: {
     throw new Error('product review artifacts must stay in data/jury-product');
   }
   const { runReviewBoardPipeline } = await import('../ai-review-board/orchestrator');
-  const { extractActualFromRun } = await import('../../../tests/ai-review-board/evaluation/runner/compare');
+  const { extractActualFromRun } = await import('../ai-review-board/final-quality-actual');
   const run = await runReviewBoardPipeline({
     rootDir: input.rootDir,
     llm: input.llm,
