@@ -7,9 +7,6 @@ import type { EvidencePack } from '@/lib/ai-review-board/types';
 import { readJson, runDir } from '@/lib/ai-review-board/store';
 import type { FrozenCoreReading } from '../../review-boundary';
 import {
-  JURY_CLAIM_STRENGTHS,
-  JURY_DECISIONS,
-  JURY_EVIDENCE_STRENGTHS,
   JURY_PRODUCT_DATA_ROOT,
   type JuryFinalSurface,
   type JuryReviewStatus,
@@ -18,7 +15,7 @@ import { githubPayloadHasSecret } from './document-secret';
 import { packFromStoredEvidence, type GithubStoredMetric } from './evidence';
 import { evidencePackFingerprint, githubRefreshRequestId } from './pack-fingerprint';
 import { planGithubReviewStart } from './review-plan';
-import { githubFirstReviewRequestId, githubReviewResultId } from './review';
+import { githubFirstReviewRequestId } from './review';
 
 export type GithubRefreshStop =
   | 'evidence-failed'
@@ -27,7 +24,8 @@ export type GithubRefreshStop =
   | 'refresh-failed'
   | 'secret-rejected'
   | 'not-ready'
-  | 'provenance-mismatch';
+  | 'provenance-mismatch'
+  | 'execution-denied';
 
 export type GithubRefreshSnapshot = {
   evidence: {
@@ -123,6 +121,11 @@ export function refreshClaimDecision(status: JuryReviewStatus | null): 'claim' |
   return 'claim';
 }
 
+/** New Refresh execution stays closed. Callers cannot pass an approval flag. */
+export function refreshNewExecutionAllowed(): false {
+  return false;
+}
+
 export async function readRefreshArtifact(boardRunId: string): Promise<EvidencePack | null> {
   if (!boardRunId || /[\\/]|\.\./.test(boardRunId)) return null;
   return readJson<EvidencePack>(path.join(runDir(JURY_PRODUCT_DATA_ROOT, boardRunId), 'evidence.json'));
@@ -159,54 +162,10 @@ export async function startGithubRefreshReview(input: {
   const fingerprint = evidencePackFingerprint(pack);
   const requestId = githubRefreshRequestId(input.tenantId, input.evidenceId, fingerprint);
   if (requestId === snapshot.firstRequest?.id) return { ok: false, flow: 'not-ready' };
-  const claimed = await input.store.claim({
-    id: requestId,
-    tenantId: input.tenantId,
-    connectionId: input.connectionId,
-    evidenceId: input.evidenceId,
-    fingerprint,
-    requestedByUserId: input.userId,
-    parentResultId: planned.parentResultId,
-  });
-  if (claimed === 'conflict') return finishExisting(input.store, requestId, planned.parentResultId, fingerprint);
-  let reading: FrozenCoreReading;
-  try {
-    reading = await input.execute(pack);
-  } catch {
-    await input.store.fail(requestId);
-    return { ok: false, flow: 'refresh-failed' };
-  }
-  const stored = await input.store.readArtifact(reading.boardRunId);
-  if (!stored || evidencePackFingerprint(stored) !== fingerprint) {
-    await input.store.fail(requestId);
-    return { ok: false, flow: 'provenance-mismatch' };
-  }
-  if (!acceptedReading(reading)) {
-    await input.store.fail(requestId);
-    return { ok: false, flow: 'refresh-failed' };
-  }
-  const resultId = githubReviewResultId(requestId, reading.boardRunId);
-  let saved: 'completed' | 'lost';
-  try {
-    saved = await input.store.complete({
-      requestId,
-      resultId,
-      tenantId: input.tenantId,
-      parentResultId: planned.parentResultId,
-      reading,
-    });
-  } catch {
-    await input.store.fail(requestId);
-    return { ok: false, flow: 'refresh-failed' };
-  }
-  if (saved === 'lost') return finishExisting(input.store, requestId, planned.parentResultId, fingerprint);
-  return { ok: true, created: true, requestId, resultId, parentResultId: planned.parentResultId, fingerprint };
-}
-
-function acceptedReading(reading: FrozenCoreReading): boolean {
-  return (JURY_DECISIONS as readonly string[]).includes(reading.expectedDecision)
-    && (JURY_EVIDENCE_STRENGTHS as readonly string[]).includes(reading.evidenceStrength)
-    && (JURY_CLAIM_STRENGTHS as readonly string[]).includes(reading.claimStrength);
+  const existing = await input.store.readClaim(requestId);
+  if (existing) return finishExisting(input.store, requestId, planned.parentResultId, fingerprint);
+  if (refreshNewExecutionAllowed() === false) return { ok: false, flow: 'execution-denied' };
+  return { ok: false, flow: 'execution-denied' };
 }
 
 async function finishExisting(

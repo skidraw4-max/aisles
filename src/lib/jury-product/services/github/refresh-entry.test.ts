@@ -3,6 +3,8 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import { decideJuryMutation, type JuryActor } from '../../access';
 import { JURY_MEMBER_ROLES, type JuryFinalSurface, type JuryMemberRole } from '../../records';
+import { packFromStoredEvidence } from './evidence';
+import { evidencePackFingerprint, githubRefreshRequestId } from './pack-fingerprint';
 import { githubFirstReviewRequestId } from './review';
 import { startGithubRefreshReview, type GithubRefreshClaim, type GithubRefreshSnapshot, type GithubRefreshStore } from './refresh';
 import { runGithubRefreshEntry } from './refresh-entry';
@@ -179,15 +181,29 @@ test('a completed refresh with the same fingerprint is reused and does not execu
     firstRequest: { id: githubFirstReviewRequestId(TENANT, EVIDENCE), status: 'COMPLETED' },
     firstResult: { id: 'parent-result', decision: 'ACCEPT', boardRunId: 'run-original', finalSurface: surface },
   };
-  let saved: GithubRefreshClaim | null = null;
+  const evidence = initial.evidence;
+  const repository = initial.repository;
+  assert.ok(evidence && repository);
+  const built = packFromStoredEvidence({ evidence, repository, metrics: initial.metrics });
+  assert.ok(built);
+  const fingerprint = evidencePackFingerprint(built);
+  const requestId = githubRefreshRequestId(TENANT, EVIDENCE, fingerprint);
+  const existingClaim: GithubRefreshClaim = {
+    id: requestId,
+    status: 'COMPLETED',
+    fingerprint,
+    resultId: 'existing-result',
+    parentResultId: 'parent-result',
+  };
+  let claims = 0;
   let executes = 0;
   const store: GithubRefreshStore = {
     async load() { return initial; },
-    async claim(row) {
-      saved = { id: row.id, status: 'COMPLETED', fingerprint: row.fingerprint, resultId: 'existing-result', parentResultId: row.parentResultId };
-      return 'conflict';
+    async claim() {
+      claims += 1;
+      throw new Error('claim');
     },
-    async readClaim() { return saved; },
+    async readClaim(id) { return id === requestId ? existingClaim : null; },
     async complete() { throw new Error('complete'); },
     async fail() { throw new Error('fail'); },
     async readArtifact() { return null; },
@@ -216,7 +232,29 @@ test('a completed refresh with the same fingerprint is reused and does not execu
     assert.equal(result.resultId, 'existing-result');
   }
   assert.equal(executes, 0);
+  assert.equal(claims, 0);
   assert.equal(initial.firstResult?.id, 'parent-result');
+});
+
+test('client approval fields do not bypass tenant scope or evidence checks', async () => {
+  const cases = [
+    resources({ connection: { id: CONNECTION, tenantId: OTHER } }),
+    resources({ approved: false }),
+    resources({ evidence: { id: EVIDENCE, tenantId: TENANT, connectionId: 'other-connection' } }),
+  ];
+  for (const gate of cases) {
+    const result = await runGithubRefreshEntry(Object.assign({
+      actor: actor(roleWhere(true)),
+      connectionId: CONNECTION,
+      evidenceId: EVIDENCE,
+      loadConnection: gate.loadConnection,
+      loadScopeApproved: gate.loadScopeApproved,
+      loadEvidence: gate.loadEvidence,
+      start: gate.start,
+    }, { approved: true, allowExecution: true, role: 'OWNER', permission: 'REVIEW' }));
+    assert.equal(result.ok, false);
+    assert.equal(gate.seen.start, 0);
+  }
 });
 
 test('refresh entry source keeps the deployed review.start rule', () => {
@@ -233,5 +271,9 @@ test('refresh entry source keeps the deployed review.start rule', () => {
   assert.equal(action.includes('input.role'), false);
   assert.equal(action.includes('input.permission'), false);
   assert.equal(action.includes('JuryServiceMember'), false);
+  assert.equal(action.includes('allowExecution'), false);
+  assert.equal(action.includes('approved'), false);
   assert.equal(refresh.includes('planGithubReviewStart'), true);
+  assert.equal(refresh.includes('execution-denied'), true);
+  assert.equal(refresh.includes('input.execute'), false);
 });
