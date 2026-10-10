@@ -3,6 +3,7 @@ import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 
 const { selectExactTest, planPreviewDbAccess } = await import(new URL('../src/lib/jury-product/preview-db-guard.ts', import.meta.url).href);
+const { buildPreviewPgConfig } = await import(new URL('../src/lib/jury-product/preview-db-tls.ts', import.meta.url).href);
 
 function value(text, name) {
   const line = text.split(/\r?\n/).find((item) => item.startsWith(`${name}=`));
@@ -37,6 +38,14 @@ const plan = planPreviewDbAccess({ JURY_PREVIEW_DB: '1', DATABASE_URL: database,
 if (!plan.ok) {
   console.log(plan.status);
   process.exit(2);
+}
+// Both urls must be securable with verified TLS before any test process starts.
+for (const url of [database, direct]) {
+  const tls = buildPreviewPgConfig(url, process.env);
+  if (!tls.ok) {
+    console.log(tls.status);
+    process.exit(2);
+  }
 }
 const child = spawnSync(process.execPath, ['--import', 'tsx', '--test', '--test-name-pattern', selected.pattern, file], {
   cwd: process.cwd(),
