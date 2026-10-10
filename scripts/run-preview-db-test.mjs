@@ -29,14 +29,18 @@ if (!selected.ok) {
 const previewText = readFileSync(new URL('../.env.preview', import.meta.url), 'utf8');
 const database = value(previewText, 'DATABASE_URL');
 const direct = value(previewText, 'DIRECT_URL');
-const plan = planPreviewDbAccess({ JURY_PREVIEW_DB: '1', DATABASE_URL: database, DIRECT_URL: direct });
+// Project refs are configuration, never source: take them from .env.preview, else from the process environment.
+const previewRef = value(previewText, 'JURY_PREVIEW_DB_PROJECT_REF') || process.env.JURY_PREVIEW_DB_PROJECT_REF || '';
+const productionRefs = value(previewText, 'JURY_PRODUCTION_DB_PROJECT_REFS') || process.env.JURY_PRODUCTION_DB_PROJECT_REFS || '';
+const refEnv = { JURY_PREVIEW_DB_PROJECT_REF: previewRef, JURY_PRODUCTION_DB_PROJECT_REFS: productionRefs };
+const plan = planPreviewDbAccess({ JURY_PREVIEW_DB: '1', DATABASE_URL: database, DIRECT_URL: direct, ...refEnv });
 if (!plan.ok) {
   console.log(plan.status);
   process.exit(2);
 }
 const child = spawnSync(process.execPath, ['--import', 'tsx', '--test', '--test-name-pattern', selected.pattern, file], {
   cwd: process.cwd(),
-  env: { ...process.env, JURY_PREVIEW_DB: '1', DATABASE_URL: database, DIRECT_URL: direct },
+  env: { ...process.env, JURY_PREVIEW_DB: '1', DATABASE_URL: database, DIRECT_URL: direct, ...refEnv },
   encoding: 'utf8',
   shell: false,
 });

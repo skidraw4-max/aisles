@@ -15,10 +15,14 @@ import {
 
 const secretUser = 'seed-user';
 const secretPassword = 'seed-password';
+// Dummy project refs. Real refs are configuration and never appear in source.
+const PREVIEW_REF = 'previewdummyrefaaaaa';
+const PRODUCTION_REF = 'productiondummyrefbb';
+const REF_ENV = { JURY_PREVIEW_DB_PROJECT_REF: PREVIEW_REF, JURY_PRODUCTION_DB_PROJECT_REFS: PRODUCTION_REF };
 const unknownHost = 'unknown.example';
-const direct = `postgres://${secretUser}:${secretPassword}@db.gdigogpddwjiofwrcies.supabase.co:5432/postgres`;
-const session = `postgres://${secretUser}:${secretPassword}@aws-0-ap-south-1.pooler.supabase.com:5432/postgres`;
-const productionDirect = `postgres://${secretUser}:${secretPassword}@db.pcvyoqbyhfbpevzkwpsf.supabase.co:5432/postgres`;
+const direct = `postgres://${secretUser}:${secretPassword}@db.previewdummyrefaaaaa.supabase.co:5432/postgres`;
+const session = `postgres://postgres.${PREVIEW_REF}:${secretPassword}@aws-0-ap-south-1.pooler.supabase.com:5432/postgres`;
+const productionDirect = `postgres://${secretUser}:${secretPassword}@db.productiondummyrefbb.supabase.co:5432/postgres`;
 const unknown = `postgres://${secretUser}:${secretPassword}@${unknownHost}:5432/postgres?sslmode=require`;
 const ordinary = `postgres://${secretUser}:${secretPassword}@ordinary.example:5432/postgres`;
 const alternate = `postgres://${secretUser}:${secretPassword}@alternate.example:5432/postgres`;
@@ -39,6 +43,7 @@ function harness(env: SeedEnv, hooks?: {
   createPool?: (connectionString: string) => void;
   disconnect?: () => Promise<void>;
 }): Harness {
+  env = { ...REF_ENV, ...env };
   const seen: Harness = {
     deps: {
       env,
@@ -114,8 +119,8 @@ function assertNoSecrets(value: string) {
   assert.equal(value.includes(secretUser), false);
   assert.equal(value.includes(secretPassword), false);
   assert.equal(value.includes(unknownHost), false);
-  assert.equal(value.includes('db.pcvyoqbyhfbpevzkwpsf.supabase.co'), false);
-  assert.equal(value.includes('db.gdigogpddwjiofwrcies.supabase.co'), false);
+  assert.equal(value.includes('db.productiondummyrefbb.supabase.co'), false);
+  assert.equal(value.includes('db.previewdummyrefaaaaa.supabase.co'), false);
   assert.equal(value.includes('aws-0-ap-south-1.pooler.supabase.com'), false);
   assert.equal(value.includes('sslmode'), false);
 }
@@ -287,7 +292,7 @@ test('preview seed blocks when only one url is the production direct hostname', 
 test('preview seed blocks a non-canonical hostname before pool creation', async () => {
   const seen = harness({
     JURY_PREVIEW_DB: '1',
-    DATABASE_URL: `postgres://${secretUser}:${secretPassword}@DB.GDIGOGPDDWJIOFWRCIES.SUPABASE.CO:5432/postgres`,
+    DATABASE_URL: `postgres://${secretUser}:${secretPassword}@DB.PREVIEWDUMMYREFAAAAA.SUPABASE.CO:5432/postgres`,
     DIRECT_URL: session,
   });
   await executeSeed(seen.deps);
@@ -303,8 +308,8 @@ test('preview seed blocks a non-canonical hostname before pool creation', async 
 });
 
 test('ordinary seed stops before pool when either url is a known preview endpoint', async () => {
-  const previewTransaction = `postgresql://${secretUser}:${secretPassword}@db.gdigogpddwjiofwrcies.supabase.co:6543/postgres`;
-  const paddedPreview = `postgres://${secretUser}:${secretPassword}@db.gdigogpddwjiofwrcies.supabase.co:05432/postgres`;
+  const previewTransaction = `postgresql://${secretUser}:${secretPassword}@db.previewdummyrefaaaaa.supabase.co:6543/postgres`;
+  const paddedPreview = `postgres://${secretUser}:${secretPassword}@db.previewdummyrefaaaaa.supabase.co:05432/postgres`;
   const cases = [
     { DATABASE_URL: direct, DIRECT_URL: ordinary },
     { DATABASE_URL: ordinary, DIRECT_URL: session },
@@ -347,7 +352,7 @@ test('ordinary seed keeps a non-preview production url on the existing path', as
 });
 
 test('ordinary seed ignores preview host text outside the hostname', async () => {
-  const previewHost = 'db.gdigogpddwjiofwrcies.supabase.co';
+  const previewHost = 'db.previewdummyrefaaaaa.supabase.co';
   const cases = [
     { DATABASE_URL: 'not a url', DIRECT_URL: ordinary },
     { DATABASE_URL: `postgres://${previewHost}:${secretPassword}@ordinary.example:5432/postgres`, DIRECT_URL: '' },
@@ -411,4 +416,27 @@ test('seed close failures do not log the exception object', async () => {
   assert.equal(seen.errors.join('\n'), 'SEED_FAILED');
   assert.deepEqual(seen.exits, [1]);
   assertNoSecrets(seen.errors.join('\n'));
+});
+
+test('seed fails closed for supabase-hosted urls when the ref configuration is missing', async () => {
+  const cases: SeedEnv[] = [
+    { DATABASE_URL: productionDirect, DIRECT_URL: ordinary },
+    { DATABASE_URL: ordinary, DIRECT_URL: session },
+    { JURY_PREVIEW_DB: '1', DATABASE_URL: direct, DIRECT_URL: session },
+  ];
+  for (const env of cases) {
+    const seen = harness(env);
+    seen.deps.env = env;
+    await executeSeed(seen.deps);
+    assert.equal(seen.errors.join('\n'), 'BLOCKED_PREVIEW_DB');
+    assert.deepEqual(seen.exits, [1]);
+    assert.equal(seen.calls.pool, 0);
+    assert.equal(seen.calls.upsert, 0);
+    assertNoSecrets(seen.errors.join('\n'));
+  }
+  const ordinaryOnly = harness({ DATABASE_URL: ordinary, DIRECT_URL: alternate });
+  ordinaryOnly.deps.env = { DATABASE_URL: ordinary, DIRECT_URL: alternate };
+  await executeSeed(ordinaryOnly.deps);
+  assert.equal(ordinaryOnly.calls.pool, 1);
+  assert.deepEqual(ordinaryOnly.errors, []);
 });

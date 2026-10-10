@@ -1,17 +1,33 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
 import test from 'node:test';
 import {
-  isKnownPreviewEndpoint,
-  openPreviewDbTest,
-  planPreviewDbAccess,
+  isKnownPreviewEndpoint as isKnownPreviewEndpointWith,
+  isSupabaseHostedEndpoint,
+  openPreviewDbTest as openPreviewDbTestWith,
+  planPreviewDbAccess as planPreviewDbAccessWith,
+  readPreviewDbRefConfig,
   selectExactTest,
+  type PreviewDbEnv,
+  type PreviewDbRefConfig,
 } from './preview-db-guard';
 
-const direct = 'postgres://user:secret@db.gdigogpddwjiofwrcies.supabase.co:5432/postgres';
-const transaction = 'postgresql://user:secret@db.gdigogpddwjiofwrcies.supabase.co:6543/postgres';
-const session = 'postgres://user:secret@aws-0-ap-south-1.pooler.supabase.com:5432/postgres';
-const productionDirect = 'postgres://user:secret@db.pcvyoqbyhfbpevzkwpsf.supabase.co:5432/postgres';
+// Dummy project refs. Real refs are configuration and never appear in source.
+const PREVIEW_REF = 'previewdummyrefaaaaa';
+const PRODUCTION_REF = 'productiondummyrefbb';
+const OTHER_REF = 'otherprojectrefzzzzz';
+const REFS: PreviewDbRefConfig = { previewRef: PREVIEW_REF, productionRefs: [PRODUCTION_REF] };
+const REF_ENV = { JURY_PREVIEW_DB_PROJECT_REF: PREVIEW_REF, JURY_PRODUCTION_DB_PROJECT_REFS: PRODUCTION_REF };
+const planPreviewDbAccess = (env: PreviewDbEnv) => planPreviewDbAccessWith(env, REFS);
+const openPreviewDbTest = (env: PreviewDbEnv, read: () => Promise<number>) => openPreviewDbTestWith(env, read, REFS);
+const isKnownPreviewEndpoint = (value: string | undefined) => isKnownPreviewEndpointWith(value, REFS);
+
+const direct = 'postgres://user:secret@db.previewdummyrefaaaaa.supabase.co:5432/postgres';
+const transaction = 'postgresql://user:secret@db.previewdummyrefaaaaa.supabase.co:6543/postgres';
+const session = `postgres://postgres.${PREVIEW_REF}:secret@aws-0-ap-south-1.pooler.supabase.com:5432/postgres`;
+const productionDirect = 'postgres://user:secret@db.productiondummyrefbb.supabase.co:5432/postgres';
 
 function calls() {
   return { migration: 0 };
@@ -67,17 +83,17 @@ test('preview db guard rejects hosts, ports, and url parts outside the allowlist
   const seen = calls();
   const cases = [
     { DATABASE_URL: 'postgres://user:secret@db.other-project.supabase.co:5432/postgres', DIRECT_URL: direct },
-    { DATABASE_URL: 'postgres://user:secret@db.gdigogpddwjiofwrcies.supabase.co:5433/postgres', DIRECT_URL: direct },
-    { DATABASE_URL: 'postgres://user:secret@db.gdigogpddwjiofwrcies.supabase.co/postgres', DIRECT_URL: direct },
+    { DATABASE_URL: 'postgres://user:secret@db.previewdummyrefaaaaa.supabase.co:5433/postgres', DIRECT_URL: direct },
+    { DATABASE_URL: 'postgres://user:secret@db.previewdummyrefaaaaa.supabase.co/postgres', DIRECT_URL: direct },
     { DATABASE_URL: 'not a url', DIRECT_URL: direct },
-    { DATABASE_URL: 'mysql://user:secret@db.gdigogpddwjiofwrcies.supabase.co:5432/postgres', DIRECT_URL: direct },
-    { DATABASE_URL: 'postgres://db.gdigogpddwjiofwrcies.supabase.co:secret@evil.example:5432/postgres', DIRECT_URL: direct },
+    { DATABASE_URL: 'mysql://user:secret@db.previewdummyrefaaaaa.supabase.co:5432/postgres', DIRECT_URL: direct },
+    { DATABASE_URL: 'postgres://db.previewdummyrefaaaaa.supabase.co:secret@evil.example:5432/postgres', DIRECT_URL: direct },
     { DATABASE_URL: 'postgres://user:aws-0-ap-south-1.pooler.supabase.com@evil.example:5432/postgres', DIRECT_URL: direct },
-    { DATABASE_URL: 'postgres://user:secret@evil.example:5432/db.gdigogpddwjiofwrcies.supabase.co', DIRECT_URL: direct },
-    { DATABASE_URL: 'postgres://user:secret@evil.example:5432/postgres?host=db.gdigogpddwjiofwrcies.supabase.co', DIRECT_URL: direct },
+    { DATABASE_URL: 'postgres://user:secret@evil.example:5432/db.previewdummyrefaaaaa.supabase.co', DIRECT_URL: direct },
+    { DATABASE_URL: 'postgres://user:secret@evil.example:5432/postgres?host=db.previewdummyrefaaaaa.supabase.co', DIRECT_URL: direct },
     { DATABASE_URL: direct },
     { DIRECT_URL: direct, JURY_PREVIEW_DB: '1' },
-    { JURY_PREVIEW_DB: '1', DATABASE_URL: session, DIRECT_URL: 'postgres://user:secret@aws-1-ap-south-1.pcvyoqbyhfbpevzkwpsf.example/postgres' },
+    { JURY_PREVIEW_DB: '1', DATABASE_URL: session, DIRECT_URL: 'postgres://user:secret@aws-1-ap-south-1.productiondummyrefbb.example/postgres' },
   ];
   for (const env of cases) {
     const blocked = await openPreviewDbTest({
@@ -132,13 +148,13 @@ test('one production direct hostname blocks even when the other url is allowed',
 });
 
 test('hostname boundaries stay outside the allowlist', () => {
-  const allowedHost = 'db.gdigogpddwjiofwrcies.supabase.co';
+  const allowedHost = 'db.previewdummyrefaaaaa.supabase.co';
   const sessionHost = 'aws-0-ap-south-1.pooler.supabase.com';
-  const productionHost = 'db.pcvyoqbyhfbpevzkwpsf.supabase.co';
+  const productionHost = 'db.productiondummyrefbb.supabase.co';
   const cases = [
     `postgres://user:secret@${allowedHost.toUpperCase()}:5432/postgres`,
     `postgres://user:secret@${allowedHost}.:5432/postgres`,
-    'postgres://user:secret@db%2egdigogpddwjiofwrcies.supabase.co:5432/postgres',
+    'postgres://user:secret@db%2epreviewdummyrefaaaaa.supabase.co:5432/postgres',
     `postgres://user:secret@${allowedHost}.evil.example:5432/postgres`,
     `postgres://${allowedHost}:secret@evil.example:5432/postgres`,
     `postgres://user:${sessionHost}@evil.example:5432/postgres`,
@@ -159,21 +175,21 @@ test('hostname boundaries stay outside the allowlist', () => {
 test('port boundaries follow the current parser without enlarging the allowlist', () => {
   const missing = planPreviewDbAccess({
     JURY_PREVIEW_DB: '1',
-    DATABASE_URL: 'postgres://user:secret@db.gdigogpddwjiofwrcies.supabase.co/postgres',
+    DATABASE_URL: 'postgres://user:secret@db.previewdummyrefaaaaa.supabase.co/postgres',
     DIRECT_URL: session,
   });
   assertBlockedPreview(missing);
 
   const otherPort = planPreviewDbAccess({
     JURY_PREVIEW_DB: '1',
-    DATABASE_URL: 'postgres://user:secret@db.gdigogpddwjiofwrcies.supabase.co:5433/postgres',
+    DATABASE_URL: 'postgres://user:secret@db.previewdummyrefaaaaa.supabase.co:5433/postgres',
     DIRECT_URL: session,
   });
   assertBlockedPreview(otherPort);
 
   const paddedDirect = planPreviewDbAccess({
     JURY_PREVIEW_DB: '1',
-    DATABASE_URL: 'postgres://user:secret@db.gdigogpddwjiofwrcies.supabase.co:05432/postgres',
+    DATABASE_URL: 'postgres://user:secret@db.previewdummyrefaaaaa.supabase.co:05432/postgres',
     DIRECT_URL: session,
   });
   assert.equal(paddedDirect.ok, true);
@@ -192,19 +208,19 @@ test('known preview endpoint detection follows the current hostname and port par
   assert.equal(isKnownPreviewEndpoint(direct), true);
   assert.equal(isKnownPreviewEndpoint(transaction), true);
   assert.equal(isKnownPreviewEndpoint(session), true);
-  assert.equal(isKnownPreviewEndpoint('postgres://user:secret@db.gdigogpddwjiofwrcies.supabase.co:05432/postgres'), true);
-  assert.equal(isKnownPreviewEndpoint('postgres://user:secret@db.gdigogpddwjiofwrcies.supabase.co/postgres'), false);
-  assert.equal(isKnownPreviewEndpoint('postgres://user:secret@db.gdigogpddwjiofwrcies.supabase.co:5433/postgres'), false);
+  assert.equal(isKnownPreviewEndpoint('postgres://user:secret@db.previewdummyrefaaaaa.supabase.co:05432/postgres'), true);
+  assert.equal(isKnownPreviewEndpoint('postgres://user:secret@db.previewdummyrefaaaaa.supabase.co/postgres'), false);
+  assert.equal(isKnownPreviewEndpoint('postgres://user:secret@db.previewdummyrefaaaaa.supabase.co:5433/postgres'), false);
   assert.equal(isKnownPreviewEndpoint('not a url'), false);
   assert.equal(isKnownPreviewEndpoint(''), false);
   assert.equal(isKnownPreviewEndpoint(undefined), false);
   assert.equal(isKnownPreviewEndpoint(productionDirect), false);
   assert.equal(isKnownPreviewEndpoint('postgres://user:secret@ordinary.example:5432/postgres'), false);
-  assert.equal(isKnownPreviewEndpoint('postgres://db.gdigogpddwjiofwrcies.supabase.co:secret@evil.example:5432/postgres'), false);
+  assert.equal(isKnownPreviewEndpoint('postgres://db.previewdummyrefaaaaa.supabase.co:secret@evil.example:5432/postgres'), false);
   assert.equal(isKnownPreviewEndpoint('postgres://user:aws-0-ap-south-1.pooler.supabase.com@evil.example:5432/postgres'), false);
-  assert.equal(isKnownPreviewEndpoint('postgres://user:secret@evil.example:5432/db.gdigogpddwjiofwrcies.supabase.co'), false);
-  assert.equal(isKnownPreviewEndpoint('postgres://user:secret@evil.example:5432/postgres?host=db.gdigogpddwjiofwrcies.supabase.co'), false);
-  assert.equal(isKnownPreviewEndpoint(`postgres://user:secret@${'db.gdigogpddwjiofwrcies.supabase.co'.toUpperCase()}:5432/postgres`), false);
+  assert.equal(isKnownPreviewEndpoint('postgres://user:secret@evil.example:5432/db.previewdummyrefaaaaa.supabase.co'), false);
+  assert.equal(isKnownPreviewEndpoint('postgres://user:secret@evil.example:5432/postgres?host=db.previewdummyrefaaaaa.supabase.co'), false);
+  assert.equal(isKnownPreviewEndpoint(`postgres://user:secret@${'db.previewdummyrefaaaaa.supabase.co'.toUpperCase()}:5432/postgres`), false);
 });
 
 test('the classifier accepts only the exact preview flag', () => {
@@ -233,6 +249,8 @@ test('prisma refuses a production direct hostname inside the test runner without
   const child = spawnSync(process.execPath, ['--import', 'tsx', '--input-type=module', '-e', `
     process.env.NODE_TEST_CONTEXT = 'child-v8';
     process.env.JURY_PREVIEW_DB = '1';
+    process.env.JURY_PREVIEW_DB_PROJECT_REF = ${JSON.stringify(PREVIEW_REF)};
+    process.env.JURY_PRODUCTION_DB_PROJECT_REFS = ${JSON.stringify(PRODUCTION_REF)};
     process.env.DATABASE_URL = ${JSON.stringify(productionDirect)};
     process.env.DIRECT_URL = process.env.DATABASE_URL;
     import('./src/lib/prisma.ts').then(() => {
@@ -248,4 +266,94 @@ test('prisma refuses a production direct hostname inside the test runner without
   assert.equal(child.status, 0, child.stdout + child.stderr);
   assert.equal(child.stdout.includes('secret'), false);
   assert.equal(child.stdout.includes('postgres://'), false);
+});
+
+test('session pooler requires the exact preview username', () => {
+  const pooler = 'aws-0-ap-south-1.pooler.supabase.com:5432/postgres';
+  const allowed = planPreviewDbAccess({ JURY_PREVIEW_DB: '1', DATABASE_URL: direct, DIRECT_URL: `postgres://postgres.${PREVIEW_REF}:secret@${pooler}` });
+  assert.equal(allowed.ok, true);
+  for (const user of ['user', 'postgres', `postgres.${OTHER_REF}`, `postgres.${PREVIEW_REF}x`, `POSTGRES.${PREVIEW_REF}`, `postgres.${PREVIEW_REF.toUpperCase()}`]) {
+    assertBlockedPreview(planPreviewDbAccess({ JURY_PREVIEW_DB: '1', DATABASE_URL: direct, DIRECT_URL: `postgres://${user}:secret@${pooler}` }));
+  }
+  assertBlockedPreview(planPreviewDbAccess({
+    JURY_PREVIEW_DB: '1',
+    DATABASE_URL: direct,
+    DIRECT_URL: `postgres://postgres.${PREVIEW_REF}:secret@aws-0-ap-south-1.pooler.supabase.com:6543/postgres`,
+  }));
+  assertBlockedProduction(planPreviewDbAccess({ JURY_PREVIEW_DB: '1', DATABASE_URL: direct, DIRECT_URL: `postgres://postgres.${PRODUCTION_REF}:secret@${pooler}` }));
+});
+
+test('direct host rejects a username or hostname that names a different project', () => {
+  assertBlockedPreview(planPreviewDbAccess({
+    JURY_PREVIEW_DB: '1',
+    DATABASE_URL: `postgres://postgres.${OTHER_REF}:secret@db.${PREVIEW_REF}.supabase.co:5432/postgres`,
+    DIRECT_URL: session,
+  }));
+  assert.equal(planPreviewDbAccess({
+    JURY_PREVIEW_DB: '1',
+    DATABASE_URL: `postgres://postgres.${PREVIEW_REF}:secret@db.${PREVIEW_REF}.supabase.co:5432/postgres`,
+    DIRECT_URL: session,
+  }).ok, true);
+  assertBlockedPreview(planPreviewDbAccess({
+    JURY_PREVIEW_DB: '1',
+    DATABASE_URL: `postgres://user:secret@db.${OTHER_REF}.supabase.co:5432/postgres`,
+    DIRECT_URL: session,
+  }));
+});
+
+test('missing or malformed ref configuration fails closed', async () => {
+  const urls = { JURY_PREVIEW_DB: '1', DATABASE_URL: direct, DIRECT_URL: session };
+  const bad: PreviewDbEnv[] = [
+    {},
+    { JURY_PREVIEW_DB_PROJECT_REF: PREVIEW_REF },
+    { JURY_PRODUCTION_DB_PROJECT_REFS: PRODUCTION_REF },
+    { JURY_PREVIEW_DB_PROJECT_REF: '', JURY_PRODUCTION_DB_PROJECT_REFS: PRODUCTION_REF },
+    { JURY_PREVIEW_DB_PROJECT_REF: 'short', JURY_PRODUCTION_DB_PROJECT_REFS: PRODUCTION_REF },
+    { JURY_PREVIEW_DB_PROJECT_REF: PREVIEW_REF.toUpperCase(), JURY_PRODUCTION_DB_PROJECT_REFS: PRODUCTION_REF },
+    { JURY_PREVIEW_DB_PROJECT_REF: PREVIEW_REF, JURY_PRODUCTION_DB_PROJECT_REFS: `${PRODUCTION_REF},` },
+    { JURY_PREVIEW_DB_PROJECT_REF: PREVIEW_REF, JURY_PRODUCTION_DB_PROJECT_REFS: `${PRODUCTION_REF},${PREVIEW_REF}` },
+  ];
+  for (const config of bad) {
+    assert.equal(readPreviewDbRefConfig(config), null);
+    assertBlockedPreview(planPreviewDbAccessWith({ ...urls, ...config }));
+    const seen = calls();
+    const opened = await openPreviewDbTestWith({ ...urls, ...config }, async () => {
+      seen.migration += 1;
+      return 0;
+    });
+    assertBlockedPreview(opened);
+    assert.equal(seen.migration, 0);
+  }
+  assert.equal(isKnownPreviewEndpointWith(direct), false);
+  assert.equal(isKnownPreviewEndpointWith(direct, null), false);
+  assertBlockedPreview(planPreviewDbAccessWith(urls, null));
+});
+
+test('ref configuration is read from the env object and keeps preview and production apart', () => {
+  assert.deepEqual(readPreviewDbRefConfig(REF_ENV), REFS);
+  const second = 'secondproductionrefz';
+  const multi = { JURY_PREVIEW_DB_PROJECT_REF: PREVIEW_REF, JURY_PRODUCTION_DB_PROJECT_REFS: `${PRODUCTION_REF}, ${second}` };
+  assert.equal(planPreviewDbAccessWith({ JURY_PREVIEW_DB: '1', DATABASE_URL: direct, DIRECT_URL: session, ...REF_ENV }).ok, true);
+  assertBlockedProduction(planPreviewDbAccessWith({
+    JURY_PREVIEW_DB: '1',
+    DATABASE_URL: direct,
+    DIRECT_URL: `postgres://user:secret@db.${second}.supabase.co:5432/postgres`,
+    ...multi,
+  }));
+});
+
+test('supabase-hosted detection needs no refs and ignores text outside the hostname', () => {
+  assert.equal(isSupabaseHostedEndpoint(direct), true);
+  assert.equal(isSupabaseHostedEndpoint(session), true);
+  assert.equal(isSupabaseHostedEndpoint(productionDirect), true);
+  assert.equal(isSupabaseHostedEndpoint('postgres://user:secret@ordinary.example:5432/postgres'), false);
+  assert.equal(isSupabaseHostedEndpoint('postgres://user:secret@evil.example:5432/postgres?host=db.x.supabase.co'), false);
+  assert.equal(isSupabaseHostedEndpoint('not a url'), false);
+  assert.equal(isSupabaseHostedEndpoint(undefined), false);
+});
+
+test('guard source carries no project refs', () => {
+  const source = readFileSync(path.join(process.cwd(), 'src/lib/jury-product/preview-db-guard.ts'), 'utf8');
+  assert.equal(/'[a-z]{20}'/.test(source), false);
+  assert.equal(/db\.[a-z]{20}\.supabase\.co/.test(source), false);
 });

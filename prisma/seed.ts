@@ -3,7 +3,13 @@ import { pathToFileURL } from 'node:url';
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import pg from 'pg';
-import { isKnownPreviewEndpoint, planPreviewDbAccess, type PreviewDbEnv } from '../src/lib/jury-product/preview-db-guard';
+import {
+  isKnownPreviewEndpoint,
+  isSupabaseHostedEndpoint,
+  planPreviewDbAccess,
+  readPreviewDbRefConfig,
+  type PreviewDbEnv,
+} from '../src/lib/jury-product/preview-db-guard';
 import { UI_CONFIG_SEED } from '../src/lib/ui-config-defaults';
 
 const SEED_FAILED = 'SEED_FAILED';
@@ -70,6 +76,14 @@ async function releaseSeed(prisma: SeedClient | undefined, pool: SeedPool | unde
   return failed;
 }
 
+// Without a valid ref configuration a Supabase-hosted URL cannot be told apart from Preview, so it fails closed.
+function ordinarySeedTouchesPreview(env: SeedEnv): boolean {
+  const refs = readPreviewDbRefConfig(env);
+  const urls = [env.DATABASE_URL, env.DIRECT_URL];
+  if (!refs) return urls.some((url) => isSupabaseHostedEndpoint(url));
+  return urls.some((url) => isKnownPreviewEndpoint(url, refs));
+}
+
 export async function executeSeed(deps: SeedDependencies): Promise<void> {
   if (deps.env.JURY_PREVIEW_DB === '1') {
     const plan = deps.planAccess ?? planPreviewDbAccess;
@@ -77,16 +91,15 @@ export async function executeSeed(deps: SeedDependencies): Promise<void> {
       JURY_PREVIEW_DB: deps.env.JURY_PREVIEW_DB,
       DATABASE_URL: deps.env.DATABASE_URL,
       DIRECT_URL: deps.env.DIRECT_URL,
+      JURY_PREVIEW_DB_PROJECT_REF: deps.env.JURY_PREVIEW_DB_PROJECT_REF,
+      JURY_PRODUCTION_DB_PROJECT_REFS: deps.env.JURY_PRODUCTION_DB_PROJECT_REFS,
     });
     if (!decision.ok) {
       deps.error(decision.status);
       deps.exit(1);
       return;
     }
-  } else if (
-    isKnownPreviewEndpoint(deps.env.DATABASE_URL) ||
-    isKnownPreviewEndpoint(deps.env.DIRECT_URL)
-  ) {
+  } else if (ordinarySeedTouchesPreview(deps.env)) {
     deps.error('BLOCKED_PREVIEW_DB');
     deps.exit(1);
     return;
@@ -141,6 +154,8 @@ async function runFromCli(): Promise<void> {
       JURY_PREVIEW_DB: process.env.JURY_PREVIEW_DB,
       DATABASE_URL: process.env.DATABASE_URL,
       DIRECT_URL: process.env.DIRECT_URL,
+      JURY_PREVIEW_DB_PROJECT_REF: process.env.JURY_PREVIEW_DB_PROJECT_REF,
+      JURY_PRODUCTION_DB_PROJECT_REFS: process.env.JURY_PRODUCTION_DB_PROJECT_REFS,
     },
     createPool: (connectionString) => new pg.Pool({ connectionString }),
     createPrisma: (pool) => new PrismaClient({ adapter: new PrismaPg(pool as pg.Pool) }),

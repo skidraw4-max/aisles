@@ -347,9 +347,9 @@ test('production database urls are blocked before fixture work', async () => {
   const seen = { seed: 0, cleanup: 0 };
   const blocked = planPreviewDbAccess({
     JURY_PREVIEW_DB: '1',
-    DATABASE_URL: 'postgres://user:secret@aws-1-ap-south-1.pcvyoqbyhfbpevzkwpsf.example/postgres',
-    DIRECT_URL: 'postgres://user:secret@aws-1-ap-south-1.pcvyoqbyhfbpevzkwpsf.example/postgres',
-  });
+    DATABASE_URL: 'postgres://user:secret@aws-1-ap-south-1.productiondummyrefbb.example/postgres',
+    DIRECT_URL: 'postgres://user:secret@aws-1-ap-south-1.productiondummyrefbb.example/postgres',
+  }, { previewRef: 'previewdummyrefaaaaa', productionRefs: ['productiondummyrefbb'] });
   assert.equal(blocked.ok, false);
   if (!blocked.ok) assert.equal(blocked.status, 'BLOCKED_PREVIEW_DB');
   assert.equal(seen.seed, 0);
