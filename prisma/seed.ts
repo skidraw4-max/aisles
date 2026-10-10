@@ -10,7 +10,7 @@ import {
   readPreviewDbRefConfig,
   type PreviewDbEnv,
 } from '../src/lib/jury-product/preview-db-guard';
-import { requirePreviewPgConfig } from '../src/lib/jury-product/preview-db-tls';
+import { requirePreviewPgConfig, type PreviewPgSsl, type PreviewTlsEnv } from '../src/lib/jury-product/preview-db-tls';
 import { UI_CONFIG_SEED } from '../src/lib/ui-config-defaults';
 
 const SEED_FAILED = 'SEED_FAILED';
@@ -147,6 +147,27 @@ export async function executeSeed(deps: SeedDependencies): Promise<void> {
   if (failed) deps.exit(1);
 }
 
+export type SeedPgPoolConfig = { connectionString: string; ssl?: PreviewPgSsl };
+
+export type SeedPgPoolDeps<P> = {
+  buildTls: (connectionString: string, env: PreviewTlsEnv) => { connectionString: string; ssl: PreviewPgSsl };
+  createPool: (config: SeedPgPoolConfig) => P;
+};
+
+/**
+ * Seed pool factory. Preview mode: verified TLS (Supabase CA + hostname) or no pool at all
+ * (buildTls throws a fixed status before createPool). Other modes: unchanged plain config.
+ */
+export function createSeedPgPool<P>(
+  connectionString: string,
+  env: PreviewTlsEnv & { JURY_PREVIEW_DB?: string },
+  deps: SeedPgPoolDeps<P>,
+): P {
+  if (env.JURY_PREVIEW_DB !== '1') return deps.createPool({ connectionString });
+  const preview = deps.buildTls(connectionString, env);
+  return deps.createPool({ connectionString: preview.connectionString, ssl: preview.ssl });
+}
+
 async function runFromCli(): Promise<void> {
   seedEntrypointStarted = true;
   await import('dotenv/config');
@@ -158,12 +179,11 @@ async function runFromCli(): Promise<void> {
       JURY_PREVIEW_DB_PROJECT_REF: process.env.JURY_PREVIEW_DB_PROJECT_REF,
       JURY_PRODUCTION_DB_PROJECT_REFS: process.env.JURY_PRODUCTION_DB_PROJECT_REFS,
     },
-    createPool: (connectionString) => {
-      // Preview mode: verified TLS (Supabase CA + hostname) or no connection at all.
-      if (process.env.JURY_PREVIEW_DB !== '1') return new pg.Pool({ connectionString });
-      const preview = requirePreviewPgConfig(connectionString, process.env);
-      return new pg.Pool({ connectionString: preview.connectionString, ssl: preview.ssl });
-    },
+    createPool: (connectionString) =>
+      createSeedPgPool(connectionString, process.env, {
+        buildTls: requirePreviewPgConfig,
+        createPool: (config) => new pg.Pool(config),
+      }),
     createPrisma: (pool) => new PrismaClient({ adapter: new PrismaPg(pool as pg.Pool) }),
     log: (message) => {
       console.log(message);
