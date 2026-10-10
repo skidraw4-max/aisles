@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { createHash, X509Certificate } from 'node:crypto';
+import { copyFileSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import net from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
@@ -8,6 +9,24 @@ import tls from 'node:tls';
 import test, { after } from 'node:test';
 import pg from 'pg';
 import { buildPreviewPgConfig, defaultPreviewCaPath, requirePreviewPgConfig } from './preview-db-tls';
+import { SUPABASE_CA_RELATIVE_PATH, type CaPin } from './supabase-ca-pin';
+
+// The committed, pinned Supabase CA. Local TLS handshake tests below use generated
+// test CAs; they reach the same pinned-validation path through the TEST-ONLY deps.pin
+// option (code-level, never env-controlled), pinned to that generated CA.
+const OFFICIAL_CA = path.join(process.cwd(), SUPABASE_CA_RELATIVE_PATH);
+function pinFor(file: string): CaPin {
+  const bytes = readFileSync(file);
+  const cert = new X509Certificate(bytes);
+  return {
+    fileSha256: createHash('sha256').update(bytes).digest('hex'),
+    fingerprint256: cert.fingerprint256,
+    subject: cert.subject,
+    issuer: cert.issuer,
+    validFrom: new Date(cert.validFrom).toISOString(),
+    validTo: new Date(cert.validTo).toISOString(),
+  };
+}
 
 // Test-only certificates are generated per run in a temp directory with the
 // openssl binary already on this machine (nothing is installed or committed).
@@ -63,29 +82,68 @@ function assertSafeStatus(value: unknown) {
   assert.equal(text.includes(dir), false);
 }
 
-test('the default CA path is the libpq location unless configured', () => {
-  assert.equal(defaultPreviewCaPath({}, 'HOME'), path.join('HOME', '.postgresql', 'root.crt'));
-  assert.equal(defaultPreviewCaPath({ JURY_PREVIEW_DB_CA_PATH: '  ' }, 'HOME'), path.join('HOME', '.postgresql', 'root.crt'));
-  assert.equal(defaultPreviewCaPath({ JURY_PREVIEW_DB_CA_PATH: 'X/ca.pem' }, 'HOME'), 'X/ca.pem');
+test('the default CA path is the pinned repo file; overrides must be absolute', () => {
+  const cwd = path.join(dir, 'project');
+  assert.equal(defaultPreviewCaPath({}, cwd), path.join(cwd, SUPABASE_CA_RELATIVE_PATH));
+  assert.equal(defaultPreviewCaPath({ JURY_PREVIEW_DB_CA_PATH: '  ' }, cwd), path.join(cwd, SUPABASE_CA_RELATIVE_PATH));
+  const abs = path.join(dir, 'ca.pem');
+  assert.equal(defaultPreviewCaPath({ JURY_PREVIEW_DB_CA_PATH: abs }, cwd), abs);
+  for (const rel of ['X/ca.pem', './certs/x.crt', 'ca.crt', '..\\ca.crt']) {
+    assert.equal(defaultPreviewCaPath({ JURY_PREVIEW_DB_CA_PATH: rel }, cwd), null, rel);
+    assert.deepEqual(buildPreviewPgConfig(base, { JURY_PREVIEW_DB_CA_PATH: rel }), { ok: false, status: 'BLOCKED_PREVIEW_TLS' });
+  }
+});
+
+test('the committed official CA passes by default and via an absolute override copy', () => {
+  const byDefault = buildPreviewPgConfig(base, {});
+  assert.equal(byDefault.ok, true);
+  const copy = path.join(dir, 'official-copy.crt');
+  copyFileSync(OFFICIAL_CA, copy);
+  const viaOverride = buildPreviewPgConfig(base, { JURY_PREVIEW_DB_CA_PATH: copy });
+  assert.equal(viaOverride.ok, true);
+  if (!viaOverride.ok || !byDefault.ok) return;
+  assert.equal(viaOverride.ssl.rejectUnauthorized, true);
+  assert.equal(viaOverride.ssl.servername, 'aws-0-ap-south-1.pooler.supabase.com');
+  assert.equal(viaOverride.ssl.checkServerIdentity, tls.checkServerIdentity);
+  assert.equal(viaOverride.ssl.ca, byDefault.ssl.ca);
+});
+
+test('a CA that does not match the pin fails closed (modified bytes, CRLF, different CA)', { skip }, () => {
+  const bytes = readFileSync(OFFICIAL_CA);
+  const mutated = Buffer.from(bytes);
+  mutated[200] ^= 0x01;
+  const crlf = Buffer.from(bytes.toString('utf8').replace(/\n/g, '\r\n'));
+  for (const [name, data] of [['mut.crt', mutated], ['crlf.crt', crlf]] as const) {
+    const file = path.join(dir, name);
+    writeFileSync(file, data);
+    const result = buildPreviewPgConfig(base, { JURY_PREVIEW_DB_CA_PATH: file });
+    assert.deepEqual(result, { ok: false, status: 'BLOCKED_PREVIEW_TLS' }, name);
+    assertSafeStatus(result);
+  }
+  // A valid but different CA is refused without the test-only pin.
+  assert.deepEqual(buildPreviewPgConfig(base, { JURY_PREVIEW_DB_CA_PATH: pki!.ca }), { ok: false, status: 'BLOCKED_PREVIEW_TLS' });
+  // Expired / not-yet-valid official CA via injected clock.
+  assert.equal(buildPreviewPgConfig(base, {}, { now: () => Date.parse('2031-04-27T00:00:00Z') }).ok, false);
+  assert.equal(buildPreviewPgConfig(base, {}, { now: () => Date.parse('2021-04-27T00:00:00Z') }).ok, false);
 });
 
 test('a missing, unreadable, or non-certificate CA fails closed', () => {
   const missing = buildPreviewPgConfig(base, { JURY_PREVIEW_DB_CA_PATH: path.join(dir, 'absent.crt') });
   assert.deepEqual(missing, { ok: false, status: 'BLOCKED_PREVIEW_TLS' });
   assertSafeStatus(missing);
-  const missingHome = buildPreviewPgConfig(base, {}, { home: path.join(dir, 'no-home') });
-  assert.equal(missingHome.ok, false);
+  const missingDefault = buildPreviewPgConfig(base, {}, { cwd: path.join(dir, 'no-project') });
+  assert.equal(missingDefault.ok, false);
   const unreadable = buildPreviewPgConfig(base, {}, { readFile: () => { throw new Error('EACCES'); } });
   assert.equal(unreadable.ok, false);
-  const notPem = buildPreviewPgConfig(base, {}, { readFile: () => 'not a certificate' });
+  const notPem = buildPreviewPgConfig(base, {}, { readFile: () => Buffer.from('not a certificate') });
   assert.equal(notPem.ok, false);
-  const brokenPem = buildPreviewPgConfig(base, {}, { readFile: () => '-----BEGIN CERTIFICATE-----\nAAAA\n-----END CERTIFICATE-----\n' });
+  const brokenPem = buildPreviewPgConfig(base, {}, { readFile: () => Buffer.from('-----BEGIN CERTIFICATE-----\nAAAA\n-----END CERTIFICATE-----\n') });
   assert.equal(brokenPem.ok, false);
   assert.throws(() => requirePreviewPgConfig(base, { JURY_PREVIEW_DB_CA_PATH: path.join(dir, 'absent.crt') }), /^Error: BLOCKED_PREVIEW_TLS$/);
 });
 
 test('a valid CA yields verified TLS options for the url host', { skip }, () => {
-  const config = buildPreviewPgConfig(base, { JURY_PREVIEW_DB_CA_PATH: pki!.ca });
+  const config = buildPreviewPgConfig(base, { JURY_PREVIEW_DB_CA_PATH: pki!.ca }, { pin: pinFor(pki!.ca) });
   assert.equal(config.ok, true);
   if (!config.ok) return;
   assert.equal(config.ssl.rejectUnauthorized, true);
@@ -93,16 +151,17 @@ test('a valid CA yields verified TLS options for the url host', { skip }, () => 
   assert.equal(config.ssl.checkServerIdentity, tls.checkServerIdentity);
   assert.equal(config.ssl.ca.includes('BEGIN CERTIFICATE'), true);
   assert.equal(config.connectionString, base);
-  const leaf = buildPreviewPgConfig(base, { JURY_PREVIEW_DB_CA_PATH: pki!.leafAsCa });
+  const leaf = buildPreviewPgConfig(base, { JURY_PREVIEW_DB_CA_PATH: pki!.leafAsCa }, { pin: pinFor(pki!.leafAsCa) });
   assert.equal(leaf.ok, false);
 });
 
 test('ssl url parameters are rejected except an explicit verify-full', { skip }, () => {
   const env = { JURY_PREVIEW_DB_CA_PATH: pki!.ca };
-  const strict = buildPreviewPgConfig(`${base}?sslmode=verify-full`, env);
+  const testPin = { pin: pinFor(pki!.ca) };
+  const strict = buildPreviewPgConfig(`${base}?sslmode=verify-full`, env, testPin);
   assert.equal(strict.ok, true);
   if (strict.ok) assert.equal(strict.connectionString.includes('sslmode'), false);
-  const kept = buildPreviewPgConfig(`${base}?application_name=jury&sslmode=verify-full`, env);
+  const kept = buildPreviewPgConfig(`${base}?application_name=jury&sslmode=verify-full`, env, testPin);
   assert.equal(kept.ok, true);
   if (kept.ok) assert.equal(kept.connectionString.includes('application_name=jury'), true);
   for (const query of [
@@ -110,12 +169,12 @@ test('ssl url parameters are rejected except an explicit verify-full', { skip },
     'sslmode=verify-full&sslmode=disable', 'ssl=true', 'ssl=0', 'ssl=no-verify', 'sslrootcert=x.crt', 'sslcert=x', 'sslkey=x',
     'uselibpqcompat=true&sslmode=require',
   ]) {
-    const blocked = buildPreviewPgConfig(`${base}?${query}`, env);
+    const blocked = buildPreviewPgConfig(`${base}?${query}`, env, testPin);
     assert.deepEqual(blocked, { ok: false, status: 'BLOCKED_PREVIEW_TLS' }, query);
     assertSafeStatus(blocked);
   }
   for (const bad of ['not a url', 'mysql://u:p@h:5432/db', '']) {
-    assert.equal(buildPreviewPgConfig(bad, env).ok, false);
+    assert.equal(buildPreviewPgConfig(bad, env, testPin).ok, false);
   }
 });
 
@@ -148,19 +207,19 @@ function tlsAttempt(port: number, ssl: tls.ConnectionOptions): Promise<{ ok: boo
 test('the built options reject an untrusted chain and a hostname mismatch on a local tls server', { skip }, async () => {
   const server = await tlsServer(pki!.cert, pki!.key);
   try {
-    const good = buildPreviewPgConfig('postgres://u:secret@localhost:5432/db', { JURY_PREVIEW_DB_CA_PATH: pki!.ca });
+    const good = buildPreviewPgConfig('postgres://u:secret@localhost:5432/db', { JURY_PREVIEW_DB_CA_PATH: pki!.ca }, { pin: pinFor(pki!.ca) });
     assert.equal(good.ok, true);
     if (!good.ok) return;
     assert.deepEqual(await tlsAttempt(server.port, good.ssl), { ok: true });
 
-    const untrusted = buildPreviewPgConfig('postgres://u:secret@localhost:5432/db', { JURY_PREVIEW_DB_CA_PATH: pki!.otherCa });
+    const untrusted = buildPreviewPgConfig('postgres://u:secret@localhost:5432/db', { JURY_PREVIEW_DB_CA_PATH: pki!.otherCa }, { pin: pinFor(pki!.otherCa) });
     assert.equal(untrusted.ok, true);
     if (!untrusted.ok) return;
     const chain = await tlsAttempt(server.port, untrusted.ssl);
     assert.equal(chain.ok, false);
     assert.match(chain.code ?? '', /UNABLE_TO_VERIFY|SELF_SIGNED|UNABLE_TO_GET_ISSUER/);
 
-    const wrongHost = buildPreviewPgConfig('postgres://u:secret@db.wrong.example:5432/db', { JURY_PREVIEW_DB_CA_PATH: pki!.ca });
+    const wrongHost = buildPreviewPgConfig('postgres://u:secret@db.wrong.example:5432/db', { JURY_PREVIEW_DB_CA_PATH: pki!.ca }, { pin: pinFor(pki!.ca) });
     assert.equal(wrongHost.ok, true);
     if (!wrongHost.ok) return;
     const mismatch = await tlsAttempt(server.port, wrongHost.ssl);
@@ -205,7 +264,7 @@ function fakePostgres(cert: string, key: string, reply: 'S' | 'N' = 'S'): Promis
 }
 
 async function pgAttempt(port: number, host: string, caPath: string): Promise<string> {
-  const config = requirePreviewPgConfig(`postgres://u:secret@${host}:${port}/db`, { JURY_PREVIEW_DB_CA_PATH: caPath });
+  const config = requirePreviewPgConfig(`postgres://u:secret@${host}:${port}/db`, { JURY_PREVIEW_DB_CA_PATH: caPath }, { pin: pinFor(caPath) });
   // Route the named host to the local fake server without touching DNS.
   const client = new pg.Client({
     connectionString: config.connectionString,
