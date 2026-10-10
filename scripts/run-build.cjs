@@ -10,17 +10,16 @@ function run(cmd, args) {
   return (r.status ?? 1) === 0;
 }
 
-const direct = process.env.DIRECT_URL?.trim();
-if (direct) {
-  console.log('[build] DIRECT_URL detected — running prisma migrate deploy');
+const { decideMigrate } = require('./build-migrate-policy.cjs');
+
+const decision = decideMigrate(process.env);
+if (decision.run) {
+  console.log(`[build] migrate policy: ${decision.reason}`);
   if (!run('npx', ['prisma', 'migrate', 'deploy'])) {
     process.exit(1);
   }
 } else {
-  console.warn(
-    '[build] DIRECT_URL not set — skipping prisma migrate deploy. ' +
-      'Add Supabase "Direct connection" URI (port 5432) as DIRECT_URL on Vercel to apply migrations on deploy.',
-  );
+  console.log(`[build] migrate policy: ${decision.reason} (skipped)`);
 }
 
 if (!run('node', ['scripts/check-no-prisma-in-client.cjs'])) {
