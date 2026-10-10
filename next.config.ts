@@ -24,6 +24,8 @@ const nextConfig: NextConfig = {
     /** AI Review Board: run JSON은 import가 아니라 fs로 읽음 → tracing에 명시 필요 */
     '/admin/ai-review-board': ['./data/ai-review-board/**/*'],
     '/admin/ai-review-board/[runId]': ['./data/ai-review-board/**/*'],
+    /** Preview DB TLS: pinned Supabase CA read via fs (preview-db-tls.ts). prisma is imported transitively by most server entries, so apply to all. */
+    '/**': ['./certs/supabase/prod-ca-2021.crt'],
   },
   async headers() {
     return [
