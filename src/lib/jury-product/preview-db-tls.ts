@@ -1,8 +1,8 @@
-import { X509Certificate } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import tls from 'node:tls';
+import { readValidCaPem } from './db-ca';
 
 /**
  * TLS for Preview DB connections (pg / Prisma driver adapter).
@@ -39,25 +39,6 @@ export function defaultPreviewCaPath(env: PreviewTlsEnv, home: string = os.homed
   return configured ? configured : path.join(home, '.postgresql', 'root.crt');
 }
 
-function readCa(caPath: string, readFile: (file: string) => string): string | null {
-  let pem: string;
-  try {
-    pem = readFile(caPath);
-  } catch {
-    return null;
-  }
-  if (!pem.includes('-----BEGIN CERTIFICATE-----')) return null;
-  try {
-    const cert = new X509Certificate(pem);
-    if (!cert.ca) return null;
-    const now = Date.now();
-    if (Date.parse(cert.validFrom) > now || Date.parse(cert.validTo) < now) return null;
-  } catch {
-    return null;
-  }
-  return pem;
-}
-
 /**
  * Builds the pg config for a Preview connection. Fails closed when the CA is
  * missing, unreadable, not a valid CA, expired, or when the URL carries ssl
@@ -88,7 +69,7 @@ export function buildPreviewPgConfig(
     return blocked;
   }
   const readFile = deps.readFile ?? ((file: string) => readFileSync(file, 'utf8'));
-  const ca = readCa(defaultPreviewCaPath(env, deps.home), readFile);
+  const ca = readValidCaPem(defaultPreviewCaPath(env, deps.home), readFile);
   if (!ca) return blocked;
   return {
     ok: true,
