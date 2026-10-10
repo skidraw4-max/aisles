@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import pg from 'pg';
+import { guardTestDatabase } from '@/lib/jury-product/preview-db-guard';
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
@@ -41,6 +42,7 @@ function createPrisma(): PrismaClient {
   if (!connectionString) {
     throw new Error('DATABASE_URL is not set');
   }
+  guardTestDatabase(process.env);
   const pool = globalForPrisma.pool ?? createPool(connectionString);
   if (!globalForPrisma.pool) {
     globalForPrisma.pool = pool;

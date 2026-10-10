@@ -4,7 +4,13 @@
  */
 export const PREVIEW_PROJECT_REF = 'gdigogpddwjiofwrcies';
 export const PREVIEW_HOST_MARKER = 'aws-0-ap-south-1';
-const PRODUCTION_MARKERS = ['pcvyoqbyhfbpevzkwpsf', 'aws-1-ap-south-1'] as const;
+
+const PREVIEW_ENDPOINTS = [
+  { hostname: 'db.gdigogpddwjiofwrcies.supabase.co', port: '5432' },
+  { hostname: 'db.gdigogpddwjiofwrcies.supabase.co', port: '6543' },
+  { hostname: 'aws-0-ap-south-1.pooler.supabase.com', port: '5432' },
+] as const;
+const PRODUCTION_DIRECT_HOSTNAME = 'db.pcvyoqbyhfbpevzkwpsf.supabase.co';
 
 export type PreviewDbBlock = 'BLOCKED_PRODUCTION_DB' | 'BLOCKED_PREVIEW_DB';
 
@@ -14,21 +20,38 @@ export type PreviewDbEnv = {
   DIRECT_URL?: string;
 };
 
+type ConnectionClass = 'allowed' | 'production' | 'rejected';
+
+function classifyConnectionUrl(value: string): ConnectionClass {
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    return 'rejected';
+  }
+  const scheme = url.protocol.slice(0, -1);
+  if (scheme !== 'postgres' && scheme !== 'postgresql') return 'rejected';
+  if (url.hostname === PRODUCTION_DIRECT_HOSTNAME) return 'production';
+  if (url.port === '') return 'rejected';
+  const allowed = PREVIEW_ENDPOINTS.some((endpoint) => endpoint.hostname === url.hostname && endpoint.port === url.port);
+  return allowed ? 'allowed' : 'rejected';
+}
+
+export function isKnownPreviewEndpoint(value: string | undefined): boolean {
+  return classifyConnectionUrl(value ?? '') === 'allowed';
+}
+
 export function planPreviewDbAccess(
   env: PreviewDbEnv,
-  expected: { projectRef: string; hostMarker: string } = {
-    projectRef: PREVIEW_PROJECT_REF,
-    hostMarker: PREVIEW_HOST_MARKER,
-  },
 ): { ok: true } | { ok: false; status: PreviewDbBlock } {
-  const database = env.DATABASE_URL ?? '';
-  const direct = env.DIRECT_URL ?? '';
-  if (PRODUCTION_MARKERS.some((marker) => database.includes(marker) || direct.includes(marker))) {
+  const database = classifyConnectionUrl(env.DATABASE_URL ?? '');
+  const direct = classifyConnectionUrl(env.DIRECT_URL ?? '');
+  if (database === 'production' || direct === 'production') {
     return { ok: false, status: 'BLOCKED_PRODUCTION_DB' };
   }
-  if (env.JURY_PREVIEW_DB !== '1') return { ok: false, status: 'BLOCKED_PREVIEW_DB' };
-  const acceptable = (value: string) => value.includes(expected.projectRef) && value.includes(expected.hostMarker);
-  if (!acceptable(database) || !acceptable(direct)) return { ok: false, status: 'BLOCKED_PREVIEW_DB' };
+  if (env.JURY_PREVIEW_DB !== '1' || database !== 'allowed' || direct !== 'allowed') {
+    return { ok: false, status: 'BLOCKED_PREVIEW_DB' };
+  }
   return { ok: true };
 }
 
