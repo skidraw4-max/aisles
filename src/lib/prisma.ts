@@ -2,7 +2,7 @@ import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import pg from 'pg';
 import { guardTestDatabase } from '@/lib/jury-product/preview-db-guard';
-import { requirePreviewPgConfig } from '@/lib/jury-product/preview-db-tls';
+import { createGuardedPool } from '@/lib/db-pool-factory';
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
@@ -29,16 +29,9 @@ function resolvePoolMax(): number {
 }
 
 function createPool(connectionString: string): pg.Pool {
-  // Preview mode: verified TLS (Supabase CA + hostname) or no connection at all.
-  const preview = process.env.JURY_PREVIEW_DB === '1' ? requirePreviewPgConfig(connectionString, process.env) : null;
-  return new pg.Pool({
-    connectionString: preview ? preview.connectionString : connectionString,
-    ...(preview ? { ssl: preview.ssl } : {}),
-    max: resolvePoolMax(),
-    idleTimeoutMillis: 20_000,
-    connectionTimeoutMillis: 8_000,
-    allowExitOnIdle: true,
-  });
+  // Preview mode (VERCEL_ENV=preview or JURY_PREVIEW_DB=1): DB target ref guard + pinned TLS
+  // run before the Pool exists; failure throws a fixed status and no pool is created.
+  return createGuardedPool(connectionString, process.env, { max: resolvePoolMax() });
 }
 
 function createPrisma(): PrismaClient {

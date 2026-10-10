@@ -6,12 +6,17 @@
  *   JURY_PREVIEW_DB_PROJECT_REF        exactly one Preview project ref
  *   JURY_PRODUCTION_DB_PROJECT_REFS    comma-separated Production project refs (at least one)
  * Missing, malformed, or overlapping configuration fails closed: nothing is allowed.
+ *
+ * URL classification lives in db-target-classifier.cjs, shared with the build-time
+ * policy (scripts/build-db-target-policy.cjs) so build and runtime cannot drift.
  */
-export const PREVIEW_HOST_MARKER = 'aws-0-ap-south-1';
-const PREVIEW_POOLER_HOSTNAME = `${PREVIEW_HOST_MARKER}.pooler.supabase.com`;
-const PREVIEW_DIRECT_PORTS = ['5432', '6543'] as const;
-const PREVIEW_POOLER_PORT = '5432';
-const PROJECT_REF = /^[a-z]{20}$/;
+import {
+  classifyConnectionUrl,
+  classifyDbTarget,
+  parsePostgresUrl,
+  readRefConfig,
+  type DbTargetEnv,
+} from './db-target-classifier.cjs';
 
 export type PreviewDbBlock = 'BLOCKED_PRODUCTION_DB' | 'BLOCKED_PREVIEW_DB';
 
@@ -31,65 +36,8 @@ export type PreviewDbRefConfig = {
 export function readPreviewDbRefConfig(
   env: Pick<PreviewDbEnv, 'JURY_PREVIEW_DB_PROJECT_REF' | 'JURY_PRODUCTION_DB_PROJECT_REFS'>,
 ): PreviewDbRefConfig | null {
-  const previewRef = env.JURY_PREVIEW_DB_PROJECT_REF ?? '';
-  const productionRefs = (env.JURY_PRODUCTION_DB_PROJECT_REFS ?? '').split(',').map((ref) => ref.trim());
-  return validRefConfig({ previewRef, productionRefs }) ? { previewRef, productionRefs } : null;
+  return readRefConfig(env);
 }
-
-function validRefConfig(refs: PreviewDbRefConfig | null | undefined): refs is PreviewDbRefConfig {
-  if (!refs || !PROJECT_REF.test(refs.previewRef)) return false;
-  if (refs.productionRefs.length === 0) return false;
-  if (!refs.productionRefs.every((ref) => PROJECT_REF.test(ref))) return false;
-  return !refs.productionRefs.includes(refs.previewRef);
-}
-
-type ConnectionClass = 'allowed' | 'production' | 'rejected';
-
-function parsePostgresUrl(value: string): URL | null {
-  let url: URL;
-  try {
-    url = new URL(value);
-  } catch {
-    return null;
-  }
-  const scheme = url.protocol.slice(0, -1);
-  if (scheme !== 'postgres' && scheme !== 'postgresql') return null;
-  return url;
-}
-
-function poolerUserRef(url: URL): string | null {
-  let user: string;
-  try {
-    user = decodeURIComponent(url.username);
-  } catch {
-    return null;
-  }
-  const match = /^postgres\.([a-z]{20})$/.exec(user);
-  return match ? match[1] ?? null : null;
-}
-
-function classifyConnectionUrl(value: string, refs: PreviewDbRefConfig | null | undefined): ConnectionClass {
-  if (!validRefConfig(refs)) return 'rejected';
-  const url = parsePostgresUrl(value);
-  if (!url) return 'rejected';
-  const userRef = poolerUserRef(url);
-  const isPooler = url.hostname === PREVIEW_POOLER_HOSTNAME;
-  for (const ref of refs.productionRefs) {
-    if (url.hostname === `db.${ref}.supabase.co`) return 'production';
-    if (isPooler && userRef === ref) return 'production';
-  }
-  if (url.port === '') return 'rejected';
-  if (url.hostname === `db.${refs.previewRef}.supabase.co`) {
-    if (!(PREVIEW_DIRECT_PORTS as readonly string[]).includes(url.port)) return 'rejected';
-    if (userRef !== null && userRef !== refs.previewRef) return 'rejected';
-    return 'allowed';
-  }
-  if (isPooler) {
-    return url.port === PREVIEW_POOLER_PORT && userRef === refs.previewRef ? 'allowed' : 'rejected';
-  }
-  return 'rejected';
-}
-
 export function isKnownPreviewEndpoint(value: string | undefined, refs?: PreviewDbRefConfig | null): boolean {
   return classifyConnectionUrl(value ?? '', refs) === 'allowed';
 }
@@ -157,5 +105,36 @@ export function guardTestDatabase(env: NodeJS.ProcessEnv): void {
     JURY_PREVIEW_DB_PROJECT_REF: env.JURY_PREVIEW_DB_PROJECT_REF,
     JURY_PRODUCTION_DB_PROJECT_REFS: env.JURY_PRODUCTION_DB_PROJECT_REFS,
   });
+  if (!gate.ok) throw new Error(gate.status);
+}
+
+export type RuntimeDbEnv = DbTargetEnv;
+
+/** Real Preview deployment (Vercel) or an explicit Preview DB session. */
+export function isPreviewRuntime(env: RuntimeDbEnv): boolean {
+  return env.VERCEL_ENV === 'preview' || env.JURY_PREVIEW_DB === '1';
+}
+
+/**
+ * Non-test runtime target check (shared classifier). Requires JURY_PREVIEW_DB=1,
+ * valid ref config, a verified Preview DATABASE_URL and, when non-blank, DIRECT_URL.
+ * A Production ref anywhere wins and yields BLOCKED_PRODUCTION_DB.
+ */
+export function planRuntimeDbTarget(env: RuntimeDbEnv): { ok: true } | { ok: false; status: PreviewDbBlock } {
+  let verdict: string;
+  try {
+    verdict = classifyDbTarget(env);
+  } catch {
+    verdict = 'unverified';
+  }
+  if (verdict === 'production') return { ok: false, status: 'BLOCKED_PRODUCTION_DB' };
+  if (verdict !== 'ok') return { ok: false, status: 'BLOCKED_PREVIEW_DB' };
+  return { ok: true };
+}
+
+/** Throws a fixed status (never a URL or ref) in Preview mode when the target is not verified. */
+export function requireRuntimeDbTarget(env: RuntimeDbEnv): void {
+  if (!isPreviewRuntime(env)) return;
+  const gate = planRuntimeDbTarget(env);
   if (!gate.ok) throw new Error(gate.status);
 }
