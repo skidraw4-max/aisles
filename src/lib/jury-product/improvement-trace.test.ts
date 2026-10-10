@@ -15,7 +15,7 @@ const LIVE_CYCLE = '14308b4c999ccbe8ca54b7f31da5385385d4073c49bbf2955582a6bb96af
 const COPY = 'workspace/mock-aisle/user-facing-copy.ts';
 const COPY_TEXT = 'export const userFacingCopy = "측정된 Evidence가 직접 지지하는 범위의 문구만 사용합니다.";';
 const owner: JuryMembership = { id: 'mem-1', tenantId: 'tenant-a', userId: 'user-1', role: 'OWNER', createdAt: '2026-10-02T00:00:00.000Z' };
-const auditor: JuryMembership = { ...owner, id: 'mem-2', role: 'AUDITOR' };
+const auditor: JuryMembership = { ...owner, id: 'mem-2', role: 'VIEWER' };
 
 test('a completed improvement restores one explicit trace', () => {
   const traced = assembleImprovementTrace(success());

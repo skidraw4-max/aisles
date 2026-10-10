@@ -186,11 +186,11 @@ describe('change gate resolution', () => {
 
   it('refuses members, auditors, other tenants, and terminal reversals', async () => {
     const member = await resolveChangeGate(
-      command({ memberships: [{ ...owner, role: 'MEMBER' }] }),
+      command({ memberships: [{ ...owner, role: 'DEVELOPER' }] }),
       memory(),
     );
     const auditor = await resolveChangeGate(
-      command({ memberships: [{ ...owner, role: 'AUDITOR' }] }),
+      command({ memberships: [{ ...owner, role: 'VIEWER' }] }),
       memory(),
     );
     assert.equal(member.ok, false);

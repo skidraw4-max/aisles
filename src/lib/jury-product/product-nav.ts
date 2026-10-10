@@ -1,9 +1,11 @@
+import { juryHref } from './jury-url';
+
 export const PRODUCT_NAV = [
-  { href: '/jury', label: 'Dashboard' },
-  { href: '/jury/services', label: 'Services' },
-  { href: '/jury/evidence', label: 'Evidence' },
-  { href: '/jury/reviews', label: 'Reviews' },
-  { href: '/jury/improvements', label: 'Improvements' },
-  { href: '/jury/audit', label: 'Audit' },
-  { href: '/jury/settings', label: 'Settings' },
+  { href: juryHref('/'), label: 'Dashboard' },
+  { href: juryHref('/services'), label: 'Services' },
+  { href: juryHref('/evidence'), label: 'Evidence' },
+  { href: juryHref('/reviews'), label: 'Reviews' },
+  { href: juryHref('/improvements'), label: 'Improvements' },
+  { href: juryHref('/audit'), label: 'Audit' },
+  { href: juryHref('/settings'), label: 'Settings' },
 ] as const;

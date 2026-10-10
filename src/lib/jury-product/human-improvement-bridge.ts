@@ -5,6 +5,7 @@
 import { createHash } from 'node:crypto';
 import { Prisma } from '@prisma/client';
 import { decideJuryMutation, resolveJuryActor } from './access';
+import { JURY_INTERACTIVE_TRANSACTION, notePersistenceFailure } from './persistence-diagnostic';
 import { REWORD_CONSTRAINTS } from './improvement-bridge';
 import type { JuryDecision, JuryMembership } from './records';
 import { JURY_DECISIONS } from './records';
@@ -213,8 +214,9 @@ export async function persistHumanImprovement(input: {
         taskId,
         taskType,
       };
-    });
-  } catch {
+    }, JURY_INTERACTIVE_TRANSACTION);
+  } catch (error) {
+    notePersistenceFailure('improvement.persist', error);
     return { ok: false, reason: 'PERSISTENCE_FAILED' };
   }
 }

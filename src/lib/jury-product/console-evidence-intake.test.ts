@@ -33,11 +33,11 @@ const LIVE_REVIEW = '3707202563ecae9b38f324a4eefd9243a14bc69420ed6cdda16c4c5794f
 const LIVE_CYCLE = '14308b4c999ccbe8ca54b7f31da5385385d4073c49bbf2955582a6bb96afb01e';
 
 const owner = membership('phase45c-owner-m', TENANT, 'phase45c-owner', 'OWNER');
-const member = membership('phase45c-member-m', TENANT, 'phase45c-member', 'MEMBER');
-const auditor = membership('phase45c-auditor-m', TENANT, 'phase45c-auditor', 'AUDITOR');
+const member = membership('phase45c-member-m', TENANT, 'phase45c-member', 'DEVELOPER');
+const auditor = membership('phase45c-auditor-m', TENANT, 'phase45c-auditor', 'VIEWER');
 const ownerActor: JuryActor = { ok: true, userId: owner.userId, tenantId: TENANT, role: 'OWNER', membershipId: owner.id };
-const memberActor: JuryActor = { ok: true, userId: member.userId, tenantId: TENANT, role: 'MEMBER', membershipId: member.id };
-const auditorActor: JuryActor = { ok: true, userId: auditor.userId, tenantId: TENANT, role: 'AUDITOR', membershipId: auditor.id };
+const memberActor: JuryActor = { ok: true, userId: member.userId, tenantId: TENANT, role: 'DEVELOPER', membershipId: member.id };
+const auditorActor: JuryActor = { ok: true, userId: auditor.userId, tenantId: TENANT, role: 'VIEWER', membershipId: auditor.id };
 
 test('the evidence form offers catalog grants only to an owner', () => {
   const catalog = view([

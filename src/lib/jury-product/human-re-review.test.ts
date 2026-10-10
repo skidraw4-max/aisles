@@ -17,10 +17,10 @@ const LIVE_REVIEW = '3707202563ecae9b38f324a4eefd9243a14bc69420ed6cdda16c4c5794f
 const LIVE_CYCLE = '14308b4c999ccbe8ca54b7f31da5385385d4073c49bbf2955582a6bb96afb01e';
 
 const owner = membership('phase53-owner-m', TENANT, 'phase53-owner', 'OWNER');
-const auditor = membership('phase53-auditor-m', TENANT, 'phase53-auditor', 'AUDITOR');
+const auditor = membership('phase53-auditor-m', TENANT, 'phase53-auditor', 'VIEWER');
 const foreign = membership('phase53-foreign-m', FOREIGN, 'phase53-foreign', 'OWNER');
 const ownerActor: JuryActor = { ok: true, userId: owner.userId, tenantId: TENANT, role: 'OWNER', membershipId: owner.id };
-const auditorActor: JuryActor = { ok: true, userId: auditor.userId, tenantId: TENANT, role: 'AUDITOR', membershipId: auditor.id };
+const auditorActor: JuryActor = { ok: true, userId: auditor.userId, tenantId: TENANT, role: 'VIEWER', membershipId: auditor.id };
 
 test('re-review control follows an approved owner gate', () => {
   const surface = face();

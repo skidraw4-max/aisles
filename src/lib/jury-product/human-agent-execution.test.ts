@@ -22,12 +22,12 @@ const LIVE_CYCLE = '14308b4c999ccbe8ca54b7f31da5385385d4073c49bbf2955582a6bb96af
 const FAKE_SUMMARY = '사용자 노출 문구를 작업 제약 안에서 조정하는 변경을 준비했다.';
 
 const owner = membership('phase51-owner-m', TENANT, 'phase51-owner', 'OWNER');
-const member = membership('phase51-member-m', TENANT, 'phase51-member', 'MEMBER');
-const auditor = membership('phase51-auditor-m', TENANT, 'phase51-auditor', 'AUDITOR');
+const member = membership('phase51-member-m', TENANT, 'phase51-member', 'DEVELOPER');
+const auditor = membership('phase51-auditor-m', TENANT, 'phase51-auditor', 'VIEWER');
 const foreign = membership('phase51-foreign-m', FOREIGN, 'phase51-foreign', 'OWNER');
 const ownerActor: JuryActor = { ok: true, userId: owner.userId, tenantId: TENANT, role: 'OWNER', membershipId: owner.id };
-const memberActor: JuryActor = { ok: true, userId: member.userId, tenantId: TENANT, role: 'MEMBER', membershipId: member.id };
-const auditorActor: JuryActor = { ok: true, userId: auditor.userId, tenantId: TENANT, role: 'AUDITOR', membershipId: auditor.id };
+const memberActor: JuryActor = { ok: true, userId: member.userId, tenantId: TENANT, role: 'DEVELOPER', membershipId: member.id };
+const auditorActor: JuryActor = { ok: true, userId: auditor.userId, tenantId: TENANT, role: 'VIEWER', membershipId: auditor.id };
 
 test('run control is only offered for a pending owner execution', () => {
   const surface = face();

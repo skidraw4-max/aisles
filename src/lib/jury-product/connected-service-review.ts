@@ -10,7 +10,9 @@ import type { AccessFailure } from './access-layer';
 import type { JuryConsoleView } from './console-view';
 import { buildProductEvidence } from './evidence-builder';
 import { persistProductEvidence, type PersistCommand, type PersistResult } from './evidence-store';
+import { JURY_INTERACTIVE_TRANSACTION, notePersistenceFailure } from './persistence-diagnostic';
 import { projectEvidenceToPack } from './projection';
+import { isGithubInstallationConnection } from './services/github/onboarding-discovery';
 import type { ProductReviewCore } from './review-boundary';
 import {
   JURY_CLAIM_STRENGTHS,
@@ -219,6 +221,7 @@ export async function runConnectedServiceEvidenceCollection(
     where: { id: command.connectionId, tenantId: actor.tenantId },
   });
   if (!connection || connection.tenantId !== actor.tenantId) return { ok: false, reason: 'NOT_FOUND' };
+  if (isGithubInstallationConnection(connection)) return { ok: false, reason: 'SCOPE_NOT_APPROVED' };
   const scopeRows = await prisma.juryAccessScope.findMany({
     where: { tenantId: actor.tenantId, connectionId: connection.id },
   });
@@ -274,7 +277,8 @@ export async function runConnectedServiceEvidenceCollection(
   let stored: PersistResult;
   try {
     stored = await persist(persistCommand);
-  } catch {
+  } catch (error) {
+    notePersistenceFailure('evidence.persist', error);
     const existing = await prisma.juryEvidence.findFirst({
       where: {
         tenantId: actor.tenantId,
@@ -533,7 +537,7 @@ export async function runConnectedServiceReview(
       data: reviewStartedAudit(actor.userId, actor.tenantId, evidence, requestId),
     });
     return { kind: 'claimed' as const };
-  });
+  }, JURY_INTERACTIVE_TRANSACTION);
   if (claimed.kind === 'busy') return { ok: false, reason: 'REVIEW_ALREADY_EXISTS' };
   if (claimed.kind === 'reused') {
     if (!(JURY_DECISIONS as readonly string[]).includes(claimed.decision)) {
@@ -617,8 +621,9 @@ export async function runConnectedServiceReview(
           },
         },
       });
-    });
-  } catch {
+    }, JURY_INTERACTIVE_TRANSACTION);
+  } catch (error) {
+    notePersistenceFailure('review.persist', error);
     const raced = await prisma.juryReviewResult.findFirst({
       where: { reviewRequestId: requestId, tenantId: actor.tenantId },
     });

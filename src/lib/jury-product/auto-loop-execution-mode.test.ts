@@ -71,8 +71,8 @@ test('phase 36 execution mode keeps the agent behind FULL_AUTO', { timeout: 120_
   const liveBefore = await liveSnapshot(prisma);
   const liveCountsBefore = await liveTenantCounts(prisma, liveBefore.reviewTenantId);
   const owner = membership('phase36-owner-mem', TENANT, 'phase36-owner', 'OWNER');
-  const member = membership('phase36-member-mem', TENANT, 'phase36-member', 'MEMBER');
-  const auditor = membership('phase36-auditor-mem', TENANT, 'phase36-auditor', 'AUDITOR');
+  const member = membership('phase36-member-mem', TENANT, 'phase36-member', 'DEVELOPER');
+  const auditor = membership('phase36-auditor-mem', TENANT, 'phase36-auditor', 'VIEWER');
   const foreign = membership('phase36-foreign-mem', FOREIGN, 'phase36-foreign', 'OWNER');
   let cleanupError: string | null = null;
   try {

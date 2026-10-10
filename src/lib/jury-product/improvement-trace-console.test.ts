@@ -19,7 +19,7 @@ const COPY = 'workspace/mock-aisle/user-facing-copy.ts';
 const COPY_TEXT = 'export const userFacingCopy = "측정된 Evidence가 직접 지지하는 범위의 문구만 사용합니다.";';
 
 test('roles can open a trace and a forged tenant is ignored', () => {
-  for (const role of ['OWNER', 'MEMBER', 'AUDITOR'] as const) {
+  for (const role of ['OWNER', 'DEVELOPER', 'VIEWER'] as const) {
     const membership: JuryMembership = {
       id: 'mem-1',
       tenantId: 'tenant-a',

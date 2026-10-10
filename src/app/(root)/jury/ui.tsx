@@ -1,4 +1,9 @@
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
+import { juryEntrySurface } from '@/components/jury/entry';
+import { OrganizationSwitcher } from '@/components/jury/OrganizationSwitcher';
+import { listOrganizationsForUser } from '@/lib/jury-product/jury-db';
+import { juryHref } from '@/lib/jury-product/jury-url';
 import {
   JURY_GA4_EVENT_PREFIX,
   JURY_PROJECTABLE_DB_METRICS,
@@ -38,7 +43,15 @@ export async function JuryChrome({
   notice?: string;
   children: React.ReactNode;
 }) {
+  if (juryEntrySurface(actor) === 'landing') redirect(juryHref('/'));
+  if (!actor.ok && actor.reason === 'NO_MEMBERSHIP') redirect(juryHref('/organization/create'));
   const identity = actor.ok ? await loadShellIdentity(actor) : null;
+  const listed = actor.ok ? await listOrganizationsForUser(actor.userId).catch(() => []) : [];
+  const organizations = listed.length > 0
+    ? listed
+    : actor.ok && identity?.tenantName
+      ? [{ tenantId: actor.tenantId, name: identity.tenantName, role: actor.role }]
+      : [];
   return (
     <div className={styles.wrap}>
       <header className={styles.header}>
@@ -50,9 +63,21 @@ export async function JuryChrome({
         </div>
         {actor.ok ? (
           <div className={styles.identity}>
+            <OrganizationSwitcher organizations={organizations} activeTenantId={actor.tenantId} />
             <p className={styles.muted}>
-              tenant <strong>{identity?.tenantName ?? SHELL_UNAVAILABLE}</strong>
+              <Link className={styles.inline} href={juryHref('/organization/members')}>Members</Link>
               {' · '}
+              <Link className={styles.inline} href={juryHref('/organization/services')}>Service access</Link>
+              {' · '}
+              <Link className={styles.inline} href={juryHref('/organization/security')}>Security</Link>
+              {decideJuryMutation({ actor, action: 'membership.write', resourceTenantId: actor.tenantId }).ok ? (
+                <>
+                  {' · '}
+                  <Link className={styles.inline} href={juryHref('/organization/invitations')}>Invitations</Link>
+                </>
+              ) : null}
+            </p>
+            <p className={styles.muted}>
               user <strong>{identity?.userLabel ?? SHELL_UNAVAILABLE}</strong>
               {' · '}
               role <span className={styles.badge}>{actor.role}</span>
@@ -91,6 +116,7 @@ function noticeText(code: string): string {
   if (code === 'NOT_IMPLEMENTED') return '권한은 확인됐지만, 이 단계에는 저장소가 없어 변경을 기록하지 않습니다.';
   if (code === 'NO_MEMBERSHIP') return 'membership이 없는 계정입니다.';
   if (code === 'UNAUTHENTICATED') return '로그인이 필요합니다.';
+  if (code === 'EMAIL_UNVERIFIED') return '이메일 인증이 필요합니다.';
   if (code === 'AMBIGUOUS_MEMBERSHIP') return 'membership이 여러 개라 tenant를 정할 수 없습니다.';
   if (code === 'STORE_UNAVAILABLE') return 'Jury 저장소가 아직 준비되지 않았습니다.';
   if (code === 'LAST_OWNER') return '마지막 OWNER는 제거하거나 내릴 수 없습니다.';
@@ -275,7 +301,7 @@ export function ServicesBody({ actor, view }: { actor: JuryActor; view: JuryCons
     <section className={styles.panel}>
       <h2 className={styles.pageTitle}>Services</h2>
       {canShowWrite(actor, 'connection.write') ? (
-        <p><Link className={styles.button} href="/jury/services/new">Add Service</Link></p>
+        <p><Link className={styles.button} href={juryHref('/services/new')}>Add Service</Link></p>
       ) : (
         <p className={styles.muted}>Add Service: 현재 역할에는 이 변경 권한이 없습니다.</p>
       )}
@@ -295,7 +321,7 @@ export function ServicesBody({ actor, view }: { actor: JuryActor; view: JuryCons
           <tbody>
             {rows.map((row) => (
               <tr key={row.id}>
-                <td><Link className={styles.inline} href={`/jury/services/${row.id}`}>{row.displayName}</Link></td>
+                <td><Link className={styles.inline} href={juryHref(`/services/${row.id}`)}>{row.displayName}</Link></td>
                 <td>{row.accessMethod}</td>
                 <td><span className={styles.badge}>{row.status}</span></td>
                 <td>{row.createdAt}</td>
@@ -423,7 +449,7 @@ export function ReviewsBody({ view }: { view: JuryConsoleView }) {
               return (
                 <tr key={row.id}>
                   <td>{request?.status ?? SHELL_UNAVAILABLE}</td>
-                  <td><Link className={styles.inline} href={`/jury/reviews/${row.id}`}>{row.expectedDecision}</Link></td>
+                  <td><Link className={styles.inline} href={juryHref(`/reviews/${row.id}`)}>{row.expectedDecision}</Link></td>
                   <td>{row.completedAt}</td>
                   <td>{request?.reviewType ?? SHELL_UNAVAILABLE}</td>
                   <td>{request?.evidenceId ?? SHELL_UNAVAILABLE}</td>
@@ -475,7 +501,7 @@ export function ReviewDetailBody({ screen, noted }: { screen: ReviewConsoleScree
         <h2>측정된 사실</h2>
         <p className={styles.muted}>Evidence</p>
         <div className={styles.row}><span className={styles.label}>Evidence ID</span><span>{screen.evidenceId ?? '없음'}</span></div>
-        <Link className={styles.inline} href="/jury/evidence">Evidence 목록</Link>
+        <Link className={styles.inline} href={juryHref('/evidence')}>Evidence 목록</Link>
         {screen.measured.map((metric) => (
           <div className={styles.row} key={metric.id}>
             <span>{metric.metric}</span>
@@ -766,7 +792,7 @@ export function ImprovementsBody({
                 <td>{task.taskType ?? SHELL_UNAVAILABLE}</td>
                 <td>{task.diagnosis}</td>
                 <td>{task.acceptanceCriteria.join(', ')}</td>
-                <td><Link className={styles.inline} href={`/jury/reviews/${task.sourceReviewId}`}>{task.sourceReviewId}</Link></td>
+                <td><Link className={styles.inline} href={juryHref(`/reviews/${task.sourceReviewId}`)}>{task.sourceReviewId}</Link></td>
                 <td>{task.sourceService ?? SHELL_UNAVAILABLE}</td>
                 <td>{task.approval ?? SHELL_UNAVAILABLE}</td>
                 <td>
@@ -811,7 +837,7 @@ export function ImprovementsBody({
                         {reReviews[task.agentExecutionId].parentReviewResultId ? <p>Original review {reReviews[task.agentExecutionId].parentReviewResultId}</p> : null}
                         {reReviews[task.agentExecutionId].evidenceId ? <p>{reReviews[task.agentExecutionId].evidenceId}</p> : null}
                         {reReviews[task.agentExecutionId].reviewResultId ? (
-                          <Link className={styles.inline} href={`/jury/reviews/${reReviews[task.agentExecutionId].reviewResultId}`}>Open new review</Link>
+                          <Link className={styles.inline} href={juryHref(`/reviews/${reReviews[task.agentExecutionId].reviewResultId}`)}>Open new review</Link>
                         ) : null}
                       </>
                     ) : canReview ? (
@@ -823,7 +849,7 @@ export function ImprovementsBody({
                   ) : null}
                 </td>
                 <td>
-                  <Link className={styles.inline} href={`/jury/improvements/${task.id}`}>Open trace</Link>
+                  <Link className={styles.inline} href={juryHref(`/improvements/${task.id}`)}>Open trace</Link>
                   {canHandoff && task.approval === 'APPROVED' && task.status === 'OPEN' && !task.agentStatus ? (
                     <form action={handoffHumanImprovement}>
                       <input type="hidden" name="improvementTaskId" value={task.id} />
@@ -836,7 +862,7 @@ export function ImprovementsBody({
           </tbody>
         </table>
       )}
-      <WriteControl actor={actor} action="improvement.write" label="개선 Task 작성" returnTo="/jury/improvements" resourceId={view.tasks[0]?.id} />
+      <WriteControl actor={actor} action="improvement.write" label="개선 Task 작성" returnTo={juryHref('/improvements')} resourceId={view.tasks[0]?.id} />
     </section>
   );
 }
@@ -902,7 +928,7 @@ export function AgentsBody({ actor, view }: { actor: JuryActor; view: JuryConsol
           <span className={styles.muted}>{row.status}</span>
         </div>
       ))}
-      <WriteControl actor={actor} action="agent.execute" label="Agent 실행" returnTo="/jury/agents" resourceId={view.executions[0]?.id} />
+      <WriteControl actor={actor} action="agent.execute" label="Agent 실행" returnTo={juryHref('/agents')} resourceId={view.executions[0]?.id} />
     </section>
   );
 }
@@ -1026,7 +1052,7 @@ export function SettingsBody({
     </section>
     <section className={styles.panel}>
       <h2>Members</h2>
-      <p className={styles.muted}>OWNER만 membership을 추가, 변경, 제거할 수 있습니다. 마지막 OWNER는 남깁니다. MEMBER는 Review 시작과 개선 Task까지이고, AUDITOR는 조회만 합니다.</p>
+      <p className={styles.muted}>OWNER와 ADMIN만 membership을 추가, 변경, 제거할 수 있습니다. 마지막 OWNER는 남깁니다.</p>
       {members.map((row) => (
         <div className={styles.row} key={row.id}>
           <span>{row.role}</span>
@@ -1036,10 +1062,12 @@ export function SettingsBody({
       {canShowWrite(actor, 'membership.write') ? (
         <form action={changeJuryMembership}>
           <input className={styles.field} name="targetUserId" placeholder="대상 user id" required />
-          <select className={styles.field} name="role" defaultValue="MEMBER">
+          <select className={styles.field} name="role" defaultValue="DEVELOPER">
             <option value="OWNER">OWNER</option>
-            <option value="MEMBER">MEMBER</option>
-            <option value="AUDITOR">AUDITOR</option>
+            <option value="ADMIN">ADMIN</option>
+            <option value="REVIEWER">REVIEWER</option>
+            <option value="DEVELOPER">DEVELOPER</option>
+            <option value="VIEWER">VIEWER</option>
           </select>
           <select className={styles.field} name="command" defaultValue="ADD_MEMBER">
             <option value="ADD_MEMBER">추가</option>
@@ -1054,7 +1082,7 @@ export function SettingsBody({
       ) : (
         <p className={styles.muted}>Membership 변경: 현재 역할에는 이 변경 권한이 없습니다.</p>
       )}
-      <WriteControl actor={actor} action="settings.write" label="설정 변경" returnTo="/jury/settings" />
+      <WriteControl actor={actor} action="settings.write" label="설정 변경" returnTo={juryHref('/settings')} />
     </section>
     <section className={styles.panel}>
       <h2>Permissions</h2>
@@ -1083,9 +1111,9 @@ export function SettingsBody({
       <div className={styles.row}><span className={styles.label}>maxIterations</span><span>{view.loopPolicy.maxIterations ?? SHELL_UNAVAILABLE}</span></div>
       <div className={styles.row}><span className={styles.label}>maxRuntimeMs</span><span>{view.loopPolicy.maxRuntimeMs ?? SHELL_UNAVAILABLE}</span></div>
       <div className={styles.row}><span className={styles.label}>maxCostUsd</span><span>{view.loopPolicy.maxCostUsd ?? SHELL_UNAVAILABLE}</span></div>
-      <p><Link className={styles.inline} href="/jury/automation">Automation status</Link></p>
-      <p><Link className={styles.inline} href="/jury/discovery">Discovery</Link></p>
-      <p><Link className={styles.inline} href="/jury/agents">Agents</Link></p>
+      <p><Link className={styles.inline} href={juryHref('/automation')}>Automation status</Link></p>
+      <p><Link className={styles.inline} href={juryHref('/discovery')}>Discovery</Link></p>
+      <p><Link className={styles.inline} href={juryHref('/agents')}>Agents</Link></p>
     </section>
     </>
   );

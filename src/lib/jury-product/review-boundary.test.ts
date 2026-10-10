@@ -12,7 +12,7 @@ const membership: JuryMembership = {
   id: 'mem-1',
   tenantId: 'tenant-a',
   userId: 'user-1',
-  role: 'MEMBER',
+  role: 'DEVELOPER',
   createdAt: '2026-10-01T00:00:00.000Z',
 };
 
@@ -55,7 +55,7 @@ function command(partial?: {
   const evidenceTenantId = partial?.evidenceTenantId ?? 'tenant-a';
   return {
     userId: partial && 'userId' in partial ? partial.userId ?? null : 'user-1',
-    memberships: partial?.memberships ?? [{ ...membership, role: partial?.role ?? 'MEMBER' }],
+    memberships: partial?.memberships ?? [{ ...membership, role: partial?.role ?? 'DEVELOPER' }],
     clientTenantId: partial?.clientTenantId,
     evidence: {
       id: 'ev-1',
@@ -133,7 +133,7 @@ describe('product review boundary', () => {
       return reading('ACCEPT');
     };
     const foreign = await runProductReview(command({ evidenceTenantId: 'tenant-b' }), core);
-    const auditor = await runProductReview(command({ role: 'AUDITOR' }), core);
+    const auditor = await runProductReview(command({ role: 'VIEWER' }), core);
     assert.equal(foreign.ok, false);
     assert.equal(auditor.ok, false);
     if (!foreign.ok) assert.equal(foreign.reason, 'TENANT_MISMATCH');

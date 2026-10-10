@@ -9,6 +9,7 @@ import test from 'node:test';
 import type { JuryActor } from './access';
 import type { JuryConsoleView } from './console-view';
 import type { JuryMembership } from './records';
+import { openPreviewDbTest, selectExactTest } from './preview-db-guard';
 import {
   MOCK_ONBOARDING_ADAPTER,
   ONBOARDING_EMPTY_SCOPES,
@@ -31,8 +32,8 @@ const REF = 'mock-connection-001';
 const SECRET = 'password=hidden';
 
 const owner = membership('phase72-owner-m', TENANT, 'phase72-owner', 'OWNER');
-const member = membership('phase72-member-m', TENANT, 'phase72-member', 'MEMBER');
-const auditor = membership('phase72-auditor-m', TENANT, 'phase72-auditor', 'AUDITOR');
+const member = membership('phase72-member-m', TENANT, 'phase72-member', 'DEVELOPER');
+const auditor = membership('phase72-auditor-m', TENANT, 'phase72-auditor', 'VIEWER');
 const foreign = membership('phase72-foreign-m', FOREIGN, 'phase72-foreign', 'OWNER');
 const ownerActor = actor(owner);
 const memberActor = actor(member);
@@ -84,9 +85,26 @@ test('onboarding source reuses mock discovery and does not call the network', ()
   assert.equal(existsSync(path.resolve(process.cwd(), 'src/app/(root)/jury/services/new/page.tsx')), true);
   assert.equal(existsSync(path.resolve(process.cwd(), 'src/app/(root)/jury/services/[connectionId]/page.tsx')), true);
   assert.equal(MOCK_ONBOARDING_ADAPTER, 'mock');
+  const dbTest = readFileSync(new URL('./service-onboarding.test.ts', import.meta.url), 'utf8');
+  const name = 'owner onboarding connects only after scope approval';
+  const owner = dbTest.slice(dbTest.lastIndexOf(name), dbTest.lastIndexOf('function loadEnv'));
+  assert.equal(owner.startsWith(name), true);
+  assert.equal(owner.indexOf('openPreviewDbTest') < owner.indexOf('loadEnv();'), true);
+  assert.equal(owner.indexOf('openPreviewDbTest') < owner.indexOf('removeFixture'), true);
+  assert.equal(selectExactTest(dbTest, name).ok, true);
 });
 
 test('owner onboarding connects only after scope approval', { timeout: 180_000 }, async () => {
+  const gate = await openPreviewDbTest(process.env, async () => {
+    const { prisma } = await import('@/lib/prisma');
+    const rows = await prisma.$queryRaw<Array<{ failed: number }>>`
+      SELECT count(*)::int AS failed
+      FROM "_prisma_migrations"
+      WHERE finished_at IS NULL AND rolled_back_at IS NULL
+    `;
+    return Number(rows[0]?.failed ?? 1);
+  });
+  if (!gate.ok) assert.fail(gate.status);
   loadEnv();
   const { prisma } = await import('@/lib/prisma');
   const liveBefore = await liveSnapshot(prisma);
@@ -329,7 +347,7 @@ function loadEnv(): void {
       const match = line.match(/^([A-Z0-9_]+)=(.*)$/);
       if (!match) continue;
       const [, key, raw] = match;
-      if (!key || (process.env[key] && !override)) continue;
+      if (!key || key === 'DATABASE_URL' || key === 'DIRECT_URL' || (process.env[key] && !override)) continue;
       process.env[key] = raw.replace(/^"|"$/g, '');
     }
   }

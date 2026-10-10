@@ -29,7 +29,9 @@ model User {
   stances    PostStance[]
   passwordResetTokens PasswordResetToken[]
   gameScores GameScore[]
-  juryMembership JuryMembership?
+  juryMemberships JuryMembership[]
+  juryServiceMembers JuryServiceMember[]
+  juryInvitationsSent OrganizationInvitation[] @relation("JuryInvitationInviter")
   createdAt  DateTime @default(now())
 }
 
@@ -302,8 +304,17 @@ model Notice {
 
 enum JuryMemberRole {
   OWNER
-  MEMBER
-  AUDITOR
+  ADMIN
+  REVIEWER
+  DEVELOPER
+  VIEWER
+}
+
+enum JuryServicePermission {
+  VIEW
+  REVIEW
+  IMPROVE
+  AGENT
 }
 
 enum JuryAccessMethod {
@@ -485,18 +496,22 @@ model JuryTenant {
   decisionCycles JuryDecisionCycle[]
   autoLoopActivation JuryAutoLoopActivation?
   humanDecisions JuryHumanDecision[]
+  serviceMembers JuryServiceMember[]
+  invitations OrganizationInvitation[]
 }
 
 model JuryMembership {
   id        String         @id
   tenantId  String
   tenant    JuryTenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  userId    String         @unique
+  userId    String
   user      User           @relation(fields: [userId], references: [id], onDelete: Restrict)
   role      JuryMemberRole
   createdAt DateTime       @default(now())
 
+  @@unique([tenantId, userId])
   @@index([tenantId])
+  @@index([userId])
 }
 
 model JuryServiceConnection {
@@ -517,8 +532,42 @@ model JuryServiceConnection {
   metrics          JuryNormalizedMetric[]
   evidence         JuryEvidence[]
   requests         JuryReviewRequest[]
+  serviceMembers   JuryServiceMember[]
 
   @@index([tenantId])
+}
+
+model JuryServiceMember {
+  id           String                @id
+  tenantId     String
+  tenant       JuryTenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  connectionId String
+  connection   JuryServiceConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User                  @relation(fields: [userId], references: [id], onDelete: Restrict)
+  permission   JuryServicePermission
+  createdAt    DateTime              @default(now())
+
+  @@unique([connectionId, userId, permission])
+  @@index([tenantId])
+  @@index([userId])
+}
+
+model OrganizationInvitation {
+  id        String         @id
+  tenantId  String
+  tenant    JuryTenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  email     String
+  role      JuryMemberRole
+  tokenHash String         @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  invitedBy String
+  inviter   User           @relation("JuryInvitationInviter", fields: [invitedBy], references: [id], onDelete: Restrict)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  @@index([tenantId, email])
 }
 
 model JuryAccessScope {

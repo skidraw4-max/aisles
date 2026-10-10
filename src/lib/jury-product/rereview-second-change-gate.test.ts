@@ -23,12 +23,12 @@ const COPY = 'workspace/mock-aisle/user-facing-copy.ts';
 const SECRET = 'password=hidden';
 
 const owner = membership('phase63-owner-m', TENANT, 'phase63-owner', 'OWNER');
-const member = membership('phase63-member-m', TENANT, 'phase63-member', 'MEMBER');
-const auditor = membership('phase63-auditor-m', TENANT, 'phase63-auditor', 'AUDITOR');
+const member = membership('phase63-member-m', TENANT, 'phase63-member', 'DEVELOPER');
+const auditor = membership('phase63-auditor-m', TENANT, 'phase63-auditor', 'VIEWER');
 const foreign = membership('phase63-foreign-m', FOREIGN, 'phase63-foreign', 'OWNER');
 const ownerActor: JuryActor = { ok: true, userId: owner.userId, tenantId: TENANT, role: 'OWNER', membershipId: owner.id };
-const memberActor: JuryActor = { ok: true, userId: member.userId, tenantId: TENANT, role: 'MEMBER', membershipId: member.id };
-const auditorActor: JuryActor = { ok: true, userId: auditor.userId, tenantId: TENANT, role: 'AUDITOR', membershipId: auditor.id };
+const memberActor: JuryActor = { ok: true, userId: member.userId, tenantId: TENANT, role: 'DEVELOPER', membershipId: member.id };
+const auditorActor: JuryActor = { ok: true, userId: auditor.userId, tenantId: TENANT, role: 'VIEWER', membershipId: auditor.id };
 
 test('second change gate control follows a completed second execution', () => {
   const base = {

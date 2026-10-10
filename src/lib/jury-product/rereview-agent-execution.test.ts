@@ -22,12 +22,12 @@ const LIVE_REVIEW = '3707202563ecae9b38f324a4eefd9243a14bc69420ed6cdda16c4c5794f
 const LIVE_CYCLE = '14308b4c999ccbe8ca54b7f31da5385385d4073c49bbf2955582a6bb96afb01e';
 
 const owner = membership('phase56-owner-m', TENANT, 'phase56-owner', 'OWNER');
-const member = membership('phase56-member-m', TENANT, 'phase56-member', 'MEMBER');
-const auditor = membership('phase56-auditor-m', TENANT, 'phase56-auditor', 'AUDITOR');
+const member = membership('phase56-member-m', TENANT, 'phase56-member', 'DEVELOPER');
+const auditor = membership('phase56-auditor-m', TENANT, 'phase56-auditor', 'VIEWER');
 const foreign = membership('phase56-foreign-m', FOREIGN, 'phase56-foreign', 'OWNER');
 const ownerActor: JuryActor = { ok: true, userId: owner.userId, tenantId: TENANT, role: 'OWNER', membershipId: owner.id };
-const memberActor: JuryActor = { ok: true, userId: member.userId, tenantId: TENANT, role: 'MEMBER', membershipId: member.id };
-const auditorActor: JuryActor = { ok: true, userId: auditor.userId, tenantId: TENANT, role: 'AUDITOR', membershipId: auditor.id };
+const memberActor: JuryActor = { ok: true, userId: member.userId, tenantId: TENANT, role: 'DEVELOPER', membershipId: member.id };
+const auditorActor: JuryActor = { ok: true, userId: auditor.userId, tenantId: TENANT, role: 'VIEWER', membershipId: auditor.id };
 
 test('second iteration run control is only the pending execution', () => {
   const base = {

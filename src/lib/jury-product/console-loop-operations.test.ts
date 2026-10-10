@@ -20,8 +20,8 @@ const LIVE_CYCLE = '14308b4c999ccbe8ca54b7f31da5385385d4073c49bbf2955582a6bb96af
 const SECRET = 'postgres://hidden';
 
 const owner = membership('phase44-owner-mem', TENANT, 'phase44-owner', 'OWNER');
-const member = membership('phase44-member-mem', TENANT, 'phase44-member', 'MEMBER');
-const auditor = membership('phase44-auditor-mem', TENANT, 'phase44-auditor', 'AUDITOR');
+const member = membership('phase44-member-mem', TENANT, 'phase44-member', 'DEVELOPER');
+const auditor = membership('phase44-auditor-mem', TENANT, 'phase44-auditor', 'VIEWER');
 
 test('a stopped switch and a blocked cycle stay readable', () => {
   const off = projectConsoleLoop({ activation: null, policy: null, cycles: [] });
@@ -113,7 +113,7 @@ test('only STOP is an allowed console transition', () => {
     membershipId: owner.id,
   };
   assert.equal(planConsoleLoopRead(actor).ok, true);
-  assert.equal(planConsoleLoopRead({ ...actor, role: 'AUDITOR' }).ok, true);
+  assert.equal(planConsoleLoopRead({ ...actor, role: 'VIEWER' }).ok, true);
   assert.equal(planConsoleLoopRead({ ok: false, reason: 'UNAUTHENTICATED' }).ok, false);
   const stop = planConsoleLoopStop({ userId: owner.userId, memberships: [owner], command: 'STOP' });
   assert.equal(stop.ok, true);
@@ -220,7 +220,7 @@ test('the console stops an existing switch and leaves an absent switch absent', 
     assert.equal(again.ok, true);
     if (again.ok) assert.equal(again.changed, false);
     assert.equal(await prisma.juryAuditEvent.count({ where: { tenantId: TENANT, action: 'AUTO_LOOP_DISABLED' } }), 1);
-    const after = await readConsoleLoopOperations({ ...ownerActor, role: 'AUDITOR' });
+    const after = await readConsoleLoopOperations({ ...ownerActor, role: 'VIEWER' });
     assert.equal(after.ok, true);
     if (after.ok) {
       assert.equal(after.screen.enabled, false);

@@ -116,7 +116,7 @@ test('phase 34 persisted auto loop stays inside one test tenant', { timeout: 180
   try {
     await removeTenants(prisma);
     const owner = membership('phase34-owner-mem', TENANT, 'phase34-owner', 'OWNER');
-    const auditor = membership('phase34-auditor-mem', TENANT, 'phase34-auditor', 'AUDITOR');
+    const auditor = membership('phase34-auditor-mem', TENANT, 'phase34-auditor', 'VIEWER');
     const foreign = membership('phase34-foreign-mem', FOREIGN, 'phase34-foreign', 'OWNER');
     await seedActors(prisma, owner, auditor, foreign);
     await seedReview(prisma, owner);

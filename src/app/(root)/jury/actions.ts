@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation';
 import { isJuryAction, planJuryCommand } from '@/lib/jury-product/access';
 import type { EvidencePack } from '@/lib/ai-review-board/types';
 import { buildConsoleIntakeInput, consoleIntakeCode } from '@/lib/jury-product/console-evidence-intake';
-import { JURY_PRODUCT_DATA_ROOT } from '@/lib/jury-product/records';
+import { JURY_MEMBER_ROLES, JURY_PRODUCT_DATA_ROOT } from '@/lib/jury-product/records';
 import { runTenantReview, tenantReviewCode } from '@/lib/jury-product/tenant-review';
 import { persistConsoleLoopStop } from '@/lib/jury-product/console-loop-operations-store';
 import { catalogScopeCode, persistCatalogScope, persistCatalogScopeDecision } from '@/lib/jury-product/console-catalog-scope';
@@ -55,18 +55,26 @@ import {
   persistServiceOnboarding,
 } from '@/lib/jury-product/service-onboarding';
 import { getJuryActor } from '@/lib/jury-product/session';
+import {
+  guardAgentExecutionFeature,
+  guardEvidenceFeature,
+  guardImprovementFeature,
+  guardReviewFeature,
+  guardServiceFeature,
+} from '@/lib/jury-product/service-feature-guard';
 import { createClient } from '@/lib/supabase/server';
 
 function safeReturnTo(value: FormDataEntryValue | null): string {
   const raw = typeof value === 'string' ? value : '';
-  if (raw.startsWith('/jury') && !raw.startsWith('//') && !raw.includes('://') && !raw.includes('\\')) {
-    return raw.split('?')[0] || '/jury';
+  const path = raw.split('?')[0] ?? '';
+  if ((path === '/jury' || path.startsWith('/jury/')) && !path.includes('\\') && !path.includes('://') && !path.includes('..')) {
+    return path || '/jury';
   }
   return '/jury';
 }
 
 function isRole(value: string): value is JuryMemberRole {
-  return value === 'OWNER' || value === 'MEMBER' || value === 'AUDITOR';
+  return (JURY_MEMBER_ROLES as readonly string[]).includes(value);
 }
 
 function isAccessMethod(value: string): value is JuryAccessMethod {
@@ -331,6 +339,8 @@ export async function submitTenantEvidenceIntake(formData: FormData): Promise<vo
 export async function submitTenantReview(formData: FormData): Promise<void> {
   const actor = await getJuryActor();
   if (!actor.ok) redirect(`/jury/evidence?result=${actor.reason}`);
+  const reviewAccess = await guardEvidenceFeature(actor, String(formData.get('evidenceId') ?? ''), 'review.execute');
+  if (!reviewAccess.ok) redirect(`/jury/evidence?result=${reviewAccess.reason === 'FORBIDDEN' ? 'FORBIDDEN' : 'NOT_FOUND'}`);
   let target = '/jury/evidence?result=PERSISTENCE_FAILED';
   try {
     const memberships = await listMembershipsForUser(actor.userId);
@@ -359,6 +369,8 @@ export async function acknowledgeHumanReview(formData: FormData): Promise<void> 
   const actor = await getJuryActor();
   if (!actor.ok) redirect(`/jury/reviews?result=${actor.reason}`);
   const reviewId = String(formData.get('reviewId') ?? '');
+  const reviewAccess = await guardReviewFeature(actor, reviewId, 'review.execute');
+  if (!reviewAccess.ok) redirect(`/jury/reviews?result=${reviewAccess.reason === 'FORBIDDEN' ? 'FORBIDDEN' : 'NOT_FOUND'}`);
   let target = '/jury/reviews?result=NOT_FOUND';
   try {
     const memberships = await listMembershipsForUser(actor.userId);
@@ -381,6 +393,8 @@ export async function createHumanImprovementTask(formData: FormData): Promise<vo
   const actor = await getJuryActor();
   if (!actor.ok) redirect(`/jury/reviews?result=${actor.reason}`);
   const reviewId = String(formData.get('reviewId') ?? '');
+  const improvementAccess = await guardReviewFeature(actor, reviewId, 'improvement.write');
+  if (!improvementAccess.ok) redirect(`/jury/reviews?result=${improvementAccess.reason === 'FORBIDDEN' ? 'FORBIDDEN' : 'NOT_FOUND'}`);
   let target = '/jury/reviews?result=NOT_FOUND';
   try {
     const memberships = await listMembershipsForUser(actor.userId);
@@ -402,6 +416,8 @@ export async function handoffHumanImprovement(formData: FormData): Promise<void>
   const actor = await getJuryActor();
   if (!actor.ok) redirect(`/jury/reviews?result=${actor.reason}`);
   const improvementTaskId = String(formData.get('improvementTaskId') ?? '');
+  const handoffAccess = await guardImprovementFeature(actor, improvementTaskId, 'improvement.write');
+  if (!handoffAccess.ok) redirect(`/jury/reviews?result=${handoffAccess.reason === 'FORBIDDEN' ? 'FORBIDDEN' : 'NOT_FOUND'}`);
   let target = '/jury/reviews?result=NOT_FOUND';
   try {
     const memberships = await listMembershipsForUser(actor.userId);
@@ -424,6 +440,8 @@ export async function runHumanAgentExecution(formData: FormData): Promise<void> 
   const actor = await getJuryActor();
   if (!actor.ok) redirect(`/jury/reviews?result=${actor.reason}`);
   const agentExecutionId = String(formData.get('agentExecutionId') ?? '');
+  const agentAccess = await guardAgentExecutionFeature(actor, agentExecutionId, 'agent.execute');
+  if (!agentAccess.ok) redirect(`/jury/reviews?result=${agentAccess.reason === 'FORBIDDEN' ? 'FORBIDDEN' : 'NOT_FOUND'}`);
   let target = '/jury/reviews?result=NOT_FOUND';
   try {
     const memberships = await listMembershipsForUser(actor.userId);
@@ -432,6 +450,7 @@ export async function runHumanAgentExecution(formData: FormData): Promise<void> 
       memberships,
       agentExecutionId,
       clientTenantId: null,
+      servicePermissions: agentAccess.servicePermissions,
     });
     target = outcome.ok
       ? `/jury/reviews/${outcome.reviewId}`
@@ -1017,6 +1036,17 @@ export async function runConnectedServiceJuryReview(formData: FormData): Promise
   const evidenceId = onboardingValue(formData, 'evidenceId');
   if (!actor.ok) redirect(`/jury/services?result=${actor.reason}`);
   if (!connectionId || !/^[a-f0-9]{64}$/.test(evidenceId)) redirect('/jury/services?result=NOT_FOUND');
+  const reviewAccess = await guardServiceFeature({
+    actor,
+    feature: 'review.execute',
+    connectionId,
+    clientTenantId: null,
+    actingUserId: null,
+    actorRole: null,
+    permission: null,
+    capability: null,
+  });
+  if (!reviewAccess.ok) redirect(`/jury/services/${connectionId}?result=${reviewAccess.reason === 'FORBIDDEN' ? 'FORBIDDEN' : 'NOT_FOUND'}`);
   let target = `/jury/services/${connectionId}?result=STORE_UNAVAILABLE`;
   try {
     const decision = await runConnectedServiceReview({

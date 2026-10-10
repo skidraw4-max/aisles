@@ -3,7 +3,9 @@
  * Run: node --import tsx --test src/lib/jury-product/improvement-change-gate.test.ts
  */
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import { existsSync, readFileSync } from 'node:fs';
+import path from 'node:path';
 import { describe, it } from 'node:test';
 import type { AgentExecutionDraft, HandoffTask, HandoffWriteTx } from './agent-handoff';
 import type { ExecutionWriteTx } from './agent-execution';
@@ -13,6 +15,7 @@ import type { ChangeGateDraft, ChangeGateWriteTx, ChangeInspection } from './cha
 import { executeImprovementTask } from './improvement-agent-run';
 import { runChangeGateForExecution, type ChangeGateRunLoad } from './improvement-change-gate';
 import { REWORD_CONSTRAINTS } from './improvement-bridge';
+import { mockAisleAbsolute, removeMockAisleWorkspace, withMockAisleLock } from './mock-aisle-lock';
 import type { JuryMembership } from './records';
 
 const owner: JuryMembership = {
@@ -168,8 +171,29 @@ async function withUniqueRetry<T>(run: () => Promise<T>): Promise<T> {
   }
 }
 
+/**
+ * Runs with the shared mock-aisle lock and without a mock-aisle workspace.
+ * A leftover workspace is removed only when it is a fixture repo whose commits all come from
+ * the fixture author used by the mock-aisle git helpers; any other state fails the test instead.
+ */
+async function withAbsentMockAisle<T>(fn: () => Promise<T>): Promise<T> {
+  return withMockAisleLock(async () => {
+    const root = mockAisleAbsolute();
+    if (existsSync(root)) {
+      const gitDir = path.join(root, '.git');
+      const log = existsSync(gitDir) ? spawnSync('git', ['--git-dir', gitDir, 'log', '--format=%ae'], { encoding: 'utf8' }) : null;
+      const authors = log && log.status === 0 ? log.stdout.split(/\r?\n/).filter(Boolean) : [];
+      if (authors.length === 0 || authors.some((author) => author !== 'jury-fixture@example.com')) {
+        throw new Error('mock-aisle holds state this suite does not own');
+      }
+      await removeMockAisleWorkspace();
+    }
+    return fn();
+  });
+}
+
 describe('improvement change gate', () => {
-  it('gates a reported file that the workspace inspection does not contain', async () => {
+  it('gates a reported file that the workspace inspection does not contain', () => withAbsentMockAisle(async () => {
     const live = await inspectAllowlistedWorkspace('data/jury-product/workspaces/mock-aisle');
     assert.equal(live.ok, true);
     if (!live.ok) return;
@@ -202,7 +226,7 @@ describe('improvement change gate', () => {
     assert.equal(box.cycle.updatedAt, '2026-10-01T16:33:57.676Z');
     assert.equal(box.resolutions.length, 0);
     assert.equal(box.reviews.length, 0);
-  });
+  }));
 
   it('uses the workspace change set when the reported file is actually present', async () => {
     const path = 'notes/phase26-note.md';
@@ -256,7 +280,7 @@ describe('improvement change gate', () => {
       testResults: { available: false, passed: null, commands: [] },
     });
     const denied = await runChangeGateForExecution(
-      { ...command, memberships: [{ ...owner, id: 'mem-m', role: 'MEMBER' }] },
+      { ...command, memberships: [{ ...owner, id: 'mem-m', role: 'DEVELOPER' }] },
       member,
     );
     assert.equal(denied.ok, false);
@@ -272,7 +296,7 @@ describe('improvement change gate', () => {
       testResults: { available: false, passed: null, commands: [] },
     });
     const readOnly = await runChangeGateForExecution(
-      { ...command, memberships: [{ ...owner, id: 'mem-a', role: 'AUDITOR' }] },
+      { ...command, memberships: [{ ...owner, id: 'mem-a', role: 'VIEWER' }] },
       auditor,
     );
     assert.equal(readOnly.ok, false);
@@ -389,7 +413,7 @@ describe('improvement change gate', () => {
     assert.equal(source.includes('child_process'), false);
   });
 
-  it('connects a fake execution to the gate without approving a missing file', async () => {
+  it('connects a fake execution to the gate without approving a missing file', () => withAbsentMockAisle(async () => {
     const work = task();
     const rows: AgentExecutionDraft[] = [];
     const handoff: HandoffWriteTx = {
@@ -463,5 +487,5 @@ describe('improvement change gate', () => {
     assert.equal(adapter.calls.length, 1);
     assert.equal(box.resolutions.length, 0);
     assert.equal(box.reviews.length, 0);
-  });
+  }));
 });

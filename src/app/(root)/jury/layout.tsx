@@ -1,6 +1,12 @@
 import type { Metadata } from 'next';
-import { SiteFooter } from '@/components/SiteFooter';
+import { Inter } from 'next/font/google';
 import { SEO_ROBOTS_PRIVATE } from '@/lib/seo-robots';
+import styles from './shell.module.css';
+
+const inter = Inter({
+  subsets: ['latin'],
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   title: 'AIsles Jury',
@@ -10,10 +16,5 @@ export const metadata: Metadata = {
 export const dynamic = 'force-dynamic';
 
 export default function JuryLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <>
-      {children}
-      <SiteFooter />
-    </>
-  );
+  return <div className={`${inter.className} ${styles.shell}`}>{children}</div>;
 }

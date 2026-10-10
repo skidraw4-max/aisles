@@ -38,6 +38,7 @@ export async function executeHumanAgentExecution(input: {
   memberships: readonly JuryMembership[];
   agentExecutionId: string;
   adapter?: AgentAdapter;
+  workspaceRoot?: string;
 }): Promise<
   | {
       ok: true;
@@ -144,6 +145,7 @@ export async function executeHumanAgentExecution(input: {
         juryDecision,
         taskType,
         adapter,
+        workspaceRoot: input.workspaceRoot,
       });
     });
   } catch {
@@ -171,6 +173,7 @@ export async function advanceLockedHumanExecution(input: {
   juryDecision: JuryDecision;
   taskType: 'VERIFICATION' | 'REWORD';
   adapter: AgentAdapter;
+  workspaceRoot?: string;
 }): Promise<
   | {
       ok: true;
@@ -204,7 +207,7 @@ export async function advanceLockedHumanExecution(input: {
     adapterResult = await adapter.run({
       executionId: execution.id,
       workspaceRef: { type: 'PROJECT', ref: 'jury-product' },
-      workspaceRoot: '',
+      workspaceRoot: input.workspaceRoot ?? '',
       inputSnapshot: task.provenance as Parameters<AgentAdapter['run']>[0]['inputSnapshot'],
       instruction: '',
       signal: controller.signal,

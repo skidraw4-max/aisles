@@ -1,6 +1,7 @@
 /**
  * Membership rules for one Jury tenant.
- * A user has at most one membership. The last OWNER cannot be removed or demoted.
+ * A user may belong to several organizations. One organization still has one membership per user.
+ * The last OWNER cannot be removed or demoted.
  * clientTenantId is never the tenant that gets written.
  */
 import { randomUUID } from 'node:crypto';
@@ -106,9 +107,9 @@ function sameTenant(tenantId: string, members: readonly JuryMembership[]): JuryM
   return members.filter((row) => row.tenantId === tenantId);
 }
 
-function requireOwner(actor: JuryActor): MembershipDecision | null {
+function requireManager(actor: JuryActor): MembershipDecision | null {
   if (!actor.ok) return { ok: false, reason: actor.reason === 'UNAUTHENTICATED' ? 'UNAUTHENTICATED' : 'FORBIDDEN' };
-  if (actor.role !== 'OWNER') return { ok: false, reason: 'FORBIDDEN' };
+  if (actor.role !== 'OWNER' && actor.role !== 'ADMIN') return { ok: false, reason: 'FORBIDDEN' };
   return null;
 }
 
@@ -118,9 +119,6 @@ export function planMembershipCommand(command: MembershipCommand): MembershipDec
     const now = command.now ?? '2026-10-01T00:00:00.000Z';
     if (!command.userId) return { ok: false, reason: 'UNAUTHENTICATED' };
     if (command.tenantName.trim().length === 0) return { ok: false, reason: 'NAME_REQUIRED' };
-    if (command.existingMemberships.some((row) => row.userId === command.userId)) {
-      return { ok: false, reason: 'ALREADY_HAS_MEMBERSHIP' };
-    }
     const tenantId = command.allocateId?.() ?? 'tenant-created';
     const membership: JuryMembership = {
       id: `${tenantId}-owner`,
@@ -152,7 +150,7 @@ export function planMembershipCommand(command: MembershipCommand): MembershipDec
     };
   }
 
-  const denied = requireOwner(command.actor);
+  const denied = requireManager(command.actor);
   if (denied) return denied;
   if (!command.actor.ok) return { ok: false, reason: 'FORBIDDEN' };
   const actor = command.actor;
@@ -161,7 +159,9 @@ export function planMembershipCommand(command: MembershipCommand): MembershipDec
 
   if (command.kind === 'ADD_MEMBER') {
     const now = command.now ?? '2026-10-01T00:00:00.000Z';
-    if (command.targetExisting.length > 0) return { ok: false, reason: 'ALREADY_HAS_MEMBERSHIP' };
+    if (command.targetExisting.some((row) => row.tenantId === tenantId && row.userId === command.targetUserId)) {
+      return { ok: false, reason: 'ALREADY_HAS_MEMBERSHIP' };
+    }
     const membership: JuryMembership = {
       id: command.allocateId?.() ?? `mem-${command.targetUserId}`,
       tenantId,

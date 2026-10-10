@@ -31,8 +31,8 @@ const LIVE_CYCLE = '14308b4c999ccbe8ca54b7f31da5385385d4073c49bbf2955582a6bb96af
 const SECRET = 'password=hidden';
 
 const owner = membership('phase45-owner-m', TENANT, 'phase45-owner', 'OWNER');
-const member = membership('phase45-member-m', TENANT, 'phase45-member', 'MEMBER');
-const auditor = membership('phase45-auditor-m', TENANT, 'phase45-auditor', 'AUDITOR');
+const member = membership('phase45-member-m', TENANT, 'phase45-member', 'DEVELOPER');
+const auditor = membership('phase45-auditor-m', TENANT, 'phase45-auditor', 'VIEWER');
 
 const GRANTS = [
   'userCount',
@@ -87,8 +87,8 @@ test('declared availability keeps zero and clears missing measurements', () => {
 
 test('an owner without connection.write is refused', () => {
   assert.equal(intakeDeniedReason('OWNER', false), 'CONNECTION_WRITE_REQUIRED');
-  assert.equal(intakeDeniedReason('MEMBER', true), 'FORBIDDEN');
-  assert.equal(intakeDeniedReason('AUDITOR', true), 'FORBIDDEN');
+  assert.equal(intakeDeniedReason('DEVELOPER', true), 'FORBIDDEN');
+  assert.equal(intakeDeniedReason('VIEWER', true), 'FORBIDDEN');
   assert.equal(intakeDeniedReason('OWNER', true), null);
 });
 

@@ -204,7 +204,7 @@ describe('improvement agent run', () => {
     const member = harness();
     const memberAdapter = fakeCursorAdapter();
     const denied = await executeImprovementTask(
-      { ...command, memberships: [{ ...owner, id: 'mem-m', role: 'MEMBER' }] },
+      { ...command, memberships: [{ ...owner, id: 'mem-m', role: 'DEVELOPER' }] },
       { load: async () => member.work, handoff: member.handoff, execution: member.execution },
       memberAdapter,
     );
@@ -217,7 +217,7 @@ describe('improvement agent run', () => {
     const auditor = harness();
     const auditorAdapter = fakeCursorAdapter();
     const readOnly = await executeImprovementTask(
-      { ...command, memberships: [{ ...owner, id: 'mem-a', role: 'AUDITOR' }] },
+      { ...command, memberships: [{ ...owner, id: 'mem-a', role: 'VIEWER' }] },
       { load: async () => auditor.work, handoff: auditor.handoff, execution: auditor.execution },
       auditorAdapter,
     );

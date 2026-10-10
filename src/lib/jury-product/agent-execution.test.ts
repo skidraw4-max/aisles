@@ -230,7 +230,7 @@ describe('agent execution', () => {
     const member = memory();
     const memberResult = await executeAgent(
       command({
-        memberships: [{ ...owner, role: 'MEMBER' }],
+        memberships: [{ ...owner, role: 'DEVELOPER' }],
       }),
       fakeCursorAdapter(),
       member,
@@ -294,10 +294,13 @@ describe('agent execution', () => {
     const service = readFileSync(new URL('./agent-execution.ts', import.meta.url), 'utf8');
     const store = readFileSync(new URL('./agent-execution-store.ts', import.meta.url), 'utf8');
     const adapterSource = readFileSync(new URL('./agents/cursor-adapter.ts', import.meta.url), 'utf8');
+    const connectorSource = readFileSync(new URL('./agents/cursor-connector.ts', import.meta.url), 'utf8');
     assert.equal(service.includes('child_process'), false);
     assert.equal(service.includes('runReviewBoardPipeline'), false);
     assert.equal(store.includes('child_process'), false);
-    assert.ok(adapterSource.indexOf('JURY_CURSOR_AGENT_ENABLED') < adapterSource.indexOf('child_process'));
+    assert.equal(adapterSource.includes('child_process'), false);
+    assert.equal(adapterSource.includes('spawn('), false);
+    assert.ok(connectorSource.indexOf('JURY_CURSOR_AGENT_ENABLED') < connectorSource.indexOf('child_process'));
     const previous = process.env.JURY_CURSOR_AGENT_ENABLED;
     delete process.env.JURY_CURSOR_AGENT_ENABLED;
     const result = await runCursorAdapter({

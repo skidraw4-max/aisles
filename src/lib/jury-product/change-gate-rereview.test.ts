@@ -270,7 +270,7 @@ describe('change gate re-review', () => {
     assert.equal(foreign.ok, false);
     if (foreign.ok) return;
     assert.equal(foreign.reason, 'TENANT_MISMATCH');
-    const auditor = await requestChangeGateReReview(command({ memberships: [{ ...owner, role: 'AUDITOR' }] }), requestTx());
+    const auditor = await requestChangeGateReReview(command({ memberships: [{ ...owner, role: 'VIEWER' }] }), requestTx());
     assert.equal(auditor.ok, false);
     if (auditor.ok) return;
     assert.equal(auditor.reason, 'FORBIDDEN');

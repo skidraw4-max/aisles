@@ -22,12 +22,12 @@ const LIVE_REVIEW = '3707202563ecae9b38f324a4eefd9243a14bc69420ed6cdda16c4c5794f
 const LIVE_CYCLE = '14308b4c999ccbe8ca54b7f31da5385385d4073c49bbf2955582a6bb96afb01e';
 
 const owner = membership('phase64-owner-m', TENANT, 'phase64-owner', 'OWNER');
-const member = membership('phase64-member-m', TENANT, 'phase64-member', 'MEMBER');
-const auditor = membership('phase64-auditor-m', TENANT, 'phase64-auditor', 'AUDITOR');
+const member = membership('phase64-member-m', TENANT, 'phase64-member', 'DEVELOPER');
+const auditor = membership('phase64-auditor-m', TENANT, 'phase64-auditor', 'VIEWER');
 const foreign = membership('phase64-foreign-m', FOREIGN, 'phase64-foreign', 'OWNER');
 const ownerActor: JuryActor = { ok: true, userId: owner.userId, tenantId: TENANT, role: 'OWNER', membershipId: owner.id };
-const memberActor: JuryActor = { ok: true, userId: member.userId, tenantId: TENANT, role: 'MEMBER', membershipId: member.id };
-const auditorActor: JuryActor = { ok: true, userId: auditor.userId, tenantId: TENANT, role: 'AUDITOR', membershipId: auditor.id };
+const memberActor: JuryActor = { ok: true, userId: member.userId, tenantId: TENANT, role: 'DEVELOPER', membershipId: member.id };
+const auditorActor: JuryActor = { ok: true, userId: auditor.userId, tenantId: TENANT, role: 'VIEWER', membershipId: auditor.id };
 
 test('later re-review control follows an approved later change gate', () => {
   const base = {

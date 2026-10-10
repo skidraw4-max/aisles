@@ -25,7 +25,7 @@ const member: JuryMembership = {
   id: 'mem-member',
   tenantId: 'tenant-a',
   userId: 'user-member',
-  role: 'MEMBER',
+  role: 'DEVELOPER',
   createdAt: '2026-10-01T00:00:00.000Z',
 };
 
@@ -63,12 +63,30 @@ describe('membership invariants', () => {
     }
   });
 
-  it('does not create a second membership for someone who already has one', () => {
+  it('lets a user create another organization', () => {
     const decision = planMembershipCommand({
       kind: 'CREATE_TENANT',
       userId: 'user-owner',
       existingMemberships: [owner],
       tenantName: 'Second',
+      allocateId: () => 'tenant-b',
+    });
+    assert.equal(decision.ok, true);
+    if (decision.ok && decision.kind === 'CREATE_TENANT') {
+      assert.equal(decision.tenantId, 'tenant-b');
+      assert.equal(decision.membership.role, 'OWNER');
+      assert.equal(decision.membership.userId, 'user-owner');
+    }
+  });
+
+  it('rejects a duplicate membership in the same organization', () => {
+    const decision = planMembershipCommand({
+      kind: 'ADD_MEMBER',
+      actor: actor('OWNER'),
+      tenantMembers: [owner, member],
+      targetExisting: [member],
+      targetUserId: member.userId,
+      role: 'VIEWER',
     });
     assert.equal(decision.ok, false);
     if (!decision.ok) assert.equal(decision.reason, 'ALREADY_HAS_MEMBERSHIP');
@@ -81,7 +99,7 @@ describe('membership invariants', () => {
       tenantMembers: [owner],
       targetExisting: [],
       targetUserId: 'user-new',
-      role: 'MEMBER',
+      role: 'DEVELOPER',
       clientTenantId: 'tenant-b',
     });
     assert.equal(decision.ok, true);
@@ -92,14 +110,14 @@ describe('membership invariants', () => {
   });
 
   it('refuses MEMBER and AUDITOR membership changes', () => {
-    for (const role of ['MEMBER', 'AUDITOR'] as const) {
+    for (const role of ['REVIEWER', 'DEVELOPER', 'VIEWER'] as const) {
       const decision = planMembershipCommand({
         kind: 'ADD_MEMBER',
-        actor: actor(role, role === 'MEMBER' ? 'user-member' : 'user-auditor'),
+        actor: actor(role, role === 'DEVELOPER' ? 'user-member' : 'user-auditor'),
         tenantMembers: [owner, member],
         targetExisting: [],
         targetUserId: 'user-new',
-        role: 'AUDITOR',
+        role: 'VIEWER',
       });
       assert.equal(decision.ok, false);
       if (!decision.ok) assert.equal(decision.reason, 'FORBIDDEN');
@@ -118,7 +136,7 @@ describe('membership invariants', () => {
       actor: actor('OWNER'),
       tenantMembers: [owner],
       targetUserId: 'user-owner',
-      role: 'MEMBER',
+      role: 'DEVELOPER',
     });
     assert.equal(remove.ok, false);
     assert.equal(demote.ok, false);

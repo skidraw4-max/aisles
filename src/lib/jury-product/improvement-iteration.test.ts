@@ -22,8 +22,8 @@ const owner: JuryMembership = {
   role: 'OWNER',
   createdAt: '2026-10-01T00:00:00.000Z',
 };
-const member: JuryMembership = { ...owner, id: 'mem-2', userId: 'user-2', role: 'MEMBER' };
-const auditor: JuryMembership = { ...owner, id: 'mem-3', userId: 'user-3', role: 'AUDITOR' };
+const member: JuryMembership = { ...owner, id: 'mem-2', userId: 'user-2', role: 'DEVELOPER' };
+const auditor: JuryMembership = { ...owner, id: 'mem-3', userId: 'user-3', role: 'VIEWER' };
 const protectedCycle = {
   id: '14308b4c999ccbe8ca54b7f31da5385385d4073c49bbf2955582a6bb96afb01e',
   iteration: 2,

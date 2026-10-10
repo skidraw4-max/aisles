@@ -3,7 +3,9 @@
  * Run: node --import tsx --test src/lib/jury-product/product-change-gate-rereview.test.ts
  */
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
+import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import test from 'node:test';
 import type { JuryActor } from './access';
@@ -25,6 +27,7 @@ import {
   persistOnboardingScopeDecision,
   persistServiceOnboarding,
 } from './service-onboarding';
+import { removeMockAisleWorkspace, withMockAisleLock } from './mock-aisle-lock';
 
 const TENANT = 'phase78-rereview';
 const FOREIGN = 'phase78-rereview-foreign';
@@ -37,8 +40,8 @@ const COPY = 'workspace/mock-aisle/user-facing-copy.ts';
 const SECRET = 'password=hidden';
 
 const owner = membership('phase78-owner-m', TENANT, 'phase78-owner', 'OWNER');
-const member = membership('phase78-member-m', TENANT, 'phase78-member', 'MEMBER');
-const auditor = membership('phase78-auditor-m', TENANT, 'phase78-auditor', 'AUDITOR');
+const member = membership('phase78-member-m', TENANT, 'phase78-member', 'DEVELOPER');
+const auditor = membership('phase78-auditor-m', TENANT, 'phase78-auditor', 'VIEWER');
 const foreign = membership('phase78-foreign-m', FOREIGN, 'phase78-foreign', 'OWNER');
 const ownerActor = actor(owner);
 
@@ -98,7 +101,9 @@ test('an approved product change gate runs one re-review and stops', { timeout: 
     failureCalls += 1;
     throw new Error('REVIEW_CORE_FAILED');
   };
+  await withMockAisleLock(async () => {
   try {
+    await removeMockAisle();
     await removeFixture(prisma);
     await seed(prisma);
     const approved = await openExecution(prisma, 'phase78-approved', core);
@@ -229,7 +234,10 @@ test('an approved product change gate runs one re-review and stops', { timeout: 
       clientTenantId: FOREIGN,
     });
     assert.equal(blockedGate.ok, true);
-    if (blockedGate.ok) assert.equal(blockedGate.gate.status, 'BLOCKED');
+    if (blockedGate.ok) {
+      assert.equal(blockedGate.gate.status, 'GATED');
+      assert.notEqual(blockedGate.gate.status, 'APPROVED');
+    }
     const blockedReview = await runProductChangeGateReReview({
       userId: owner.userId,
       memberships: [owner],
@@ -356,9 +364,94 @@ test('an approved product change gate runs one re-review and stops', { timeout: 
     assert.equal(auditText.includes(SECRET), false);
     assert.deepEqual(await liveSnapshot(prisma), liveBefore);
   } finally {
+    await removeMockAisle();
     await removeFixture(prisma);
   }
+  });
 });
+
+test('a real git diff approval runs one product re-review', { timeout: 540_000 }, async () => {
+  loadEnv();
+  const { prisma } = await import('@/lib/prisma');
+  const liveBefore = await liveSnapshot(prisma);
+  let pipelines = 0;
+  const core: ProductReviewCore = async (args) => {
+    pipelines += 1;
+    const { callFrozenReviewPipeline } = await import('./review-core');
+    const { createMockReviewBoardLlm } = await import('../ai-review-board/mock-llm');
+    return callFrozenReviewPipeline({ ...args, llm: createMockReviewBoardLlm() });
+  };
+  await withMockAisleLock(async () => {
+  try {
+    await prepareMockAisleGit();
+    await removeFixture(prisma);
+    await seed(prisma);
+    const ready = await openExecution(prisma, 'phase78-git', core);
+    assert.equal(pipelines, 1);
+    const execution = await prisma.juryAgentExecution.findFirst({
+      where: { id: ready.executionId, tenantId: TENANT },
+      select: { workspaceRef: true },
+    });
+    assert.deepEqual(execution?.workspaceRef, { type: 'PROJECT', ref: 'jury-product' });
+    const approved = await evaluateProductChangeGate({
+      userId: owner.userId,
+      memberships: [owner],
+      agentExecutionId: ready.executionId,
+      clientTenantId: FOREIGN,
+    });
+    assert.equal(approved.ok, true);
+    if (approved.ok) assert.equal(approved.gate.status, 'APPROVED');
+    const reviewed = await runProductChangeGateReReview({
+      userId: owner.userId,
+      memberships: [owner],
+      agentExecutionId: ready.executionId,
+      clientTenantId: FOREIGN,
+      core,
+    });
+    assert.equal(reviewed.ok, true);
+    assert.equal(pipelines, 2);
+    const children = await prisma.juryReviewResult.count({
+      where: { tenantId: TENANT, parentReviewResultId: ready.resultId },
+    });
+    assert.equal(children, 1);
+    const again = await runProductChangeGateReReview({
+      userId: owner.userId,
+      memberships: [owner],
+      agentExecutionId: ready.executionId,
+      clientTenantId: FOREIGN,
+      core,
+    });
+    assert.equal(again.ok, true);
+    if (again.ok) assert.equal(again.created, false);
+    assert.equal(pipelines, 2);
+    assert.deepEqual(await liveSnapshot(prisma), liveBefore);
+  } finally {
+    await removeMockAisle();
+    await removeFixture(prisma);
+  }
+  });
+});
+
+const MOCK_AISLE = path.resolve(process.cwd(), 'data/jury-product/workspaces/mock-aisle');
+
+async function removeMockAisle(): Promise<void> {
+  await removeMockAisleWorkspace();
+}
+
+async function prepareMockAisleGit(): Promise<void> {
+  await removeMockAisle();
+  const file = path.join(MOCK_AISLE, 'workspace', 'mock-aisle', 'user-facing-copy.ts');
+  await mkdir(path.dirname(file), { recursive: true });
+  await writeFile(file, 'export const userFacingCopy = "before";\n', 'utf8');
+  gitInMock(['init']);
+  gitInMock(['add', 'workspace/mock-aisle/user-facing-copy.ts']);
+  gitInMock(['-c', 'user.email=jury-fixture@example.com', '-c', 'user.name=jury-fixture', 'commit', '-m', 'baseline']);
+}
+
+function gitInMock(args: string[]): void {
+  const result = spawnSync('git', args, { cwd: MOCK_AISLE, encoding: 'utf8' });
+  if (result.status !== 0) throw new Error(result.stderr || result.stdout || 'git failed');
+}
 
 async function approveGate(
   prisma: Awaited<typeof import('@/lib/prisma')>['prisma'],

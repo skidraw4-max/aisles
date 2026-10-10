@@ -1,5 +1,6 @@
 import { isJuryStoreUnavailable } from '@/lib/jury-product/jury-db';
 import { loadReviewConsole } from '@/lib/jury-product/review-console';
+import { guardReviewFeature } from '@/lib/jury-product/service-feature-guard';
 import { getJuryActor } from '@/lib/jury-product/session';
 import { FollowingReReviewBody, HumanChangeGateBody, HumanReReviewBody, JuryChrome, ReReviewAgentHandoffBody, ReReviewAgentRunBody, ReReviewChangeGateBody, ReviewDetailBody, LaterAgentRunBody, LaterChangeGateBody, LaterImprovementApprovalBody, LaterImprovementBody, LaterImprovementHandoffBody, LaterReReviewBody, SecondChangeGateBody, SecondImprovementApprovalBody, SecondImprovementBody, SecondImprovementHandoffBody, SecondReReviewBody } from '../../ui';
 
@@ -21,7 +22,8 @@ export default async function JuryReviewDetailPage({
     );
   }
   try {
-    const loaded = await loadReviewConsole(actor, reviewId);
+    const access = await guardReviewFeature(actor, reviewId, 'review.read');
+    const loaded = access.ok ? await loadReviewConsole(actor, reviewId) : { ok: false as const, reason: 'NOT_FOUND' as const };
     return (
       <JuryChrome actor={actor}>
         {loaded.ok ? (
@@ -46,7 +48,7 @@ export default async function JuryReviewDetailPage({
             <FollowingReReviewBody screen={loaded.screen} />
           </>
         ) : (
-          <p>이 tenant에서 해당 Review를 찾을 수 없습니다.</p>
+          <p>{!access.ok && access.reason === 'FORBIDDEN' ? 'Not authorized' : '이 tenant에서 해당 Review를 찾을 수 없습니다.'}</p>
         )}
       </JuryChrome>
     );

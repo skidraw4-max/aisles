@@ -3,6 +3,7 @@
  * The database unique key is designed in a migration that is not applied here.
  */
 import { Prisma, type PrismaClient } from '@prisma/client';
+import { JURY_INTERACTIVE_TRANSACTION } from './persistence-diagnostic';
 import type { BuiltJuryEvidence } from './evidence-builder';
 import type { JuryEvidence, JuryNormalizedMetric } from './records';
 
@@ -227,6 +228,6 @@ function prismaEvidenceTx(tx: Tx): EvidenceWriteTx {
 export async function persistProductEvidence(command: PersistCommand): Promise<PersistResult> {
   const { prisma } = await import('@/lib/prisma');
   return commitProductEvidence(command, {
-    transaction: (work) => prisma.$transaction((tx) => work(prismaEvidenceTx(tx))),
+    transaction: (work) => prisma.$transaction((tx) => work(prismaEvidenceTx(tx)), JURY_INTERACTIVE_TRANSACTION),
   });
 }

@@ -6,7 +6,7 @@ import { createHash } from 'node:crypto';
 import { Prisma } from '@prisma/client';
 import { decideJuryMutation, resolveJuryActor } from './access';
 import { containsSecret } from './agent-execution';
-import { parseWorkspaceRef } from './agent-handoff';
+import { parseWorkspaceRef, type WorkspaceRef } from './agent-handoff';
 import { resolveAllowedWorkspace } from './agent-workspace';
 import {
   evaluateChangeGate,
@@ -19,6 +19,8 @@ import { inspectAllowlistedWorkspace } from './change-gate-workspace';
 import { HUMAN_HANDOFF_AGENT } from './human-agent-handoff';
 import { HUMAN_IMPROVEMENT_KIND, humanImprovementTaskType } from './human-improvement-bridge';
 import { evaluateImprovementChangeScope } from './improvement-scope-check';
+import { JURY_INTERACTIVE_TRANSACTION, notePersistenceFailure } from './persistence-diagnostic';
+import { inspectionWorkspaceForProduct } from './product-inspection-workspace';
 import type { JuryDecision, JuryMembership } from './records';
 import { JURY_DECISIONS } from './records';
 
@@ -202,11 +204,22 @@ export async function evaluateProductChangeGate(input: {
           gate: viewOf(existing),
         };
       }
-      const workspace = parseWorkspaceRef(execution.workspaceRef);
-      const workspaceRoot = workspace ? resolveAllowedWorkspace(workspace) : null;
+      const lineageWorkspace = parseWorkspaceRef(execution.workspaceRef);
+      const inspectionWorkspace = lineageWorkspace
+        ? inspectionWorkspaceForProduct(lineageWorkspace) ?? lineageWorkspace
+        : null;
+      const workspaceRoot = inspectionWorkspace ? resolveAllowedWorkspace(inspectionWorkspace) : null;
       const inspection = workspaceRoot ? await readInspection(readWorkspace, workspaceRoot) : { files: [], present: [] };
       const reported = readReported(execution.provenance);
-      const writer = gateWriter(tx, actor.userId, actor.tenantId, lineage, stringList(execution.allowedPaths));
+      const writer = gateWriter(
+        tx,
+        actor.userId,
+        actor.tenantId,
+        lineage,
+        stringList(execution.allowedPaths),
+        lineageWorkspace,
+        inspectionWorkspace,
+      );
       const judged = await evaluateChangeGate(
         {
           userId: input.userId,
@@ -218,7 +231,7 @@ export async function evaluateProductChangeGate(input: {
             tenantId: execution.tenantId,
             taskId: execution.taskId,
             status: execution.status,
-            workspaceRef: execution.workspaceRef,
+            workspaceRef: inspectionWorkspace ?? execution.workspaceRef,
             provenance: null,
           },
           task: { id: task.id, tenantId: task.tenantId },
@@ -241,8 +254,9 @@ export async function evaluateProductChangeGate(input: {
         agentExecutionId: execution.id,
         gate: viewOfDraft(judged.gate),
       };
-    });
-  } catch {
+    }, JURY_INTERACTIVE_TRANSACTION);
+  } catch (error) {
+    notePersistenceFailure('change-gate.persist', error);
     return { ok: false, reason: 'PERSISTENCE_FAILED' };
   }
 }
@@ -289,6 +303,8 @@ function gateWriter(
   tenantId: string,
   lineage: Lineage,
   allowedPaths: string[],
+  lineageWorkspace: WorkspaceRef | null,
+  inspectionWorkspace: WorkspaceRef | null,
 ): ChangeGateWriteTx {
   return {
     async findByExecution(executionId) {
@@ -323,7 +339,8 @@ function gateWriter(
           provenance: {
             agentExecutionId: row.executionId,
             improvementTaskId: row.improvementTaskId,
-            workspaceRef: row.provenance.workspaceRef,
+            workspaceRef: lineageWorkspace ?? row.provenance.workspaceRef,
+            inspectionWorkspaceRef: inspectionWorkspace,
             reviewResultId: lineage.reviewResultId,
             reviewRequestId: lineage.reviewRequestId,
             humanDecisionId: lineage.humanDecisionId,

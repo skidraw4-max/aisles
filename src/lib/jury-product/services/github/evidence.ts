@@ -62,7 +62,7 @@ export function githubObservationHints(input: {
     hints.push('GitHub commit count was not included. It was not estimated from commit metadata.');
     hints.push(`GitHub commit metadata documents: ${input.commitDocuments}.`);
   }
-  if (readme?.availability === 'AVAILABLE') {
+  if (readme?.availability === 'AVAILABLE' && typeof readme.value === 'number' && Number.isFinite(readme.value)) {
     hints.push(readme.value === 0 ? 'GitHub README is empty.' : `GitHub README is available. Bytes ${readme.value}.`);
   } else if (readme?.availability === 'NOT_AVAILABLE') {
     hints.push('GitHub README is not available. This is absence, not a collection failure.');

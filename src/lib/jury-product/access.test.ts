@@ -25,7 +25,7 @@ const memberA: JuryMembership = {
   id: 'mem-member-a',
   tenantId: 'tenant-a',
   userId: 'user-member',
-  role: 'MEMBER',
+  role: 'DEVELOPER',
   createdAt: '2026-10-01T00:00:00.000Z',
 };
 
@@ -33,7 +33,7 @@ const auditorA: JuryMembership = {
   id: 'mem-auditor-a',
   tenantId: 'tenant-a',
   userId: 'user-auditor',
-  role: 'AUDITOR',
+  role: 'VIEWER',
   createdAt: '2026-10-01T00:00:00.000Z',
 };
 
@@ -72,10 +72,10 @@ describe('resolveJuryActor', () => {
     }
   });
 
-  it('refuses to pick among multiple memberships', () => {
+  it('falls back to the earliest membership and ignores a client tenant id', () => {
     const resolved = actor('user-owner', ownerAndMember, 'tenant-b');
-    assert.equal(resolved.ok, false);
-    if (!resolved.ok) assert.equal(resolved.reason, 'AMBIGUOUS_MEMBERSHIP');
+    assert.equal(resolved.ok, true);
+    if (resolved.ok) assert.equal(resolved.tenantId, 'tenant-a');
   });
 
   it('denies a signed-in user with no membership', () => {
@@ -160,13 +160,13 @@ describe('membership directory', () => {
       path.join(dir, 'memberships.json'),
       JSON.stringify([
         ownerA,
-        { id: 'bad', tenantId: 'tenant-x', userId: 'user-x', role: 'ADMIN', createdAt: '2026-10-01T00:00:00.000Z' },
+        { id: 'bad', tenantId: 'tenant-x', userId: 'user-x', role: 'GUEST', createdAt: '2026-10-01T00:00:00.000Z' },
       ]),
       'utf8',
     );
     const loaded = await loadJuryMembershipDirectory(dir);
     assert.equal(loaded.length, 1);
     assert.equal(loaded[0]?.role, 'OWNER');
-    assert.equal(loaded.some((row) => row.role === ('ADMIN' as 'OWNER')), false);
+    assert.equal(loaded.some((row) => row.role === ('GUEST' as 'OWNER')), false);
   });
 });

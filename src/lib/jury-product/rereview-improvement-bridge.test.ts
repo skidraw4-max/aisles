@@ -18,11 +18,11 @@ const LIVE_REVIEW = '3707202563ecae9b38f324a4eefd9243a14bc69420ed6cdda16c4c5794f
 const LIVE_CYCLE = '14308b4c999ccbe8ca54b7f31da5385385d4073c49bbf2955582a6bb96afb01e';
 
 const owner = membership('phase54-owner-m', TENANT, 'phase54-owner', 'OWNER');
-const member = membership('phase54-member-m', TENANT, 'phase54-member', 'MEMBER');
-const auditor = membership('phase54-auditor-m', TENANT, 'phase54-auditor', 'AUDITOR');
+const member = membership('phase54-member-m', TENANT, 'phase54-member', 'DEVELOPER');
+const auditor = membership('phase54-auditor-m', TENANT, 'phase54-auditor', 'VIEWER');
 const foreign = membership('phase54-foreign-m', FOREIGN, 'phase54-foreign', 'OWNER');
 const ownerActor: JuryActor = { ok: true, userId: owner.userId, tenantId: TENANT, role: 'OWNER', membershipId: owner.id };
-const auditorActor: JuryActor = { ok: true, userId: auditor.userId, tenantId: TENANT, role: 'AUDITOR', membershipId: auditor.id };
+const auditorActor: JuryActor = { ok: true, userId: auditor.userId, tenantId: TENANT, role: 'VIEWER', membershipId: auditor.id };
 
 test('re-review improvement control follows the stored re-review decision', () => {
   const base = {

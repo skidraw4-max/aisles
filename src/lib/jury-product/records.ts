@@ -16,7 +16,7 @@ export const JURY_AGENT_PATH_FLOOR = [
   'tests/ai-review-board/evaluation',
 ] as const;
 
-export const JURY_MEMBER_ROLES = ['OWNER', 'MEMBER', 'AUDITOR'] as const;
+export const JURY_MEMBER_ROLES = ['OWNER', 'ADMIN', 'REVIEWER', 'DEVELOPER', 'VIEWER'] as const;
 export type JuryMemberRole = (typeof JURY_MEMBER_ROLES)[number];
 
 export const JURY_ACCESS_METHODS = [

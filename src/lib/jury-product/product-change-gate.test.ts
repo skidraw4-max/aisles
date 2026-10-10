@@ -3,7 +3,9 @@
  * Run: node --import tsx --test src/lib/jury-product/product-change-gate.test.ts
  */
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
+import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import test from 'node:test';
 import type { JuryActor } from './access';
@@ -20,6 +22,7 @@ import { handoffProductImprovement } from './product-handoff';
 import { connectProductReviewImprovement } from './product-improvement';
 import type { ProductReviewCore } from './review-boundary';
 import type { JuryMembership } from './records';
+import { removeMockAisleWorkspace, withMockAisleLock } from './mock-aisle-lock';
 import {
   persistOnboardingDiscovery,
   persistOnboardingScopeDecision,
@@ -37,15 +40,18 @@ const COPY = 'workspace/mock-aisle/user-facing-copy.ts';
 const SECRET = 'password=hidden';
 
 const owner = membership('phase77-owner-m', TENANT, 'phase77-owner', 'OWNER');
-const member = membership('phase77-member-m', TENANT, 'phase77-member', 'MEMBER');
-const auditor = membership('phase77-auditor-m', TENANT, 'phase77-auditor', 'AUDITOR');
+const member = membership('phase77-member-m', TENANT, 'phase77-member', 'DEVELOPER');
+const auditor = membership('phase77-auditor-m', TENANT, 'phase77-auditor', 'VIEWER');
 const foreign = membership('phase77-foreign-m', FOREIGN, 'phase77-foreign', 'OWNER');
 const ownerActor = actor(owner);
 
 test('product change gate reuses the existing evaluator and stops at the gate', () => {
   const source = readFileSync(new URL('./product-change-gate.ts', import.meta.url), 'utf8');
   assert.equal(source.includes('evaluateChangeGate('), true);
+  assert.equal(source.includes('inspectionWorkspaceForProduct'), true);
   assert.equal(source.includes('inspectAllowlistedWorkspace'), true);
+  const allowlist = readFileSync(new URL('./agent-workspace.ts', import.meta.url), 'utf8');
+  assert.equal(/['"]jury-product['"]\s*:/.test(allowlist), false);
   assert.equal(source.includes("action: 'agent.execute'"), true);
   assert.equal(source.includes('HUMAN_IMPROVEMENT_KIND'), true);
   assert.equal(source.includes('human-agent-execution'), true);
@@ -85,7 +91,9 @@ test('a completed product execution is gated by the existing evaluator', { timeo
     const { createMockReviewBoardLlm } = await import('../ai-review-board/mock-llm');
     return callFrozenReviewPipeline({ ...args, llm: createMockReviewBoardLlm() });
   };
+  await withMockAisleLock(async () => {
   try {
+    await removeMockAisle();
     await removeFixture(prisma);
     await seed(prisma);
     const ready = await openExecution(prisma, 'phase77-ready', core);
@@ -140,15 +148,26 @@ test('a completed product execution is gated by the existing evaluator', { timeo
     if (first.ok) {
       assert.equal(first.created, true);
       assert.equal(first.evaluated, true);
-      assert.equal(first.gate.status, 'BLOCKED');
-      assert.equal(first.gate.errorCode, 'WORKSPACE_NOT_ALLOWED');
-      assert.equal(first.gate.reasons.includes('WORKSPACE_NOT_ALLOWED'), true);
+      assert.equal(first.gate.status, 'GATED');
+      assert.notEqual(first.gate.status, 'APPROVED');
+      assert.equal(first.gate.errorCode, null);
+      assert.equal(first.gate.reasons.includes('AGENT_REPORTED_FILE_NOT_FOUND_IN_WORKSPACE'), true);
+      assert.equal(first.gate.reasons.includes('WORKSPACE_NOT_ALLOWED'), false);
     }
-    assert.equal(firstWatch.calls, 0);
+    assert.equal(firstWatch.calls, 1);
+    assert.deepEqual(firstWatch.roots, ['data/jury-product/workspaces/mock-aisle']);
     const stored = await prisma.juryChangeGateResult.findFirst({
       where: { executionId: ready.executionId, tenantId: TENANT },
     });
     const storedText = JSON.stringify(stored);
+    const storedProvenance = stored?.provenance as { workspaceRef?: unknown; inspectionWorkspaceRef?: unknown } | null;
+    const storedExecution = await prisma.juryAgentExecution.findFirst({
+      where: { id: ready.executionId, tenantId: TENANT },
+      select: { workspaceRef: true },
+    });
+    assert.deepEqual(storedExecution?.workspaceRef, { type: 'PROJECT', ref: 'jury-product' });
+    assert.deepEqual(storedProvenance?.workspaceRef, { type: 'PROJECT', ref: 'jury-product' });
+    assert.deepEqual(storedProvenance?.inspectionWorkspaceRef, { type: 'PROJECT', ref: 'mock-aisle' });
     assert.equal(storedText.includes(ready.executionId), true);
     assert.equal(storedText.includes(ready.taskId), true);
     assert.equal(storedText.includes(ready.resultId), true);
@@ -184,6 +203,9 @@ test('a completed product execution is gated by the existing evaluator', { timeo
     }), 1);
     assert.equal(await prisma.juryAuditEvent.count({
       where: { tenantId: TENANT, agentExecutionId: ready.executionId, action: 'CHANGE_GATE_BLOCKED' },
+    }), 0);
+    assert.equal(await prisma.juryAuditEvent.count({
+      where: { tenantId: TENANT, agentExecutionId: ready.executionId, action: 'CHANGE_GATE_COMPLETED' },
     }), 1);
 
     const raceWatch = watch();
@@ -205,10 +227,13 @@ test('a completed product execution is gated by the existing evaluator', { timeo
     if (left.ok && right.ok) {
       assert.equal([left, right].filter((row) => row.created).length, 1);
       assert.equal([left, right].filter((row) => row.evaluated).length, 1);
-      assert.equal(left.gate.status, 'BLOCKED');
-      assert.equal(right.gate.status, 'BLOCKED');
+      assert.equal(left.gate.status, 'GATED');
+      assert.equal(right.gate.status, 'GATED');
+      assert.notEqual(left.gate.status, 'APPROVED');
+      assert.notEqual(right.gate.status, 'APPROVED');
     }
-    assert.equal(raceWatch.calls, 0);
+    assert.equal(raceWatch.calls, 1);
+    assert.deepEqual(raceWatch.roots, ['data/jury-product/workspaces/mock-aisle']);
     assert.equal(await prisma.juryChangeGateResult.count({ where: { executionId: race.executionId, tenantId: TENANT } }), 1);
 
     const idle = watch();
@@ -378,9 +403,87 @@ test('a completed product execution is gated by the existing evaluator', { timeo
     assert.equal(await prisma.juryChangeGateResult.count({ where }), 5);
     assert.deepEqual(await liveSnapshot(prisma), liveBefore);
   } finally {
+    await removeMockAisle();
     await removeFixture(prisma);
   }
+  });
 });
+
+test('a real mock-aisle git diff approves the product change gate', { timeout: 540_000 }, async () => {
+  loadEnv();
+  const { prisma } = await import('@/lib/prisma');
+  const liveBefore = await liveSnapshot(prisma);
+  let pipelines = 0;
+  const core: ProductReviewCore = async (args) => {
+    pipelines += 1;
+    const { callFrozenReviewPipeline } = await import('./review-core');
+    const { createMockReviewBoardLlm } = await import('../ai-review-board/mock-llm');
+    return callFrozenReviewPipeline({ ...args, llm: createMockReviewBoardLlm() });
+  };
+  await withMockAisleLock(async () => {
+  try {
+    await prepareMockAisleGit();
+    await removeFixture(prisma);
+    await seed(prisma);
+    const ready = await openExecution(prisma, 'phase77-git', core);
+    const execution = await prisma.juryAgentExecution.findFirst({
+      where: { id: ready.executionId, tenantId: TENANT },
+      select: { workspaceRef: true, provenance: true },
+    });
+    assert.deepEqual(execution?.workspaceRef, { type: 'PROJECT', ref: 'jury-product' });
+    const reported = (execution?.provenance as { result?: { changedFiles?: string[] } } | null)?.result?.changedFiles;
+    assert.deepEqual(reported, [COPY]);
+    const live = await inspectAllowlistedWorkspace('data/jury-product/workspaces/mock-aisle');
+    assert.equal(live.ok, true);
+    if (live.ok) assert.equal(live.files.some((file) => file.path === COPY && file.kind === 'modified'), true);
+    const approved = await evaluateProductChangeGate({
+      userId: owner.userId,
+      memberships: [owner],
+      agentExecutionId: ready.executionId,
+      clientTenantId: FOREIGN,
+    });
+    assert.equal(approved.ok, true);
+    if (approved.ok) {
+      assert.equal(approved.evaluated, true);
+      assert.equal(approved.gate.status, 'APPROVED');
+      assert.equal(approved.gate.credentialDetected, false);
+    }
+    const stored = await prisma.juryChangeGateResult.findFirst({
+      where: { executionId: ready.executionId, tenantId: TENANT },
+    });
+    const provenance = stored?.provenance as { workspaceRef?: unknown; inspectionWorkspaceRef?: unknown } | null;
+    assert.deepEqual(provenance?.workspaceRef, { type: 'PROJECT', ref: 'jury-product' });
+    assert.deepEqual(provenance?.inspectionWorkspaceRef, { type: 'PROJECT', ref: 'mock-aisle' });
+    assert.equal(JSON.stringify(stored?.changedFiles).includes(COPY), true);
+    assert.equal(pipelines, 1);
+    assert.deepEqual(await liveSnapshot(prisma), liveBefore);
+  } finally {
+    await removeMockAisle();
+    await removeFixture(prisma);
+  }
+  });
+});
+
+const MOCK_AISLE = path.resolve(process.cwd(), 'data/jury-product/workspaces/mock-aisle');
+
+async function removeMockAisle(): Promise<void> {
+  await removeMockAisleWorkspace();
+}
+
+async function prepareMockAisleGit(): Promise<void> {
+  await removeMockAisle();
+  const file = path.join(MOCK_AISLE, 'workspace', 'mock-aisle', 'user-facing-copy.ts');
+  await mkdir(path.dirname(file), { recursive: true });
+  await writeFile(file, 'export const userFacingCopy = "before";\n', 'utf8');
+  gitInMock(['init']);
+  gitInMock(['add', 'workspace/mock-aisle/user-facing-copy.ts']);
+  gitInMock(['-c', 'user.email=jury-fixture@example.com', '-c', 'user.name=jury-fixture', 'commit', '-m', 'baseline']);
+}
+
+function gitInMock(args: string[]): void {
+  const result = spawnSync('git', args, { cwd: MOCK_AISLE, encoding: 'utf8' });
+  if (result.status !== 0) throw new Error(result.stderr || result.stdout || 'git failed');
+}
 
 function watch(
   inner: (relativeRoot: string) => Promise<
@@ -388,13 +491,17 @@ function watch(
     | { ok: false; reason: 'WORKSPACE_NOT_ALLOWED' | 'WORKSPACE_ESCAPE' }
   > = inspectAllowlistedWorkspace,
 ) {
-  const box = { calls: 0 };
+  const box = { calls: 0, roots: [] as string[] };
   return {
     get calls() {
       return box.calls;
     },
+    get roots() {
+      return box.roots;
+    },
     inspect: async (relativeRoot: string) => {
       box.calls += 1;
+      box.roots.push(relativeRoot);
       return inner(relativeRoot);
     },
   };

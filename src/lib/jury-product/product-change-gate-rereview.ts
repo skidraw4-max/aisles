@@ -10,6 +10,7 @@ import { HUMAN_IMPROVEMENT_KIND, humanImprovementTaskType } from './human-improv
 import { evaluateHumanReReview, type HumanReReviewFailure, type HumanReReviewView } from './human-re-review';
 import type { JuryMembership } from './records';
 import { JURY_DECISIONS } from './records';
+import { JURY_INTERACTIVE_TRANSACTION, notePersistenceFailure } from './persistence-diagnostic';
 import type { ProductReviewCore } from './review-boundary';
 
 export type ProductReReviewFailure = HumanReReviewFailure | 'SNAPSHOT_UNSAFE';
@@ -140,9 +141,10 @@ export async function runProductChangeGateReReview(input: {
         return { ok: false as const, reason: 'RE-REVIEW_NOT_APPROVED' as const };
       }
       return { ok: true as const };
-    });
+    }, JURY_INTERACTIVE_TRANSACTION);
     if (!ready.ok) return ready;
-  } catch {
+  } catch (error) {
+    notePersistenceFailure('re-review.ready', error);
     return { ok: false, reason: 'PERSISTENCE_FAILED' };
   }
   return evaluateHumanReReview({

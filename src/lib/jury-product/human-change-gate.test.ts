@@ -22,11 +22,11 @@ const COPY = 'workspace/mock-aisle/user-facing-copy.ts';
 const SECRET = 'example-secret-value';
 
 const owner = membership('phase52-owner-m', TENANT, 'phase52-owner', 'OWNER');
-const member = membership('phase52-member-m', TENANT, 'phase52-member', 'MEMBER');
-const auditor = membership('phase52-auditor-m', TENANT, 'phase52-auditor', 'AUDITOR');
+const member = membership('phase52-member-m', TENANT, 'phase52-member', 'DEVELOPER');
+const auditor = membership('phase52-auditor-m', TENANT, 'phase52-auditor', 'VIEWER');
 const foreign = membership('phase52-foreign-m', FOREIGN, 'phase52-foreign', 'OWNER');
 const ownerActor: JuryActor = { ok: true, userId: owner.userId, tenantId: TENANT, role: 'OWNER', membershipId: owner.id };
-const auditorActor: JuryActor = { ok: true, userId: auditor.userId, tenantId: TENANT, role: 'AUDITOR', membershipId: auditor.id };
+const auditorActor: JuryActor = { ok: true, userId: auditor.userId, tenantId: TENANT, role: 'VIEWER', membershipId: auditor.id };
 
 test('change gate control follows a completed owner execution', () => {
   const surface = face();

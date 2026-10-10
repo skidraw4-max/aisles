@@ -37,8 +37,8 @@ const PERIOD_C = ['2026-09-15', '2026-09-21'] as const;
 const PERIOD_D = ['2026-09-22', '2026-09-28'] as const;
 
 const owner = membership('phase73-owner-m', TENANT, 'phase73-owner', 'OWNER');
-const member = membership('phase73-member-m', TENANT, 'phase73-member', 'MEMBER');
-const auditor = membership('phase73-auditor-m', TENANT, 'phase73-auditor', 'AUDITOR');
+const member = membership('phase73-member-m', TENANT, 'phase73-member', 'DEVELOPER');
+const auditor = membership('phase73-auditor-m', TENANT, 'phase73-auditor', 'VIEWER');
 const foreign = membership('phase73-foreign-m', FOREIGN, 'phase73-foreign', 'OWNER');
 const ownerActor = actor(owner);
 const memberActor = actor(member);
@@ -376,8 +376,8 @@ test('failed review without a result retries once and preserves finished results
   const retryTenant = 'phase73-retry';
   const retryForeign = 'phase73-retry-foreign';
   const retryOwner = membership('phase73-retry-owner-m', retryTenant, 'phase73-retry-owner', 'OWNER');
-  const retryMember = membership('phase73-retry-member-m', retryTenant, 'phase73-retry-member', 'MEMBER');
-  const retryAuditor = membership('phase73-retry-auditor-m', retryTenant, 'phase73-retry-auditor', 'AUDITOR');
+  const retryMember = membership('phase73-retry-member-m', retryTenant, 'phase73-retry-member', 'DEVELOPER');
+  const retryAuditor = membership('phase73-retry-auditor-m', retryTenant, 'phase73-retry-auditor', 'VIEWER');
   const retryForeignOwner = membership('phase73-retry-foreign-m', retryForeign, 'phase73-retry-foreign', 'OWNER');
   const retryOwnerActor = actor(retryOwner);
   const retryMemberActor = actor(retryMember);

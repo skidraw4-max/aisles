@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useFormStatus } from 'react-dom';
 import { createClient } from '@/lib/supabase/client';
+import { juryHref } from '@/lib/jury-product/jury-url';
 import { PRODUCT_NAV } from '@/lib/jury-product/product-nav';
 import styles from './jury.module.css';
 
@@ -72,7 +73,8 @@ export function LogoutButton() {
       onClick={async () => {
         const supabase = createClient();
         await supabase.auth.signOut();
-        router.replace('/');
+        router.replace(juryHref('/'));
+        router.refresh();
       }}
     >
       Logout

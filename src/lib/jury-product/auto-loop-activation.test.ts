@@ -13,8 +13,8 @@ const owner: JuryMembership = {
   role: 'OWNER',
   createdAt: '2026-10-02T00:00:00.000Z',
 };
-const member: JuryMembership = { ...owner, id: 'mem-member', userId: 'user-member', role: 'MEMBER' };
-const auditor: JuryMembership = { ...owner, id: 'mem-auditor', userId: 'user-auditor', role: 'AUDITOR' };
+const member: JuryMembership = { ...owner, id: 'mem-member', userId: 'user-member', role: 'DEVELOPER' };
+const auditor: JuryMembership = { ...owner, id: 'mem-auditor', userId: 'user-auditor', role: 'VIEWER' };
 
 test('auto loop stays off until an activation row is on', () => {
   assert.equal(autoLoopIsEnabled(null, { maxIterations: 5 }), false);

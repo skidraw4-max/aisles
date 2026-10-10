@@ -1,6 +1,7 @@
 /**
  * Service onboarding over the existing connection, mock discovery, and scope contract.
- * MockDiscoveryAdapter is runMockDiscovery. It does not open a network connection.
+ * Mock connections use runMockDiscovery and do not open a network connection.
+ * A GitHub installation connection is routed to GitHub repository discovery instead.
  */
 import { randomUUID } from 'node:crypto';
 import { Prisma } from '@prisma/client';
@@ -9,6 +10,8 @@ import { createAccessContext, type AccessFailure } from './access-layer';
 import { containsSecret } from './agent-execution';
 import type { JuryConsoleView } from './console-view';
 import { planServiceTarget, runMockDiscovery, runScopeDecision, type DiscoveryFailure, type DiscoveryTx } from './discovery';
+import { JURY_INTERACTIVE_TRANSACTION } from './persistence-diagnostic';
+import { isGithubInstallationConnection } from './services/github/onboarding-discovery';
 import {
   JURY_ACCESS_METHODS,
   type JuryAccessMethod,
@@ -24,7 +27,7 @@ async function openTx<T>(
   run: (tx: Prisma.TransactionClient, bindDiscoveryTx: (tx: Prisma.TransactionClient) => DiscoveryTx) => Promise<T>,
 ): Promise<T> {
   const [{ prisma }, { bindDiscoveryTx }] = await Promise.all([import('@/lib/prisma'), import('./jury-db')]);
-  return prisma.$transaction((tx) => run(tx, bindDiscoveryTx));
+  return prisma.$transaction((tx) => run(tx, bindDiscoveryTx), JURY_INTERACTIVE_TRANSACTION);
 }
 
 export const MOCK_ONBOARDING_ADAPTER = 'mock';
@@ -108,7 +111,7 @@ export function projectServiceOnboarding(view: JuryConsoleView, connectionId: st
     discoveryStatus: discovery?.approval ?? 'Not started',
     scopeStatus: scopes.length === 0 ? ONBOARDING_EMPTY_SCOPES : scopes.map((row) => row.status).join(', '),
     credentialLabel: displayCredentialRef(connection.credentialRef),
-    canOpenEvidence: connection.status === 'CONNECTED',
+    canOpenEvidence: connection.status === 'CONNECTED' && !isGithubInstallationConnection(connection),
   };
 }
 
@@ -227,6 +230,20 @@ export async function persistOnboardingDiscovery(command: {
     clientTenantId: command.clientTenantId,
   });
   if (!allowed.ok) return allowed;
+  const { prisma } = await import('@/lib/prisma');
+  const preview = await prisma.juryServiceConnection.findFirst({
+    where: { id: command.connectionId, tenantId: actor.tenantId },
+  });
+  if (!preview || preview.tenantId !== actor.tenantId) return { ok: false, reason: 'NOT_FOUND' };
+  if (isGithubInstallationConnection(preview)) {
+    const { persistGithubOnboardingDiscovery } = await import('./services/github/onboarding-discovery');
+    return persistGithubOnboardingDiscovery({
+      actor,
+      connectionId: preview.id,
+      now: command.now,
+      allocateId: command.allocateId,
+    });
+  }
   return openTx(async (tx, bindDiscoveryTx) => {
     const bound = bindDiscoveryTx(tx);
     const connection = await bound.findConnection(actor.tenantId, command.connectionId);
@@ -294,6 +311,11 @@ export async function persistOnboardingScopeDecision(command: {
       select: { id: true, connectionId: true },
     });
     if (!scopeRow) return { ok: false as const, reason: 'NOT_FOUND' as const };
+    const connectionRow = await tx.juryServiceConnection.findFirst({
+      where: { id: scopeRow.connectionId, tenantId: actor.tenantId },
+    });
+    if (!connectionRow || connectionRow.tenantId !== actor.tenantId) return { ok: false as const, reason: 'NOT_FOUND' as const };
+    if (isGithubInstallationConnection(connectionRow)) return { ok: false as const, reason: 'NOT_IMPLEMENTED' as const };
     await tx.$queryRaw(
       Prisma.sql`SELECT id FROM "JuryServiceConnection" WHERE id = ${scopeRow.connectionId} AND "tenantId" = ${actor.tenantId} FOR UPDATE`,
     );

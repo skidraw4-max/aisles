@@ -21,8 +21,8 @@ const LIVE_REVIEW = '3707202563ecae9b38f324a4eefd9243a14bc69420ed6cdda16c4c5794f
 const LIVE_CYCLE = '14308b4c999ccbe8ca54b7f31da5385385d4073c49bbf2955582a6bb96afb01e';
 
 const owner = membership('phase46-owner-m', TENANT, 'phase46-owner', 'OWNER');
-const member = membership('phase46-member-m', TENANT, 'phase46-member', 'MEMBER');
-const auditor = membership('phase46-auditor-m', TENANT, 'phase46-auditor', 'AUDITOR');
+const member = membership('phase46-member-m', TENANT, 'phase46-member', 'DEVELOPER');
+const auditor = membership('phase46-auditor-m', TENANT, 'phase46-auditor', 'VIEWER');
 
 test('tenant packs follow the existing comparator contract', () => {
   const zero = packOf([row('newUsersLast7d', 'AVAILABLE', 0)]);

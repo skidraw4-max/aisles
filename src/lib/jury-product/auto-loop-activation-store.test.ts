@@ -60,8 +60,8 @@ test('phase 35 activation gate stays off until an owner turns it on', { timeout:
   const liveBefore = await liveSnapshot(prisma);
   const liveCountsBefore = await liveTenantCounts(prisma, liveBefore.reviewTenantId);
   const owner = membership('phase35-owner-mem', TENANT, 'phase35-owner', 'OWNER');
-  const member = membership('phase35-member-mem', TENANT, 'phase35-member', 'MEMBER');
-  const auditor = membership('phase35-auditor-mem', TENANT, 'phase35-auditor', 'AUDITOR');
+  const member = membership('phase35-member-mem', TENANT, 'phase35-member', 'DEVELOPER');
+  const auditor = membership('phase35-auditor-mem', TENANT, 'phase35-auditor', 'VIEWER');
   const foreign = membership('phase35-foreign-mem', FOREIGN, 'phase35-foreign', 'OWNER');
   let cleanupError: string | null = null;
   try {

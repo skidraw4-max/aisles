@@ -27,8 +27,8 @@ const LIVE_REVIEW = '3707202563ecae9b38f324a4eefd9243a14bc69420ed6cdda16c4c5794f
 const LIVE_CYCLE = '14308b4c999ccbe8ca54b7f31da5385385d4073c49bbf2955582a6bb96afb01e';
 
 const owner = membership('phase46c-e2e-owner-m', TENANT, 'phase46c-e2e-owner', 'OWNER');
-const member = membership('phase46c-e2e-member-m', TENANT, 'phase46c-e2e-member', 'MEMBER');
-const auditor = membership('phase46c-e2e-auditor-m', TENANT, 'phase46c-e2e-auditor', 'AUDITOR');
+const member = membership('phase46c-e2e-member-m', TENANT, 'phase46c-e2e-member', 'DEVELOPER');
+const auditor = membership('phase46c-e2e-auditor-m', TENANT, 'phase46c-e2e-auditor', 'VIEWER');
 const foreign = membership('phase46c-e2e-foreign-m', FOREIGN, 'phase46c-e2e-foreign', 'OWNER');
 const ownerActor: JuryActor = { ok: true, userId: owner.userId, tenantId: TENANT, role: 'OWNER', membershipId: owner.id };
 

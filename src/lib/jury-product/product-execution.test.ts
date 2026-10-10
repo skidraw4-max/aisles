@@ -16,7 +16,7 @@ import {
 } from './connected-service-review';
 import { handoffProductImprovement } from './product-handoff';
 import { connectProductReviewImprovement } from './product-improvement';
-import { executeProductAgentExecution } from './product-execution';
+import { completeProductAgentExecution, executeProductAgentExecution } from './product-execution';
 import type { ProductReviewCore } from './review-boundary';
 import type { JuryMembership } from './records';
 import {
@@ -35,14 +35,30 @@ const PERIOD = ['2026-09-01', '2026-09-07'] as const;
 const SUMMARY = '사용자 노출 문구를 작업 제약 안에서 조정하는 변경을 준비했다.';
 
 const owner = membership('phase76-owner-m', TENANT, 'phase76-owner', 'OWNER');
-const member = membership('phase76-member-m', TENANT, 'phase76-member', 'MEMBER');
-const auditor = membership('phase76-auditor-m', TENANT, 'phase76-auditor', 'AUDITOR');
+const member = membership('phase76-member-m', TENANT, 'phase76-member', 'DEVELOPER');
+const auditor = membership('phase76-auditor-m', TENANT, 'phase76-auditor', 'VIEWER');
 const foreign = membership('phase76-foreign-m', FOREIGN, 'phase76-foreign', 'OWNER');
 const ownerActor = actor(owner);
 
 test('product execution reuses the human writer and does not call a live agent', () => {
   const source = readFileSync(new URL('./product-execution.ts', import.meta.url), 'utf8');
-  assert.equal(source.includes('executeHumanAgentExecution'), true);
+  const executeBody = source.slice(
+    source.indexOf('export async function executeProductAgentExecution'),
+    source.indexOf('export async function claimProductAgentExecution'),
+  );
+  const claimBody = source.slice(
+    source.indexOf('export async function claimProductAgentExecution'),
+    source.indexOf('export async function completeProductAgentExecution'),
+  );
+  assert.equal(executeBody.includes('await claimProductAgentExecution'), true);
+  assert.equal(executeBody.includes('adapter.run'), true);
+  assert.equal(executeBody.includes('await completeProductAgentExecution'), true);
+  assert.equal(executeBody.indexOf('await claimProductAgentExecution') < executeBody.indexOf('adapter.run'), true);
+  assert.equal(executeBody.indexOf('adapter.run') < executeBody.indexOf('await completeProductAgentExecution'), true);
+  assert.equal(executeBody.includes('$transaction'), false);
+  assert.equal(claimBody.includes('$transaction'), true);
+  assert.equal(claimBody.includes('adapter.run'), false);
+  assert.equal(claimBody.includes("status: 'RUNNING'"), true);
   assert.equal(source.includes("action: 'agent.execute'"), true);
   assert.equal(source.includes('HUMAN_IMPROVEMENT_KIND'), true);
   assert.equal(source.includes('human-agent-handoff'), true);
@@ -120,8 +136,20 @@ test('a product pending execution completes once through the fake adapter', { ti
     if (!foreignTry.ok) assert.equal(foreignTry.reason, 'NOT_FOUND');
     assert.equal(denied.calls.length, 0);
 
-    const shared = fakeCursorAdapter('success');
-    const [ownerRun, memberRace] = await Promise.all([
+    const inner = fakeCursorAdapter('success');
+    const shared = {
+      calls: inner.calls,
+      async run(runInput: Parameters<typeof inner.run>[0]) {
+        const visible = await prisma.juryAgentExecution.findFirst({
+          where: { id: runInput.executionId, tenantId: TENANT },
+          select: { status: true, startedAt: true },
+        });
+        assert.equal(visible?.status, 'RUNNING');
+        assert.ok(visible?.startedAt);
+        return inner.run(runInput);
+      },
+    };
+    const raced = await Promise.all([
       executeProductAgentExecution({
         userId: owner.userId,
         memberships: [owner],
@@ -130,16 +158,18 @@ test('a product pending execution completes once through the fake adapter', { ti
         adapter: shared,
       }),
       executeProductAgentExecution({
-        userId: member.userId,
-        memberships: [member],
+        userId: owner.userId,
+        memberships: [owner],
         agentExecutionId: ready.executionId,
         adapter: shared,
       }),
     ]);
-    assert.equal(memberRace.ok, false);
-    assert.equal(ownerRun.ok, true);
-    if (ownerRun.ok) {
-      assert.equal(ownerRun.status, 'COMPLETED');
+    const completed = raced.filter((item) => item.ok && item.status === 'COMPLETED');
+    const busy = raced.filter((item) => !item.ok && item.reason === 'ALREADY_RUNNING');
+    assert.equal(completed.length, 1);
+    assert.equal(busy.length, 1);
+    const ownerRun = completed[0];
+    if (ownerRun?.ok) {
       assert.equal(ownerRun.adapterCalled, true);
       assert.equal(ownerRun.result?.summary, SUMMARY);
     }
@@ -167,6 +197,20 @@ test('a product pending execution completes once through the fake adapter', { ti
       assert.equal(again.adapterCalled, false);
     }
     assert.equal(replay.calls.length, 0);
+    const repeated = await completeProductAgentExecution({
+      userId: owner.userId,
+      memberships: [owner],
+      agentExecutionId: ready.executionId,
+      result: { ok: true, changedFiles: ['other.ts'], summary: '다시 쓰지 않는다', testsRun: [], testsPassed: null },
+    });
+    assert.equal(repeated.ok, true);
+    if (repeated.ok) {
+      assert.equal(repeated.adapterCalled, false);
+      assert.equal(repeated.result?.summary, SUMMARY);
+    }
+    assert.equal(await prisma.juryAuditEvent.count({
+      where: { tenantId: TENANT, agentExecutionId: ready.executionId, action: 'AGENT_EXECUTION_COMPLETED' },
+    }), 1);
     assert.equal(await prisma.juryAuditEvent.count({
       where: { tenantId: TENANT, agentExecutionId: ready.executionId, action: 'AGENT_EXECUTION_STARTED' },
     }), 1);
@@ -301,8 +345,12 @@ test('a product pending execution completes once through the fake adapter', { ti
     assert.equal(await prisma.juryAgentExecution.findFirst({
       where: { id: held.executionId },
       select: { status: true },
-    }).then((row) => row?.status), 'PENDING');
-    await prisma.juryAuditEvent.deleteMany({ where: { id: poisonId } });
+    }).then((row) => row?.status), 'RUNNING');
+    await prisma.juryAgentExecution.update({
+      where: { id: held.executionId },
+      data: { status: 'PENDING', startedAt: null },
+    });
+    await prisma.juryAuditEvent.deleteMany({ where: { agentExecutionId: held.executionId } });
 
     await prisma.juryHumanDecision.updateMany({
       where: { tenantId: TENANT, reviewResultId: held.resultId },
@@ -330,8 +378,20 @@ test('a product pending execution completes once through the fake adapter', { ti
     assert.equal(failAdapter.calls.length, 1);
     assert.equal(await prisma.juryAgentExecution.findFirst({
       where: { id: failed.executionId },
-      select: { status: true },
+      select: { status: true, finishedAt: true, errorCode: true },
     }).then((row) => row?.status), 'BLOCKED');
+    const blockedAgain = await executeProductAgentExecution({
+      userId: owner.userId,
+      memberships: [owner],
+      agentExecutionId: failed.executionId,
+      adapter: failAdapter,
+    });
+    assert.equal(blockedAgain.ok, true);
+    if (blockedAgain.ok) {
+      assert.equal(blockedAgain.status, 'BLOCKED');
+      assert.equal(blockedAgain.adapterCalled, false);
+    }
+    assert.equal(failAdapter.calls.length, 1);
 
     assert.equal(await prisma.juryEvidence.count({ where: { tenantId: TENANT } }), evidenceBefore);
     assert.equal(await prisma.juryImprovementTask.count({ where: { tenantId: TENANT } }), tasksBefore);

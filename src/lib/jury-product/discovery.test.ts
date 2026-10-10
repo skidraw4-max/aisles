@@ -25,7 +25,7 @@ const owner: JuryActor = {
   membershipId: 'mem-owner',
 };
 
-function actor(role: 'MEMBER' | 'AUDITOR'): JuryActor {
+function actor(role: 'DEVELOPER' | 'VIEWER'): JuryActor {
   return {
     ok: true,
     userId: `user-${role.toLowerCase()}`,
@@ -154,7 +154,7 @@ describe('scope approval', () => {
       assert.equal(revoked.discovery.approval, 'REJECTED');
       assert.equal(revoked.audit.action, 'SCOPE_REVOKED');
     }
-    for (const role of ['MEMBER', 'AUDITOR'] as const) {
+    for (const role of ['DEVELOPER', 'VIEWER'] as const) {
       const decision = planScopeDecision({
         actor: actor(role),
         scope,
@@ -340,7 +340,7 @@ describe('discovery commit', () => {
         audits.push(event.action);
       },
     };
-    const member = await runScopeDecision({ actor: actor('MEMBER'), scopeId: 'scope-1', decision: 'APPROVE' }, tx);
+    const member = await runScopeDecision({ actor: actor('DEVELOPER'), scopeId: 'scope-1', decision: 'APPROVE' }, tx);
     assert.equal(member.ok, false);
     const approved = await runScopeDecision(
       { actor: owner, scopeId: 'scope-1', decision: 'APPROVE', clientTenantId: 'tenant-b' },
@@ -373,7 +373,7 @@ describe('service target', () => {
       assert.equal(JSON.stringify(decision.connection).includes('raw-token'), false);
     }
     const member = planServiceTarget({
-      actor: actor('MEMBER'),
+      actor: actor('DEVELOPER'),
       serviceKey: 'shop',
       displayName: 'Shop',
       accessMethod: 'API_KEY',

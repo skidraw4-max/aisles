@@ -14,7 +14,7 @@ const auditor: JuryMembership = {
   id: 'mem-phase33-auditor',
   tenantId: 'tenant-phase33',
   userId: 'user-auditor',
-  role: 'AUDITOR',
+  role: 'VIEWER',
   createdAt: '2026-10-02T00:00:00.000Z',
 };
 const foreign: JuryMembership = {

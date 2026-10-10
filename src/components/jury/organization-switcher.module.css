@@ -1,0 +1,34 @@
+.switcher {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1rem;
+  min-width: 0;
+}
+
+.label {
+  display: grid;
+  gap: 0.25rem;
+  min-width: 0;
+  color: #8ea0b8;
+  font-size: 0.75rem;
+}
+
+.label select {
+  max-width: 16rem;
+  min-height: 2.25rem;
+  padding: 0.35rem 0.6rem;
+  border: 1px solid rgba(158, 182, 222, 0.35);
+  border-radius: 2px;
+  background: #0b1220;
+  color: #e7edf5;
+  font: inherit;
+  font-size: 0.9375rem;
+  text-overflow: ellipsis;
+}
+
+.create {
+  color: #c5d7ff;
+  font-size: 0.875rem;
+  text-underline-offset: 0.18em;
+}

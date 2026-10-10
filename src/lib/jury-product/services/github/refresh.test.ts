@@ -351,7 +351,7 @@ test('production database urls are blocked before fixture work', async () => {
     DIRECT_URL: 'postgres://user:secret@aws-1-ap-south-1.pcvyoqbyhfbpevzkwpsf.example/postgres',
   });
   assert.equal(blocked.ok, false);
-  if (!blocked.ok) assert.equal(blocked.status, 'BLOCKED_PRODUCTION_DB');
+  if (!blocked.ok) assert.equal(blocked.status, 'BLOCKED_PREVIEW_DB');
   assert.equal(seen.seed, 0);
   assert.equal(seen.cleanup, 0);
   assert.equal(JSON.stringify(blocked).includes('secret'), false);

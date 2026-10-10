@@ -32,8 +32,8 @@ const REF = 'mock-connection-001';
 const PERIOD = ['2026-09-01', '2026-09-07'] as const;
 
 const owner = membership('phase75-owner-m', TENANT, 'phase75-owner', 'OWNER');
-const member = membership('phase75-member-m', TENANT, 'phase75-member', 'MEMBER');
-const auditor = membership('phase75-auditor-m', TENANT, 'phase75-auditor', 'AUDITOR');
+const member = membership('phase75-member-m', TENANT, 'phase75-member', 'DEVELOPER');
+const auditor = membership('phase75-auditor-m', TENANT, 'phase75-auditor', 'VIEWER');
 const foreign = membership('phase75-foreign-m', FOREIGN, 'phase75-foreign', 'OWNER');
 const ownerActor = actor(owner);
 

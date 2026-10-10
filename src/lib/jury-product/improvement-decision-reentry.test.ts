@@ -21,8 +21,8 @@ const owner: JuryMembership = {
   role: 'OWNER',
   createdAt: '2026-10-01T00:00:00.000Z',
 };
-const member: JuryMembership = { ...owner, id: 'mem-2', userId: 'user-2', role: 'MEMBER' };
-const auditor: JuryMembership = { ...owner, id: 'mem-3', userId: 'user-3', role: 'AUDITOR' };
+const member: JuryMembership = { ...owner, id: 'mem-2', userId: 'user-2', role: 'DEVELOPER' };
+const auditor: JuryMembership = { ...owner, id: 'mem-3', userId: 'user-3', role: 'VIEWER' };
 const liveResult = '3707202563ecae9b38f324a4eefd9243a14bc69420ed6cdda16c4c5794f62e0d';
 const liveParent = 'aa734100752dfe92bcfbd8742c6a0049094807ab21e0265fff04a04f6b16ff1e';
 

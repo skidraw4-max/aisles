@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { juryHref } from '@/lib/jury-product/jury-url';
 import type { JuryActor } from '@/lib/jury-product/access';
 import { JURY_ACCESS_METHODS } from '@/lib/jury-product/records';
 import type { JuryConsoleView } from '@/lib/jury-product/console-view';
@@ -10,6 +11,10 @@ import {
   projectServiceOnboarding,
   scopePurpose,
 } from '@/lib/jury-product/service-onboarding';
+import {
+  isGithubInstallationConnection,
+  isSyntheticMockDiscovery,
+} from '@/lib/jury-product/services/github/onboarding-discovery';
 import {
   collectConnectedServiceEvidence,
   decideOnboardingScope,
@@ -88,6 +93,8 @@ export function ServiceDetailBody({
     );
   }
   const { connection, discovery, scopes } = detail;
+  const github = isGithubInstallationConnection(connection);
+  const synthetic = discovery ? isSyntheticMockDiscovery(connection.serviceKey, discovery.proposedMetrics) : false;
   return (
     <section className={styles.panel}>
       <h2 className={styles.pageTitle}>{connection.displayName}</h2>
@@ -97,7 +104,7 @@ export function ServiceDetailBody({
       <p>Service name {connection.displayName}</p>
       <p>Connection type <span className={styles.badge}>{connection.accessMethod}</span></p>
       <p>Status <span className={styles.badge}>{connection.status}</span></p>
-      <p>adapterKey {MOCK_ONBOARDING_SERVICE.adapterKey}</p>
+      <p>adapterKey {github ? 'github' : MOCK_ONBOARDING_SERVICE.adapterKey}</p>
       <p>Credential reference {detail.credentialLabel}</p>
       <p>Created At {connection.createdAt}</p>
       <p>Updated At {connection.updatedAt}</p>
@@ -106,7 +113,8 @@ export function ServiceDetailBody({
       <p>Discovery status <span className={styles.badge}>{detail.discoveryStatus}</span></p>
       {discovery ? (
         <>
-          <p>Adapter MockDiscoveryAdapter</p>
+          <p>Adapter {github && !synthetic ? 'GitHubRepositoryDiscovery' : 'MockDiscoveryAdapter'}</p>
+          {github && synthetic ? <p>This discovery is a mock placeholder. It is not a GitHub repository list.</p> : null}
           <p>Explored {discovery.exploredAt}</p>
           <p>Resources {discovery.surfaces.join(', ')} · {discovery.menus.join(', ')}</p>
           <p>Data sources {discovery.dataSources.join(', ')}</p>
@@ -114,6 +122,13 @@ export function ServiceDetailBody({
           {discovery.proposedMetrics.map((item) => (
             <p key={item.metric}>{item.metric}: {item.reason}</p>
           ))}
+          {github && synthetic && canShowWrite(actor, 'discovery.approve') ? (
+            <form action={runOnboardingDiscovery}>
+              <input type="hidden" name="connectionId" value={connection.id} />
+              <input type="hidden" name="tenantId" value="client-supplied-tenant" />
+              <OnboardingSubmit label="Run GitHub Discovery" pendingLabel="Discovery running" />
+            </form>
+          ) : null}
         </>
       ) : canShowWrite(actor, 'discovery.approve') ? (
         <form action={runOnboardingDiscovery}>
@@ -150,7 +165,7 @@ export function ServiceDetailBody({
           </tbody>
         </table>
       )}
-      {scopes.filter((scope) => scope.status === 'PROPOSED').map((scope) => (
+      {scopes.filter((scope) => scope.status === 'PROPOSED' && !github).map((scope) => (
         canShowWrite(actor, 'scope.write') ? (
           <form action={decideOnboardingScope} key={scope.id}>
             <input type="hidden" name="scopeId" value={scope.id} />
@@ -168,7 +183,13 @@ export function ServiceDetailBody({
       <p>Status <span className={styles.badge}>{connection.status}</span></p>
       {connection.status === 'CONNECTED' ? <p>CONNECTED</p> : <p>Not connected</p>}
       <h3>Evidence</h3>
-      {connection.status === 'CONNECTED' ? (
+      {github ? (
+        <p>
+          Evidence collection stays closed until one repository scope is approved.
+          {' '}
+          <Link className={styles.inline} href={juryHref('/services/github')}>GitHub repositories</Link>
+        </p>
+      ) : connection.status === 'CONNECTED' ? (
         canShowWrite(actor, 'connection.write') ? (
           <form action={collectConnectedServiceEvidence}>
             <input type="hidden" name="connectionId" value={connection.id} />
@@ -213,14 +234,14 @@ export function ServiceDetailBody({
               <OnboardingSubmit label="Run Review" pendingLabel="Review running" />
             </form>
           ) : null}
-          {row.resultId ? <p><Link className={styles.inline} href={`/jury/reviews/${row.resultId}`}>Reviews</Link></p> : null}
+          {row.resultId ? <p><Link className={styles.inline} href={juryHref(`/reviews/${row.resultId}`)}>Reviews</Link></p> : null}
         </article>
       ))}
       {detail.canOpenEvidence ? (
         <p>
-          <Link className={styles.inline} href="/jury/evidence">Evidence</Link>
+          <Link className={styles.inline} href={juryHref('/evidence')}>Evidence</Link>
           {' · '}
-          <Link className={styles.inline} href="/jury/reviews">Reviews</Link>
+          <Link className={styles.inline} href={juryHref('/reviews')}>Reviews</Link>
         </p>
       ) : null}
     </section>

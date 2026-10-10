@@ -1,6 +1,9 @@
 import { loadJuryCatalog, isJuryStoreUnavailable } from '@/lib/jury-product/jury-db';
 import { readJuryConsole } from '@/lib/jury-product/console-view';
-import { getJuryActor } from '@/lib/jury-product/session';
+import { restrictJuryConsole } from '@/lib/jury-product/service-feature-authorization';
+import { listUserServiceGrants } from '@/lib/jury-product/service-feature-guard';
+import { getJuryEntry } from '@/lib/jury-product/session';
+import { createClient } from '@/lib/supabase/server';
 import type { JuryActor } from '@/lib/jury-product/access';
 import type { JuryConsoleView } from '@/lib/jury-product/console-view';
 
@@ -23,6 +26,16 @@ export async function loadShellIdentity(actor: { userId: string; tenantId: strin
   }
 }
 
+export async function readJurySessionEmail(): Promise<string | null> {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    return typeof user?.email === 'string' && user.email.trim() ? user.email.trim() : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function loadJuryShell(searchParams: Promise<{ result?: string | string[] }>): Promise<{
   actor: JuryActor;
   view: JuryConsoleView | null;
@@ -31,11 +44,19 @@ export async function loadJuryShell(searchParams: Promise<{ result?: string | st
   const params = await searchParams;
   const raw = params.result;
   const notice = Array.isArray(raw) ? raw[0] : raw;
-  const actor = await getJuryActor();
-  if (!actor.ok) return { actor, view: null, notice };
+  const actor = await getJuryEntry();
+  if (!actor.ok) {
+    return {
+      actor: { ok: false, reason: actor.reason === 'EMAIL_UNVERIFIED' ? 'UNAUTHENTICATED' : actor.reason },
+      view: null,
+      notice: actor.reason === 'EMAIL_UNVERIFIED' ? 'EMAIL_UNVERIFIED' : notice,
+    };
+  }
   try {
     const catalog = await loadJuryCatalog(actor.tenantId);
-    return { actor, view: readJuryConsole(actor, catalog), notice };
+    const view = readJuryConsole(actor, catalog);
+    const grants = view ? await listUserServiceGrants(actor.tenantId, actor.userId) : [];
+    return { actor, view: view ? restrictJuryConsole(view, actor, grants) : null, notice };
   } catch (error) {
     if (isJuryStoreUnavailable(error)) {
       return { actor: { ok: false, reason: 'STORE_UNAVAILABLE' }, view: null, notice };

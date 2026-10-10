@@ -16,8 +16,8 @@ import {
 } from './product-shell';
 
 const owner: JuryActor = { ok: true, userId: 'user-owner', tenantId: 'tenant-a', role: 'OWNER', membershipId: 'm-owner' };
-const member: JuryActor = { ok: true, userId: 'user-member', tenantId: 'tenant-a', role: 'MEMBER', membershipId: 'm-member' };
-const auditor: JuryActor = { ok: true, userId: 'user-auditor', tenantId: 'tenant-a', role: 'AUDITOR', membershipId: 'm-auditor' };
+const member: JuryActor = { ok: true, userId: 'user-member', tenantId: 'tenant-a', role: 'DEVELOPER', membershipId: 'm-member' };
+const auditor: JuryActor = { ok: true, userId: 'user-auditor', tenantId: 'tenant-a', role: 'VIEWER', membershipId: 'm-auditor' };
 
 test('product shell navigation opens the console routes', () => {
   for (const item of PRODUCT_NAV) {

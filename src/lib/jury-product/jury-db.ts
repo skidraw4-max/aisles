@@ -12,6 +12,22 @@ import {
   type DiscoveryTx,
 } from './discovery';
 import type { JuryConsoleCatalog } from './console-fixture';
+import { matchRecentOwnedOrganization, ORGANIZATION_CREATE_RETRY_MS, planOwnedOrganization } from './organization-creation';
+import { organizationsForUser, type JuryOrganizationOption } from './organization-switch';
+import {
+  commitMemberRemoval,
+  commitMemberRoleChange,
+  type MemberManagementDb,
+} from './member-management';
+import {
+  commitInvitationAcceptance,
+  commitOrganizationInvitation,
+  hashInvitationToken,
+  invitationStatus,
+  INVITATION_TOKEN_RE,
+  type InvitationDb,
+  type OrganizationInvitationRecord,
+} from './organization-invitation';
 import {
   runMembershipCommand,
   type MembershipCommand,
@@ -186,12 +202,338 @@ function toMembership(row: {
   return { id: row.id, tenantId: row.tenantId, userId: row.userId, role, createdAt: iso(row.createdAt) };
 }
 
+export async function listOrganizationsForUser(userId: string): Promise<JuryOrganizationOption[]> {
+  const rows = await prisma.juryMembership.findMany({
+    where: { userId },
+    orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+    select: {
+      tenantId: true,
+      userId: true,
+      role: true,
+      createdAt: true,
+      tenant: { select: { id: true, name: true } },
+    },
+  });
+  return organizationsForUser({
+    userId,
+    memberships: rows.flatMap((row) => {
+      const role = oneOf(JURY_MEMBER_ROLES, row.role);
+      return role ? [{ tenantId: row.tenantId, userId: row.userId, role, createdAt: iso(row.createdAt) }] : [];
+    }),
+    tenants: rows.map((row) => ({ id: row.tenant.id, name: row.tenant.name })),
+  });
+}
+
 export async function listMembershipsForUser(userId: string): Promise<JuryMembership[]> {
   const rows = await prisma.juryMembership.findMany({ where: { userId } });
   return rows.flatMap((row) => {
     const mapped = toMembership(row);
     return mapped ? [mapped] : [];
   });
+}
+
+function invitationDb(tx: Prisma.TransactionClient): InvitationDb {
+  return {
+    async lockTenant(tenantId) {
+      await tx.$queryRaw`SELECT id FROM "JuryTenant" WHERE id = ${tenantId} FOR UPDATE`;
+    },
+    async findUserIdByEmail(email) {
+      const rows = await tx.user.findMany({
+        where: { email: { equals: email, mode: 'insensitive' } },
+        select: { id: true, email: true },
+      });
+      return rows.find((row) => row.email.trim().toLowerCase() === email)?.id ?? null;
+    },
+    async userHasMembership(userId, tenantId) {
+      const row = await tx.juryMembership.findFirst({ where: { userId, tenantId }, select: { id: true } });
+      return Boolean(row);
+    },
+    async listPendingInvitationIds(tenantId, email, now) {
+      const rows = await tx.organizationInvitation.findMany({
+        where: { tenantId, email, usedAt: null, expiresAt: { gt: new Date(now) } },
+        select: { id: true },
+      });
+      return rows.map((row) => row.id);
+    },
+    async expireInvitation(id, expiresAt) {
+      await tx.organizationInvitation.update({ where: { id }, data: { expiresAt: new Date(expiresAt) } });
+    },
+    async insertInvitation(row) {
+      await tx.organizationInvitation.create({
+        data: {
+          id: row.id,
+          tenantId: row.tenantId,
+          email: row.email,
+          role: row.role,
+          tokenHash: row.tokenHash,
+          expiresAt: new Date(row.expiresAt),
+          invitedBy: row.invitedBy,
+        },
+      });
+    },
+    async appendAudit(event) {
+      await tx.juryAuditEvent.create({
+        data: {
+          id: event.id,
+          tenantId: event.tenantId,
+          timestamp: new Date(event.timestamp),
+          actor: event.actorUserId,
+          action: event.action,
+          provenance: event.provenance,
+        },
+      });
+    },
+    async lockInvitationByHash(tokenHash) {
+      const rows = await tx.$queryRaw<Array<{
+        id: string;
+        tenantId: string;
+        email: string;
+        role: string;
+        tokenHash: string;
+        expiresAt: Date;
+        usedAt: Date | null;
+        invitedBy: string;
+      }>>`
+        SELECT id, "tenantId", email, role::text AS role, "tokenHash", "expiresAt", "usedAt", "invitedBy"
+        FROM "OrganizationInvitation"
+        WHERE "tokenHash" = ${tokenHash}
+        FOR UPDATE
+      `;
+      const row = rows[0];
+      if (!row) return null;
+      const role = oneOf(JURY_MEMBER_ROLES, row.role);
+      if (!role) return null;
+      const invitation: OrganizationInvitationRecord = {
+        id: row.id,
+        tenantId: row.tenantId,
+        email: row.email.trim().toLowerCase(),
+        role,
+        tokenHash: row.tokenHash,
+        expiresAt: iso(row.expiresAt),
+        usedAt: row.usedAt ? iso(row.usedAt) : null,
+        invitedBy: row.invitedBy,
+      };
+      return invitation;
+    },
+    async listMemberships(userId) {
+      const rows = await tx.juryMembership.findMany({ where: { userId } });
+      return rows.flatMap((row) => {
+        const mapped = toMembership(row);
+        return mapped ? [mapped] : [];
+      });
+    },
+    async createMembership(row) {
+      await tx.juryMembership.create({
+        data: {
+          id: row.id,
+          tenantId: row.tenantId,
+          userId: row.userId,
+          role: row.role,
+          createdAt: new Date(row.createdAt),
+        },
+      });
+    },
+    async markInvitationUsed(id, usedAt) {
+      await tx.organizationInvitation.update({ where: { id }, data: { usedAt: new Date(usedAt) } });
+    },
+  };
+}
+
+function isUniqueViolation(error: unknown): boolean {
+  return Boolean(error && typeof error === 'object' && 'code' in error && (error as { code?: string }).code === 'P2002');
+}
+
+export async function createOrganizationInvitationRecord(
+  input: Parameters<typeof commitOrganizationInvitation>[0],
+): Promise<Awaited<ReturnType<typeof commitOrganizationInvitation>>> {
+  return prisma.$transaction((tx) => commitOrganizationInvitation(input, invitationDb(tx)));
+}
+
+export async function acceptOrganizationInvitationRecord(
+  input: Parameters<typeof commitInvitationAcceptance>[0],
+): Promise<Awaited<ReturnType<typeof commitInvitationAcceptance>>> {
+  try {
+    return await prisma.$transaction((tx) => commitInvitationAcceptance(input, invitationDb(tx)));
+  } catch (error) {
+    if (isUniqueViolation(error)) return { ok: false, reason: 'ALREADY_HAS_MEMBERSHIP' };
+    throw error;
+  }
+}
+
+export async function listTenantInvitations(tenantId: string, now = new Date().toISOString()): Promise<Array<{
+  id: string;
+  email: string;
+  role: JuryMembership['role'];
+  status: ReturnType<typeof invitationStatus>;
+  expiresAt: string;
+  createdAt: string;
+}>> {
+  const rows = await prisma.organizationInvitation.findMany({
+    where: { tenantId },
+    orderBy: { createdAt: 'desc' },
+    select: {
+      id: true,
+      tenantId: true,
+      email: true,
+      role: true,
+      expiresAt: true,
+      usedAt: true,
+      createdAt: true,
+    },
+  });
+  return rows.flatMap((row) => {
+    if (row.tenantId !== tenantId) return [];
+    const role = oneOf(JURY_MEMBER_ROLES, row.role);
+    if (!role) return [];
+    const expiresAt = iso(row.expiresAt);
+    const usedAt = row.usedAt ? iso(row.usedAt) : null;
+    return [{
+      id: row.id,
+      email: row.email,
+      role,
+      status: invitationStatus({ usedAt, expiresAt }, now),
+      expiresAt,
+      createdAt: iso(row.createdAt),
+    }];
+  });
+}
+
+export async function readInvitationPreview(token: string): Promise<
+  | { ok: false; reason: 'MALFORMED' | 'NOT_FOUND' }
+  | {
+      ok: true;
+      invitation: {
+        id: string;
+        tenantId: string;
+        tenantName: string;
+        email: string;
+        role: JuryMembership['role'];
+        expiresAt: string;
+        usedAt: string | null;
+        status: ReturnType<typeof invitationStatus>;
+      };
+    }
+> {
+  if (!INVITATION_TOKEN_RE.test(token)) return { ok: false, reason: 'MALFORMED' };
+  const row = await prisma.organizationInvitation.findUnique({
+    where: { tokenHash: hashInvitationToken(token) },
+    select: {
+      id: true,
+      tenantId: true,
+      email: true,
+      role: true,
+      expiresAt: true,
+      usedAt: true,
+      tenant: { select: { name: true } },
+    },
+  });
+  if (!row) return { ok: false, reason: 'NOT_FOUND' };
+  const role = oneOf(JURY_MEMBER_ROLES, row.role);
+  if (!role) return { ok: false, reason: 'NOT_FOUND' };
+  const now = new Date().toISOString();
+  const expiresAt = iso(row.expiresAt);
+  const usedAt = row.usedAt ? iso(row.usedAt) : null;
+  return {
+    ok: true,
+    invitation: {
+      id: row.id,
+      tenantId: row.tenantId,
+      tenantName: row.tenant.name,
+      email: row.email,
+      role,
+      expiresAt,
+      usedAt,
+      status: invitationStatus({ usedAt, expiresAt }, now),
+    },
+  };
+}
+
+function memberDb(tx: Prisma.TransactionClient): MemberManagementDb {
+  return {
+    async lockTenantMemberships(tenantId) {
+      const rows = await tx.$queryRaw<Array<{ id: string; tenantId: string; userId: string; role: string; createdAt: Date }>>`
+        SELECT id, "tenantId", "userId", role::text AS role, "createdAt"
+        FROM "JuryMembership"
+        WHERE "tenantId" = ${tenantId}
+        FOR UPDATE
+      `;
+      return rows.flatMap((row) => {
+        const mapped = toMembership(row);
+        return mapped && mapped.tenantId === tenantId ? [mapped] : [];
+      });
+    },
+    async updateRole(id, role) {
+      await tx.juryMembership.update({ where: { id }, data: { role } });
+    },
+    async deleteMembership(id) {
+      await tx.juryMembership.delete({ where: { id } });
+    },
+    async appendAudit(event) {
+      await tx.juryAuditEvent.create({
+        data: {
+          id: event.id,
+          tenantId: event.tenantId,
+          timestamp: new Date(event.timestamp),
+          actor: event.actorUserId,
+          action: event.action,
+          provenance: event.provenance,
+        },
+      });
+    },
+  };
+}
+
+export type OrganizationMemberRow = {
+  membershipId: string;
+  userId: string;
+  email: string;
+  displayName: string | null;
+  role: JuryMembership['role'];
+  joinedAt: string;
+};
+
+export async function listOrganizationMembers(tenantId: string): Promise<OrganizationMemberRow[]> {
+  const rows = await prisma.juryMembership.findMany({
+    where: { tenantId },
+    orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+    select: {
+      id: true,
+      tenantId: true,
+      userId: true,
+      role: true,
+      createdAt: true,
+      user: { select: { id: true, email: true, username: true } },
+    },
+  });
+  return rows.flatMap((row) => {
+    if (row.tenantId !== tenantId || row.user.id !== row.userId) return [];
+    const role = oneOf(JURY_MEMBER_ROLES, row.role);
+    if (!role) return [];
+    const displayName = row.user.username.trim();
+    return [{
+      membershipId: row.id,
+      userId: row.userId,
+      email: row.user.email,
+      displayName: displayName ? displayName : null,
+      role,
+      joinedAt: iso(row.createdAt),
+    }];
+  });
+}
+
+export async function changeOrganizationMemberRole(
+  input: Parameters<typeof commitMemberRoleChange>[0],
+): Promise<Awaited<ReturnType<typeof commitMemberRoleChange>>> {
+  return prisma.$transaction((tx) => commitMemberRoleChange(input, memberDb(tx)));
+}
+
+export async function removeOrganizationMember(
+  input: Parameters<typeof commitMemberRemoval>[0],
+): Promise<Awaited<ReturnType<typeof commitMemberRemoval>>> {
+  const { removeOrganizationMemberWithServiceCleanup } = await import('./member-service-cleanup-db');
+  const removed = await removeOrganizationMemberWithServiceCleanup(input);
+  if (!removed.ok) return removed;
+  return { ok: true, audit: removed.audit };
 }
 
 export async function listMembershipsForTenant(tenantId: string): Promise<JuryMembership[]> {
@@ -622,6 +964,81 @@ export async function persistMembershipCommand(
   command: Parameters<typeof runMembershipCommand>[0],
 ): Promise<MembershipDecision> {
   return prisma.$transaction(async (tx) => runMembershipCommand(command, txAdapter(tx)));
+}
+
+/** Creates a JuryTenant and its first OWNER membership in one transaction. A repeat within the retry window reuses that tenant. */
+export async function createOwnedOrganization(input: {
+  userId: string;
+  tenantName: string;
+  now?: string;
+}): Promise<MembershipDecision> {
+  const now = input.now ?? new Date().toISOString();
+  const planned = planOwnedOrganization({
+    sessionUserId: input.userId,
+    emailVerified: true,
+    tenantName: input.tenantName,
+    allocateId: newJuryId,
+    now,
+  });
+  if (!planned.ok) return { ok: false, reason: planned.reason === 'NAME_REQUIRED' || planned.reason === 'NAME_TOO_LONG' ? 'NAME_REQUIRED' : 'UNAUTHENTICATED' };
+  return prisma.$transaction(async (tx) => {
+    await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${input.userId} FOR UPDATE`;
+    const since = new Date(Date.parse(now) - ORGANIZATION_CREATE_RETRY_MS);
+    const recent = await tx.juryMembership.findMany({
+      where: { userId: input.userId, role: 'OWNER', createdAt: { gte: since } },
+      include: { tenant: { select: { name: true } } },
+      orderBy: { createdAt: 'desc' },
+    });
+    const reused = matchRecentOwnedOrganization({
+      userId: input.userId,
+      name: planned.tenantName,
+      now,
+      rows: recent.map((row) => ({
+        tenantId: row.tenantId,
+        userId: row.userId,
+        role: row.role,
+        tenantName: row.tenant.name,
+        createdAt: row.createdAt.toISOString(),
+      })),
+    });
+    if (reused) {
+      const row = recent.find((item) => item.tenantId === reused);
+      return {
+        ok: true as const,
+        kind: 'CREATE_TENANT' as const,
+        tenantId: reused,
+        tenantName: planned.tenantName,
+        membership: {
+          id: row?.id ?? planned.membership.id,
+          tenantId: reused,
+          userId: input.userId,
+          role: 'OWNER' as const,
+          createdAt: row?.createdAt.toISOString() ?? now,
+        },
+        audit: {
+          tenantId: reused,
+          actorUserId: input.userId,
+          action: 'TENANT_CREATED' as const,
+          targetUserId: input.userId,
+          role: 'OWNER' as const,
+        },
+        membershipAudit: {
+          tenantId: reused,
+          actorUserId: input.userId,
+          action: 'MEMBERSHIP_ADDED' as const,
+          targetUserId: input.userId,
+          role: 'OWNER' as const,
+        },
+      };
+    }
+    return runMembershipCommand({
+      kind: 'CREATE_TENANT',
+      userId: input.userId,
+      tenantName: planned.tenantName,
+      allocateId: () => planned.tenantId,
+      now,
+    }, txAdapter(tx));
+  });
 }
 
 export function newJuryId(): string {

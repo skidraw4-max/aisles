@@ -23,11 +23,11 @@ const LIVE_REVIEW = '3707202563ecae9b38f324a4eefd9243a14bc69420ed6cdda16c4c5794f
 const LIVE_CYCLE = '14308b4c999ccbe8ca54b7f31da5385385d4073c49bbf2955582a6bb96afb01e';
 
 const owner = membership('phase50-owner-m', TENANT, 'phase50-owner', 'OWNER');
-const member = membership('phase50-member-m', TENANT, 'phase50-member', 'MEMBER');
-const auditor = membership('phase50-auditor-m', TENANT, 'phase50-auditor', 'AUDITOR');
+const member = membership('phase50-member-m', TENANT, 'phase50-member', 'DEVELOPER');
+const auditor = membership('phase50-auditor-m', TENANT, 'phase50-auditor', 'VIEWER');
 const foreign = membership('phase50-foreign-m', FOREIGN, 'phase50-foreign', 'OWNER');
 const ownerActor: JuryActor = { ok: true, userId: owner.userId, tenantId: TENANT, role: 'OWNER', membershipId: owner.id };
-const auditorActor: JuryActor = { ok: true, userId: auditor.userId, tenantId: TENANT, role: 'AUDITOR', membershipId: auditor.id };
+const auditorActor: JuryActor = { ok: true, userId: auditor.userId, tenantId: TENANT, role: 'VIEWER', membershipId: auditor.id };
 
 test('handoff controls stay behind a human-approved task', () => {
   const surface = face();
