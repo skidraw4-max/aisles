@@ -1,3 +1,4 @@
+import 'server-only';
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { createClient } from '@supabase/supabase-js';
 import { checkSupabaseTarget } from '@/lib/jury-product/supabase-target-guard.cjs';

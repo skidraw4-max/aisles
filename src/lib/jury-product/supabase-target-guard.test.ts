@@ -130,7 +130,7 @@ test('createAdminClient throws fixed code before createClient on a blocked previ
   const saved = { ...process.env };
   try {
     Object.assign(process.env, base({ NEXT_PUBLIC_SUPABASE_URL: `https://${PROD}.supabase.co` }));
-    // admin.ts imports 'server-only' only when that package exists; see report.
+    // admin.ts imports 'server-only'; run with --import ./src/lib/jury-product/server-only-test-hook.mjs
     const { createAdminClient } = await import('../supabase/admin');
     assert.throws(() => createAdminClient(), /^Error: BLOCKED_SUPABASE_PRODUCTION$/);
     process.env.NEXT_PUBLIC_SUPABASE_URL = URL_OK;
