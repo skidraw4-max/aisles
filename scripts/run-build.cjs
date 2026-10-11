@@ -33,6 +33,15 @@ if (!target.ok) {
   process.exit(1);
 }
 
+// 1b. Supabase API target (Preview only): URL/keys must name the Preview project, never Production.
+//     Non-preview builds skip silently so Production output is unchanged. Only a fixed code is logged.
+const { isPreviewScope, checkSupabaseTarget } = require('../src/lib/jury-product/supabase-target-guard.cjs');
+if (isPreviewScope(process.env)) {
+  const sb = checkSupabaseTarget(process.env, { checkServiceKeyIfPresent: true });
+  console.log(`[build] supabase target: ${sb.code}`);
+  if (!sb.ok) process.exit(1);
+}
+
 const decision = decideMigrate(process.env);
 if (decision.run) {
   console.log(`[build] migrate policy: ${decision.reason}`);
