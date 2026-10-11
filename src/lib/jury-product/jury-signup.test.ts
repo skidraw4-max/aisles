@@ -97,7 +97,7 @@ test('jury signup uses Supabase signUp and leaves hub signup in place', () => {
   assert.match(page, /JurySignupForm/);
   assert.match(dashboard, /EMAIL_UNVERIFIED/);
   assert.match(dashboard, /JuryEmailNotice/);
-  assert.match(callback, /nextParam\?\.startsWith\('\/'\) && !nextParam\.startsWith\('\/\/'\)/);
+  assert.match(callback, /safeRelativePath\(nextParam, '\/'\)/);
   assert.match(hubSignup, /email_confirm: true/);
   assert.match(hubLogin, /signupParam === '1'/);
 });

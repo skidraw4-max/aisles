@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { GoogleIcon } from '@/components/GoogleIcon';
 import { signInWithOAuth } from '@/lib/capacitor-oauth';
-import { getPublicSiteUrl } from '@/lib/site-url';
+import { getAuthCallbackSiteUrl, getPublicSiteUrl } from '@/lib/site-url';
 import { createClient } from '@/lib/supabase/client';
 import { syncPrismaUserWithAuth } from '@/lib/sync-prisma-user';
 import { ACCOUNT_EMAIL_CONFLICT_MESSAGE, runProfileSync } from '@/lib/auth/account-email-conflict';
@@ -91,7 +91,7 @@ export function JurySignupForm({ returnQuery }: { returnQuery?: string | null })
     setMessage(null);
     setLoading(true);
     try {
-      const callback = juryOAuthRedirect(getPublicSiteUrl(), returnQuery);
+      const callback = juryOAuthRedirect(getAuthCallbackSiteUrl(), returnQuery);
       if (!callback) throw new Error('missing-callback');
       await signInWithOAuth(createClient(), 'google', {
         redirectTo: callback.redirectTo,

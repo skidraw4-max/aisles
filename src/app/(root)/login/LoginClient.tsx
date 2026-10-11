@@ -4,15 +4,12 @@ import { useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { AuthModal } from '@/components/AuthModal';
 import { createClient } from '@/lib/supabase/client';
-import { accountEmailConflictNotice } from '@/lib/auth/account-email-conflict';
+import { AUTH_CALLBACK_EMAIL_ERROR, accountEmailConflictNotice } from '@/lib/auth/account-email-conflict';
+import { safeRelativePath } from '@/lib/auth/auth-redirect';
 
 export function safeNextPath(raw: string | null): string {
-  if (!raw || !raw.startsWith('/') || raw.startsWith('//')) return '/';
-  return raw;
+  return safeRelativePath(raw, '/');
 }
-
-const AUTH_CALLBACK_EMAIL_ERROR =
-  '이메일 인증 링크가 만료되었거나 이미 사용되었습니다. 다시 로그인하거나 회원가입 후 새 인증 메일을 받아 주세요.';
 
 const OAUTH_RETURN_SUCCESS = '로그인되었습니다. 환영합니다!';
 

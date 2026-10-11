@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { signInWithOAuth } from '@/lib/capacitor-oauth';
-import { getPublicSiteUrl } from '@/lib/site-url';
+import { getAuthCallbackSiteUrl, getPublicSiteUrl } from '@/lib/site-url';
+import { isSafeRelativePath } from '@/lib/auth/auth-redirect';
 import { syncPrismaUserWithAuth } from '@/lib/sync-prisma-user';
 import { ACCOUNT_EMAIL_CONFLICT_MESSAGE, runProfileSync } from '@/lib/auth/account-email-conflict';
 import { GoogleIcon } from '@/components/GoogleIcon';
@@ -171,11 +172,11 @@ export function AuthModal({
 
   /** Supabase `resetPasswordForEmail`: 입력한 이메일로만 복구 메일 발송(존재 여부는 응답에 드러내지 않는 것이 권장). */
   function buildOAuthCallbackUrl(): string {
-    const base = getPublicSiteUrl().replace(/\/$/, '');
+    const base = getAuthCallbackSiteUrl().replace(/\/$/, '');
     const url = new URL('/auth/callback', `${base}/`);
     if (typeof window !== 'undefined' && window.location.pathname === '/login') {
       const next = new URLSearchParams(window.location.search).get('next');
-      if (next?.startsWith('/') && !next.startsWith('//')) {
+      if (isSafeRelativePath(next)) {
         url.searchParams.set('next', next);
       }
     }

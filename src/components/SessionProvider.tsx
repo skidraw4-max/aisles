@@ -6,11 +6,13 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 import type { User } from '@supabase/supabase-js';
 import type { Role } from '@prisma/client';
 import { tryCreateBrowserClient } from '@/lib/supabase/client';
+import { createProfileSyncGate, syncProfileWithGate } from '@/lib/auth/account-email-conflict';
 
 export type InitialSession = {
   userId: string;
@@ -62,12 +64,16 @@ export function SessionProvider({ initialSession = null, children }: Props) {
   const [dbRole, setDbRole] = useState<Role | null>(initialSession?.dbRole ?? null);
   const [hydrated, setHydrated] = useState(false);
 
-  const applyProfile = useCallback(async (accessToken: string) => {
+  const syncGate = useRef(createProfileSyncGate());
+
+  const applyProfile = useCallback(async (accessToken: string, userId: string) => {
     try {
-      await fetch('/api/auth/sync-profile', {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${accessToken}` },
-      });
+      await syncProfileWithGate(syncGate.current, userId, () =>
+        fetch('/api/auth/sync-profile', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${accessToken}` },
+        }),
+      );
     } catch {
       /* 다음 요청에서 재시도 */
     }
@@ -98,6 +104,7 @@ export function SessionProvider({ initialSession = null, children }: Props) {
       const u = session?.user ?? null;
       setUser(u);
       if (!u) {
+        syncGate.current.reset();
         setDbUsername(null);
         setDbRole(null);
         setHydrated(true);
@@ -107,7 +114,7 @@ export function SessionProvider({ initialSession = null, children }: Props) {
         initialSession?.userId === u.id &&
         (initialSession.dbUsername != null || initialSession.dbRole != null);
       if (!serverProfileReady && session?.access_token) {
-        await applyProfile(session.access_token);
+        await applyProfile(session.access_token, u.id);
       }
       setHydrated(true);
     };
@@ -120,6 +127,7 @@ export function SessionProvider({ initialSession = null, children }: Props) {
       const next = session?.user ?? null;
       setUser(next);
       if (!session?.access_token) {
+        syncGate.current.reset();
         setDbUsername(null);
         setDbRole(null);
         return;
@@ -128,7 +136,7 @@ export function SessionProvider({ initialSession = null, children }: Props) {
         event === 'SIGNED_IN' ||
         (event === 'TOKEN_REFRESHED' && !initialSession?.userId)
       ) {
-        await applyProfile(session.access_token);
+        await applyProfile(session.access_token, session.user.id);
       }
     });
 

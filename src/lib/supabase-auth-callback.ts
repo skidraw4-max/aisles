@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import type { EmailOtpType } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 import { ACCOUNT_EMAIL_CONFLICT_QUERY, isAccountEmailConflictResponse } from '@/lib/auth/account-email-conflict';
+import { safeRelativePath } from '@/lib/auth/auth-redirect';
 
 type Options =
   | { afterSuccess: 'fromNextQueryOrHome' }
@@ -21,9 +22,7 @@ export async function supabaseAuthCallbackGet(request: Request, options: Options
   const successPath =
     options.afterSuccess === 'fixed'
       ? options.path
-      : nextParam?.startsWith('/') && !nextParam.startsWith('//')
-        ? nextParam
-        : '/';
+      : safeRelativePath(nextParam, '/');
 
   const fail = () => NextResponse.redirect(new URL('/login?error=auth_callback', url.origin));
   // Profile email conflict: only for normal sign-in flows; fixed-path flows (password reset) are unchanged.

@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { JuryLoginForm } from '@/components/jury/JuryLoginForm';
 import { juryReturnQuery, safeJuryNext } from '@/lib/jury-product/jury-url';
+import { juryLoginErrorNotice } from '@/lib/auth/account-email-conflict';
 import { getJuryEntry } from '@/lib/jury-product/session';
 
 export const metadata: Metadata = {
@@ -11,7 +12,7 @@ export const metadata: Metadata = {
 export default async function JuryLoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ next?: string | string[] }>;
+  searchParams: Promise<{ next?: string | string[]; error?: string | string[] }>;
 }) {
   const params = await searchParams;
   const requested = typeof params.next === 'string' ? params.next : null;
@@ -21,7 +22,7 @@ export default async function JuryLoginPage({
   return (
     <JuryLoginForm
       returnQuery={returnQuery}
-      notice={entry.reason === 'EMAIL_UNVERIFIED' ? '이메일 인증이 필요합니다.' : undefined}
+      notice={juryLoginErrorNotice(typeof params.error === 'string' ? params.error : null) ?? (entry.reason === 'EMAIL_UNVERIFIED' ? '이메일 인증이 필요합니다.' : undefined)}
     />
   );
 }

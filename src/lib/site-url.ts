@@ -1,4 +1,5 @@
 import { getCanonicalSiteUrl } from '@/lib/canonical-site-url';
+import { resolveAuthCallbackBase, resolveEmailLinkBase } from '@/lib/auth/auth-redirect';
 
 /**
  * 이메일 인증·비밀번호 재설정 등 Supabase `redirectTo` / `emailRedirectTo`에 쓰는 공개 URL.
@@ -25,6 +26,19 @@ export function getPublicSiteUrl(): string {
 }
 
 /**
+ * OAuth `redirectTo` base only. Client email links keep getPublicSiteUrl(); server reset links
+ * use the validated request origin (resolveEmailLinkBase).
+ * The current page origin is used when it is on the auth origin allowlist (www/jury
+ * aisleshub.com, this team's Vercel deployments, localhost); otherwise getPublicSiteUrl().
+ */
+export function getAuthCallbackSiteUrl(): string {
+  return resolveAuthCallbackBase({
+    publicSiteUrl: getPublicSiteUrl(),
+    currentOrigin: typeof window !== 'undefined' ? window.location.origin : null,
+  });
+}
+
+/**
  * `resetPasswordForEmail` 의 `redirectTo`. `new URL` 로 조합해 경로가 빠지지 않게 함.
  * 메일의 verify 링크에 `redirect_to` 가 사이트 루트만 있으면 Dashboard 이메일 템플릿을 확인할 것.
  */
@@ -40,18 +54,18 @@ export function getPasswordRecoveryRedirectTo(): string {
 /**
  * 서버(Route Handler) 전용. `window` 없이 env·canonical 만 사용 — Supabase 가 메일에 넣는 redirect_to 와 일치해야 함.
  */
-export function getPasswordRecoveryRedirectToForServer(): string {
+export function getPasswordRecoveryRedirectToForServer(requestOrigin?: string | null): string {
   const explicit = process.env.NEXT_PUBLIC_PASSWORD_RECOVERY_REDIRECT_TO?.trim();
   if (explicit) {
     return explicit.replace(/\/$/, '');
   }
-  const base = getCanonicalSiteUrl();
+  const base = resolveEmailLinkBase(requestOrigin, getCanonicalSiteUrl());
   return new URL('/auth/reset-callback', `${base}/`).href;
 }
 
 /** Prisma 유저용: 메일의 redirect_to 에 토큰이 붙은 재설정 페이지 */
-export function buildPasswordRecoveryPageUrlWithToken(token: string): string {
-  const base = getCanonicalSiteUrl();
+export function buildPasswordRecoveryPageUrlWithToken(token: string, requestOrigin?: string | null): string {
+  const base = resolveEmailLinkBase(requestOrigin, getCanonicalSiteUrl());
   const u = new URL('/reset-password', `${base}/`);
   u.searchParams.set('token', token);
   return u.href;

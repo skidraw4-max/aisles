@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { GoogleIcon } from '@/components/GoogleIcon';
 import { signInWithOAuth } from '@/lib/capacitor-oauth';
-import { getPublicSiteUrl } from '@/lib/site-url';
+import { getAuthCallbackSiteUrl } from '@/lib/site-url';
 import { createClient } from '@/lib/supabase/client';
 import { syncPrismaUserWithAuth } from '@/lib/sync-prisma-user';
 import { ACCOUNT_EMAIL_CONFLICT_MESSAGE, runProfileSync } from '@/lib/auth/account-email-conflict';
@@ -52,7 +52,7 @@ export function JuryLoginForm({ notice, returnQuery }: { notice?: string; return
     setLoading(true);
     try {
       const supabase = createClient();
-      const callback = juryOAuthRedirect(getPublicSiteUrl(), returnQuery);
+      const callback = juryOAuthRedirect(getAuthCallbackSiteUrl(), returnQuery);
       if (!callback) throw new Error('Google 계정으로 진행할 수 없습니다.');
       await signInWithOAuth(supabase, 'google', {
         redirectTo: callback.redirectTo,

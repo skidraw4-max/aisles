@@ -59,7 +59,56 @@ export async function runProfileSync(
   }
 }
 
+/**
+ * In-memory guard for SessionProvider's background profile sync. After a conflict for a
+ * user id, further background syncs for that same id are skipped until the user changes,
+ * signs out (reset), or the page reloads. Nothing is persisted. Other failures never block.
+ */
+export function createProfileSyncGate() {
+  let blockedUserId: string | null = null;
+  return {
+    shouldSync: (userId: string) => blockedUserId !== userId,
+    record(userId: string, conflict: boolean) {
+      if (conflict) blockedUserId = userId;
+      else if (blockedUserId === userId) blockedUserId = null;
+    },
+    reset() {
+      blockedUserId = null;
+    },
+  };
+}
+export type ProfileSyncGate = ReturnType<typeof createProfileSyncGate>;
+
+/** Background sync through the gate. Network failure => 'failed' (not blocking, retried next time). */
+export async function syncProfileWithGate(
+  gate: ProfileSyncGate,
+  userId: string,
+  call: () => Promise<Response>,
+): Promise<'skipped' | 'conflict' | 'synced' | 'failed'> {
+  if (!gate.shouldSync(userId)) return 'skipped';
+  let res: Response;
+  try {
+    res = await call();
+  } catch {
+    return 'failed';
+  }
+  const conflict = await isAccountEmailConflictResponse(res);
+  gate.record(userId, conflict);
+  return conflict ? 'conflict' : res.ok ? 'synced' : 'failed';
+}
+
+/** Login page text for `?error=auth_callback` (shared by the hub and Jury login pages). */
+export const AUTH_CALLBACK_EMAIL_ERROR =
+  '이메일 인증 링크가 만료되었거나 이미 사용되었습니다. 다시 로그인하거나 회원가입 후 새 인증 메일을 받아 주세요.';
+
 /** Login page notice for `?error=account_email_conflict`; null otherwise. */
 export function accountEmailConflictNotice(errorParam: string | null): { type: 'err'; text: string } | null {
   return errorParam === ACCOUNT_EMAIL_CONFLICT_QUERY ? { type: 'err', text: ACCOUNT_EMAIL_CONFLICT_MESSAGE } : null;
+}
+
+/** Jury login page notice: conflict first, then auth_callback; null otherwise (one notice only). */
+export function juryLoginErrorNotice(errorParam: string | null): string | null {
+  const conflict = accountEmailConflictNotice(errorParam);
+  if (conflict) return conflict.text;
+  return errorParam === 'auth_callback' ? AUTH_CALLBACK_EMAIL_ERROR : null;
 }
