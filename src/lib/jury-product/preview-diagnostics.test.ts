@@ -43,7 +43,7 @@ function deps(over: Partial<PreviewDiagDeps> = {}, calls: Calls = { auth: 0, loa
     env: previewEnv(),
     loadAuth: async () => {
       calls.load += 1;
-      return { requireAdminAction: async () => { calls.auth += 1; return { ok: true }; } };
+      return { classifyAdminAuth: async () => { calls.auth += 1; return { ok: true }; } };
     },
     rateLimit: () => { calls.rate += 1; return false; },
     checks: okChecks(),
@@ -108,7 +108,7 @@ test('auth failures: 401/403 with fixed code only, no checks run', async () => {
     const checks = new Proxy({}, { get: () => () => { checked += 1; return { ok: true }; } }) as DiagChecks;
     const res = await createPreviewDiagHandler(deps({
       checks,
-      loadAuth: async () => ({ requireAdminAction: async () => ({ ok: false, code, error: S_MSG }) }),
+      loadAuth: async () => ({ classifyAdminAuth: async () => ({ ok: false, code, error: S_MSG }) }),
     }))(req());
     assert.equal(res.status, status);
     const text = await res.text();
@@ -123,9 +123,9 @@ test('auth module import failure / throw / odd result -> 503 ADMIN_AUTH_UNAVAILA
   const variants: PreviewDiagDeps['loadAuth'][] = [
     async () => { throw new Error(`BLOCKED_PRODUCTION_DB ${S_MSG} ${S_DB}`); },
     async () => { throw new PinnedCaError('CA_PIN_FINGERPRINT'); },
-    async () => ({ requireAdminAction: async () => { throw new Error(S_MSG); } }),
-    async () => ({ requireAdminAction: async () => ({ ok: false, code: 'WEIRD' }) }),
-    async () => ({ requireAdminAction: async () => undefined as unknown as { ok: boolean } }),
+    async () => ({ classifyAdminAuth: async () => { throw new Error(S_MSG); } }),
+    async () => ({ classifyAdminAuth: async () => ({ ok: false, code: 'WEIRD' }) }),
+    async () => ({ classifyAdminAuth: async () => undefined as unknown as { ok: boolean } }),
   ];
   for (const loadAuth of variants) {
     const res = await createPreviewDiagHandler(deps({ loadAuth }))(req());
@@ -290,8 +290,8 @@ test('route module: GET only, dynamic/no-cache config, lazy admin import, no sta
   assert.match(src, /export const dynamic = 'force-dynamic'/);
   assert.match(src, /export const runtime = 'nodejs'/);
   assert.match(src, /export const revalidate = 0/);
-  assert.ok(!/^import .*(require-admin|@\/lib\/prisma)/m.test(src), 'auth/prisma must not be statically imported');
-  assert.match(src, /import\('@\/lib\/auth\/require-admin'\)/);
+  assert.ok(!/^import .*(require-admin|classify-admin-auth|@\/lib\/prisma)/m.test(src), 'auth/prisma must not be statically imported');
+  assert.match(src, /import\('@\/lib\/auth\/classify-admin-auth'\)/);
   // Static-check modules and rate limiter must not import Prisma (transitively within jury-product).
   for (const f of ['preview-diagnostics.ts', 'preview-db-guard.ts', 'preview-db-tls.ts', 'db-ca.ts', 'supabase-ca-pin.ts',
     'supabase-target-guard.cjs', 'db-target-classifier.cjs', '../cron-rate-limit.ts']) {

@@ -54,7 +54,14 @@ export type DiagBody = {
 };
 
 type Env = { readonly [key: string]: string | undefined };
-type AuthResult = { ok: true } | { ok: false; code: 'UNAUTHORIZED' | 'FORBIDDEN' };
+type AuthFailCode = 'UNAUTHORIZED' | 'FORBIDDEN' | 'AUTH_UNAVAILABLE' | 'DB_UNAVAILABLE';
+type AuthResult = { ok: true } | { ok: false; code: AuthFailCode };
+const AUTH_STATUS: Readonly<Record<AuthFailCode, number>> = Object.freeze({
+  UNAUTHORIZED: 401,
+  FORBIDDEN: 403,
+  AUTH_UNAVAILABLE: 503,
+  DB_UNAVAILABLE: 503,
+});
 
 /** Raw check outputs; each may throw. Only fixed fields are read from them. */
 export type DiagChecks = {
@@ -68,8 +75,8 @@ export type DiagChecks = {
 
 export type PreviewDiagDeps = {
   env: Env;
-  /** Lazy import of the admin auth module (pulls Prisma). Must not be called outside Preview. */
-  loadAuth: () => Promise<{ requireAdminAction: () => Promise<{ ok: boolean; code?: string }> }>;
+  /** Lazy import of the diagnostics admin classifier (pulls Prisma). Must not be called outside Preview. */
+  loadAuth: () => Promise<{ classifyAdminAuth: () => Promise<{ ok: boolean; code?: string }> }>;
   checks: DiagChecks;
   /** true => limited. Must not import Prisma. */
   rateLimit: (req: Request) => boolean;
@@ -175,15 +182,17 @@ export function createPreviewDiagHandler(deps: PreviewDiagDeps): (req: Request) 
     let auth: AuthResult;
     try {
       const mod = await deps.loadAuth();
-      const r = await mod.requireAdminAction();
+      const r = await mod.classifyAdminAuth();
       if (r?.ok === true) auth = { ok: true };
       else if (r?.code === 'UNAUTHORIZED') auth = { ok: false, code: 'UNAUTHORIZED' };
       else if (r?.code === 'FORBIDDEN') auth = { ok: false, code: 'FORBIDDEN' };
+      else if (r?.code === 'AUTH_UNAVAILABLE') auth = { ok: false, code: 'AUTH_UNAVAILABLE' };
+      else if (r?.code === 'DB_UNAVAILABLE') auth = { ok: false, code: 'DB_UNAVAILABLE' };
       else return json(503, { code: 'ADMIN_AUTH_UNAVAILABLE' });
     } catch {
       return json(503, { code: 'ADMIN_AUTH_UNAVAILABLE' });
     }
-    if (!auth.ok) return json(auth.code === 'UNAUTHORIZED' ? 401 : 403, { code: auth.code });
+    if (!auth.ok) return json(AUTH_STATUS[auth.code], { code: auth.code });
 
     // 4. Network-free checks, each isolated.
     const body = serializeDiagBody(true, runStaticChecks(deps.env, deps.checks));

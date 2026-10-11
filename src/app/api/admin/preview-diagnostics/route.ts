@@ -19,7 +19,7 @@ const diagLimiter = createRateLimiter({ limit: 10, windowMs: 60_000 });
 export function GET(req: Request): Promise<Response> {
   return createPreviewDiagHandler({
     env: process.env,
-    loadAuth: () => import('@/lib/auth/require-admin'),
+    loadAuth: () => import('@/lib/auth/classify-admin-auth'),
     rateLimit: (r) => diagLimiter.check(clientKeyFromRequest(r)),
     checks: {
       supabaseTarget: (env) => checkSupabaseTarget(env, { requireServiceKey: true }),
