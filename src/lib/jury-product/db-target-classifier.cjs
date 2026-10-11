@@ -45,17 +45,22 @@ function readProductionRefs(env) {
   return raw.split(',').map((ref) => ref.trim()).filter((ref) => PROJECT_REF.test(ref));
 }
 
-function parsePostgresUrl(value) {
-  if (typeof value !== 'string') return null;
+/** Parse with a fixed status ('ok' | 'invalid' | 'bad_scheme'); shared by the verdict and diagnostics. */
+function parseUrlDetail(value) {
+  if (typeof value !== 'string') return { url: null, status: 'invalid' };
   let url;
   try {
     url = new URL(value);
   } catch {
-    return null;
+    return { url: null, status: 'invalid' };
   }
   const scheme = url.protocol.slice(0, -1);
-  if (scheme !== 'postgres' && scheme !== 'postgresql') return null;
-  return url;
+  if (scheme !== 'postgres' && scheme !== 'postgresql') return { url: null, status: 'bad_scheme' };
+  return { url, status: 'ok' };
+}
+
+function parsePostgresUrl(value) {
+  return parseUrlDetail(value).url;
 }
 
 function userRef(url) {
@@ -148,6 +153,79 @@ function classifyDbTarget(env) {
   return verdict;
 }
 
+/**
+ * Diagnostics only (t86). Explains, per URL, why classifyDbTarget would not accept it.
+ * Never changes or feeds the verdict. Returns fixed enums / booleans only: no URL, host,
+ * username, password, query value, ref, path or exception text. Any internal error makes
+ * the whole entry DIAGNOSTIC_UNAVAILABLE. Built from the same helpers as the verdict and
+ * cross-checked against classifyConnectionUrl; a mismatch is reported as UNVERIFIED_OTHER.
+ */
+const DIAGNOSTIC_VARS = ['DATABASE_URL', 'DIRECT_URL'];
+
+function unavailableDiagnostic(name, present) {
+  return {
+    var: name, present, parse: 'unavailable', hostClass: 'unavailable', portClass: 'unavailable',
+    userRefMatch: 'unavailable', prodRefMention: 'unavailable', sslPolicy: 'unavailable', reason: 'DIAGNOSTIC_UNAVAILABLE',
+  };
+}
+
+function diagnoseUrl(name, env) {
+  const e = env || {};
+  const varName = DIAGNOSTIC_VARS.includes(name) ? name : 'DATABASE_URL';
+  const value = e[varName];
+  const present = typeof value === 'string' && value.trim() !== '';
+  try {
+    if (!present) {
+      return { ...unavailableDiagnostic(varName, false), reason: 'URL_MISSING' };
+    }
+    const prodRefMention = mentionsRef(value, readProductionRefs(e));
+    const { url, status } = parseUrlDetail(value);
+    const refs = readRefConfig(e);
+    const base = {
+      var: varName, present: true, parse: status, hostClass: 'unavailable', portClass: 'unavailable',
+      userRefMatch: 'unavailable', prodRefMention, sslPolicy: 'unavailable', reason: 'UNVERIFIED_OTHER',
+    };
+    if (prodRefMention) return { ...base, reason: 'PRODUCTION_REF' };
+    if (!url) return { ...base, reason: status === 'bad_scheme' ? 'BAD_SCHEME' : 'URL_PARSE_INVALID' };
+    const port = url.port;
+    base.portClass = port === '' ? 'none' : port === '5432' || port === '6543' ? port : 'other';
+    base.sslPolicy = hasWeakSslParams(url) ? 'fail' : 'pass';
+    // Without a valid ref config the endpoint cannot be classified (verdict is CONFIG).
+    if (!validRefConfig(refs)) return { ...base, reason: 'DIAGNOSTIC_UNAVAILABLE' };
+    const ref = userRef(url);
+    base.userRefMatch = ref === refs.previewRef;
+    const isDirect = url.hostname === `db.${refs.previewRef}.supabase.co`;
+    const isPooler = POOLER_HOST.test(url.hostname);
+    base.hostClass = isDirect ? 'direct_preview' : isPooler ? 'shared_pooler' : 'other';
+    const c = classifyConnectionUrl(value, refs);
+    if (c === 'production') return { ...base, reason: 'PRODUCTION_REF' };
+    // Mirror classifyConnectionUrl's branch order.
+    let reason;
+    if (port === '') reason = 'PORT_MISSING';
+    else if (isDirect) {
+      if (!DIRECT_PORTS.includes(port)) reason = 'PORT_OTHER';
+      else if (ref !== null && ref !== refs.previewRef) reason = 'USER_REF_MISSING';
+      else reason = 'OK';
+    } else if (isPooler) {
+      if (port === '6543') reason = 'PORT_6543';
+      else if (port !== POOLER_PORT) reason = 'PORT_OTHER';
+      else if (ref !== refs.previewRef) reason = 'USER_REF_MISSING';
+      else reason = 'OK';
+    } else reason = 'HOST_OTHER';
+    // Cross-check with the real classifier; never claim a cause it does not agree with.
+    if ((reason === 'OK') !== (c === 'allowed')) return { ...base, reason: 'UNVERIFIED_OTHER' };
+    if (reason === 'OK' && base.sslPolicy === 'fail') reason = 'SSL_PARAM';
+    return { ...base, reason };
+  } catch {
+    return unavailableDiagnostic(varName, present);
+  }
+}
+
+/** One diagnostic entry per URL variable, DATABASE_URL first. */
+function diagnoseDbTarget(env) {
+  return DIAGNOSTIC_VARS.map((name) => diagnoseUrl(name, env));
+}
+
 module.exports = {
   validRefConfig,
   readRefConfig,
@@ -155,4 +233,6 @@ module.exports = {
   parsePostgresUrl,
   classifyConnectionUrl,
   classifyDbTarget,
+  diagnoseUrl,
+  diagnoseDbTarget,
 };

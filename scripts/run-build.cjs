@@ -17,13 +17,19 @@ function run(cmd, args) {
   return (r.status ?? 1) === 0;
 }
 
-const { decideDbTarget } = require('./build-db-target-policy.cjs');
+const { decideDbTarget, describeDbTargetBlock } = require('./build-db-target-policy.cjs');
 const { decideMigrate } = require('./build-migrate-policy.cjs');
 
 // 1. DB target check first: nothing below (migrate, next build) runs on a blocked target.
 const target = decideDbTarget(process.env);
 console.log(`[build] db target: ${target.code}`);
 if (!target.ok) {
+  // Diagnostics only (Preview block): fixed enums per URL; failures here never change the exit.
+  try {
+    for (const line of describeDbTargetBlock(process.env)) console.log(line);
+  } catch {
+    // ignore
+  }
   process.exit(1);
 }
 

@@ -50,7 +50,8 @@ test('run-build.cjs: target check precedes decideMigrate, the migrate call and n
     return i;
   };
   const target = at('decideDbTarget(process.env)');
-  const exit = at('if (!target.ok) {\n  process.exit(1);') >= 0 ? src.indexOf('if (!target.ok)') : -1;
+  const exit = at('if (!target.ok) {');
+  assert.ok(exit < src.indexOf('process.exit(1);', exit));
   assert.ok(target < exit);
   assert.ok(exit < at('decideMigrate(process.env)'));
   assert.ok(exit < at(['migrate', 'dep' + 'loy'].map((w) => `'${w}'`).join(', ')));
@@ -69,7 +70,10 @@ test('run-build.cjs child process: blocked preview exits 1 before spawning anyth
   const r = spawnSync(process.execPath, ['scripts/run-build.cjs'], { cwd: process.cwd(), env, encoding: 'utf8', timeout: 20000 });
   assert.equal(r.status, 1);
   const out = `${r.stdout}${r.stderr}`;
-  assert.equal(out.trim(), '[build] db target: BLOCKED_DB_TARGET_PRODUCTION');
+  const lines = out.trim().split(/\r?\n/);
+  assert.equal(lines[0], '[build] db target: BLOCKED_DB_TARGET_PRODUCTION');
+  assert.equal(lines.length, 3);
+  assert.ok(lines.slice(1).every((l) => l.startsWith('[build] db target detail: ')));
   assert.equal(out.includes('migrate policy'), false);
   assertNoSecrets(out);
 });
@@ -78,5 +82,5 @@ test('run-build.cjs child process: preview with missing config exits 1 with CONF
   const env = { PATH: process.env.PATH, SystemRoot: process.env.SystemRoot, VERCEL: '1', VERCEL_ENV: 'preview', DATABASE_URL: urls.direct };
   const r = spawnSync(process.execPath, ['scripts/run-build.cjs'], { cwd: process.cwd(), env, encoding: 'utf8', timeout: 20000 });
   assert.equal(r.status, 1);
-  assert.equal(`${r.stdout}${r.stderr}`.trim(), '[build] db target: BLOCKED_DB_TARGET_CONFIG');
+  assert.equal(`${r.stdout}${r.stderr}`.trim().split(/\r?\n/)[0], '[build] db target: BLOCKED_DB_TARGET_CONFIG');
 });
