@@ -81,6 +81,7 @@ test('5. runProfileSync: conflict => "conflict" with no warn; other errors => wa
 test('6. user-visible text is only the fixed Korean message (no server text/email/id/token)', () => {
   const n = accountEmailConflictNotice('account_email_conflict');
   assert.deepEqual(n, { type: 'err', text: ACCOUNT_EMAIL_CONFLICT_MESSAGE });
+  assert.equal(ACCOUNT_EMAIL_CONFLICT_MESSAGE, '이 이메일에 연결된 기존 계정이 있어 프로필을 동기화할 수 없습니다. 관리자에게 문의해 주세요.');
   assert.equal(accountEmailConflictNotice('auth_callback'), null);
   assert.equal(accountEmailConflictNotice(null), null);
   assert.ok(/[가-힣]/.test(ACCOUNT_EMAIL_CONFLICT_MESSAGE));

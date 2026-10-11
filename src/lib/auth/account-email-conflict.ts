@@ -7,7 +7,7 @@ export const ACCOUNT_EMAIL_CONFLICT_CODE = 'ACCOUNT_EMAIL_CONFLICT' as const;
 /** Login page `?error=` value used by the auth callback on conflict. */
 export const ACCOUNT_EMAIL_CONFLICT_QUERY = 'account_email_conflict' as const;
 export const ACCOUNT_EMAIL_CONFLICT_MESSAGE =
-  '이 이메일에 연결된 기존 계정이 있어 프로필을 동기화할 수 없습니다. 계정 연결 상태를 확인해 주세요.';
+  '이 이메일에 연결된 기존 계정이 있어 프로필을 동기화할 수 없습니다. 관리자에게 문의해 주세요.';
 
 export class AccountEmailConflictError extends Error {
   readonly code = ACCOUNT_EMAIL_CONFLICT_CODE;
