@@ -8,6 +8,7 @@ import { signInWithOAuth } from '@/lib/capacitor-oauth';
 import { getPublicSiteUrl } from '@/lib/site-url';
 import { createClient } from '@/lib/supabase/client';
 import { syncPrismaUserWithAuth } from '@/lib/sync-prisma-user';
+import { ACCOUNT_EMAIL_CONFLICT_MESSAGE, runProfileSync } from '@/lib/auth/account-email-conflict';
 import {
   classifyJurySignUpResult,
   juryAuthErrorMessage,
@@ -60,9 +61,16 @@ export function JurySignupForm({ returnQuery }: { returnQuery?: string | null })
         return;
       }
       if (outcome === 'enter' && data.session?.access_token) {
-        void syncPrismaUserWithAuth(data.session.access_token).catch((err: unknown) => {
-          console.warn('[jury-auth] profile sync deferred failed:', err instanceof Error ? err.message : String(err));
-        });
+        const syncOutcome = await runProfileSync(
+          syncPrismaUserWithAuth,
+          data.session.access_token,
+          undefined,
+          '[jury-auth] profile sync deferred failed:',
+        );
+        if (syncOutcome === 'conflict') {
+          setMessage(ACCOUNT_EMAIL_CONFLICT_MESSAGE);
+          return;
+        }
         router.push(returnQuery ? safeJuryNext(returnQuery) : juryHref('/'));
         router.refresh();
         return;

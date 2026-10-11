@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import type { EmailOtpType } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
+import { ACCOUNT_EMAIL_CONFLICT_QUERY, isAccountEmailConflictResponse } from '@/lib/auth/account-email-conflict';
 
 type Options =
   | { afterSuccess: 'fromNextQueryOrHome' }
@@ -25,6 +26,10 @@ export async function supabaseAuthCallbackGet(request: Request, options: Options
         : '/';
 
   const fail = () => NextResponse.redirect(new URL('/login?error=auth_callback', url.origin));
+  // Profile email conflict: only for normal sign-in flows; fixed-path flows (password reset) are unchanged.
+  const conflict = () => NextResponse.redirect(new URL(`/login?error=${ACCOUNT_EMAIL_CONFLICT_QUERY}`, url.origin));
+  const syncConflict = (res: Response | null) =>
+    options.afterSuccess === 'fixed' ? Promise.resolve(false) : isAccountEmailConflictResponse(res);
 
   const supabase = await createClient();
 
@@ -39,10 +44,11 @@ export async function supabaseAuthCallbackGet(request: Request, options: Options
       data: { session },
     } = await supabase.auth.getSession();
     if (session?.access_token) {
-      await fetch(new URL('/api/auth/sync-profile', url.origin), {
+      const syncRes = await fetch(new URL('/api/auth/sync-profile', url.origin), {
         method: 'POST',
         headers: { Authorization: `Bearer ${session.access_token}` },
-      }).catch(() => {});
+      }).catch(() => null);
+      if (await syncConflict(syncRes)) return conflict();
     }
     return NextResponse.redirect(new URL(successPath, url.origin));
   }
@@ -56,10 +62,11 @@ export async function supabaseAuthCallbackGet(request: Request, options: Options
       return fail();
     }
     if (data.session?.access_token) {
-      await fetch(new URL('/api/auth/sync-profile', url.origin), {
+      const syncRes = await fetch(new URL('/api/auth/sync-profile', url.origin), {
         method: 'POST',
         headers: { Authorization: `Bearer ${data.session.access_token}` },
-      }).catch(() => {});
+      }).catch(() => null);
+      if (await syncConflict(syncRes)) return conflict();
       return NextResponse.redirect(new URL(successPath, url.origin));
     }
     return fail();
@@ -77,10 +84,11 @@ export async function supabaseAuthCallbackGet(request: Request, options: Options
       return fail();
     }
     if (data.session?.access_token) {
-      await fetch(new URL('/api/auth/sync-profile', url.origin), {
+      const syncRes = await fetch(new URL('/api/auth/sync-profile', url.origin), {
         method: 'POST',
         headers: { Authorization: `Bearer ${data.session.access_token}` },
-      }).catch(() => {});
+      }).catch(() => null);
+      if (await syncConflict(syncRes)) return conflict();
       return NextResponse.redirect(new URL(successPath, url.origin));
     }
     return fail();

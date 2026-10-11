@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { AuthModal } from '@/components/AuthModal';
 import { createClient } from '@/lib/supabase/client';
+import { accountEmailConflictNotice } from '@/lib/auth/account-email-conflict';
 
 export function safeNextPath(raw: string | null): string {
   if (!raw || !raw.startsWith('/') || raw.startsWith('//')) return '/';
@@ -22,7 +23,7 @@ function loginNoticeFromParams(error: string | null) {
       text: AUTH_CALLBACK_EMAIL_ERROR,
     };
   }
-  return null;
+  return accountEmailConflictNotice(error);
 }
 
 export function LoginClient() {

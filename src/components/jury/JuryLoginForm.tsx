@@ -8,6 +8,7 @@ import { signInWithOAuth } from '@/lib/capacitor-oauth';
 import { getPublicSiteUrl } from '@/lib/site-url';
 import { createClient } from '@/lib/supabase/client';
 import { syncPrismaUserWithAuth } from '@/lib/sync-prisma-user';
+import { ACCOUNT_EMAIL_CONFLICT_MESSAGE, runProfileSync } from '@/lib/auth/account-email-conflict';
 import { juryHref, juryOAuthRedirect, jurySignupHref, jurySignupLink, safeJuryNext } from '@/lib/jury-product/jury-url';
 import styles from './jury-entry.module.css';
 
@@ -27,9 +28,16 @@ export function JuryLoginForm({ notice, returnQuery }: { notice?: string; return
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
       if (!data.session) throw new Error('세션을 받지 못했습니다.');
-      void syncPrismaUserWithAuth(data.session.access_token).catch((err: unknown) => {
-        console.warn('[jury-auth] profile sync deferred failed:', err instanceof Error ? err.message : String(err));
-      });
+      const syncOutcome = await runProfileSync(
+        syncPrismaUserWithAuth,
+        data.session.access_token,
+        undefined,
+        '[jury-auth] profile sync deferred failed:',
+      );
+      if (syncOutcome === 'conflict') {
+        setMessage(ACCOUNT_EMAIL_CONFLICT_MESSAGE);
+        return;
+      }
       router.push(returnQuery ? safeJuryNext(returnQuery) : juryHref('/'));
       router.refresh();
     } catch (err: unknown) {
