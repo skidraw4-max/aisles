@@ -7,6 +7,8 @@
  * or hostile values keep the relative `/jury` routes.
  */
 
+import { withEmailFlowMarker } from '@/lib/auth/auth-callback-error';
+
 const STATIC_ROUTES = new Set([
   '/',
   '/login',
@@ -226,7 +228,7 @@ export function juryEmailVerificationDestination(siteOrigin: string, next?: stri
   if (!redirectTo) return null;
   const url = new URL(redirectTo);
   url.searchParams.set('next', juryCallbackNext(next));
-  return url.href;
+  return withEmailFlowMarker(url.href);
 }
 
 export function isJuryRequestPath(pathname: string, host?: string | null): boolean {

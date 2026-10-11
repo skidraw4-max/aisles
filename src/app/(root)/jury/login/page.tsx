@@ -1,8 +1,9 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { JuryLoginForm } from '@/components/jury/JuryLoginForm';
-import { juryReturnQuery, safeJuryNext } from '@/lib/jury-product/jury-url';
-import { juryLoginErrorNotice } from '@/lib/auth/account-email-conflict';
+import { juryReturnQuery } from '@/lib/jury-product/jury-url';
+import { JURY_LOGIN_STORE_UNAVAILABLE_NOTICE, juryLoginErrorNotice } from '@/lib/auth/account-email-conflict';
+import { juryLoginOutcome } from '@/lib/jury-product/jury-login-entry';
 import { getJuryEntry } from '@/lib/jury-product/session';
 
 export const metadata: Metadata = {
@@ -18,11 +19,12 @@ export default async function JuryLoginPage({
   const requested = typeof params.next === 'string' ? params.next : null;
   const returnQuery = juryReturnQuery(requested);
   const entry = await getJuryEntry();
-  if (entry.ok) redirect(safeJuryNext(returnQuery));
+  const outcome = juryLoginOutcome(entry, returnQuery);
+  if (outcome.kind === 'redirect') redirect(outcome.href);
   return (
     <JuryLoginForm
       returnQuery={returnQuery}
-      notice={juryLoginErrorNotice(typeof params.error === 'string' ? params.error : null) ?? (entry.reason === 'EMAIL_UNVERIFIED' ? '이메일 인증이 필요합니다.' : undefined)}
+      notice={juryLoginErrorNotice(typeof params.error === 'string' ? params.error : null) ?? (outcome.notice === 'STORE_UNAVAILABLE' ? JURY_LOGIN_STORE_UNAVAILABLE_NOTICE : outcome.notice === 'EMAIL_UNVERIFIED' ? '이메일 인증이 필요합니다.' : undefined)}
     />
   );
 }

@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client';
 import { signInWithOAuth } from '@/lib/capacitor-oauth';
 import { getAuthCallbackSiteUrl, getPublicSiteUrl } from '@/lib/site-url';
 import { isSafeRelativePath } from '@/lib/auth/auth-redirect';
+import { withEmailFlowMarker } from '@/lib/auth/auth-callback-error';
 import { syncPrismaUserWithAuth } from '@/lib/sync-prisma-user';
 import { ACCOUNT_EMAIL_CONFLICT_MESSAGE, runProfileSync } from '@/lib/auth/account-email-conflict';
 import { GoogleIcon } from '@/components/GoogleIcon';
@@ -132,7 +133,7 @@ export function AuthModal({
           password,
           options: {
             data: { username: username.trim() },
-            ...(site ? { emailRedirectTo: `${site}/auth/callback` } : {}),
+            ...(site ? { emailRedirectTo: withEmailFlowMarker(`${site}/auth/callback`) } : {}),
           },
         });
         if (error) throw error;

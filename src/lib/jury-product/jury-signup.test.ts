@@ -61,7 +61,7 @@ test('jury signup success asks for verification and an existing account stays a 
 
 test('verification callback destination and next stay inside Jury', () => {
   const destination = juryEmailVerificationDestination('https://www.aisleshub.com');
-  assert.equal(destination, 'https://www.aisleshub.com/auth/callback?next=%2Fjury');
+  assert.equal(destination, 'https://www.aisleshub.com/auth/callback?next=%2Fjury&flow=email');
   assert.equal(safeJuryNext('/jury'), '/jury');
   assert.equal(safeJuryNext('/jury/login'), '/jury/login');
   assert.equal(safeJuryNext('/reviews'), '/jury/reviews');

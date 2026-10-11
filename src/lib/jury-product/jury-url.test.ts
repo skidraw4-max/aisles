@@ -65,7 +65,7 @@ test('external and malformed redirect targets stay on /jury', () => {
   assert.equal(oauth?.next, '/jury');
   assert.equal(oauth?.redirectTo, 'https://www.aisleshub.com/auth/callback?next=%2Fjury');
   assert.equal(juryPasswordResetDestination('https://www.aisleshub.com'), 'https://www.aisleshub.com/auth/reset-callback');
-  assert.equal(juryEmailVerificationDestination('https://www.aisleshub.com'), 'https://www.aisleshub.com/auth/callback?next=%2Fjury');
+  assert.equal(juryEmailVerificationDestination('https://www.aisleshub.com'), 'https://www.aisleshub.com/auth/callback?next=%2Fjury&flow=email');
   assert.equal(safeJuryNext('//evil.example.com'), '/jury');
   assert.equal(safeJuryNext('javascript:alert(1)'), '/jury');
   assert.equal(safeJuryNext('%2F%2Fevil.example.com'), '/jury');
@@ -87,5 +87,19 @@ test('legacy Jury pages remain mounted', () => {
     'src/app/(root)/jury/settings/page.tsx',
   ]) {
     assert.equal(existsSync(path.resolve(process.cwd(), file)), true, file);
+  }
+});
+
+test('email verification destination carries flow=email and keeps next sanitized', () => {
+  const base = 'https://www.aisleshub.com';
+  const d1 = new URL(juryEmailVerificationDestination(base, '/jury/invitation/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA')!);
+  assert.equal(d1.pathname, '/auth/callback');
+  assert.equal(d1.searchParams.get('flow'), 'email');
+  assert.equal(d1.searchParams.get('next'), '/jury/invitation/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA');
+  for (const bad of ['/jury/organization/create', '//evil.example', 'https://evil.example', '%2F%2Fevil.example', '/jury/../../etc']) {
+    const d = new URL(juryEmailVerificationDestination(base, bad)!);
+    assert.equal(d.origin, base);
+    assert.equal(d.searchParams.get('next'), '/jury');
+    assert.equal(d.searchParams.get('flow'), 'email');
   }
 });

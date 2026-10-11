@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { AuthModal } from '@/components/AuthModal';
 import { createClient } from '@/lib/supabase/client';
-import { AUTH_CALLBACK_EMAIL_ERROR, accountEmailConflictNotice } from '@/lib/auth/account-email-conflict';
+import { accountEmailConflictNotice, authCallbackFailureText } from '@/lib/auth/account-email-conflict';
 import { safeRelativePath } from '@/lib/auth/auth-redirect';
 
 export function safeNextPath(raw: string | null): string {
@@ -14,10 +14,11 @@ export function safeNextPath(raw: string | null): string {
 const OAUTH_RETURN_SUCCESS = '로그인되었습니다. 환영합니다!';
 
 function loginNoticeFromParams(error: string | null) {
-  if (error === 'auth_callback') {
+  const callbackText = authCallbackFailureText(error);
+  if (callbackText) {
     return {
       type: 'err' as const,
-      text: AUTH_CALLBACK_EMAIL_ERROR,
+      text: callbackText,
     };
   }
   return accountEmailConflictNotice(error);
@@ -38,14 +39,15 @@ export function LoginClient() {
   } | null>(null);
 
   const effectiveNotice = useMemo(() => {
-    if (errorParam === 'auth_callback') {
+    if (authCallbackFailureText(errorParam)) {
       return resolvedAuthCallbackNotice;
     }
     return loginNoticeFromParams(errorParam);
   }, [errorParam, resolvedAuthCallbackNotice]);
 
   useEffect(() => {
-    if (errorParam !== 'auth_callback') return;
+    const failureText = authCallbackFailureText(errorParam);
+    if (!failureText) return;
 
     let cancelled = false;
     let navigateTimer: ReturnType<typeof setTimeout> | undefined;
@@ -63,7 +65,7 @@ export function LoginClient() {
           router.refresh();
         }, 900);
       } else {
-        setResolvedAuthCallbackNotice({ type: 'err', text: AUTH_CALLBACK_EMAIL_ERROR });
+        setResolvedAuthCallbackNotice({ type: 'err', text: failureText });
       }
     })();
 

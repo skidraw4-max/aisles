@@ -57,7 +57,7 @@ test('2. allowlisted origins are kept; everything else falls back to publicSiteU
 
 test('3. login failure -> fixed same-origin error page; conflict -> Korean notice', () => {
   const cb = src('src/lib/supabase-auth-callback.ts');
-  assert.match(cb, /const fail = \(\) => NextResponse\.redirect\(new URL\('\/login\?error=auth_callback', url\.origin\)\);/);
+  assert.match(cb, /new URL\(`\/login\?error=\$\{authCallbackFailureQuery\(kind, options\.afterSuccess === 'fixed' \|\| emailFlow\)\}`, url\.origin\)/);
   assert.match(cb, /new URL\(`\/login\?error=\$\{ACCOUNT_EMAIL_CONFLICT_QUERY\}`, url\.origin\)/);
   const n = accountEmailConflictNotice('account_email_conflict');
   assert.equal(n?.text, ACCOUNT_EMAIL_CONFLICT_MESSAGE);
@@ -175,14 +175,17 @@ test('11. NEXT_PUBLIC_PASSWORD_RECOVERY_REDIRECT_TO keeps precedence', () => {
 
 test('12. Jury login page shows exactly one notice: conflict (shared constant) else email-unverified', () => {
   const page = src('src/app/(root)/jury/login/page.tsx');
-  assert.match(page, /notice=\{juryLoginErrorNotice\(typeof params\.error === 'string' \? params\.error : null\) \?\? \(entry\.reason === 'EMAIL_UNVERIFIED' \? /);
+  assert.match(page, /notice=\{juryLoginErrorNotice\(typeof params\.error === 'string' \? params\.error : null\) \?\? \(outcome\.notice === 'STORE_UNAVAILABLE' \? JURY_LOGIN_STORE_UNAVAILABLE_NOTICE : outcome\.notice === 'EMAIL_UNVERIFIED' \? /);
   assert.equal(juryLoginErrorNotice('account_email_conflict'), ACCOUNT_EMAIL_CONFLICT_MESSAGE);
   assert.equal(juryLoginErrorNotice('auth_callback'), AUTH_CALLBACK_EMAIL_ERROR);
   for (const e of [null, '', 'other', 'AUTH_CALLBACK', 'account_email_conflict ']) assert.equal(juryLoginErrorNotice(e), null, String(e));
   assert.ok(/[\uac00-\ud7a3]/.test(AUTH_CALLBACK_EMAIL_ERROR));
   const lc = src('src/app/(root)/login/LoginClient.tsx');
   assert.ok(!lc.includes('const AUTH_CALLBACK_EMAIL_ERROR'), 'hub uses the shared constant');
-  assert.equal((lc.match(/AUTH_CALLBACK_EMAIL_ERROR/g) ?? []).length, 3, 'import + 2 existing uses');
+  assert.ok(!lc.includes('AUTH_CALLBACK_EMAIL_ERROR'), 'hub maps every callback value through authCallbackFailureText');
+  assert.equal((lc.match(/authCallbackFailureText\(/g) ?? []).length, 3, 'notice, memo gate, session-recovery effect');
+  assert.match(lc, /setResolvedAuthCallbackNotice\(\{ type: 'ok', text: OAUTH_RETURN_SUCCESS \}\);/);
+  assert.match(lc, /setResolvedAuthCallbackNotice\(\{ type: 'err', text: failureText \}\);/);
   assert.equal((page.match(/notice=/g) ?? []).length, 1);
   assert.ok(!page.includes('ACCOUNT_EMAIL_CONFLICT_MESSAGE'));
   assert.equal(accountEmailConflictNotice('account_email_conflict')?.text, ACCOUNT_EMAIL_CONFLICT_MESSAGE);
