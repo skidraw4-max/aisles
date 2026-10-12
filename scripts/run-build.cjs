@@ -5,8 +5,9 @@
  *      otherwise the build stops here (exit 1) before any migration or next build.
  *      Only a fixed code is logged. Production and local builds are unchanged.
  *   2. Migration policy (scripts/build-migrate-policy.cjs): `prisma migrate deploy`
- *      runs only on Vercel production with a non-blank DIRECT_URL and without
- *      JURY_SKIP_MIGRATIONS=1. Local and Preview builds skip it.
+ *      is skipped by default, including on Vercel production. It runs only on Vercel
+ *      production with the exact JURY_ALLOW_PROD_MIGRATE confirmation token, a non-blank
+ *      DIRECT_URL, and without JURY_SKIP_MIGRATIONS=1. Local and Preview builds skip it.
  *   3. Client boundary check, ads.txt, next build.
  * @see https://www.prisma.io/docs/orm/overview/databases/supabase
  */
