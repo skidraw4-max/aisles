@@ -283,8 +283,8 @@ test('github review presentation keeps the stored decision and folds repeated cl
 
 test('github product flow source does not invent progress or a review pipeline', () => {
   const source = readFileSync(new URL('./product-flow.ts', import.meta.url), 'utf8');
-  const panel = readFileSync(new URL('../../../../app/(root)/jury/services/github/github-panel.tsx', import.meta.url), 'utf8');
-  const page = readFileSync(new URL('../../../../app/(root)/jury/services/github/page.tsx', import.meta.url), 'utf8');
+  const panel = readFileSync(new URL('../../../../app/(jury)/jury/services/github/github-panel.tsx', import.meta.url), 'utf8');
+  const page = readFileSync(new URL('../../../../app/(jury)/jury/services/github/page.tsx', import.meta.url), 'utf8');
   for (const text of [source, panel, page]) {
     assert.equal(text.includes('semanticJudgments'), false);
     assert.equal(text.includes('73%'), false);

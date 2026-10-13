@@ -104,7 +104,7 @@ test('later agent execution reuses the locked lifecycle', () => {
   assert.equal(executor.includes("action: 'agent.execute'"), true);
   assert.equal(executor.includes('containsSecret'), true);
   assert.equal(executor.includes('FOR UPDATE'), true);
-  const actions = readFileSync(path.resolve(process.cwd(), 'src/app/(root)/jury/actions.ts'), 'utf8');
+  const actions = readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/actions.ts'), 'utf8');
   const fn = actions.slice(
     actions.indexOf('export async function runLaterAgentExecution'),
     actions.indexOf('export async function runLaterChangeGate'),
@@ -113,7 +113,7 @@ test('later agent execution reuses the locked lifecycle', () => {
   for (const key of ['tenantId', 'improvementTaskId', 'reviewResultId', 'humanDecisionId', 'changeGateResultId', 'provider', 'workspace', 'status']) {
     assert.equal(fn.includes(`formData.get('${key}')`), false, key);
   }
-  const ui = readFileSync(path.resolve(process.cwd(), 'src/app/(root)/jury/ui.tsx'), 'utf8');
+  const ui = readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/ui.tsx'), 'utf8');
   const body = ui.slice(
     ui.indexOf('export function LaterAgentRunBody'),
     ui.indexOf('export function LaterChangeGateBody'),

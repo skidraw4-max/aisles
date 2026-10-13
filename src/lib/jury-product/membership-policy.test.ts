@@ -285,8 +285,8 @@ describe('membership commit', () => {
 describe('persistence boundary', () => {
   it('keeps the product session off the JSON directory', () => {
     const session = fs.readFileSync(new URL('./session.ts', import.meta.url), 'utf8');
-    const load = fs.readFileSync(new URL('../../app/(root)/jury/load.ts', import.meta.url), 'utf8');
-    const actions = fs.readFileSync(new URL('../../app/(root)/jury/actions.ts', import.meta.url), 'utf8');
+    const load = fs.readFileSync(new URL('../../app/(jury)/jury/load.ts', import.meta.url), 'utf8');
+    const actions = fs.readFileSync(new URL('../../app/(jury)/jury/actions.ts', import.meta.url), 'utf8');
     const route = fs.readFileSync(new URL('../../app/api/jury/console/route.ts', import.meta.url), 'utf8');
     const db = fs.readFileSync(new URL('./jury-db.ts', import.meta.url), 'utf8');
     for (const source of [session, load, actions, route, db]) {

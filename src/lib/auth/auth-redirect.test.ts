@@ -174,7 +174,7 @@ test('11. NEXT_PUBLIC_PASSWORD_RECOVERY_REDIRECT_TO keeps precedence', () => {
 });
 
 test('12. Jury login page shows exactly one notice: conflict (shared constant) else email-unverified', () => {
-  const page = src('src/app/(root)/jury/login/page.tsx');
+  const page = src('src/app/(jury)/jury/login/page.tsx');
   assert.match(page, /notice=\{juryLoginErrorNotice\(typeof params\.error === 'string' \? params\.error : null\) \?\? \(outcome\.notice === 'STORE_UNAVAILABLE' \? JURY_LOGIN_STORE_UNAVAILABLE_NOTICE : outcome\.notice === 'EMAIL_UNVERIFIED' \? /);
   assert.equal(juryLoginErrorNotice('account_email_conflict'), ACCOUNT_EMAIL_CONFLICT_MESSAGE);
   assert.equal(juryLoginErrorNotice('auth_callback'), AUTH_CALLBACK_EMAIL_ERROR);

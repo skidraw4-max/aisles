@@ -51,7 +51,7 @@ test('3. path safety: hostile next never leaves the Jury routes', () => {
 });
 
 test('4. login page wiring: decision helper, store notice, single notice', () => {
-  const page = readFileSync(new URL('../../app/(root)/jury/login/page.tsx', import.meta.url), 'utf8');
+  const page = readFileSync(new URL('../../app/(jury)/jury/login/page.tsx', import.meta.url), 'utf8');
   assert.match(page, /const outcome = juryLoginOutcome\(entry, returnQuery\);/);
   assert.match(page, /if \(outcome\.kind === 'redirect'\) redirect\(outcome\.href\);/);
   assert.match(page, /JURY_LOGIN_STORE_UNAVAILABLE_NOTICE/);

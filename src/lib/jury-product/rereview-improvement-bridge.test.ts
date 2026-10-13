@@ -357,13 +357,13 @@ test('re-review improvement bridge stays off host collectors and later phases', 
   assert.equal(source.includes('humanImprovementTaskType'), true);
   assert.equal(source.includes('NO_IMPROVEMENT'), true);
   assert.equal(source.includes('containsSecret'), true);
-  const actions = readFileSync(path.resolve(process.cwd(), 'src/app/(root)/jury/actions.ts'), 'utf8');
+  const actions = readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/actions.ts'), 'utf8');
   const fn = actions.slice(actions.indexOf('export async function createReReviewImprovementTask'));
   assert.equal(fn.includes("formData.get('reReviewResultId')"), true);
   for (const key of ['tenantId', 'taskType', 'reviewId', 'diagnosis', 'acceptanceCriteria', 'humanDecision']) {
     assert.equal(fn.includes(`formData.get('${key}')`), false, key);
   }
-  const ui = readFileSync(path.resolve(process.cwd(), 'src/app/(root)/jury/ui.tsx'), 'utf8');
+  const ui = readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/ui.tsx'), 'utf8');
   const reviewBody = ui.slice(ui.indexOf('export function HumanReReviewBody'), ui.indexOf('export function HumanChangeGateBody'));
   assert.equal(reviewBody.includes('Create Improvement Task'), true);
   assert.equal(reviewBody.includes('No improvement required'), true);

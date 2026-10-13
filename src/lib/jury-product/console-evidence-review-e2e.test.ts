@@ -244,8 +244,8 @@ test('console catalog evidence reaches one external review', { timeout: 120_000 
 test('console review path does not call host collectors', () => {
   const files = [
     'src/lib/jury-product/console-catalog-scope.ts',
-    'src/app/(root)/jury/actions.ts',
-    'src/app/(root)/jury/ui.tsx',
+    'src/app/(jury)/jury/actions.ts',
+    'src/app/(jury)/jury/ui.tsx',
   ];
   for (const file of files) {
     const source = readFileSync(path.resolve(process.cwd(), file), 'utf8');
@@ -253,7 +253,7 @@ test('console review path does not call host collectors', () => {
       assert.equal(source.includes(token), false, `${file} ${token}`);
     }
   }
-  const actions = readFileSync(path.resolve(process.cwd(), 'src/app/(root)/jury/actions.ts'), 'utf8');
+  const actions = readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/actions.ts'), 'utf8');
   const review = actions.slice(actions.indexOf('export async function submitTenantReview'));
   assert.equal(review.includes('runTenantReview'), true);
   assert.equal(review.includes("formData.get('tenantId')"), false);

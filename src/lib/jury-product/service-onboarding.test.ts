@@ -73,8 +73,8 @@ test('onboarding source reuses mock discovery and does not call the network', ()
   for (const token of ['runReviewBoardPipeline', 'evaluateChangeGate', 'fakeCursorAdapter', 'buildEvidencePackFromDb', 'JURY_CONSOLE_FIXTURE']) {
     assert.equal(source.includes(token), false, token);
   }
-  const ui = readFileSync(path.resolve(process.cwd(), 'src/app/(root)/jury/service-onboarding-ui.tsx'), 'utf8');
-  assert.equal(ui.includes('Add Service') || readFileSync(path.resolve(process.cwd(), 'src/app/(root)/jury/ui.tsx'), 'utf8').includes('Add Service'), true);
+  const ui = readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/service-onboarding-ui.tsx'), 'utf8');
+  assert.equal(ui.includes('Add Service') || readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/ui.tsx'), 'utf8').includes('Add Service'), true);
   assert.equal(ui.includes('No access scopes proposed.'), false);
   assert.equal(ui.includes('ONBOARDING_EMPTY_SCOPES'), true);
   assert.equal(ui.includes('Approve'), true);
@@ -82,8 +82,8 @@ test('onboarding source reuses mock discovery and does not call the network', ()
   for (const label of ['Run Agent', 'Run Change Gate', 'Run Re-review', 'Auto Fix', 'Run Loop']) {
     assert.equal(ui.includes(label), false, label);
   }
-  assert.equal(existsSync(path.resolve(process.cwd(), 'src/app/(root)/jury/services/new/page.tsx')), true);
-  assert.equal(existsSync(path.resolve(process.cwd(), 'src/app/(root)/jury/services/[connectionId]/page.tsx')), true);
+  assert.equal(existsSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/services/new/page.tsx')), true);
+  assert.equal(existsSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/services/[connectionId]/page.tsx')), true);
   assert.equal(MOCK_ONBOARDING_ADAPTER, 'mock');
   const dbTest = readFileSync(new URL('./service-onboarding.test.ts', import.meta.url), 'utf8');
   const name = 'owner onboarding connects only after scope approval';

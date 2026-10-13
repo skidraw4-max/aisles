@@ -319,7 +319,7 @@ test('review console source stays off host collectors and improvement actions', 
     assert.equal(source.includes(token), false, token);
   }
   assert.equal(source.includes('tenantId: actor.tenantId'), true);
-  const ui = readFileSync(path.resolve(process.cwd(), 'src/app/(root)/jury/ui.tsx'), 'utf8');
+  const ui = readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/ui.tsx'), 'utf8');
   const body = ui.slice(ui.indexOf('export function ReviewDetailBody'), ui.indexOf('const INTAKE_AVAILABILITY'));
   assert.equal(body.includes('acknowledgeHumanReview'), true);
   assert.equal(body.includes('name="reviewId"'), true);
@@ -339,7 +339,7 @@ test('review console source stays off host collectors and improvement actions', 
   assert.equal(source.includes('확인 완료'), true);
   assert.equal(source.includes('검증 필요'), true);
   assert.equal(source.includes('수정 필요'), true);
-  const actions = readFileSync(path.resolve(process.cwd(), 'src/app/(root)/jury/actions.ts'), 'utf8');
+  const actions = readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/actions.ts'), 'utf8');
   const note = actions.slice(actions.indexOf('export async function acknowledgeHumanReview'));
   assert.equal(note.includes("formData.get('tenantId')"), false);
   assert.equal(note.includes('noteHumanNextAction'), true);

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { createJuryOrganization } from '@/app/(root)/jury/organization/actions';
+import { createJuryOrganization } from '@/app/(jury)/jury/organization/actions';
 import { juryHref } from '@/lib/jury-product/jury-url';
 import styles from './jury-entry.module.css';
 

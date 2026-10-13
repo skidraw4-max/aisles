@@ -312,7 +312,7 @@ test('later re-review reuses the existing change-gate review lifecycle', () => {
   assert.equal(reused.includes("action: 'review.start'"), true);
   const gate = readFileSync(path.resolve(process.cwd(), 'src/lib/jury-product/change-gate.ts'), 'utf8');
   assert.equal(gate.includes('WORKSPACE_NOT_ALLOWED'), true);
-  const actions = readFileSync(path.resolve(process.cwd(), 'src/app/(root)/jury/actions.ts'), 'utf8');
+  const actions = readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/actions.ts'), 'utf8');
   const fn = actions.slice(
     actions.indexOf('export async function runLaterReReview'),
     actions.indexOf('export async function createLaterReReviewImprovementTask'),
@@ -321,7 +321,7 @@ test('later re-review reuses the existing change-gate review lifecycle', () => {
   for (const key of ['tenantId', 'changeGateResultId', 'reviewResultId', 'humanDecisionId', 'improvementTaskId', 'provider', 'workspace']) {
     assert.equal(fn.includes(`formData.get('${key}')`), false, key);
   }
-  const ui = readFileSync(path.resolve(process.cwd(), 'src/app/(root)/jury/ui.tsx'), 'utf8');
+  const ui = readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/ui.tsx'), 'utf8');
   const body = ui.slice(
     ui.indexOf('export function LaterReReviewBody'),
     ui.indexOf('export function LaterImprovementBody'),

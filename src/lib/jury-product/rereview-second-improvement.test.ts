@@ -323,7 +323,7 @@ test('second improvement reuses the phase 54 task writer', () => {
   const bridge = readFileSync(path.resolve(process.cwd(), 'src/lib/jury-product/rereview-improvement-bridge.ts'), 'utf8');
   assert.equal(bridge.includes('REWORD_CONSTRAINTS'), true);
   assert.equal(bridge.includes('NO_IMPROVEMENT'), true);
-  const actions = readFileSync(path.resolve(process.cwd(), 'src/app/(root)/jury/actions.ts'), 'utf8');
+  const actions = readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/actions.ts'), 'utf8');
   const fn = actions.slice(
     actions.indexOf('export async function createSecondReReviewImprovementTask'),
     actions.indexOf('export async function approveReReviewAgentAction'),
@@ -332,7 +332,7 @@ test('second improvement reuses the phase 54 task writer', () => {
   for (const key of ['tenantId', 'taskId', 'agentExecutionId', 'changeGateResultId', 'approvalId', 'taskType', 'diagnosis']) {
     assert.equal(fn.includes(`formData.get('${key}')`), false, key);
   }
-  const ui = readFileSync(path.resolve(process.cwd(), 'src/app/(root)/jury/ui.tsx'), 'utf8');
+  const ui = readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/ui.tsx'), 'utf8');
   const body = ui.slice(
     ui.indexOf('export function SecondImprovementBody'),
     ui.indexOf('export function SecondImprovementApprovalBody'),

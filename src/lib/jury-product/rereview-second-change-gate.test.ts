@@ -323,7 +323,7 @@ test('second change gate reuses the existing evaluator contract', () => {
   const human = readFileSync(path.resolve(process.cwd(), 'src/lib/jury-product/human-change-gate.ts'), 'utf8');
   assert.equal(human.includes('evaluateChangeGate'), true);
   assert.equal(human.includes('inspection: { files: [], present: [] }'), true);
-  const actions = readFileSync(path.resolve(process.cwd(), 'src/app/(root)/jury/actions.ts'), 'utf8');
+  const actions = readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/actions.ts'), 'utf8');
   const fn = actions.slice(
     actions.indexOf('export async function runSecondChangeGate'),
     actions.indexOf('export async function runLaterReReview'),
@@ -332,7 +332,7 @@ test('second change gate reuses the existing evaluator contract', () => {
   for (const key of ['tenantId', 'provider', 'workspace', 'taskId', 'humanDecision', 'prompt', 'changedFiles', 'gatePolicy', 'improvementTaskId']) {
     assert.equal(fn.includes(`formData.get('${key}')`), false, key);
   }
-  const ui = readFileSync(path.resolve(process.cwd(), 'src/app/(root)/jury/ui.tsx'), 'utf8');
+  const ui = readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/ui.tsx'), 'utf8');
   const body = ui.slice(
     ui.indexOf('export function SecondChangeGateBody'),
     ui.indexOf('export function LaterReReviewBody'),

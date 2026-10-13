@@ -311,13 +311,13 @@ test('human agent handoff stays off host collectors and execution', () => {
   assert.equal(source.includes('input.workspace'), false);
   assert.equal(source.includes("action: 'improvement.write'"), true);
   assert.equal(source.includes("status: 'PENDING'"), true);
-  const actions = readFileSync(path.resolve(process.cwd(), 'src/app/(root)/jury/actions.ts'), 'utf8');
+  const actions = readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/actions.ts'), 'utf8');
   const fn = actions.slice(actions.indexOf('export async function handoffHumanImprovement'), actions.indexOf('async function tenantReviewCore'));
   assert.equal(fn.includes("formData.get('improvementTaskId')"), true);
   for (const key of ['tenantId', 'decision', 'action', 'agentType', 'provider', 'workspace', 'prompt']) {
     assert.equal(fn.includes(`formData.get('${key}')`), false, key);
   }
-  const ui = readFileSync(path.resolve(process.cwd(), 'src/app/(root)/jury/ui.tsx'), 'utf8');
+  const ui = readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/ui.tsx'), 'utf8');
   const body = ui.slice(ui.indexOf('export function ReviewDetailBody'), ui.indexOf('const INTAKE_AVAILABILITY'));
   assert.equal(body.includes('Send to Agent'), true);
   assert.equal(body.includes('Status:'), true);

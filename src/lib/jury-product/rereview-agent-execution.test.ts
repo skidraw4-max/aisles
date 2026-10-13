@@ -435,7 +435,7 @@ test('second iteration execution reuses the locked lifecycle', () => {
   assert.equal(source.includes("action: 'agent.execute'"), true);
   assert.equal(source.includes('input.agentExecutionId'), true);
   assert.equal(source.includes('HUMAN_APPROVAL_REQUIRED'), true);
-  const actions = readFileSync(path.resolve(process.cwd(), 'src/app/(root)/jury/actions.ts'), 'utf8');
+  const actions = readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/actions.ts'), 'utf8');
   const fn = actions.slice(
     actions.indexOf('export async function runReReviewAgentExecution'),
     actions.indexOf('export async function runReReviewChangeGate'),
@@ -444,7 +444,7 @@ test('second iteration execution reuses the locked lifecycle', () => {
   for (const key of ['tenantId', 'provider', 'workspace', 'taskId', 'humanDecision', 'prompt', 'reviewResultId', 'reReviewResultId']) {
     assert.equal(fn.includes(`formData.get('${key}')`), false, key);
   }
-  const ui = readFileSync(path.resolve(process.cwd(), 'src/app/(root)/jury/ui.tsx'), 'utf8');
+  const ui = readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/ui.tsx'), 'utf8');
   const body = ui.slice(ui.indexOf('export function ReReviewAgentRunBody'), ui.indexOf('export function ReReviewChangeGateBody'));
   assert.equal(body.includes('Run Agent'), true);
   assert.equal(body.includes('Agent Running'), true);

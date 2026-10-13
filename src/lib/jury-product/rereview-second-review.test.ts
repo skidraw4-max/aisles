@@ -370,13 +370,13 @@ test('second re-review reuses the phase 53 change-gate review', () => {
   assert.equal(source.includes('input.agentExecutionId'), true);
   assert.equal(source.includes('RE-REVIEW_NOT_APPROVED'), true);
   assert.equal(source.includes('HUMAN_APPROVAL_REQUIRED'), true);
-  const actions = readFileSync(path.resolve(process.cwd(), 'src/app/(root)/jury/actions.ts'), 'utf8');
+  const actions = readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/actions.ts'), 'utf8');
   const fn = actions.slice(actions.indexOf('export async function runSecondReReview'));
   assert.equal(fn.includes("formData.get('agentExecutionId')"), true);
   for (const key of ['tenantId', 'taskId', 'reviewResultId', 'changeGateResultId', 'approvalId', 'provider', 'workspace']) {
     assert.equal(fn.includes(`formData.get('${key}')`), false, key);
   }
-  const ui = readFileSync(path.resolve(process.cwd(), 'src/app/(root)/jury/ui.tsx'), 'utf8');
+  const ui = readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/ui.tsx'), 'utf8');
   const body = ui.slice(ui.indexOf('export function SecondReReviewBody'), ui.indexOf('export function SecondImprovementBody'));
   assert.equal(body.includes('Run Re-review'), true);
   assert.equal(body.includes('Re-review Running'), true);

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { changeJuryMemberRole, removeJuryMember } from '@/app/(root)/jury/organization/members/actions';
+import { changeJuryMemberRole, removeJuryMember } from '@/app/(jury)/jury/organization/members/actions';
 import styles from './jury-entry.module.css';
 import listStyles from './invitation.module.css';
 

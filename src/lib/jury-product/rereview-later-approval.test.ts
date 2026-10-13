@@ -97,7 +97,7 @@ test('later approval reuses the human decision writer', () => {
   assert.equal(writer.includes("action: 'review.start'"), true);
   assert.equal(writer.includes('HUMAN_DECISION_RECORDED'), true);
   assert.equal(writer.includes('FOR UPDATE'), true);
-  const actions = readFileSync(path.resolve(process.cwd(), 'src/app/(root)/jury/actions.ts'), 'utf8');
+  const actions = readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/actions.ts'), 'utf8');
   const fn = actions.slice(
     actions.indexOf('export async function approveLaterImprovementTask'),
     actions.indexOf('export async function handoffLaterImprovementTask'),
@@ -106,7 +106,7 @@ test('later approval reuses the human decision writer', () => {
   for (const key of ['tenantId', 'reviewResultId', 'humanDecisionId', 'parentTaskId', 'agentExecutionId', 'changeGateResultId', 'reReviewResultId']) {
     assert.equal(fn.includes(`formData.get('${key}')`), false, key);
   }
-  const ui = readFileSync(path.resolve(process.cwd(), 'src/app/(root)/jury/ui.tsx'), 'utf8');
+  const ui = readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/ui.tsx'), 'utf8');
   const body = ui.slice(
     ui.indexOf('export function LaterImprovementApprovalBody'),
     ui.indexOf('export function LaterImprovementHandoffBody'),

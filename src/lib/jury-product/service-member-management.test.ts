@@ -320,9 +320,9 @@ test('effective service permission follows the stored level', () => {
 });
 
 test('service access screen posts to the server and ignores caller identity', () => {
-  const page = readFileSync(new URL('../../app/(root)/jury/organization/services/page.tsx', import.meta.url), 'utf8');
-  const action = readFileSync(new URL('../../app/(root)/jury/organization/services/actions.ts', import.meta.url), 'utf8');
-  const chrome = readFileSync(new URL('../../app/(root)/jury/ui.tsx', import.meta.url), 'utf8');
+  const page = readFileSync(new URL('../../app/(jury)/jury/organization/services/page.tsx', import.meta.url), 'utf8');
+  const action = readFileSync(new URL('../../app/(jury)/jury/organization/services/actions.ts', import.meta.url), 'utf8');
+  const chrome = readFileSync(new URL('../../app/(jury)/jury/ui.tsx', import.meta.url), 'utf8');
   const db = readFileSync(new URL('./jury-db.ts', import.meta.url), 'utf8');
   assert.match(page, /Service access/);
   assert.match(page, /listServiceAccess/);

@@ -275,7 +275,7 @@ test('re-review handoff stays on the pending contract', () => {
   assert.equal(source.includes("action: 'improvement.write'"), true);
   assert.equal(source.includes('input.improvementTaskId'), true);
   assert.equal(source.includes('noteHumanNextAction'), true);
-  const actions = readFileSync(path.resolve(process.cwd(), 'src/app/(root)/jury/actions.ts'), 'utf8');
+  const actions = readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/actions.ts'), 'utf8');
   const fn = actions.slice(
     actions.indexOf('export async function handoffReReviewImprovement'),
     actions.indexOf('export async function runReReviewAgentExecution'),
@@ -284,7 +284,7 @@ test('re-review handoff stays on the pending contract', () => {
   for (const key of ['tenantId', 'reviewResultId', 'reReviewResultId', 'provider', 'workspace', 'humanDecision', 'taskType']) {
     assert.equal(fn.includes(`formData.get('${key}')`), false, key);
   }
-  const ui = readFileSync(path.resolve(process.cwd(), 'src/app/(root)/jury/ui.tsx'), 'utf8');
+  const ui = readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/ui.tsx'), 'utf8');
   const body = ui.slice(ui.indexOf('export function ReReviewAgentHandoffBody'), ui.indexOf('export function HumanReReviewBody'));
   assert.equal(body.includes('Approve for Agent'), true);
   assert.equal(body.includes('Send to Agent'), true);

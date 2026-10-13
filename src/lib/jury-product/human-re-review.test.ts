@@ -229,13 +229,13 @@ test('human re-review reuses the existing change-gate review', () => {
   assert.equal(source.includes('persistChangeGateReReviewExecution'), true);
   assert.equal(source.includes("action: 'review.start'"), true);
   assert.equal(source.includes('input.agentExecutionId'), true);
-  const actions = readFileSync(path.resolve(process.cwd(), 'src/app/(root)/jury/actions.ts'), 'utf8');
+  const actions = readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/actions.ts'), 'utf8');
   const fn = actions.slice(actions.indexOf('export async function runHumanReReview'), actions.indexOf('async function tenantReviewCore'));
   assert.equal(fn.includes("formData.get('agentExecutionId')"), true);
   for (const key of ['tenantId', 'reviewResultId', 'improvementTaskId', 'evidenceId', 'humanDecision', 'gateResult']) {
     assert.equal(fn.includes(`formData.get('${key}')`), false, key);
   }
-  const ui = readFileSync(path.resolve(process.cwd(), 'src/app/(root)/jury/ui.tsx'), 'utf8');
+  const ui = readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/ui.tsx'), 'utf8');
   const gateBody = ui.slice(ui.indexOf('export function HumanChangeGateBody'), ui.indexOf('export function EvidenceBody'));
   assert.equal(gateBody.includes('Re-review'), false);
   const reviewBody = ui.slice(ui.indexOf('export function HumanReReviewBody'), ui.indexOf('export function HumanChangeGateBody'));

@@ -80,7 +80,7 @@ test('product handoff reuses the existing writer and does not call an adapter', 
   ]) {
     assert.equal(source.includes(token), false, token);
   }
-  const ui = readFileSync(path.resolve(process.cwd(), 'src/app/(root)/jury/ui.tsx'), 'utf8');
+  const ui = readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/ui.tsx'), 'utf8');
   const body = ui.slice(ui.indexOf('export function ImprovementsBody'), ui.indexOf('export function ImprovementTraceBody'));
   assert.equal(body.includes('Send to Agent'), true);
   assert.equal(body.includes('approval'), true);

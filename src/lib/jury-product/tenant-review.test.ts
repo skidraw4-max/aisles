@@ -168,7 +168,7 @@ test('tenant review source stays off the host collectors', () => {
   assert.equal(source.includes('runAisleAdapter'), false);
   assert.equal(source.includes('projectEvidenceToPack'), false);
   assert.equal(source.includes("mode: 'EXTERNAL_SERVICE'"), true);
-  const ui = readFileSync(path.resolve(process.cwd(), 'src/app/(root)/jury/ui.tsx'), 'utf8');
+  const ui = readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/ui.tsx'), 'utf8');
   const body = ui.slice(ui.indexOf('export function EvidenceBody'), ui.indexOf('export function ImprovementsBody'));
   assert.equal(body.includes('Run Jury Review'), true);
   assert.equal(body.includes("canShowWrite(actor, 'review.start')"), true);

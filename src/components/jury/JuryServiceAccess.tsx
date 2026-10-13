@@ -6,7 +6,7 @@ import {
   addJuryServiceMember,
   changeJuryServiceMemberPermission,
   removeJuryServiceMember,
-} from '@/app/(root)/jury/organization/services/actions';
+} from '@/app/(jury)/jury/organization/services/actions';
 import styles from './jury-entry.module.css';
 import listStyles from './invitation.module.css';
 

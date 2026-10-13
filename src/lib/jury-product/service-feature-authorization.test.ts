@@ -222,7 +222,7 @@ test('console lists keep service administration and hide feature rows without pe
 });
 
 test('product actions authorize before review, improvement, and agent work', () => {
-  const actions = readFileSync(path.resolve(process.cwd(), 'src/app/(root)/jury/actions.ts'), 'utf8');
+  const actions = readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/actions.ts'), 'utf8');
   const review = actions.slice(actions.indexOf('export async function runConnectedServiceJuryReview'));
   assert.equal(review.indexOf('guardServiceFeature') < review.indexOf('runConnectedServiceReview'), true);
   const agent = actions.slice(

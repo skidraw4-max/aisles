@@ -246,19 +246,19 @@ test('security overview is read only and organization pages ignore url identity'
     assert.equal(section.every((item) => item.mutable === false), true);
   }
   for (const file of [
-    'src/app/(root)/jury/organization/security/page.tsx',
-    'src/app/(root)/jury/organization/members/page.tsx',
-    'src/app/(root)/jury/organization/services/page.tsx',
+    'src/app/(jury)/jury/organization/security/page.tsx',
+    'src/app/(jury)/jury/organization/members/page.tsx',
+    'src/app/(jury)/jury/organization/services/page.tsx',
   ]) {
     const source = readFileSync(path.resolve(process.cwd(), file), 'utf8');
     assert.equal(source.includes('searchParams'), false, file);
     assert.equal(source.includes('tenantId='), false, file);
   }
-  const security = readFileSync(path.resolve(process.cwd(), 'src/app/(root)/jury/organization/security/page.tsx'), 'utf8');
-  const members = readFileSync(path.resolve(process.cwd(), 'src/app/(root)/jury/organization/members/page.tsx'), 'utf8');
-  const services = readFileSync(path.resolve(process.cwd(), 'src/app/(root)/jury/organization/services/page.tsx'), 'utf8');
+  const security = readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/organization/security/page.tsx'), 'utf8');
+  const members = readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/organization/members/page.tsx'), 'utf8');
+  const services = readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/organization/services/page.tsx'), 'utf8');
   const controls = readFileSync(path.resolve(process.cwd(), 'src/components/jury/JuryMemberControls.tsx'), 'utf8');
-  const chrome = readFileSync(path.resolve(process.cwd(), 'src/app/(root)/jury/ui.tsx'), 'utf8');
+  const chrome = readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/ui.tsx'), 'utf8');
   const db = readFileSync(path.resolve(process.cwd(), 'src/lib/jury-product/jury-db.ts'), 'utf8');
   assert.match(security, /Organization security/);
   assert.match(security, /cannot be changed here/);

@@ -374,7 +374,7 @@ test('later improvement reuses the phase 59 task writer', () => {
   assert.equal(bridge.includes('REWORD_CONSTRAINTS'), true);
   assert.equal(bridge.includes('humanImprovementTaskType'), true);
   assert.equal(bridge.includes('NO_IMPROVEMENT'), true);
-  const actions = readFileSync(path.resolve(process.cwd(), 'src/app/(root)/jury/actions.ts'), 'utf8');
+  const actions = readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/actions.ts'), 'utf8');
   const fn = actions.slice(
     actions.indexOf('export async function createLaterReReviewImprovementTask'),
     actions.indexOf('export async function approveLaterImprovementTask'),
@@ -383,7 +383,7 @@ test('later improvement reuses the phase 59 task writer', () => {
   for (const key of ['tenantId', 'improvementTaskId', 'reviewRequestId', 'humanDecisionId', 'agentExecutionId', 'changeGateResultId', 'parentTaskId']) {
     assert.equal(fn.includes(`formData.get('${key}')`), false, key);
   }
-  const ui = readFileSync(path.resolve(process.cwd(), 'src/app/(root)/jury/ui.tsx'), 'utf8');
+  const ui = readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/ui.tsx'), 'utf8');
   const body = ui.slice(
     ui.indexOf('export function LaterImprovementBody'),
     ui.indexOf('export function LaterImprovementApprovalBody'),

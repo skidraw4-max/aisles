@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { acceptJuryInvitation } from '@/app/(root)/jury/invitation/actions';
+import { acceptJuryInvitation } from '@/app/(jury)/jury/invitation/actions';
 import { juryHref } from '@/lib/jury-product/jury-url';
 import styles from './jury-entry.module.css';
 

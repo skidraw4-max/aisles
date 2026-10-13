@@ -33,7 +33,7 @@ test('authentication stays with Supabase and Jury entry follows verification the
   const member = resolveJuryActor({ userId: 'user-a', memberships: [ownerA] });
   assert.equal(member.ok, true);
   if (member.ok) assert.equal(member.tenantId, 'org-a');
-  const dashboard = readFileSync(new URL('../../app/(root)/jury/page.tsx', import.meta.url), 'utf8');
+  const dashboard = readFileSync(new URL('../../app/(jury)/jury/page.tsx', import.meta.url), 'utf8');
   const session = readFileSync(new URL('./session.ts', import.meta.url), 'utf8');
   assert.match(dashboard, /EMAIL_UNVERIFIED/);
   assert.match(dashboard, /JuryEmailNotice/);

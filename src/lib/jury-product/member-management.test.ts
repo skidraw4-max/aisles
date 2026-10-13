@@ -275,11 +275,11 @@ test('concurrent owner removal leaves the owner in place', async () => {
 });
 
 test('members and invitations stay linked without changing service permissions', () => {
-  const page = readFileSync(new URL('../../app/(root)/jury/organization/members/page.tsx', import.meta.url), 'utf8');
-  const action = readFileSync(new URL('../../app/(root)/jury/organization/members/actions.ts', import.meta.url), 'utf8');
+  const page = readFileSync(new URL('../../app/(jury)/jury/organization/members/page.tsx', import.meta.url), 'utf8');
+  const action = readFileSync(new URL('../../app/(jury)/jury/organization/members/actions.ts', import.meta.url), 'utf8');
   const policy = readFileSync(new URL('./member-management.ts', import.meta.url), 'utf8');
   const db = readFileSync(new URL('./jury-db.ts', import.meta.url), 'utf8');
-  const chrome = readFileSync(new URL('../../app/(root)/jury/ui.tsx', import.meta.url), 'utf8');
+  const chrome = readFileSync(new URL('../../app/(jury)/jury/ui.tsx', import.meta.url), 'utf8');
   assert.match(page, /Invite member/);
   assert.match(page, /juryHref\('\/organization\/invitations'\)/);
   assert.match(page, /listOrganizationMembers/);

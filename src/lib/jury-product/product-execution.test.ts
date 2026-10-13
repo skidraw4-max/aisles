@@ -74,7 +74,7 @@ test('product execution reuses the human writer and does not call a live agent',
   ]) {
     assert.equal(source.includes(token), false, token);
   }
-  const ui = readFileSync(path.resolve(process.cwd(), 'src/app/(root)/jury/ui.tsx'), 'utf8');
+  const ui = readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/ui.tsx'), 'utf8');
   const body = ui.slice(ui.indexOf('export function ImprovementsBody'), ui.indexOf('export function ImprovementTraceBody'));
   assert.equal(body.includes('Run Agent (Mock)'), true);
   assert.equal(body.includes('Completed'), true);

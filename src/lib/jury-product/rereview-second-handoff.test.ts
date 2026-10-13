@@ -289,7 +289,7 @@ test('second handoff reuses the pending agent contract', () => {
   }
   assert.equal(source.includes('persistReReviewAgentHandoff'), true);
   assert.equal(source.includes('input.improvementTaskId'), true);
-  const actions = readFileSync(path.resolve(process.cwd(), 'src/app/(root)/jury/actions.ts'), 'utf8');
+  const actions = readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/actions.ts'), 'utf8');
   const fn = actions.slice(
     actions.indexOf('export async function handoffSecondImprovementTask'),
     actions.indexOf('export async function runSecondChangeGate'),
@@ -298,7 +298,7 @@ test('second handoff reuses the pending agent contract', () => {
   for (const key of ['tenantId', 'reviewResultId', 'humanDecisionId', 'agentExecutionId', 'changeGateResultId', 'provider', 'workspace']) {
     assert.equal(fn.includes(`formData.get('${key}')`), false, key);
   }
-  const ui = readFileSync(path.resolve(process.cwd(), 'src/app/(root)/jury/ui.tsx'), 'utf8');
+  const ui = readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/ui.tsx'), 'utf8');
   const body = ui.slice(
     ui.indexOf('export function SecondImprovementHandoffBody'),
     ui.indexOf('export function SecondChangeGateBody'),

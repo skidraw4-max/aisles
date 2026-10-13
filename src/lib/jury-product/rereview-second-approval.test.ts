@@ -312,7 +312,7 @@ test('second approval reuses the stored human decision contract', () => {
   }
   assert.equal(source.includes('noteHumanNextAction'), true);
   assert.equal(source.includes('input.improvementTaskId'), true);
-  const actions = readFileSync(path.resolve(process.cwd(), 'src/app/(root)/jury/actions.ts'), 'utf8');
+  const actions = readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/actions.ts'), 'utf8');
   const fn = actions.slice(
     actions.indexOf('export async function approveSecondImprovementTask'),
     actions.indexOf('export async function handoffSecondImprovementTask'),
@@ -321,7 +321,7 @@ test('second approval reuses the stored human decision contract', () => {
   for (const key of ['tenantId', 'reviewResultId', 'reReviewResultId', 'agentExecutionId', 'changeGateResultId', 'taskType', 'humanDecision']) {
     assert.equal(fn.includes(`formData.get('${key}')`), false, key);
   }
-  const ui = readFileSync(path.resolve(process.cwd(), 'src/app/(root)/jury/ui.tsx'), 'utf8');
+  const ui = readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/ui.tsx'), 'utf8');
   const body = ui.slice(
     ui.indexOf('export function SecondImprovementApprovalBody'),
     ui.indexOf('export function SecondImprovementHandoffBody'),

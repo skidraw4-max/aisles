@@ -229,7 +229,7 @@ test('a null activity metric stays null in the refresh identity', async () => {
 
 test('refresh status does not call execution or change the deny policy', () => {
   const source = readFileSync(new URL('./refresh-status.ts', import.meta.url), 'utf8');
-  const panel = readFileSync(new URL('../../../../app/(root)/jury/github-refresh-status.tsx', import.meta.url), 'utf8');
+  const panel = readFileSync(new URL('../../../../app/(jury)/jury/github-refresh-status.tsx', import.meta.url), 'utf8');
   for (const token of ['refreshGithubEvidence', 'startGithubRefreshReview', 'reviewGithubEvidence', 'insertRefreshClaim', ['createGemini', 'ReviewBoardLlm'].join('')]) {
     assert.equal(source.includes(token), false);
     assert.equal(panel.includes(token), false);

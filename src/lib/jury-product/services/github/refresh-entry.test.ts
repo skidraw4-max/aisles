@@ -259,7 +259,7 @@ test('client approval fields do not bypass tenant scope or evidence checks', asy
 
 test('refresh entry source keeps the deployed review.start rule', () => {
   const entry = readFileSync(new URL('./refresh-entry.ts', import.meta.url), 'utf8');
-  const action = readFileSync(new URL('../../../../app/(root)/jury/refresh-github-action.ts', import.meta.url), 'utf8');
+  const action = readFileSync(new URL('../../../../app/(jury)/jury/refresh-github-action.ts', import.meta.url), 'utf8');
   const refresh = readFileSync(new URL('./refresh.ts', import.meta.url), 'utf8');
   assert.equal(entry.includes("action: 'review.start'"), true);
   for (const token of ['JuryServiceMember', 'service-feature-guard', 'createGeminiReviewBoardLlm', 'startGithubRepositoryReview']) {

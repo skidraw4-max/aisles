@@ -21,7 +21,7 @@ const auditor: JuryActor = { ok: true, userId: 'user-auditor', tenantId: 'tenant
 
 test('product shell navigation opens the console routes', () => {
   for (const item of PRODUCT_NAV) {
-    const relative = item.href === '/jury' ? 'src/app/(root)/jury/page.tsx' : `src/app/(root)/jury/${item.href.slice('/jury/'.length)}/page.tsx`;
+    const relative = item.href === '/jury' ? 'src/app/(jury)/jury/page.tsx' : `src/app/(jury)/jury/${item.href.slice('/jury/'.length)}/page.tsx`;
     assert.equal(existsSync(path.resolve(process.cwd(), relative)), true, item.href);
   }
   assert.deepEqual(PRODUCT_NAV.map((item) => item.label), [
@@ -124,7 +124,7 @@ test('auditor stays read-only and the shell does not fall back to fixtures', () 
   for (const token of ['JURY_CONSOLE_FIXTURE', 'phase71', 'evaluateChangeGate', 'persistChangeGateReReview', 'prisma', 'buildEvidencePackFromDb']) {
     assert.equal(source.includes(token), false, token);
   }
-  const ui = readFileSync(path.resolve(process.cwd(), 'src/app/(root)/jury/ui.tsx'), 'utf8');
+  const ui = readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/ui.tsx'), 'utf8');
   assert.equal(ui.includes('SHELL_UNAVAILABLE'), true);
   assert.equal(ui.includes('No services connected yet'), false);
   assert.equal(ui.includes('SHELL_EMPTY.services'), true);

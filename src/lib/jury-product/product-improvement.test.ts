@@ -84,7 +84,7 @@ test('product improvement reuses the human-decision boundary and does not start 
   assert.equal(bridge.includes("juryDecision === 'ACCEPT'"), true);
   assert.equal(bridge.includes('REVIEW_NOT_COMPLETED'), true);
   assert.equal(bridge.includes('findUnique'), false);
-  const ui = readFileSync(path.resolve(process.cwd(), 'src/app/(root)/jury/ui.tsx'), 'utf8');
+  const ui = readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/ui.tsx'), 'utf8');
   assert.equal(ui.includes('source service'), true);
   assert.equal(ui.includes('Create Improvement Task'), true);
   const body = ui.slice(ui.indexOf('export function ImprovementsBody'), ui.indexOf('export function ImprovementTraceBody')).replaceAll('Run Agent (Mock)', '').replaceAll('Run Change Gate', '').replaceAll('Run Re-review', '');

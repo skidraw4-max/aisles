@@ -172,7 +172,7 @@ test('catalog scope source does not read the host', () => {
   for (const token of ['buildEvidencePackFromDb', 'attachGa4Evidence', 'runAisleAdapter', 'GA4_PROPERTY_ID', 'GA4_SERVICE_ACCOUNT', 'projectEvidenceToPack']) {
     assert.equal(source.includes(token), false, token);
   }
-  const ui = readFileSync(path.resolve(process.cwd(), 'src/app/(root)/jury/ui.tsx'), 'utf8');
+  const ui = readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/ui.tsx'), 'utf8');
   const body = ui.slice(ui.indexOf('Catalog Metric Scope'), ui.indexOf('export function ReviewsBody'));
   assert.equal(body.includes('proposeCatalogScope'), true);
   assert.equal(body.includes('name="tenantId"'), false);

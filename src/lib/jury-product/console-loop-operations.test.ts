@@ -259,7 +259,7 @@ test('loop operations do not enable the loop or trust a client tenant', () => {
   const files = [
     'src/lib/jury-product/console-loop-operations.ts',
     'src/lib/jury-product/console-loop-operations-store.ts',
-    'src/app/(root)/jury/automation/page.tsx',
+    'src/app/(jury)/jury/automation/page.tsx',
   ];
   for (const file of files) {
     const source = readFileSync(path.resolve(process.cwd(), file), 'utf8');
@@ -268,10 +268,10 @@ test('loop operations do not enable the loop or trust a client tenant', () => {
     assert.equal(source.includes('runReviewBoardPipeline'), false, file);
     assert.equal(source.includes(LIVE_REVIEW.slice(0, 16)), false, file);
   }
-  const ui = readFileSync(path.resolve(process.cwd(), 'src/app/(root)/jury/ui.tsx'), 'utf8');
+  const ui = readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/ui.tsx'), 'utf8');
   assert.equal(ui.includes('자동 Loop 중지'), true);
   assert.equal(ui.includes('자동화 정책 변경'), false);
-  const action = readFileSync(path.resolve(process.cwd(), 'src/app/(root)/jury/actions.ts'), 'utf8');
+  const action = readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/actions.ts'), 'utf8');
   const stop = action.slice(action.indexOf('export async function stopJuryAutoLoop'));
   assert.equal(stop.includes('clientTenantId: null'), true);
   assert.equal(stop.includes('persistAutoLoopActivation'), false);

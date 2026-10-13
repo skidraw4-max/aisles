@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { switchJuryOrganization } from '@/app/(root)/jury/organization/actions';
+import { switchJuryOrganization } from '@/app/(jury)/jury/organization/actions';
 import type { JuryOrganizationOption } from '@/lib/jury-product/organization-switch';
 import { juryHref } from '@/lib/jury-product/jury-url';
 import styles from './organization-switcher.module.css';

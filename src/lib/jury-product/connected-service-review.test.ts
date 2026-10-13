@@ -108,7 +108,7 @@ test('connected service source reuses the access, evidence, and projection bound
   assert.equal(source.includes('runReviewBoardPipeline'), false);
   assert.equal(source.includes("expectedDecision: 'ACCEPT'"), false);
   assert.equal(source.includes('GA4_PROPERTY_ID'), true);
-  const ui = readFileSync(path.resolve(process.cwd(), 'src/app/(root)/jury/service-onboarding-ui.tsx'), 'utf8');
+  const ui = readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/service-onboarding-ui.tsx'), 'utf8');
   assert.equal(ui.includes('Collect Evidence'), true);
   assert.equal(ui.includes('Run Review'), true);
   assert.equal(ui.includes('formatMeasuredValue'), true);
@@ -117,7 +117,7 @@ test('connected service source reuses the access, evidence, and projection bound
   for (const label of ['Run Agent', 'Run Change Gate', 'Run Re-review', 'Auto Fix', 'Run Loop']) {
     assert.equal(ui.includes(label), false, label);
   }
-  const actions = readFileSync(path.resolve(process.cwd(), 'src/app/(root)/jury/actions.ts'), 'utf8');
+  const actions = readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/actions.ts'), 'utf8');
   const fn = actions.slice(actions.indexOf('export async function collectConnectedServiceEvidence'));
   assert.equal(fn.includes('getJuryActor()'), true);
   assert.equal(fn.includes('clientTenantId: null'), true);
@@ -128,7 +128,7 @@ test('connected service source reuses the access, evidence, and projection bound
   for (const key of ['tenantId', 'connectionId', 'scopeId', 'decision']) {
     assert.equal(fn.includes(`formData.get('${key}')`), false, key);
   }
-  assert.equal(existsSync(path.resolve(process.cwd(), 'src/app/(root)/jury/services/[connectionId]/page.tsx')), true);
+  assert.equal(existsSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/services/[connectionId]/page.tsx')), true);
 });
 
 test('owner collects mock evidence and runs the existing Jury Core once', { timeout: 540_000 }, async () => {

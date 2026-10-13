@@ -65,13 +65,13 @@ test('product re-review reuses the existing boundary and stops at the new result
   ]) {
     assert.equal(source.includes(token), false, token);
   }
-  const ui = readFileSync(path.resolve(process.cwd(), 'src/app/(root)/jury/ui.tsx'), 'utf8');
+  const ui = readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/ui.tsx'), 'utf8');
   const body = ui.slice(ui.indexOf('export function ImprovementsBody'), ui.indexOf('export function ImprovementTraceBody'));
   assert.equal(body.includes("gates[task.agentExecutionId] === 'APPROVED'"), true);
   assert.equal(body.includes('Run Re-review'), true);
   assert.equal(body.includes('New review'), true);
   assert.equal(body.includes('Original review'), true);
-  const actions = readFileSync(path.resolve(process.cwd(), 'src/app/(root)/jury/actions.ts'), 'utf8');
+  const actions = readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/actions.ts'), 'utf8');
   const fn = actions.slice(
     actions.indexOf('export async function runProductChangeGateReReview'),
     actions.indexOf('export async function runHumanReReview'),

@@ -75,16 +75,16 @@ test('external and malformed redirect targets stay on /jury', () => {
 
 test('legacy Jury pages remain mounted', () => {
   for (const file of [
-    'src/app/(root)/jury/page.tsx',
-    'src/app/(root)/jury/login/page.tsx',
-    'src/app/(root)/jury/signup/page.tsx',
-    'src/app/(root)/jury/organization/create/page.tsx',
-    'src/app/(root)/jury/reviews/page.tsx',
-    'src/app/(root)/jury/services/page.tsx',
-    'src/app/(root)/jury/evidence/page.tsx',
-    'src/app/(root)/jury/improvements/page.tsx',
-    'src/app/(root)/jury/audit/page.tsx',
-    'src/app/(root)/jury/settings/page.tsx',
+    'src/app/(jury)/jury/page.tsx',
+    'src/app/(jury)/jury/login/page.tsx',
+    'src/app/(jury)/jury/signup/page.tsx',
+    'src/app/(jury)/jury/organization/create/page.tsx',
+    'src/app/(jury)/jury/reviews/page.tsx',
+    'src/app/(jury)/jury/services/page.tsx',
+    'src/app/(jury)/jury/evidence/page.tsx',
+    'src/app/(jury)/jury/improvements/page.tsx',
+    'src/app/(jury)/jury/audit/page.tsx',
+    'src/app/(jury)/jury/settings/page.tsx',
   ]) {
     assert.equal(existsSync(path.resolve(process.cwd(), file)), true, file);
   }

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { createJuryInvitation } from '@/app/(root)/jury/organization/invitations/actions';
+import { createJuryInvitation } from '@/app/(jury)/jury/organization/invitations/actions';
 import styles from './jury-entry.module.css';
 import listStyles from './invitation.module.css';
 

@@ -169,8 +169,8 @@ test('console intake stores one declared metric and ignores a second submit', { 
 test('console intake does not call the host adapter or put tenant in the form', () => {
   const files = [
     'src/lib/jury-product/console-evidence-intake.ts',
-    'src/app/(root)/jury/actions.ts',
-    'src/app/(root)/jury/ui.tsx',
+    'src/app/(jury)/jury/actions.ts',
+    'src/app/(jury)/jury/ui.tsx',
   ];
   for (const file of files) {
     const source = readFileSync(path.resolve(process.cwd(), file), 'utf8');
@@ -182,14 +182,14 @@ test('console intake does not call the host adapter or put tenant in the form', 
     assert.equal(source.includes('evidence-builder'), false, file);
     assert.equal(source.includes('aisle-adapter'), false, file);
   }
-  const action = readFileSync(path.resolve(process.cwd(), 'src/app/(root)/jury/actions.ts'), 'utf8');
+  const action = readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/actions.ts'), 'utf8');
   const submitAction = action.slice(action.indexOf('export async function submitTenantEvidenceIntake'));
   assert.equal(submitAction.includes('persistTenantEvidenceIntake'), true);
   assert.equal(submitAction.includes('clientTenantId: null'), true);
   assert.equal(submitAction.includes('getJuryActor()'), true);
   assert.equal(submitAction.includes("formData.get('tenantId')"), false);
   assert.equal(submitAction.includes('error.message'), false);
-  const ui = readFileSync(path.resolve(process.cwd(), 'src/app/(root)/jury/ui.tsx'), 'utf8');
+  const ui = readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/ui.tsx'), 'utf8');
   const body = ui.slice(ui.indexOf('export function EvidenceBody'), ui.indexOf('export function ImprovementsBody'));
   assert.equal(body.includes('tenantId'), false);
   assert.equal(body.includes('Create Evidence'), true);

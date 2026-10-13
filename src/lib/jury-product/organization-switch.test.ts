@@ -77,9 +77,9 @@ test('switching changes the actor tenant and does not carry the previous role', 
 });
 
 test('the console switcher posts to the server and links to organization creation', () => {
-  const chrome = readFileSync(new URL('../../app/(root)/jury/ui.tsx', import.meta.url), 'utf8');
+  const chrome = readFileSync(new URL('../../app/(jury)/jury/ui.tsx', import.meta.url), 'utf8');
   const switcher = readFileSync(new URL('../../components/jury/OrganizationSwitcher.tsx', import.meta.url), 'utf8');
-  const action = readFileSync(new URL('../../app/(root)/jury/organization/actions.ts', import.meta.url), 'utf8');
+  const action = readFileSync(new URL('../../app/(jury)/jury/organization/actions.ts', import.meta.url), 'utf8');
   assert.match(chrome, /OrganizationSwitcher/);
   assert.match(chrome, /listOrganizationsForUser/);
   assert.match(switcher, /juryHref\('\/organization\/create'\)/);

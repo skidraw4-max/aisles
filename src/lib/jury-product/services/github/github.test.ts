@@ -461,10 +461,10 @@ test('github source does not expose credentials or write operations', () => {
   ];
   const source = files.map((file) => readFileSync(new URL(`./${file}`, import.meta.url), 'utf8')).join('\n');
   const ui = [
-    '../../../../app/(root)/jury/github-actions.ts',
-    '../../../../app/(root)/jury/services/github/page.tsx',
-    '../../../../app/(root)/jury/services/github/callback/route.ts',
-    '../../../../app/(root)/jury/services/github/github-panel.tsx',
+    '../../../../app/(jury)/jury/github-actions.ts',
+    '../../../../app/(jury)/jury/services/github/page.tsx',
+    '../../../../app/(jury)/jury/services/github/callback/route.ts',
+    '../../../../app/(jury)/jury/services/github/github-panel.tsx',
   ].map((file) => readFileSync(new URL(file, import.meta.url), 'utf8')).join('\n');
   assert.equal(source.includes('localStorage'), false);
   assert.equal(source.includes('document.cookie'), false);

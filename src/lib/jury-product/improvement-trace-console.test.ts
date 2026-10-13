@@ -94,7 +94,7 @@ test('the console text drops secret values and the read route does not write', (
     assert.equal(body.includes(secret), false, secret);
   }
   for (const file of [
-    'src/app/(root)/jury/improvements/[taskId]/page.tsx',
+    'src/app/(jury)/jury/improvements/[taskId]/page.tsx',
     'src/app/api/jury/improvements/[taskId]/route.ts',
     'src/lib/jury-product/improvement-trace-console.ts',
   ]) {

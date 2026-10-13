@@ -294,7 +294,7 @@ test('human improvement bridge stays off host collectors and agent execution', (
   assert.equal(source.includes('input.reviewId'), true);
   assert.equal(source.includes('input.decision'), false);
   assert.equal(source.includes("action: 'improvement.write'"), true);
-  const actions = readFileSync(path.resolve(process.cwd(), 'src/app/(root)/jury/actions.ts'), 'utf8');
+  const actions = readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/actions.ts'), 'utf8');
   const fn = actions.slice(actions.indexOf('export async function createHumanImprovementTask'), actions.indexOf('async function tenantReviewCore'));
   assert.equal(fn.includes("formData.get('reviewId')"), true);
   assert.equal(fn.includes("formData.get('tenantId')"), false);
@@ -302,7 +302,7 @@ test('human improvement bridge stays off host collectors and agent execution', (
   assert.equal(fn.includes("formData.get('action')"), false);
   assert.equal(fn.includes('reviewRequestId'), false);
   assert.equal(fn.includes('humanDecisionId'), false);
-  const ui = readFileSync(path.resolve(process.cwd(), 'src/app/(root)/jury/ui.tsx'), 'utf8');
+  const ui = readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/ui.tsx'), 'utf8');
   const body = ui.slice(ui.indexOf('export function ReviewDetailBody'), ui.indexOf('const INTAKE_AVAILABILITY'));
   assert.equal(body.includes('Create Improvement Task'), true);
   assert.equal(body.includes('Improvement Task Created'), true);

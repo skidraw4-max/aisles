@@ -14,7 +14,7 @@ test('unauthenticated jury entry is the landing and every other actor stays on t
 test('jury landing and login stay on the jury auth entry and the existing signup link', () => {
   const landing = readFileSync(new URL('./JuryLanding.tsx', import.meta.url), 'utf8');
   const login = readFileSync(new URL('./JuryLoginForm.tsx', import.meta.url), 'utf8');
-  const loginPage = readFileSync(new URL('../../app/(root)/jury/login/page.tsx', import.meta.url), 'utf8');
+  const loginPage = readFileSync(new URL('../../app/(jury)/jury/login/page.tsx', import.meta.url), 'utf8');
   assert.match(landing, /AIsles Jury/);
   assert.match(landing, /by AIsles Studio/);
   assert.match(landing, /AI Services Under Review/);

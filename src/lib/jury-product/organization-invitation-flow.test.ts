@@ -384,10 +384,10 @@ test('invitation routes stay inside Jury and do not carry a tenant id', () => {
   assert.equal(jurySignupLink(`/jury/invitation/${token}`, null).startsWith('/jury/signup?next='), true);
   assert.equal(juryLoginHref('https://evil.example', null), '/jury/login');
   assert.equal(safeJuryNext('https://evil.example', null), '/jury');
-  const invitePage = readFileSync(new URL('../../app/(root)/jury/organization/invitations/page.tsx', import.meta.url), 'utf8');
-  const acceptPage = readFileSync(new URL('../../app/(root)/jury/invitation/[token]/page.tsx', import.meta.url), 'utf8');
-  const createAction = readFileSync(new URL('../../app/(root)/jury/organization/invitations/actions.ts', import.meta.url), 'utf8');
-  const acceptAction = readFileSync(new URL('../../app/(root)/jury/invitation/actions.ts', import.meta.url), 'utf8');
+  const invitePage = readFileSync(new URL('../../app/(jury)/jury/organization/invitations/page.tsx', import.meta.url), 'utf8');
+  const acceptPage = readFileSync(new URL('../../app/(jury)/jury/invitation/[token]/page.tsx', import.meta.url), 'utf8');
+  const createAction = readFileSync(new URL('../../app/(jury)/jury/organization/invitations/actions.ts', import.meta.url), 'utf8');
+  const acceptAction = readFileSync(new URL('../../app/(jury)/jury/invitation/actions.ts', import.meta.url), 'utf8');
   const form = readFileSync(new URL('../../components/jury/JuryInvitationForm.tsx', import.meta.url), 'utf8');
   const db = readFileSync(new URL('./jury-db.ts', import.meta.url), 'utf8');
   assert.match(invitePage, /JuryInvitationForm/);

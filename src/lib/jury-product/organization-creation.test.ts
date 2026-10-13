@@ -144,10 +144,10 @@ test('a membership failure rolls the planned tenant back with the transaction', 
 });
 
 test('the organization screen and action stay on the Jury URL boundary', () => {
-  const page = readFileSync(new URL('../../app/(root)/jury/organization/create/page.tsx', import.meta.url), 'utf8');
+  const page = readFileSync(new URL('../../app/(jury)/jury/organization/create/page.tsx', import.meta.url), 'utf8');
   const form = readFileSync(new URL('../../components/jury/JuryOrganizationForm.tsx', import.meta.url), 'utf8');
-  const action = readFileSync(new URL('../../app/(root)/jury/organization/actions.ts', import.meta.url), 'utf8');
-  const dashboard = readFileSync(new URL('../../app/(root)/jury/page.tsx', import.meta.url), 'utf8');
+  const action = readFileSync(new URL('../../app/(jury)/jury/organization/actions.ts', import.meta.url), 'utf8');
+  const dashboard = readFileSync(new URL('../../app/(jury)/jury/page.tsx', import.meta.url), 'utf8');
   assert.match(page, /Create your organization/);
   assert.match(page, /getJuryEntry/);
   assert.match(form, /juryHref\('\/'\)/);

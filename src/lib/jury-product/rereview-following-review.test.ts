@@ -115,13 +115,13 @@ test('following re-review reuses the existing change-gate review lifecycle', () 
   const reused = readFileSync(path.resolve(process.cwd(), 'src/lib/jury-product/rereview-second-review.ts'), 'utf8');
   assert.equal(reused.includes('persistChangeGateReReviewRequest'), true);
   assert.equal(reused.includes('persistChangeGateReReviewExecution'), true);
-  const actions = readFileSync(path.resolve(process.cwd(), 'src/app/(root)/jury/actions.ts'), 'utf8');
+  const actions = readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/actions.ts'), 'utf8');
   const fn = actions.slice(actions.indexOf('export async function runFollowingReReview'));
   assert.equal(fn.includes("formData.get('agentExecutionId')"), true);
   for (const key of ['tenantId', 'improvementTaskId', 'reviewResultId', 'humanDecisionId', 'changeGateResultId', 'provider', 'workspace', 'status', 'decision']) {
     assert.equal(fn.includes(`formData.get('${key}')`), false, key);
   }
-  const ui = readFileSync(path.resolve(process.cwd(), 'src/app/(root)/jury/ui.tsx'), 'utf8');
+  const ui = readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/ui.tsx'), 'utf8');
   const body = ui.slice(ui.indexOf('export function FollowingReReviewBody'));
   assert.equal(body.includes('Run Re-review'), true);
   assert.equal(body.includes('statusSummary'), true);

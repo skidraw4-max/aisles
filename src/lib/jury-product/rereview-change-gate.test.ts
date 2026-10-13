@@ -293,13 +293,13 @@ test('second change gate does not grow a new evaluator', () => {
   const human = readFileSync(path.resolve(process.cwd(), 'src/lib/jury-product/human-change-gate.ts'), 'utf8');
   assert.equal(human.includes('evaluateChangeGate'), true);
   assert.equal(human.includes('inspection: { files: [], present: [] }'), true);
-  const actions = readFileSync(path.resolve(process.cwd(), 'src/app/(root)/jury/actions.ts'), 'utf8');
+  const actions = readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/actions.ts'), 'utf8');
   const fn = actions.slice(actions.indexOf('export async function runReReviewChangeGate'));
   assert.equal(fn.includes("formData.get('agentExecutionId')"), true);
   for (const key of ['tenantId', 'provider', 'workspace', 'taskId', 'humanDecision', 'prompt', 'changedFiles', 'gatePolicy']) {
     assert.equal(fn.includes(`formData.get('${key}')`), false, key);
   }
-  const ui = readFileSync(path.resolve(process.cwd(), 'src/app/(root)/jury/ui.tsx'), 'utf8');
+  const ui = readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/ui.tsx'), 'utf8');
   const body = ui.slice(ui.indexOf('export function ReReviewChangeGateBody'), ui.indexOf('export function SecondReReviewBody'));
   assert.equal(body.includes('Run Change Gate'), true);
   assert.equal(body.includes('Change Gate: APPROVED'), true);
