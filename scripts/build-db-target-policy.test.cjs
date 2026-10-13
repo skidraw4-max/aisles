@@ -53,8 +53,8 @@ test('run-build.cjs: target check precedes decideMigrate, the migrate call and n
   const exit = at('if (!target.ok) {');
   assert.ok(exit < src.indexOf('process.exit(1);', exit));
   assert.ok(target < exit);
-  assert.ok(exit < at('decideMigrate(process.env)'));
-  assert.ok(exit < at(['migrate', 'dep' + 'loy'].map((w) => `'${w}'`).join(', ')));
+  assert.ok(exit < at("console.log('[build] migrate policy: BUILD_MIGRATE_DISABLED (skipped)');"));
+  assert.ok(at('if (!sb.ok) process.exit(1);') < at("console.log('[build] migrate policy: BUILD_MIGRATE_DISABLED (skipped)');"));
   assert.ok(exit < at("'next', 'build'"));
   assert.ok(exit < at('check-no-prisma-in-client'));
   assert.equal(src.split('decideDbTarget(').length - 1, 1);
