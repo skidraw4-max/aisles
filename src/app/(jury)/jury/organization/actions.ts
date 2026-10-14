@@ -7,6 +7,12 @@ import { activeOrganizationCookie } from '@/lib/jury-product/active-organization
 import { juryEmailVerification } from '@/lib/jury-product/jury-email-gate';
 import { isJuryStoreUnavailable, createOwnedOrganization, listMembershipsForUser } from '@/lib/jury-product/jury-db';
 import { normalizeOrganizationName, organizationCreationMessage } from '@/lib/jury-product/organization-creation';
+import {
+  logOrganizationCreateFailure,
+  organizationCreateDecisionDiagnostic,
+  organizationCreateErrorDiagnostic,
+  type OrganizationCreateStage,
+} from '@/lib/jury-product/organization-create-diagnostic';
 import { planOrganizationSwitch } from '@/lib/jury-product/organization-switch';
 import { juryHref } from '@/lib/jury-product/jury-url';
 import { createClient } from '@/lib/supabase/server';
@@ -15,6 +21,7 @@ import { redirect } from 'next/navigation';
 export async function createJuryOrganization(formData: FormData): Promise<{ ok: true } | { ok: false; message: string }> {
   const name = normalizeOrganizationName(String(formData.get('organizationName') ?? formData.get('tenantName') ?? ''));
   if (!name.ok) return { ok: false, message: organizationCreationMessage(name.reason) };
+  let stage: OrganizationCreateStage = 'auth';
   try {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
@@ -24,16 +31,21 @@ export async function createJuryOrganization(formData: FormData): Promise<{ ok: 
     if (juryEmailVerification(user) !== 'verified') {
       return { ok: false, message: organizationCreationMessage('EMAIL_UNVERIFIED') };
     }
+    stage = 'ensure_user';
     await ensurePrismaUser(user);
+    stage = 'create_org';
     const decision = await createOwnedOrganization({ userId: user.id, tenantName: name.name });
     if (!decision.ok || decision.kind !== 'CREATE_TENANT') {
+      logOrganizationCreateFailure(organizationCreateDecisionDiagnostic(decision.ok ? null : decision.reason));
       return { ok: false, message: organizationCreationMessage('FAILED') };
     }
+    stage = 'cookie';
     const cookie = activeOrganizationCookie(decision.tenantId);
     const store = await cookies();
     store.set(cookie.name, cookie.value, cookie.options);
     return { ok: true };
-  } catch {
+  } catch (error) {
+    logOrganizationCreateFailure(organizationCreateErrorDiagnostic(stage, error));
     return { ok: false, message: organizationCreationMessage('FAILED') };
   }
 }
