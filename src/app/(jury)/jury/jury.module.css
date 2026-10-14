@@ -41,6 +41,7 @@
 }
 
 .panel {
+  min-width: 0;
   border: 1px solid #2c3644;
   border-radius: 10px;
   padding: 1rem 1.1rem;
@@ -67,6 +68,7 @@
   display: flex;
   justify-content: space-between;
   gap: 1rem;
+  min-width: 0;
   padding: 0.35rem 0;
   border-bottom: 1px solid #243041;
 }
@@ -173,6 +175,8 @@ a.inline {
 
 .table {
   width: 100%;
+  max-width: 100%;
+  table-layout: fixed;
   border-collapse: collapse;
 }
 
@@ -182,11 +186,44 @@ a.inline {
   padding: 0.45rem 0.4rem;
   border-bottom: 1px solid #243041;
   vertical-align: top;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .table th {
   color: #b7c0cc;
   font-weight: 600;
+}
+
+.activityTable th:nth-child(1),
+.activityTable td:nth-child(1) {
+  width: 18%;
+}
+
+.activityTable th:nth-child(2),
+.activityTable td:nth-child(2) {
+  width: 17%;
+}
+
+.activityTable th:nth-child(3),
+.activityTable td:nth-child(3) {
+  width: 25%;
+}
+
+.activityTable th:nth-child(4),
+.activityTable td:nth-child(4) {
+  width: 28%;
+}
+
+.activityTable th:nth-child(5),
+.activityTable td:nth-child(5) {
+  width: 12%;
+}
+
+.identifier {
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .skeleton {
@@ -226,7 +263,11 @@ a.inline {
   }
 
   .table {
-    display: block;
-    overflow-x: auto;
+    font-size: 0.9rem;
+  }
+
+  .activityTable th,
+  .activityTable td {
+    padding: 0.4rem 0.3rem;
   }
 }

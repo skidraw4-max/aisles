@@ -34,6 +34,11 @@ const GATE_COPY: Record<Exclude<JuryActor, { ok: true }>['reason'], string> = {
   STORE_UNAVAILABLE: 'Jury 저장소가 아직 준비되지 않았습니다. migration을 적용하기 전에는 tenant 데이터를 열지 않습니다.',
 };
 
+function compactIdentifier(value: string, start = 10, end = 8): string {
+  if (value.length <= start + end + 1) return value;
+  return `${value.slice(0, start)}…${value.slice(-end)}`;
+}
+
 export async function JuryChrome({
   actor,
   notice,
@@ -267,7 +272,7 @@ export function DashboardBody({ view }: { view: JuryConsoleView }) {
       <section className={styles.panel}>
         <h2>Recent Activity</h2>
         {board.activity.length === 0 ? <p>{SHELL_EMPTY.audit}</p> : (
-          <table className={styles.table}>
+          <table className={`${styles.table} ${styles.activityTable}`}>
             <thead>
               <tr>
                 <th>timestamp</th>
@@ -281,9 +286,9 @@ export function DashboardBody({ view }: { view: JuryConsoleView }) {
               {board.activity.map((event) => (
                 <tr key={event.id}>
                   <td>{event.timestamp}</td>
-                  <td>{event.actor}</td>
+                  <td className={styles.identifier} title={event.actor}>{compactIdentifier(event.actor)}</td>
                   <td>{event.action}</td>
-                  <td>{event.resource}</td>
+                  <td className={styles.identifier} title={event.resource}>{compactIdentifier(event.resource)}</td>
                   <td>{event.status}</td>
                 </tr>
               ))}
@@ -1017,9 +1022,9 @@ export function AuditBody({ view }: { view: JuryConsoleView }) {
             {events.map((event) => (
               <tr key={event.id}>
                 <td>{event.timestamp}</td>
-                <td>{event.actor}</td>
+                <td className={styles.identifier} title={event.actor}>{compactIdentifier(event.actor)}</td>
                 <td>{event.action}</td>
-                <td>{event.resource}</td>
+                <td className={styles.identifier} title={event.resource}>{compactIdentifier(event.resource)}</td>
                 <td>{event.status}</td>
               </tr>
             ))}
