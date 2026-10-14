@@ -34,6 +34,7 @@ test('excluded paths are never rewritten (no double prefix, auth/static/metadata
 
 test('middleware: /?code reset redirect runs before the jury rewrite; hub hosts unchanged', () => {
   const mw = readFileSync(path.join(repo, 'middleware.ts'), 'utf8').replace(/\r\n/g, '\n');
+  const nextConfig = readFileSync(path.join(repo, 'next.config.ts'), 'utf8').replace(/\r\n/g, '\n');
   const code = mw.indexOf("u.pathname = '/auth/reset-callback';");
   const rewrite = mw.indexOf('if (isJuryHost(requestHostname(request)) && shouldRewriteToJury(pathname)) {');
   const auth = mw.indexOf('function needsAuth');
@@ -43,4 +44,7 @@ test('middleware: /?code reset redirect runs before the jury rewrite; hub hosts 
   assert.match(mw, /const host = forwardedHost \|\| request\.headers\.get\('host'\) \|\| request\.nextUrl\.hostname;/);
   assert.match(mw, /matcher: \['\/\(\(\?!_next\/\|api\/\)\.\*\)'\]/);
   assert.equal((mw.match(/NextResponse\.rewrite/g) ?? []).length, 1);
+  assert.match(nextConfig, /source: '\/'[\s\S]*?value: 'jury\.aisleshub\.com'[\s\S]*?destination: '\/jury'/);
+  assert.match(nextConfig, /source: '\/:path\(\(\?!_next/);
+  assert.match(nextConfig, /destination: '\/jury\/:path'/);
 });
