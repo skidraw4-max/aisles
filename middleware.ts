@@ -2,6 +2,7 @@ import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 import { isCronRateLimited } from '@/lib/cron-rate-limit';
 import { shouldAllowSearchIndexing } from '@/lib/seo-robots';
+import { isJuryHost, juryRewritePath, shouldRewriteToJury } from '@/lib/jury-product/jury-host';
 
 /**
  * NextResponse에 원본 요청 헤더를 넘겨 RSC/정적 자산 연계가 깨지지 않게 함 (Next 15 권장 패턴).
@@ -48,6 +49,13 @@ export async function middleware(request: NextRequest) {
     const u = request.nextUrl.clone();
     u.pathname = '/auth/reset-callback';
     return applyIndexingPolicy(NextResponse.redirect(u));
+  }
+
+  // Jury host: serve Jury routes at the root (jury.aisleshub.com/x -> /jury/x). Hub hosts unchanged.
+  if (isJuryHost(request.nextUrl.hostname) && shouldRewriteToJury(pathname)) {
+    const target = request.nextUrl.clone();
+    target.pathname = juryRewritePath(pathname);
+    return applyIndexingPolicy(NextResponse.rewrite(target, { request: { headers: request.headers } }));
   }
 
   /** `/upload` · `/games/[slug]/play` 만 세션 검사 (그 외는 Supabase 왕복 생략) */

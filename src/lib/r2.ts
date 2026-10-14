@@ -1,5 +1,7 @@
+import 'server-only';
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { createClient } from '@supabase/supabase-js';
+import { checkSupabaseTarget } from '@/lib/jury-product/supabase-target-guard.cjs';
 
 type R2Config = {
   endpoint: string;
@@ -78,6 +80,9 @@ async function uploadViaSupabaseStorage(
   contentType: string,
   cfg: SupabaseStorageConfig
 ): Promise<{ publicUrl: string } | { error: string }> {
+  // Preview only: fail closed with a fixed code before the service-role client exists.
+  const target = checkSupabaseTarget(process.env, { checkAnonKey: false, requireServiceKey: true });
+  if (!target.ok) return { error: target.code };
   const supabase = createClient(cfg.url, cfg.serviceKey, {
     auth: { autoRefreshToken: false, persistSession: false },
   });

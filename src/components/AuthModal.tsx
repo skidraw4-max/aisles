@@ -3,8 +3,11 @@
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { signInWithOAuth } from '@/lib/capacitor-oauth';
-import { getPublicSiteUrl } from '@/lib/site-url';
+import { getAuthCallbackSiteUrl, getPublicSiteUrl } from '@/lib/site-url';
+import { isSafeRelativePath } from '@/lib/auth/auth-redirect';
+import { withEmailFlowMarker } from '@/lib/auth/auth-callback-error';
 import { syncPrismaUserWithAuth } from '@/lib/sync-prisma-user';
+import { ACCOUNT_EMAIL_CONFLICT_MESSAGE, runProfileSync } from '@/lib/auth/account-email-conflict';
 import { GoogleIcon } from '@/components/GoogleIcon';
 import styles from './AuthModal.module.css';
 
@@ -65,14 +68,14 @@ export function AuthModal({
 
   const resetFeedback = () => setMessage(null);
 
-  function syncProfileInBackground(accessToken: string) {
-    // 로그인/회원가입 전환 속도를 위해 프로필 동기화는 비동기 후행 처리
-    void syncPrismaUserWithAuth(accessToken).catch((err: unknown) => {
-      console.warn(
-        '[auth] profile sync deferred failed:',
-        err instanceof Error ? err.message : String(err)
-      );
-    });
+  /** Profile sync: conflict => fixed message, stay in the modal (session is kept). Other failures keep the previous non-blocking behavior. */
+  async function syncProfileOrReportConflict(accessToken: string): Promise<boolean> {
+    const outcome = await runProfileSync(syncPrismaUserWithAuth, accessToken);
+    if (outcome === 'conflict') {
+      setMessage({ type: 'err', text: ACCOUNT_EMAIL_CONFLICT_MESSAGE });
+      return false;
+    }
+    return true;
   }
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -84,7 +87,7 @@ export function AuthModal({
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
       if (!data.session) throw new Error('세션을 받지 못했습니다.');
-      syncProfileInBackground(data.session.access_token);
+      if (!(await syncProfileOrReportConflict(data.session.access_token))) return;
       onAuthed();
       onClose();
     } catch (err: unknown) {
@@ -130,12 +133,12 @@ export function AuthModal({
           password,
           options: {
             data: { username: username.trim() },
-            ...(site ? { emailRedirectTo: `${site}/auth/callback` } : {}),
+            ...(site ? { emailRedirectTo: withEmailFlowMarker(`${site}/auth/callback`) } : {}),
           },
         });
         if (error) throw error;
         if (data.session) {
-          syncProfileInBackground(data.session.access_token);
+          if (!(await syncProfileOrReportConflict(data.session.access_token))) return;
           onAuthed();
           onClose();
           return;
@@ -158,7 +161,7 @@ export function AuthModal({
       });
       if (error) throw error;
       if (!data.session) throw new Error('세션을 받지 못했습니다. 로그인 화면에서 다시 시도해 주세요.');
-      syncProfileInBackground(data.session.access_token);
+      if (!(await syncProfileOrReportConflict(data.session.access_token))) return;
       onAuthed();
       onClose();
     } catch (err: unknown) {
@@ -170,11 +173,11 @@ export function AuthModal({
 
   /** Supabase `resetPasswordForEmail`: 입력한 이메일로만 복구 메일 발송(존재 여부는 응답에 드러내지 않는 것이 권장). */
   function buildOAuthCallbackUrl(): string {
-    const base = getPublicSiteUrl().replace(/\/$/, '');
+    const base = getAuthCallbackSiteUrl().replace(/\/$/, '');
     const url = new URL('/auth/callback', `${base}/`);
     if (typeof window !== 'undefined' && window.location.pathname === '/login') {
       const next = new URLSearchParams(window.location.search).get('next');
-      if (next?.startsWith('/') && !next.startsWith('//')) {
+      if (isSafeRelativePath(next)) {
         url.searchParams.set('next', next);
       }
     }

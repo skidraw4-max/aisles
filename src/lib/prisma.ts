@@ -1,6 +1,8 @@
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import pg from 'pg';
+import { guardTestDatabase } from '@/lib/jury-product/preview-db-guard';
+import { createGuardedPool } from '@/lib/db-pool-factory';
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
@@ -27,13 +29,9 @@ function resolvePoolMax(): number {
 }
 
 function createPool(connectionString: string): pg.Pool {
-  return new pg.Pool({
-    connectionString,
-    max: resolvePoolMax(),
-    idleTimeoutMillis: 20_000,
-    connectionTimeoutMillis: 8_000,
-    allowExitOnIdle: true,
-  });
+  // Preview mode (VERCEL_ENV=preview or JURY_PREVIEW_DB=1): DB target ref guard + pinned TLS
+  // run before the Pool exists; failure throws a fixed status and no pool is created.
+  return createGuardedPool(connectionString, process.env, { max: resolvePoolMax() });
 }
 
 function createPrisma(): PrismaClient {
@@ -41,6 +39,7 @@ function createPrisma(): PrismaClient {
   if (!connectionString) {
     throw new Error('DATABASE_URL is not set');
   }
+  guardTestDatabase(process.env);
   const pool = globalForPrisma.pool ?? createPool(connectionString);
   if (!globalForPrisma.pool) {
     globalForPrisma.pool = pool;

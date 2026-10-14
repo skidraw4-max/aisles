@@ -24,7 +24,7 @@ const IS_WIN = process.platform === 'win32';
 const TOKEN = 'I_UNDERSTAND_PRODUCTION_MIGRATE';
 const FAKE_DIRECT = 'postgresql://fakeuser:FakePw0rdSentinel@127.0.0.1:1/x';
 const MARKER = 'STUB_BINARY_MARKER';
-// Built at runtime so the static scan in build-migrate-policy.test.cjs (no script but run-build may name the command) stays green.
+// Built at runtime so the static scan in build-migrate-policy.test.cjs (no script, including run-build, may name the command) stays green.
 const MIGRATE_CMD = ['npx', 'prisma', 'migrate', 'de' + 'ploy'].join(' ');
 
 let tmp;
@@ -105,11 +105,11 @@ after(() => {
   if (tmp) fs.rmSync(tmp, { recursive: true, force: true });
 });
 
-test('production without token: PRODUCTION_MIGRATE_NOT_ALLOWED, migrate not spawned, next build runs', () => {
+test('production without token: BUILD_MIGRATE_DISABLED, migrate not spawned, next build runs', () => {
   const r = runBuild(PROD_ENV);
   assert.equal(r.status, 0);
   assert.match(r.out, /\[build\] db target: DB_TARGET_SKIPPED_PRODUCTION/);
-  assert.match(r.out, /\[build\] migrate policy: PRODUCTION_MIGRATE_NOT_ALLOWED \(skipped\)/);
+  assert.match(r.out, /\[build\] migrate policy: BUILD_MIGRATE_DISABLED \(skipped\)/);
   assert.doesNotMatch(r.out, /supabase target/);
   assert.ok(!r.log.some((l) => /prisma\s+migrate/.test(l)));
   assert.deepEqual(r.log, TAIL);
@@ -120,34 +120,36 @@ test('production with wrong token values: skipped, migrate not spawned', () => {
   for (const v of ['1', 'true', ` ${TOKEN}`, `${TOKEN} `, TOKEN.toLowerCase()]) {
     const r = runBuild({ ...PROD_ENV, JURY_ALLOW_PROD_MIGRATE: v });
     assert.equal(r.status, 0);
-    assert.match(r.out, /migrate policy: PRODUCTION_MIGRATE_NOT_ALLOWED \(skipped\)/);
+    assert.match(r.out, /migrate policy: BUILD_MIGRATE_DISABLED \(skipped\)/);
     assert.deepEqual(r.log, TAIL);
     assertNoSecrets(r.out);
   }
 });
 
-test('production JURY_SKIP_MIGRATIONS=1 with token: OPT_OUT, migrate not spawned', () => {
+test('production JURY_SKIP_MIGRATIONS=1 with token: BUILD_MIGRATE_DISABLED, migrate not spawned', () => {
   const r = runBuild({ ...PROD_ENV, JURY_ALLOW_PROD_MIGRATE: TOKEN, JURY_SKIP_MIGRATIONS: '1' });
   assert.equal(r.status, 0);
-  assert.match(r.out, /migrate policy: OPT_OUT \(skipped\)/);
+  assert.match(r.out, /migrate policy: BUILD_MIGRATE_DISABLED \(skipped\)/);
   assert.deepEqual(r.log, TAIL);
   assertNoSecrets(r.out);
 });
 
-test('production with exact token: the migrate command is invoked (stub only) before the rest', () => {
+test('production with exact token: migrate not spawned, only the tail steps run', () => {
   const r = runBuild({ ...PROD_ENV, JURY_ALLOW_PROD_MIGRATE: TOKEN });
   assert.equal(r.status, 0);
-  assert.match(r.out, /migrate policy: PRODUCTION_MIGRATE\n/);
-  assert.deepEqual(r.log, [MIGRATE_CMD, ...TAIL]);
+  assert.match(r.out, /\[build\] migrate policy: BUILD_MIGRATE_DISABLED \(skipped\)/);
+  assert.ok(!r.log.includes(MIGRATE_CMD));
+  assert.ok(!r.log.some((l) => /prisma\s+migrate/.test(l)));
+  assert.deepEqual(r.log, TAIL);
   assertNoSecrets(r.out);
 });
 
-test('preview with valid fake preview targets: NON_PRODUCTION_SKIP, migrate not spawned', () => {
+test('preview with valid fake preview targets: BUILD_MIGRATE_DISABLED, migrate not spawned', () => {
   const r = runBuild(PREVIEW_OK);
   assert.equal(r.status, 0);
   assert.match(r.out, /\[build\] db target: DB_TARGET_OK/);
   assert.match(r.out, /\[build\] supabase target: SUPABASE_TARGET_OK/);
-  assert.match(r.out, /migrate policy: NON_PRODUCTION_SKIP \(skipped\)/);
+  assert.match(r.out, /migrate policy: BUILD_MIGRATE_DISABLED \(skipped\)/);
   assert.deepEqual(r.log, TAIL);
   assertNoSecrets(r.out);
 });
@@ -161,11 +163,11 @@ test('preview with production DB ref: DB target block exits 1, nothing spawned',
   assertNoSecrets(r.out);
 });
 
-test('local (no VERCEL) with token: LOCAL_SKIP, migrate not spawned', () => {
+test('local (no VERCEL) with token: BUILD_MIGRATE_DISABLED, migrate not spawned', () => {
   const r = runBuild({ DIRECT_URL: FAKE_DIRECT, JURY_ALLOW_PROD_MIGRATE: TOKEN });
   assert.equal(r.status, 0);
   assert.match(r.out, /\[build\] db target: DB_TARGET_SKIPPED_LOCAL/);
-  assert.match(r.out, /migrate policy: LOCAL_SKIP \(skipped\)/);
+  assert.match(r.out, /migrate policy: BUILD_MIGRATE_DISABLED \(skipped\)/);
   assert.deepEqual(r.log, TAIL);
   assertNoSecrets(r.out);
 });

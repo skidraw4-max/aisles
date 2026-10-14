@@ -5,6 +5,7 @@ import {
   buildPasswordRecoveryPageUrlWithToken,
   getPasswordRecoveryRedirectToForServer,
 } from '@/lib/site-url';
+import { requestUrlOrigin } from '@/lib/auth/auth-redirect';
 import { NextResponse } from 'next/server';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -38,7 +39,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: '서버 설정 오류입니다.' }, { status: 503 });
     }
 
-    let redirectTo = getPasswordRecoveryRedirectToForServer();
+    // Request origin is only used when it passes the auth origin allowlist (else canonical).
+    const requestOrigin = requestUrlOrigin(request.url);
+    let redirectTo = getPasswordRecoveryRedirectToForServer(requestOrigin);
 
     let prismaUser: { id: string; email: string } | null = null;
     try {
@@ -62,7 +65,7 @@ export async function POST(request: Request) {
             expiresAt,
           },
         });
-        redirectTo = buildPasswordRecoveryPageUrlWithToken(token);
+        redirectTo = buildPasswordRecoveryPageUrlWithToken(token, requestOrigin);
       } catch (tokenErr) {
         console.error(
           '[api/auth/forgot-password] PasswordResetToken 저장 실패(마이그레이션·DB 확인). reset-callback URL로 메일만 발송합니다:',
