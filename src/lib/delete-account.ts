@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { createAdminClient, hasServiceRoleKey } from '@/lib/supabase/admin';
+import { deleteUserJuryRecords } from './jury-account-deletion';
 
 export class AccountDeletionError extends Error {
   constructor(
@@ -29,6 +30,7 @@ export async function deleteUserAccount(userId: string): Promise<void> {
   }
 
   await prisma.$transaction(async (tx) => {
+    await deleteUserJuryRecords(tx, userId);
     await tx.post.deleteMany({ where: { authorId: userId } });
     await tx.user.delete({ where: { id: userId } });
   });
