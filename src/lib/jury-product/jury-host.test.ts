@@ -35,10 +35,12 @@ test('excluded paths are never rewritten (no double prefix, auth/static/metadata
 test('middleware: /?code reset redirect runs before the jury rewrite; hub hosts unchanged', () => {
   const mw = readFileSync(path.join(repo, 'middleware.ts'), 'utf8').replace(/\r\n/g, '\n');
   const code = mw.indexOf("u.pathname = '/auth/reset-callback';");
-  const rewrite = mw.indexOf('if (isJuryHost(request.nextUrl.hostname) && shouldRewriteToJury(pathname)) {');
+  const rewrite = mw.indexOf('if (isJuryHost(requestHostname(request)) && shouldRewriteToJury(pathname)) {');
   const auth = mw.indexOf('function needsAuth');
   assert.ok(code > 0 && rewrite > code && auth > rewrite);
   assert.match(mw, /return applyIndexingPolicy\(NextResponse\.rewrite\(target, \{ request: \{ headers: request\.headers \} \}\)\);/);
+  assert.match(mw, /const forwardedHost = request\.headers\.get\('x-forwarded-host'\)\?\.split\('\,'\)\[0\]\?\.trim\(\);/);
+  assert.match(mw, /const host = forwardedHost \|\| request\.headers\.get\('host'\) \|\| request\.nextUrl\.hostname;/);
   assert.match(mw, /matcher: \['\/\(\(\?!_next\/\|api\/\)\.\*\)'\]/);
   assert.equal((mw.match(/NextResponse\.rewrite/g) ?? []).length, 1);
 });
