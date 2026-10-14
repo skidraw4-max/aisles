@@ -6,6 +6,8 @@
 
 .frame {
   width: min(100%, 40rem);
+  margin-inline: auto;
+  text-align: center;
 }
 
 .brand {
@@ -33,6 +35,7 @@
 .message {
   margin: 0.75rem 0 0;
   max-width: 18ch;
+  margin-inline: auto;
   font-size: clamp(1.75rem, 4vw, 2.5rem);
   font-weight: 560;
   letter-spacing: -0.03em;
@@ -44,6 +47,7 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 0.45rem 0.55rem;
+  justify-content: center;
   margin: 1.5rem 0 0;
   padding: 0;
   list-style: none;
@@ -87,6 +91,7 @@
 .status {
   display: flex;
   flex-wrap: wrap;
+  justify-content: center;
   gap: 0.75rem 1rem;
   margin: 1rem 0 0;
   padding: 0;
@@ -112,6 +117,7 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  justify-content: center;
   gap: 0.85rem 1.25rem;
   margin-top: 2rem;
 }
@@ -164,7 +170,7 @@
   display: grid;
   gap: 0.85rem;
   width: min(100%, 24rem);
-  margin-top: 1.5rem;
+  margin: 1.5rem auto 0;
 }
 
 .field {
@@ -172,6 +178,7 @@
   gap: 0.35rem;
   color: #8ea0b8;
   font-size: 0.8125rem;
+  text-align: left;
 }
 
 .field input {
@@ -217,7 +224,7 @@
 }
 
 .copy {
-  margin: 1rem 0 0;
+  margin: 1rem auto 0;
   max-width: 36rem;
   color: #c5d4e8;
   font-size: 0.9375rem;

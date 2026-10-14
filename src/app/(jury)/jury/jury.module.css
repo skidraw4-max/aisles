@@ -7,6 +7,7 @@
 
 .header {
   margin-bottom: 1rem;
+  text-align: center;
 }
 
 .title {
@@ -23,6 +24,7 @@
 .nav {
   display: flex;
   flex-wrap: wrap;
+  justify-content: center;
   gap: 0.4rem 0.75rem;
   margin: 1rem 0 1.25rem;
   padding: 0;
@@ -128,6 +130,7 @@ a.inline {
 
 .pageTitle {
   margin: 0 0 0.8rem;
+  text-align: center;
   font-size: 1.25rem;
 }
 
@@ -135,6 +138,7 @@ a.inline {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  justify-content: center;
   gap: 0.75rem;
   margin-top: 0.75rem;
 }
@@ -153,6 +157,7 @@ a.inline {
 
 .navWrap {
   margin: 0.5rem 0 1.25rem;
+  text-align: center;
 }
 
 .menuButton {
