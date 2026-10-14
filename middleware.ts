@@ -24,6 +24,13 @@ function nextWithRequest(request: NextRequest) {
   );
 }
 
+/** Prefer the host forwarded by Vercel when resolving host-based product routing. */
+function requestHostname(request: NextRequest): string {
+  const forwardedHost = request.headers.get('x-forwarded-host')?.split(',')[0]?.trim();
+  const host = forwardedHost || request.headers.get('host') || request.nextUrl.hostname;
+  return host.toLowerCase().replace(/:\d+$/, '').replace(/\.$/, '');
+}
+
 /** 비인증 사용자도 접근 허용 — 아래 보호 리다이렉트에서 제외 */
 const PUBLIC_PATH_PREFIXES = ['/reset-password'] as const;
 
@@ -52,7 +59,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // Jury host: serve Jury routes at the root (jury.aisleshub.com/x -> /jury/x). Hub hosts unchanged.
-  if (isJuryHost(request.nextUrl.hostname) && shouldRewriteToJury(pathname)) {
+  if (isJuryHost(requestHostname(request)) && shouldRewriteToJury(pathname)) {
     const target = request.nextUrl.clone();
     target.pathname = juryRewritePath(pathname);
     return applyIndexingPolicy(NextResponse.rewrite(target, { request: { headers: request.headers } }));
