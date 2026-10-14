@@ -109,4 +109,3 @@ export async function commitMemberRoleWithoutServiceChange(
 ): Promise<Awaited<ReturnType<typeof commitMemberRoleChange>>> {
   return commitMemberRoleChange(input, db);
 }
-
