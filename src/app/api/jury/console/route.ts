@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isJuryAction, planJuryCommand } from '@/lib/jury-product/access';
-import { readJuryConsole } from '@/lib/jury-product/console-view';
 import { findResourceTenant, isJuryStoreUnavailable, loadJuryCatalog } from '@/lib/jury-product/jury-db';
+import { readConsoleReviewIds } from '@/lib/jury-product/service-feature-authorization';
+import { listUserServiceGrants } from '@/lib/jury-product/service-feature-guard';
 import { getJuryActor } from '@/lib/jury-product/session';
 
 function statusFor(reason: string): number {
@@ -18,13 +19,19 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ ok: false, reason: actor.reason }, { status: statusFor(actor.reason) });
   }
   try {
-    const catalog = await loadJuryCatalog(actor.tenantId);
-    const view = readJuryConsole(actor, catalog);
+    const read = await readConsoleReviewIds({
+      actor,
+      loadCatalog: () => loadJuryCatalog(actor.tenantId),
+      listGrants: () => listUserServiceGrants(actor.tenantId, actor.userId),
+    });
+    if (!read.ok) {
+      return NextResponse.json({ ok: false, reason: read.reason }, { status: statusFor(read.reason) });
+    }
     return NextResponse.json({
       ok: true,
       tenantId: actor.tenantId,
       role: actor.role,
-      reviewIds: view?.results.map((row) => row.id) ?? [],
+      reviewIds: read.reviewIds,
     });
   } catch (error) {
     if (isJuryStoreUnavailable(error)) {

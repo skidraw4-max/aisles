@@ -230,3 +230,28 @@ function show(value: string | null): string | null {
   if (containsSecret(value) || /(?:postgres|mysql|redis|mongodb):\/\//i.test(value) || /\bsk-[A-Za-z0-9]/.test(value) || /\bAKIA[0-9A-Z]{8,}/.test(value)) return null;
   return value;
 }
+
+export type TraceFeatureGuard = (
+  actor: Extract<JuryActor, { ok: true }>,
+  taskId: string,
+  feature: 'improvement.read',
+) => Promise<{ ok: true } | { ok: false; reason: string }>;
+
+/**
+ * Track A: the improvement trace is read only after the service feature guard allows improvement.read.
+ * A denied caller never reaches the trace reader.
+ */
+export async function readGuardedImprovementTrace<T>(input: {
+  actor: Extract<JuryActor, { ok: true }>;
+  taskId: string;
+  guard: TraceFeatureGuard;
+  read: () => Promise<T>;
+}): Promise<{ ok: true; value: T } | { ok: false; reason: ImprovementTraceFailure }> {
+  const access = await input.guard(input.actor, input.taskId, 'improvement.read');
+  if (!access.ok) {
+    if (access.reason === 'UNAUTHENTICATED' || access.reason === 'NO_MEMBERSHIP') return { ok: false, reason: access.reason };
+    if (access.reason === 'FORBIDDEN') return { ok: false, reason: 'FORBIDDEN' };
+    return { ok: false, reason: 'NOT_FOUND' };
+  }
+  return { ok: true, value: await input.read() };
+}

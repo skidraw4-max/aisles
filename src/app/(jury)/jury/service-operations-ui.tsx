@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { juryHref } from '@/lib/jury-product/jury-url';
-import type { ServiceOperationModel } from '@/lib/jury-product/service-operations-status';
+import { hasReviewAccess, improvementOpenCountCell, type ServiceOperationModel } from '@/lib/jury-product/service-operations-status';
 import type { SafeProviderView } from '@/lib/jury-product/services/provider-boundary';
 import {
   collectConnectedServiceEvidence,
@@ -15,6 +15,7 @@ function mark(value: boolean): string {
 
 function NextAction({ model }: { model: ServiceOperationModel }) {
   const action = model.next;
+  if (!action) return null;
   return (
     <section>
       <h3>Next action</h3>
@@ -93,12 +94,12 @@ export function ServiceOperationsList({
                 <td><Link className={styles.inline} href={juryHref(`/services/${row.connectionId}`)}>{row.name}</Link></td>
                 <td>{providers[row.connectionId]?.displayName ?? 'Unknown'}</td>
                 <td><span className={styles.badge}>{row.connectionStatus}</span></td>
-                <td>{row.phase}</td>
+                <td>{row.phase ?? '—'}</td>
                 <td>{row.parts.evidence === 'READY' ? 'Ready' : 'No evidence collected yet'}</td>
-                <td>{row.lastReview}</td>
-                <td>{row.review.decision ?? 'No review'}</td>
-                <td>{row.improvement.openCount}</td>
-                <td>{row.agent.status ?? 'No execution'}</td>
+                <td>{hasReviewAccess(row) ? row.lastReview : '—'}</td>
+                <td>{hasReviewAccess(row) ? (row.review.decision ?? 'No review') : '—'}</td>
+                <td>{improvementOpenCountCell(row)}</td>
+                <td>{hasReviewAccess(row) ? (row.agent.status ?? 'No execution') : '—'}</td>
                 <td>{row.lastActivity}</td>
               </tr>
             ))}
@@ -120,8 +121,8 @@ export function ServiceOperationDetail({
     <section className={styles.panel}>
       <h2 className={styles.pageTitle}>{model.name}</h2>
       <p>Connection <span className={styles.badge}>{model.connectionStatus}</span></p>
-      <p>Operational <span className={styles.badge}>{model.phase}</span></p>
-      <p>Health <span className={styles.badge}>{model.health}</span></p>
+      {model.phase ? <p>Operational <span className={styles.badge}>{model.phase}</span></p> : null}
+      {model.health ? <p>Health <span className={styles.badge}>{model.health}</span></p> : null}
       {provider ? (
         <>
           <h3>Connection configuration</h3>
@@ -141,9 +142,9 @@ export function ServiceOperationDetail({
 
       <h3>Overview</h3>
       <p>Evidence {model.parts.evidence}</p>
-      <p>Review {model.parts.review}</p>
-      <p>Improvement {model.parts.improvement}</p>
-      <p>Agent {model.parts.agent}</p>
+      {model.parts.review ? <p>Review {model.parts.review}</p> : null}
+      {model.parts.improvement ? <p>Improvement {model.parts.improvement}</p> : null}
+      {model.parts.agent ? <p>Agent {model.parts.agent}</p> : null}
 
       <h3>Onboarding</h3>
       <p>Discovery {model.onboarding.discovery}</p>
@@ -164,44 +165,52 @@ export function ServiceOperationDetail({
         </>
       )}
 
-      <h3>Review</h3>
-      {model.review.empty ? <p>No review</p> : (
+      {hasReviewAccess(model) ? (
         <>
-          <p>Decision {model.review.decision}</p>
-          <p>Summary {model.review.statusSummary}</p>
-          <p>Top problems {model.review.topProblems.join(', ') || 'None'}</p>
-          <p>Expected user effect {model.review.expectedUserEffect}</p>
-          <p>Risk {model.review.risk}</p>
-          <p>Reviewed {model.review.reviewedAt}</p>
-        </>
-      )}
+          <h3>Review</h3>
+          {model.review.empty ? <p>No review</p> : (
+            <>
+              <p>Decision {model.review.decision}</p>
+              <p>Summary {model.review.statusSummary}</p>
+              <p>Top problems {model.review.topProblems.join(', ') || 'None'}</p>
+              <p>Expected user effect {model.review.expectedUserEffect}</p>
+              <p>Risk {model.review.risk}</p>
+              <p>Reviewed {model.review.reviewedAt}</p>
+            </>
+          )}
 
-      <h3>Improvement</h3>
-      {model.improvement.empty ? <p>No improvement</p> : (
+          <h3>Improvement</h3>
+          {model.improvement.empty ? <p>No improvement</p> : (
+            <>
+              <p>Open tasks {model.improvement.openCount}</p>
+              <p>Latest {model.improvement.latestStatus}</p>
+              <p>{model.improvement.latestTitle}</p>
+            </>
+          )}
+
+          <h3>Agent</h3>
+          {model.agent.empty ? <p>No execution</p> : (
+            <>
+              <p>Status {model.agent.status}</p>
+              <p>Provider {model.agent.provider}</p>
+              <p>Started {model.agent.startedAt ?? 'Not available'}</p>
+              <p>Finished {model.agent.finishedAt ?? 'Not available'}</p>
+              <p>Changed files {model.agent.changedFilesCount ?? 0}</p>
+              <p>Tests passed {model.agent.testsPassed === null ? 'Not available' : model.agent.testsPassed ? 'true' : 'false'}</p>
+            </>
+          )}
+        </>
+      ) : null}
+
+      {model.flow ? (
         <>
-          <p>Open tasks {model.improvement.openCount}</p>
-          <p>Latest {model.improvement.latestStatus}</p>
-          <p>{model.improvement.latestTitle}</p>
+          <h3>Change flow</h3>
+          <p>Agent {model.flow.agent}</p>
+          <p>Change Gate {model.flow.changeGate}</p>
+          <p>Re-review {model.flow.reReview}</p>
+          <p>Jury {model.flow.jury}</p>
         </>
-      )}
-
-      <h3>Agent</h3>
-      {model.agent.empty ? <p>No execution</p> : (
-        <>
-          <p>Status {model.agent.status}</p>
-          <p>Provider {model.agent.provider}</p>
-          <p>Started {model.agent.startedAt ?? 'Not available'}</p>
-          <p>Finished {model.agent.finishedAt ?? 'Not available'}</p>
-          <p>Changed files {model.agent.changedFilesCount ?? 0}</p>
-          <p>Tests passed {model.agent.testsPassed === null ? 'Not available' : model.agent.testsPassed ? 'true' : 'false'}</p>
-        </>
-      )}
-
-      <h3>Change flow</h3>
-      <p>Agent {model.flow.agent}</p>
-      <p>Change Gate {model.flow.changeGate}</p>
-      <p>Re-review {model.flow.reReview}</p>
-      <p>Jury {model.flow.jury}</p>
+      ) : null}
 
       <NextAction model={model} />
 

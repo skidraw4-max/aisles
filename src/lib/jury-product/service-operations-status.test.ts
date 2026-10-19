@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import type { JuryConsoleView } from './console-view';
 import { JURY_CORE_CONTRACT_VERSION, JURY_PRODUCT_DATA_ROOT } from './records';
+import { restrictJuryConsole } from './service-feature-authorization';
 import type { ServiceGrantRow } from './service-member-management';
 import {
   actionState,
@@ -11,6 +12,10 @@ import {
   operationCapabilities,
   projectServiceOperation,
   visibleActivity,
+  exposeOperationalState,
+  hasReviewAccess,
+  improvementOpenCountCell,
+  withoutOperationalState,
   type OperationCapabilities,
 } from './service-operations-status';
 
@@ -350,4 +355,353 @@ test('operations source does not persist lifecycle or call jury core', () => {
   assert.equal(loader.includes('authorizeJuryServiceFeature'), true);
   assert.equal(loader.includes('loadJuryCatalog'), true);
   assert.equal(loader.includes('credentialRef'), false);
+});
+
+test('track A: service operations hide review data from a viewer', () => {
+  const reviewedView = view('org-a', 'svc-a', {
+    requests: [{
+      id: 'req', tenantId: 'org-a', connectionId: 'svc-a', evidenceId: 'ev', reviewType: 'FULL_REVIEW',
+      mode: 'AISLE_SELF', status: 'COMPLETED', coreRootDir: JURY_PRODUCT_DATA_ROOT,
+    }],
+    results: [{
+      id: 'rev', tenantId: 'org-a', reviewRequestId: 'req', boardRunId: 'run', evidenceStrength: 'strong',
+      claimStrength: 'weak', conflictDetected: false, overclaimDetected: false, revisionRequired: true,
+      expectedDecision: 'REWORD',
+      finalSurface: {
+        statusSummary: 'Final only', topProblems: ['copy'], expectedUserEffect: 'clearer', risk: 'low',
+        dimensionEvidence: [], supportedClaims: [], partiallySupportedClaims: [], hypotheses: [],
+      },
+      contractVersion: JURY_CORE_CONTRACT_VERSION, completedAt: '2026-10-08T11:00:00.000Z',
+    }],
+    audit: [
+      { id: 'au-svc', tenantId: 'org-a', action: 'SERVICE_CONNECTION_ACTIVATED', serviceKey: 'key-svc-a', timestamp: '2026-10-08T10:00:00.000Z' },
+      { id: 'au-done', tenantId: 'org-a', action: 'REVIEW_COMPLETED', reviewId: 'rev', decision: 'REWORD', timestamp: '2026-10-08T11:00:00.000Z' },
+    ],
+  } as Partial<JuryConsoleView>);
+  for (const role of ['OWNER', 'ADMIN', 'DEVELOPER', 'REVIEWER', 'VIEWER'] as const) {
+    const actor = { ok: true as const, userId: 'user', tenantId: 'org-a', role, membershipId: 'mem' };
+    const grants: ServiceGrantRow[] = [{ id: 'g', tenantId: 'org-a', connectionId: 'svc-a', userId: 'user', permission: 'AGENT' }];
+    const restricted = restrictJuryConsole({ ...reviewedView, role }, actor, grants);
+    const model = projectServiceOperation(restricted, 'svc-a', operationCapabilities({ actor, connection: { id: 'svc-a', tenantId: 'org-a' }, grants }), accessSummary(role, grants), NOW);
+    assert.ok(model, role);
+    const labels = model.activity.map((row) => row.label);
+    if (role === 'VIEWER') {
+      assert.equal(model.review.empty, true, role);
+      assert.equal(model.review.decision, null, role);
+      assert.equal(model.review.statusSummary, null, role);
+      assert.equal(labels.includes('Review completed'), false, role);
+      assert.equal(JSON.stringify(model).includes('REWORD'), false, role);
+      assert.equal(JSON.stringify(model).includes('Final only'), false, role);
+    } else {
+      assert.equal(model.review.empty, false, role);
+      assert.equal(model.review.decision, 'REWORD', role);
+      assert.equal(labels.includes('Review completed'), true, role);
+    }
+  }
+  const viewOnly = restrictJuryConsole(reviewedView, { ok: true, userId: 'user', tenantId: 'org-a', role: 'OWNER', membershipId: 'mem' },
+    [{ id: 'g', tenantId: 'org-a', connectionId: 'svc-a', userId: 'user', permission: 'VIEW' }]);
+  assert.equal(viewOnly.results.length, 0);
+});
+
+test('track A: service operations loader restricts before projecting', () => {
+  const loader = readFileSync(new URL('./service-operations.ts', import.meta.url), 'utf8');
+  const restrict = loader.indexOf('restrictJuryConsole(tenantView, actor, grants)');
+  assert.ok(restrict > 0);
+  assert.ok(restrict < loader.indexOf('projectServiceOperation('));
+});
+
+test('track A follow-up: a viewer sees connection, evidence and metrics but no derived pipeline state', () => {
+  const evidence = [{
+    id: 'ev', tenantId: 'org-a', connectionId: 'svc-a', purpose: 'observe',
+    periodStart: '2026-10-01', periodEnd: '2026-10-07', timezone: 'Asia/Seoul',
+    metricIds: ['m0'], adapterKey: 'mock', collectedAt: '2026-10-08T10:00:00.000Z',
+  }];
+  const metrics = [{
+    id: 'm0', tenantId: 'org-a', connectionId: 'svc-a', evidenceId: 'ev', metric: 'signups',
+    value: 3, unit: 'COUNT', periodStart: '2026-10-01', periodEnd: '2026-10-07', timezone: 'Asia/Seoul',
+    sourceSystem: 'DATABASE', sourceRef: 'db', collectedAt: '2026-10-08T10:00:00.000Z', availability: 'AVAILABLE',
+    rawPayloadRef: 'raw/0', adapterKey: 'mock', adapterVersion: '0', ruleId: 'identity',
+  }];
+  const full = view('org-a', 'svc-a', {
+    evidence,
+    metrics,
+    requests: [{
+      id: 'req', tenantId: 'org-a', connectionId: 'svc-a', evidenceId: 'ev', reviewType: 'FULL_REVIEW',
+      mode: 'AISLE_SELF', status: 'COMPLETED', coreRootDir: JURY_PRODUCT_DATA_ROOT,
+    }],
+    results: [{
+      id: 'rev', tenantId: 'org-a', reviewRequestId: 'req', boardRunId: 'run', evidenceStrength: 'strong',
+      claimStrength: 'weak', conflictDetected: false, overclaimDetected: false, revisionRequired: false,
+      expectedDecision: 'ACCEPT',
+      finalSurface: {
+        statusSummary: 'Final only', topProblems: [], expectedUserEffect: 'none', risk: 'low',
+        dimensionEvidence: [], supportedClaims: [], partiallySupportedClaims: [], hypotheses: [],
+      },
+      contractVersion: JURY_CORE_CONTRACT_VERSION, completedAt: '2026-10-08T11:00:00.000Z',
+    }],
+  } as Partial<JuryConsoleView>);
+  const grants: ServiceGrantRow[] = [{ id: 'g', tenantId: 'org-a', connectionId: 'svc-a', userId: 'user', permission: 'AGENT' }];
+  const build = (role: 'OWNER' | 'ADMIN' | 'DEVELOPER' | 'REVIEWER' | 'VIEWER') => {
+    const actor = { ok: true as const, userId: 'user', tenantId: 'org-a', role, membershipId: 'mem' };
+    const restricted = restrictJuryConsole({ ...full, role }, actor, grants);
+    const model = projectServiceOperation(restricted, 'svc-a', operationCapabilities({ actor, connection: { id: 'svc-a', tenantId: 'org-a' }, grants }), accessSummary(role, grants), NOW);
+    assert.ok(model, role);
+    return model;
+  };
+  const viewer = withoutOperationalState(build('VIEWER'));
+  assert.equal(viewer.phase, null);
+  assert.equal(viewer.health, null);
+  assert.equal(viewer.next, null);
+  assert.equal(viewer.connectionStatus, 'CONNECTED');
+  assert.equal(viewer.parts.connection, 'CONNECTED');
+  assert.equal(viewer.parts.evidence, 'READY');
+  assert.equal(viewer.evidence.empty, false);
+  assert.equal(viewer.evidence.measuredCount, 1);
+  assert.equal(viewer.evidence.evidenceId, 'ev');
+  assert.equal(viewer.review.empty, true);
+  assert.equal(JSON.stringify(viewer).includes('ACCEPT'), false);
+  for (const role of ['OWNER', 'ADMIN', 'DEVELOPER', 'REVIEWER'] as const) {
+    const model = build(role);
+    assert.equal(model.health, 'HEALTHY', role);
+    assert.equal(model.phase, 'REVIEWED', role);
+    assert.ok(model.next, role);
+    assert.equal(model.review.decision, 'ACCEPT', role);
+  }
+});
+
+test('track A follow-up: the loader strips derived state only when review access is denied', () => {
+  const loader = readFileSync(new URL('./service-operations.ts', import.meta.url), 'utf8');
+  assert.equal(loader.includes('exposeOperationalState(model, {'), true);
+  assert.equal(loader.includes('withoutOperationalState('), false);
+  assert.equal(loader.includes('decideJuryMutation('), false);
+  const ui = readFileSync(new URL('../../app/(jury)/jury/service-operations-ui.tsx', import.meta.url), 'utf8');
+  assert.equal(ui.includes('if (!action) return null;'), true);
+  assert.equal(ui.includes('{model.health ? '), true);
+  assert.equal(ui.includes('{model.phase ? '), true);
+});
+
+function followUp2View(): JuryConsoleView {
+  const at = '2026-10-08T10:00:00.000Z';
+  const service = (id: string) => view('org-a', id).connections[0]!;
+  const evidenceFor = (id: string) => ({
+    id: `ev-${id}`, tenantId: 'org-a', connectionId: id, purpose: 'observe',
+    periodStart: '2026-10-01', periodEnd: '2026-10-07', timezone: 'Asia/Seoul',
+    metricIds: [`m-${id}`], adapterKey: 'mock', collectedAt: at,
+  });
+  const metricFor = (id: string) => ({
+    id: `m-${id}`, tenantId: 'org-a', connectionId: id, evidenceId: `ev-${id}`, metric: 'signups',
+    value: 3, unit: 'COUNT', periodStart: '2026-10-01', periodEnd: '2026-10-07', timezone: 'Asia/Seoul',
+    sourceSystem: 'DATABASE', sourceRef: 'db', collectedAt: at, availability: 'AVAILABLE',
+    rawPayloadRef: 'raw/0', adapterKey: 'mock', adapterVersion: '0', ruleId: 'identity',
+  });
+  const reviewed = (id: string) => ({
+    requests: [{
+      id: `req-${id}`, tenantId: 'org-a', connectionId: id, evidenceId: `ev-${id}`, reviewType: 'FULL_REVIEW',
+      mode: 'AISLE_SELF', status: 'COMPLETED', coreRootDir: JURY_PRODUCT_DATA_ROOT,
+    }],
+    results: [{
+      id: `rev-${id}`, tenantId: 'org-a', reviewRequestId: `req-${id}`, boardRunId: 'run', evidenceStrength: 'strong',
+      claimStrength: 'weak', conflictDetected: false, overclaimDetected: false, revisionRequired: true,
+      expectedDecision: 'REWORD',
+      finalSurface: {
+        statusSummary: 'Final only', topProblems: ['copy'], expectedUserEffect: 'clearer', risk: 'low',
+        dimensionEvidence: [], supportedClaims: [], partiallySupportedClaims: [], hypotheses: [],
+      },
+      contractVersion: JURY_CORE_CONTRACT_VERSION, completedAt: '2026-10-08T11:00:00.000Z',
+    }],
+    tasks: [{
+      id: `task-${id}`, tenantId: 'org-a', reviewResultId: `rev-${id}`, diagnosis: 'Reword the headline',
+      acceptanceCriteria: ['headline'], status: 'OPEN', loopIndex: 1,
+      loopPolicy: { maxIterations: null, maxRuntimeMs: null, maxCostUsd: null },
+      createdAt: '2026-10-08T11:10:00.000Z',
+    }],
+    executions: [{
+      id: `exec-${id}`, tenantId: 'org-a', taskId: `task-${id}`, agent: 'CURSOR', allowedPaths: [], deniedPaths: [],
+      status: 'SUCCEEDED', startedAt: '2026-10-08T11:20:00.000Z', finishedAt: '2026-10-08T11:30:00.000Z',
+    }],
+  });
+  const a = reviewed('svc-a');
+  const b = reviewed('svc-b');
+  const base = view('org-a', 'svc-a');
+  return {
+    ...base,
+    connections: [service('svc-a'), service('svc-b')],
+    scopes: [...base.scopes, ...view('org-a', 'svc-b').scopes],
+    discoveries: [...base.discoveries, ...view('org-a', 'svc-b').discoveries],
+    evidence: [evidenceFor('svc-a'), evidenceFor('svc-b')],
+    metrics: [metricFor('svc-a'), metricFor('svc-b')],
+    requests: [...a.requests, ...b.requests],
+    results: [...a.results, ...b.results],
+    tasks: [...a.tasks, ...b.tasks],
+    executions: [...a.executions, ...b.executions],
+  } as JuryConsoleView;
+}
+
+const FU2_ROLES = ['OWNER', 'ADMIN', 'DEVELOPER', 'REVIEWER', 'VIEWER'] as const;
+type Fu2Role = typeof FU2_ROLES[number];
+
+function fu2Model(role: Fu2Role, connectionId: string, grants: ServiceGrantRow[], client: { actorRole?: string; permission?: string } = {}) {
+  const actor = { ok: true as const, userId: 'user', tenantId: 'org-a', role, membershipId: 'mem' };
+  const restricted = restrictJuryConsole({ ...followUp2View(), role }, actor, grants);
+  const connection = { id: connectionId, tenantId: 'org-a' };
+  const input = { actor, connection, grants, ...client };
+  const projected = projectServiceOperation(restricted, connectionId, operationCapabilities(input), accessSummary(role, grants), NOW);
+  assert.ok(projected, `${role} ${connectionId}`);
+  return { projected, exposed: exposeOperationalState(projected, input) };
+}
+
+function fu2Grant(connectionId: string, permission: ServiceGrantRow['permission']): ServiceGrantRow {
+  return { id: `g-${connectionId}`, tenantId: 'org-a', connectionId, userId: 'user', permission };
+}
+
+function assertStatusOnly(model: ReturnType<typeof withoutOperationalState>, label: string) {
+  assert.equal(model.phase, null, label);
+  assert.equal(model.health, null, label);
+  assert.equal(model.next, null, label);
+  assert.equal(model.parts.review, null, label);
+  assert.equal(model.parts.improvement, null, label);
+  assert.equal(model.parts.agent, null, label);
+  assert.equal(model.flow, null, label);
+  const json = JSON.stringify(model);
+  for (const word of ['NOT_READY', 'IDLE', 'REWORD', 'Final only']) assert.equal(json.includes(word), false, `${label} ${word}`);
+}
+
+function assertStatusKept(model: ReturnType<typeof withoutOperationalState>, connectionId: string, label: string) {
+  assert.equal(model.connectionStatus, 'CONNECTED', label);
+  assert.equal(model.parts.connection, 'CONNECTED', label);
+  assert.equal(model.parts.evidence, 'READY', label);
+  assert.equal(model.evidence.empty, false, label);
+  assert.equal(model.evidence.evidenceId, `ev-${connectionId}`, label);
+  assert.equal(model.evidence.measuredCount, 1, label);
+}
+
+test('follow-up 2 (1): a viewer never sees review, improvement, agent or flow state, even with an AGENT grant', () => {
+  for (const permission of ['VIEW', 'REVIEW', 'IMPROVE', 'AGENT'] as const) {
+    const { exposed } = fu2Model('VIEWER', 'svc-a', [fu2Grant('svc-a', permission)]);
+    assertStatusOnly(exposed, `VIEWER ${permission}`);
+    assertStatusKept(exposed, 'svc-a', `VIEWER ${permission}`);
+  }
+});
+
+test('follow-up 2 (2): reviewer and above without a REVIEW grant on the service get the status-only view', () => {
+  for (const role of FU2_ROLES.filter((row) => row !== 'VIEWER')) {
+    const { exposed } = fu2Model(role, 'svc-a', [fu2Grant('svc-a', 'VIEW')]);
+    assertStatusOnly(exposed, `${role} VIEW`);
+    assertStatusKept(exposed, 'svc-a', `${role} VIEW`);
+  }
+});
+
+test('follow-up 2 (3): members with review.read on the service keep the full model unchanged', () => {
+  const top: Record<Exclude<Fu2Role, 'VIEWER'>, ServiceGrantRow['permission']> = { OWNER: 'AGENT', ADMIN: 'AGENT', DEVELOPER: 'IMPROVE', REVIEWER: 'REVIEW' };
+  for (const role of FU2_ROLES.filter((row): row is Exclude<Fu2Role, 'VIEWER'> => row !== 'VIEWER')) {
+    for (const permission of ['REVIEW', top[role]] as const) {
+      const { projected, exposed } = fu2Model(role, 'svc-a', [fu2Grant('svc-a', permission)]);
+      assert.deepEqual(exposed, projected, `${role} ${permission}`);
+      assert.equal(exposed.parts.review, 'LAST_RESULT_AVAILABLE', role);
+      assert.ok(exposed.flow, role);
+      assert.ok(exposed.phase && exposed.health && exposed.next, role);
+      assertStatusKept(exposed, 'svc-a', role);
+    }
+  }
+});
+
+test('follow-up 2 (4): the decision is per service, not per organization role', () => {
+  const grants = [fu2Grant('svc-a', 'REVIEW'), fu2Grant('svc-b', 'VIEW')];
+  const a = fu2Model('REVIEWER', 'svc-a', grants).exposed;
+  const b = fu2Model('REVIEWER', 'svc-b', grants).exposed;
+  assert.equal(a.parts.review, 'LAST_RESULT_AVAILABLE');
+  assert.ok(a.flow);
+  assertStatusOnly(b, 'REVIEWER svc-b VIEW');
+  assertStatusKept(b, 'svc-b', 'REVIEWER svc-b VIEW');
+});
+
+test('follow-up 2 (5): a client-supplied role or permission does not unlock derived state', () => {
+  const { exposed } = fu2Model('VIEWER', 'svc-a', [fu2Grant('svc-a', 'VIEW')], { actorRole: 'OWNER', permission: 'AGENT' });
+  assertStatusOnly(exposed, 'VIEWER spoofed');
+  const reviewer = fu2Model('REVIEWER', 'svc-a', [fu2Grant('svc-a', 'VIEW')], { actorRole: 'OWNER', permission: 'AGENT' }).exposed;
+  assertStatusOnly(reviewer, 'REVIEWER spoofed');
+});
+
+test('follow-up 2 (6): the UI renders nothing for hidden parts and flow, and the loader adds no query', () => {
+  const ui = readFileSync(new URL('../../app/(jury)/jury/service-operations-ui.tsx', import.meta.url), 'utf8');
+  for (const guard of ['{model.parts.review ? ', '{model.parts.improvement ? ', '{model.parts.agent ? ', '{model.flow ? (']) {
+    assert.equal(ui.includes(guard), true, guard);
+  }
+  const loader = readFileSync(new URL('./service-operations.ts', import.meta.url), 'utf8');
+  assert.equal((loader.match(/loadJuryCatalog\(/g) ?? []).length, 2);
+  assert.equal((loader.match(/listUserServiceGrants\(/g) ?? []).length, 2);
+});
+
+function followUp3NoData(): JuryConsoleView {
+  const full = followUp2View();
+  return { ...full, requests: [], results: [], tasks: [], executions: [] };
+}
+
+function fu3Model(input: JuryConsoleView, role: Fu2Role, permission: ServiceGrantRow['permission']) {
+  const actor = { ok: true as const, userId: 'user', tenantId: 'org-a', role, membershipId: 'mem' };
+  const grants = [fu2Grant('svc-a', permission)];
+  const restricted = restrictJuryConsole({ ...input, role }, actor, grants);
+  const args = { actor, connection: { id: 'svc-a', tenantId: 'org-a' }, grants };
+  const projected = projectServiceOperation(restricted, 'svc-a', operationCapabilities(args), accessSummary(role, grants), NOW);
+  assert.ok(projected);
+  return exposeOperationalState(projected, args);
+}
+
+test('follow-up 3: review, improvement and agent areas follow service review.read in all four data combinations', () => {
+  const combos = [
+    { label: 'no permission + data', input: followUp2View(), role: 'VIEWER' as const, permission: 'AGENT' as const, access: false, data: true },
+    { label: 'no permission + data (reviewer, VIEW grant)', input: followUp2View(), role: 'REVIEWER' as const, permission: 'VIEW' as const, access: false, data: true },
+    { label: 'no permission + no data', input: followUp3NoData(), role: 'VIEWER' as const, permission: 'VIEW' as const, access: false, data: false },
+    { label: 'permission + data', input: followUp2View(), role: 'REVIEWER' as const, permission: 'REVIEW' as const, access: true, data: true, improvementRead: false },
+    { label: 'permission + data (owner, AGENT grant)', input: followUp2View(), role: 'OWNER' as const, permission: 'AGENT' as const, access: true, data: true, improvementRead: true },
+    { label: 'permission + no data', input: followUp3NoData(), role: 'OWNER' as const, permission: 'AGENT' as const, access: true, data: false },
+  ];
+  for (const combo of combos) {
+    const model = fu3Model(combo.input, combo.role, combo.permission);
+    assert.equal(hasReviewAccess(model), combo.access, combo.label);
+    assertStatusKept(model, 'svc-a', combo.label);
+    if (!combo.access) {
+      assertStatusOnly(model, combo.label);
+      continue;
+    }
+    assert.equal(model.review.empty, !combo.data, combo.label);
+    // improvement and agent records follow improvement.read (restrictJuryConsole), independent of this follow-up
+    const improvementData = combo.data && combo.improvementRead === true;
+    assert.equal(model.improvement.empty, !improvementData, combo.label);
+    assert.equal(model.agent.empty, !improvementData, combo.label);
+    assert.equal(model.lastReview, combo.data ? 'REWORD' : 'No review', combo.label);
+    assert.equal(model.review.decision, combo.data ? 'REWORD' : null, combo.label);
+    assert.equal(model.parts.review, combo.data ? 'LAST_RESULT_AVAILABLE' : 'NONE', combo.label);
+  }
+});
+
+test('follow-up 3: the UI gates review areas and list cells on hasReviewAccess and keeps empty states for permitted users', () => {
+  const ui = readFileSync(new URL('../../app/(jury)/jury/service-operations-ui.tsx', import.meta.url), 'utf8');
+  assert.equal(ui.includes("<td>{hasReviewAccess(row) ? row.lastReview : '—'}</td>"), true);
+  assert.equal(ui.includes("<td>{hasReviewAccess(row) ? (row.review.decision ?? 'No review') : '—'}</td>"), true);
+  assert.equal(ui.includes("<td>{hasReviewAccess(row) ? (row.agent.status ?? 'No execution') : '—'}</td>"), true);
+  const gate = ui.indexOf('{hasReviewAccess(model) ? (');
+  assert.ok(gate > 0);
+  const end = ui.indexOf(') : null}', gate);
+  const gated = ui.slice(gate, end);
+  for (const text of ['<h3>Review</h3>', '<p>No review</p>', '<h3>Improvement</h3>', '<p>No improvement</p>', '<h3>Agent</h3>', '<p>No execution</p>']) {
+    assert.equal(gated.includes(text), true, text);
+    assert.equal(ui.split(text).length - 1, 1, `${text} renders only inside the gate`);
+  }
+  const evidence = ui.indexOf('<h3>Evidence</h3>');
+  assert.ok(evidence > 0 && evidence < gate, 'evidence stays outside the gate');
+  assert.equal(ui.includes('{model.flow ? ('), true);
+  assert.equal(ui.includes('if (!action) return null;'), true);
+});
+
+test('track A pre-commit: open improvement count shows — without review.read and the number with it', () => {
+  const full = { parts: { review: 'REVIEWED' }, improvement: { openCount: 3 } } as unknown as Parameters<typeof withoutOperationalState>[0];
+  const empty = { parts: { review: 'REVIEWED' }, improvement: { openCount: 0 } } as unknown as Parameters<typeof withoutOperationalState>[0];
+  assert.equal(improvementOpenCountCell(full), 3);
+  assert.equal(improvementOpenCountCell(empty), 0);
+  assert.equal(improvementOpenCountCell(withoutOperationalState(full)), '—');
+  assert.equal(improvementOpenCountCell(withoutOperationalState(empty)), '—');
+  const ui = readFileSync('src/app/(jury)/jury/service-operations-ui.tsx', 'utf8');
+  assert.ok(ui.includes('<td>{improvementOpenCountCell(row)}</td>'));
+  assert.equal(ui.includes('<td>{row.improvement.openCount}</td>'), false);
 });
