@@ -36,6 +36,8 @@ export type JuryConsoleView = {
   reReviews: JuryConsoleCatalog['reReviews'];
   audit: JuryConsoleCatalog['audit'];
   loopPolicy: JuryLoopGuardPolicy;
+  /** Track B: ids of visible tasks whose service grants agent.execute. Set only by restrictJuryConsole; absent means none. */
+  agentTaskIds?: readonly string[];
 };
 
 export function readJuryConsole(actor: JuryActor, catalog: JuryConsoleCatalog): JuryConsoleView | null {

@@ -655,6 +655,20 @@ export function HumanReReviewBody({ screen }: { screen: ReviewConsoleScreen }) {
   );
 }
 
+/** Track B: the next improvement task for improvement.read without agent.execute. Task id, type, and status only. */
+export function ReReviewNextImprovementBody({ screen }: { screen: ReviewConsoleScreen }) {
+  const task = screen.nextImprovement;
+  if (!task) return null;
+  return (
+    <section className={styles.panel}>
+      <h2>Next Improvement Task</h2>
+      <p>Task: {task.id}</p>
+      <p>Type: {task.taskType}</p>
+      <p>Status: {task.status}</p>
+    </section>
+  );
+}
+
 export function HumanChangeGateBody({ screen }: { screen: ReviewConsoleScreen }) {
   return (
     <section className={styles.panel}>
@@ -772,6 +786,7 @@ export function ImprovementsBody({
   const canHandoff = canShowWrite(actor, 'improvement.write');
   const canRun = canShowWrite(actor, 'agent.execute');
   const canReview = canShowWrite(actor, 'review.start');
+  const agentTasks = new Set(view.agentTaskIds ?? []);
   return (
     <section className={styles.panel}>
       <h2>Improvements</h2>
@@ -812,7 +827,7 @@ export function ImprovementsBody({
                   ) : null}
                   {task.agentStatus === 'BLOCKED' ? <span>Blocked</span> : null}
                   {task.agentStatus === 'PENDING' || !task.agentStatus ? (
-                    task.agentStatus === 'PENDING' ? <span>PENDING</span> : <span>{task.approval === 'APPROVED' ? 'READY' : SHELL_UNAVAILABLE}</span>
+                    task.agentStatus === 'PENDING' ? <span>PENDING</span> : <span>{task.approval === 'APPROVED' && agentTasks.has(task.id) ? 'READY' : SHELL_UNAVAILABLE}</span>
                   ) : null}
                   {canRun && task.approval === 'APPROVED' && task.agentStatus === 'PENDING' && task.agentExecutionId ? (
                     <form action={runHumanAgentExecution}>
@@ -855,7 +870,7 @@ export function ImprovementsBody({
                 </td>
                 <td>
                   <Link className={styles.inline} href={juryHref(`/improvements/${task.id}`)}>Open trace</Link>
-                  {canHandoff && task.approval === 'APPROVED' && task.status === 'OPEN' && !task.agentStatus ? (
+                  {canHandoff && agentTasks.has(task.id) && task.approval === 'APPROVED' && task.status === 'OPEN' && !task.agentStatus ? (
                     <form action={handoffHumanImprovement}>
                       <input type="hidden" name="improvementTaskId" value={task.id} />
                       <button className={styles.button} type="submit">Send to Agent</button>
@@ -972,7 +987,8 @@ export function AutomationBody({
         <>
           <div className={styles.row}><span className={styles.label}>enabled</span><span>{loop.enabled ? '켜짐' : '꺼짐'}</span></div>
           <div className={styles.row}><span className={styles.label}>mode</span><span>{loop.mode}</span></div>
-          <div className={styles.row}><span className={styles.label}>중단 이유</span><span>{loop.stopReason ?? '없음'}</span></div>
+          <div className={styles.row}><span className={styles.label}>중단 이유</span><span>{loop.stopReason ?? '표시된 Loop 기준 없음'}</span></div>
+          <p className={styles.muted}>권한이 있는 서비스의 Loop만 표시합니다. 중단 이유도 표시된 Loop 기준입니다.</p>
           {loop.cycles.map((cycle) => (
             <div className={styles.row} key={cycle.id}>
               <span>{cycle.status}</span>

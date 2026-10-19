@@ -562,6 +562,119 @@ export function projectReviewConsole(input: {
   };
 }
 
+export type ReviewConsoleAccess = { improvement: boolean; agent: boolean };
+
+/**
+ * Track B: the review block keeps review.read.
+ * Improvement task, status, and approval fields need improvement.read.
+ * Agent execution, Change Gate, and the re-reviews stored on a Change Gate need agent.execute.
+ * The general handoff, like the re-review handoffs, needs improvement.read and agent.execute.
+ * Callers decide access for this review's own service, then pass the booleans here.
+ */
+export function restrictReviewConsoleScreen(screen: ReviewConsoleScreen, access: ReviewConsoleAccess): ReviewConsoleScreen {
+  const improvement = access.improvement === true;
+  const agent = access.agent === true;
+  return {
+    ...screen,
+    improvementTask: improvement ? screen.improvementTask : null,
+    canCreateImprovement: improvement && screen.canCreateImprovement,
+    canHandoff: improvement && agent && screen.canHandoff,
+    nextImprovement: improvement ? screen.nextImprovement : null,
+    canCreateReReviewImprovement: improvement && agent && screen.canCreateReReviewImprovement,
+    nextApproval: improvement ? screen.nextApproval : null,
+    canApproveReReviewAgent: improvement && screen.canApproveReReviewAgent,
+    canHandoffReReviewAgent: improvement && screen.canHandoffReReviewAgent,
+    nextSecondImprovement: improvement ? screen.nextSecondImprovement : null,
+    canCreateSecondImprovement: improvement && agent && screen.canCreateSecondImprovement,
+    nextSecondApproval: improvement ? screen.nextSecondApproval : null,
+    canApproveSecondImprovement: improvement && screen.canApproveSecondImprovement,
+    canHandoffSecondImprovement: improvement && screen.canHandoffSecondImprovement,
+    nextLaterImprovement: improvement ? screen.nextLaterImprovement : null,
+    canCreateLaterImprovement: improvement && agent && screen.canCreateLaterImprovement,
+    nextLaterApproval: improvement ? screen.nextLaterApproval : null,
+    canApproveLaterImprovement: improvement && screen.canApproveLaterImprovement,
+    canHandoffLaterImprovement: improvement && screen.canHandoffLaterImprovement,
+    agentExecution: agent ? screen.agentExecution : null,
+    canRun: agent && screen.canRun,
+    changeGate: agent ? screen.changeGate : null,
+    canRunChangeGate: agent && screen.canRunChangeGate,
+    reReview: agent ? screen.reReview : null,
+    canRunReReview: agent && screen.canRunReReview,
+    nextAgentExecution: agent ? screen.nextAgentExecution : null,
+    canRunReReviewAgent: agent && screen.canRunReReviewAgent,
+    nextChangeGate: agent ? screen.nextChangeGate : null,
+    canRunReReviewChangeGate: agent && screen.canRunReReviewChangeGate,
+    nextSecondReReview: agent ? screen.nextSecondReReview : null,
+    canRunSecondReReview: agent && screen.canRunSecondReReview,
+    secondReReviewResultId: agent ? screen.secondReReviewResultId : null,
+    secondReReviewDecision: agent ? screen.secondReReviewDecision : null,
+    nextSecondAgentExecution: agent ? screen.nextSecondAgentExecution : null,
+    nextSecondChangeGate: agent ? screen.nextSecondChangeGate : null,
+    canRunSecondChangeGate: agent && screen.canRunSecondChangeGate,
+    nextLaterReReview: agent ? screen.nextLaterReReview : null,
+    canRunLaterReReview: agent && screen.canRunLaterReReview,
+    nextLaterAgentExecution: agent ? screen.nextLaterAgentExecution : null,
+    canRunLaterAgent: agent && screen.canRunLaterAgent,
+    nextLaterChangeGate: agent ? screen.nextLaterChangeGate : null,
+    canRunLaterChangeGate: agent && screen.canRunLaterChangeGate,
+    nextFollowingReReview: agent ? screen.nextFollowingReReview : null,
+    canRunFollowingReReview: agent && screen.canRunFollowingReReview,
+  };
+}
+
+export type ReviewConsoleSection =
+  | 'HumanChangeGate'
+  | 'HumanReReview'
+  | 'ReReviewNextImprovement'
+  | 'ReReviewAgentHandoff'
+  | 'ReReviewAgentRun'
+  | 'ReReviewChangeGate'
+  | 'SecondReReview'
+  | 'SecondImprovement'
+  | 'SecondImprovementApproval'
+  | 'SecondImprovementHandoff'
+  | 'SecondChangeGate'
+  | 'LaterReReview'
+  | 'LaterImprovement'
+  | 'LaterImprovementApproval'
+  | 'LaterImprovementHandoff'
+  | 'LaterAgentRun'
+  | 'LaterChangeGate'
+  | 'FollowingReReview';
+
+/**
+ * Which detail sections render. The review section always renders for a reader with review.read.
+ * Re-review sections, titles included, need agent.execute. The next improvement task from the first
+ * re-review has its own improvement block for readers without agent.execute; readers with both keep it in Re-review.
+ */
+export function reviewConsoleSections(
+  screen: ReviewConsoleScreen,
+  access: ReviewConsoleAccess,
+): Record<ReviewConsoleSection, boolean> {
+  const improvement = access.improvement === true;
+  const agent = access.agent === true;
+  return {
+    HumanChangeGate: agent,
+    HumanReReview: agent,
+    ReReviewNextImprovement: improvement && !agent && Boolean(screen.nextImprovement),
+    ReReviewAgentHandoff: improvement,
+    ReReviewAgentRun: agent,
+    ReReviewChangeGate: agent,
+    SecondReReview: agent,
+    SecondImprovement: improvement,
+    SecondImprovementApproval: improvement,
+    SecondImprovementHandoff: improvement,
+    SecondChangeGate: agent,
+    LaterReReview: agent,
+    LaterImprovement: improvement,
+    LaterImprovementApproval: improvement,
+    LaterImprovementHandoff: improvement,
+    LaterAgentRun: agent,
+    LaterChangeGate: agent,
+    FollowingReReview: agent,
+  };
+}
+
 export function planHumanNextAction(input: {
   actor: JuryActor;
   review: { id: string; tenantId: string; expectedDecision: JuryDecision } | null;
