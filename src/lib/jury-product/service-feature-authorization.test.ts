@@ -239,7 +239,7 @@ test('product actions authorize before review, improvement, and agent work', () 
   }
   const gate = actions.slice(actions.indexOf('export async function runProductChangeGate'), actions.indexOf('export async function runProductChangeGateReReview'));
   assert.equal(gate.includes('evaluateProductChangeGate'), true);
-  assert.equal(gate.includes('guardAgentExecutionFeature'), false);
+  assert.equal(gate.includes('guardAgentExecutionFeature'), true);
 });
 
 const TRACK_A_ROLES = ['OWNER', 'ADMIN', 'DEVELOPER', 'REVIEWER', 'VIEWER'] as const;

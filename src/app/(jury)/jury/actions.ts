@@ -1,7 +1,7 @@
 'use server';
 
 import { redirect } from 'next/navigation';
-import { isJuryAction, planJuryCommand } from '@/lib/jury-product/access';
+import { decideJuryMutation, isJuryAction, planJuryCommand } from '@/lib/jury-product/access';
 import type { EvidencePack } from '@/lib/ai-review-board/types';
 import { buildConsoleIntakeInput, consoleIntakeCode } from '@/lib/jury-product/console-evidence-intake';
 import { JURY_MEMBER_ROLES, JURY_PRODUCT_DATA_ROOT } from '@/lib/jury-product/records';
@@ -79,6 +79,12 @@ function isRole(value: string): value is JuryMemberRole {
 
 function isAccessMethod(value: string): value is JuryAccessMethod {
   return (JURY_ACCESS_METHODS as readonly string[]).includes(value);
+}
+
+/** Unauthorized services and missing resources share NOT_FOUND. Only a role failure with a service grant stays FORBIDDEN. */
+function featureRedirectCode(access: { ok: false; reason: string }): 'FORBIDDEN' | 'NOT_FOUND' {
+  const denial = 'denial' in access ? (access as { denial?: unknown }).denial : undefined;
+  return access.reason === 'FORBIDDEN' && denial !== 'SERVICE_NOT_GRANTED' ? 'FORBIDDEN' : 'NOT_FOUND';
 }
 
 export async function stopJuryAutoLoop(formData: FormData): Promise<void> {
@@ -340,7 +346,7 @@ export async function submitTenantReview(formData: FormData): Promise<void> {
   const actor = await getJuryActor();
   if (!actor.ok) redirect(`/jury/evidence?result=${actor.reason}`);
   const reviewAccess = await guardEvidenceFeature(actor, String(formData.get('evidenceId') ?? ''), 'review.execute');
-  if (!reviewAccess.ok) redirect(`/jury/evidence?result=${reviewAccess.reason === 'FORBIDDEN' ? 'FORBIDDEN' : 'NOT_FOUND'}`);
+  if (!reviewAccess.ok) redirect(`/jury/evidence?result=${featureRedirectCode(reviewAccess)}`);
   let target = '/jury/evidence?result=PERSISTENCE_FAILED';
   try {
     const memberships = await listMembershipsForUser(actor.userId);
@@ -370,7 +376,7 @@ export async function acknowledgeHumanReview(formData: FormData): Promise<void> 
   if (!actor.ok) redirect(`/jury/reviews?result=${actor.reason}`);
   const reviewId = String(formData.get('reviewId') ?? '');
   const reviewAccess = await guardReviewFeature(actor, reviewId, 'review.execute');
-  if (!reviewAccess.ok) redirect(`/jury/reviews?result=${reviewAccess.reason === 'FORBIDDEN' ? 'FORBIDDEN' : 'NOT_FOUND'}`);
+  if (!reviewAccess.ok) redirect(`/jury/reviews?result=${featureRedirectCode(reviewAccess)}`);
   let target = '/jury/reviews?result=NOT_FOUND';
   try {
     const memberships = await listMembershipsForUser(actor.userId);
@@ -394,7 +400,7 @@ export async function createHumanImprovementTask(formData: FormData): Promise<vo
   if (!actor.ok) redirect(`/jury/reviews?result=${actor.reason}`);
   const reviewId = String(formData.get('reviewId') ?? '');
   const improvementAccess = await guardReviewFeature(actor, reviewId, 'improvement.write');
-  if (!improvementAccess.ok) redirect(`/jury/reviews?result=${improvementAccess.reason === 'FORBIDDEN' ? 'FORBIDDEN' : 'NOT_FOUND'}`);
+  if (!improvementAccess.ok) redirect(`/jury/reviews?result=${featureRedirectCode(improvementAccess)}`);
   let target = '/jury/reviews?result=NOT_FOUND';
   try {
     const memberships = await listMembershipsForUser(actor.userId);
@@ -417,7 +423,11 @@ export async function handoffHumanImprovement(formData: FormData): Promise<void>
   if (!actor.ok) redirect(`/jury/reviews?result=${actor.reason}`);
   const improvementTaskId = String(formData.get('improvementTaskId') ?? '');
   const handoffAccess = await guardImprovementFeature(actor, improvementTaskId, 'improvement.write');
-  if (!handoffAccess.ok) redirect(`/jury/reviews?result=${handoffAccess.reason === 'FORBIDDEN' ? 'FORBIDDEN' : 'NOT_FOUND'}`);
+  if (!handoffAccess.ok) redirect(`/jury/reviews?result=${featureRedirectCode(handoffAccess)}`);
+  const handoffAgentAccess = await guardImprovementFeature(actor, improvementTaskId, 'agent.execute');
+  if (!handoffAgentAccess.ok) redirect(`/jury/reviews?result=${featureRedirectCode(handoffAgentAccess)}`);
+  const handoffAgentRole = decideJuryMutation({ actor, action: 'agent.execute', resourceTenantId: actor.tenantId });
+  if (!handoffAgentRole.ok) redirect('/jury/reviews?result=FORBIDDEN');
   let target = '/jury/reviews?result=NOT_FOUND';
   try {
     const memberships = await listMembershipsForUser(actor.userId);
@@ -441,7 +451,9 @@ export async function runHumanAgentExecution(formData: FormData): Promise<void> 
   if (!actor.ok) redirect(`/jury/reviews?result=${actor.reason}`);
   const agentExecutionId = String(formData.get('agentExecutionId') ?? '');
   const agentAccess = await guardAgentExecutionFeature(actor, agentExecutionId, 'agent.execute');
-  if (!agentAccess.ok) redirect(`/jury/reviews?result=${agentAccess.reason === 'FORBIDDEN' ? 'FORBIDDEN' : 'NOT_FOUND'}`);
+  if (!agentAccess.ok) redirect(`/jury/reviews?result=${featureRedirectCode(agentAccess)}`);
+  const agentRole = decideJuryMutation({ actor, action: 'agent.execute', resourceTenantId: actor.tenantId });
+  if (!agentRole.ok) redirect('/jury/reviews?result=FORBIDDEN');
   let target = '/jury/reviews?result=NOT_FOUND';
   try {
     const memberships = await listMembershipsForUser(actor.userId);
@@ -465,6 +477,8 @@ export async function runHumanChangeGate(formData: FormData): Promise<void> {
   const actor = await getJuryActor();
   if (!actor.ok) redirect(`/jury/reviews?result=${actor.reason}`);
   const agentExecutionId = String(formData.get('agentExecutionId') ?? '');
+  const access = await guardAgentExecutionFeature(actor, agentExecutionId, 'agent.execute');
+  if (!access.ok) redirect(`/jury/reviews?result=${featureRedirectCode(access)}`);
   let target = '/jury/reviews?result=NOT_FOUND';
   try {
     const memberships = await listMembershipsForUser(actor.userId);
@@ -486,6 +500,8 @@ export async function runProductChangeGate(formData: FormData): Promise<void> {
   const actor = await getJuryActor();
   if (!actor.ok) redirect(`/jury/reviews?result=${actor.reason}`);
   const agentExecutionId = String(formData.get('agentExecutionId') ?? '');
+  const access = await guardAgentExecutionFeature(actor, agentExecutionId, 'agent.execute');
+  if (!access.ok) redirect(`/jury/reviews?result=${featureRedirectCode(access)}`);
   let target = '/jury/reviews?result=NOT_FOUND';
   try {
     const memberships = await listMembershipsForUser(actor.userId);
@@ -508,6 +524,8 @@ export async function runProductChangeGateReReview(formData: FormData): Promise<
   const actor = await getJuryActor();
   if (!actor.ok) redirect(`/jury/improvements?result=${actor.reason}`);
   const agentExecutionId = String(formData.get('agentExecutionId') ?? '');
+  const access = await guardAgentExecutionFeature(actor, agentExecutionId, 'review.execute');
+  if (!access.ok) redirect(`/jury/improvements?result=${featureRedirectCode(access)}`);
   let target = '/jury/improvements?result=NOT_FOUND';
   try {
     const memberships = await listMembershipsForUser(actor.userId);
@@ -530,6 +548,8 @@ export async function runHumanReReview(formData: FormData): Promise<void> {
   const actor = await getJuryActor();
   if (!actor.ok) redirect(`/jury/reviews?result=${actor.reason}`);
   const agentExecutionId = String(formData.get('agentExecutionId') ?? '');
+  const access = await guardAgentExecutionFeature(actor, agentExecutionId, 'review.execute');
+  if (!access.ok) redirect(`/jury/reviews?result=${featureRedirectCode(access)}`);
   let target = '/jury/reviews?result=NOT_FOUND';
   try {
     const memberships = await listMembershipsForUser(actor.userId);
@@ -569,6 +589,8 @@ export async function createReReviewImprovementTask(formData: FormData): Promise
   const actor = await getJuryActor();
   if (!actor.ok) redirect(`/jury/reviews?result=${actor.reason}`);
   const reReviewResultId = String(formData.get('reReviewResultId') ?? '');
+  const access = await guardReviewFeature(actor, reReviewResultId, 'improvement.write');
+  if (!access.ok) redirect(`/jury/reviews?result=${featureRedirectCode(access)}`);
   let target = '/jury/reviews?result=NOT_FOUND';
   try {
     const memberships = await listMembershipsForUser(actor.userId);
@@ -590,6 +612,8 @@ export async function createSecondReReviewImprovementTask(formData: FormData): P
   const actor = await getJuryActor();
   if (!actor.ok) redirect(`/jury/reviews?result=${actor.reason}`);
   const reReviewResultId = String(formData.get('reReviewResultId') ?? '');
+  const access = await guardReviewFeature(actor, reReviewResultId, 'improvement.write');
+  if (!access.ok) redirect(`/jury/reviews?result=${featureRedirectCode(access)}`);
   let target = '/jury/reviews?result=NOT_FOUND';
   try {
     const memberships = await listMembershipsForUser(actor.userId);
@@ -611,6 +635,8 @@ export async function approveReReviewAgentAction(formData: FormData): Promise<vo
   const actor = await getJuryActor();
   if (!actor.ok) redirect(`/jury/reviews?result=${actor.reason}`);
   const improvementTaskId = String(formData.get('improvementTaskId') ?? '');
+  const access = await guardImprovementFeature(actor, improvementTaskId, 'review.execute');
+  if (!access.ok) redirect(`/jury/reviews?result=${featureRedirectCode(access)}`);
   let target = '/jury/reviews?result=NOT_FOUND';
   try {
     const memberships = await listMembershipsForUser(actor.userId);
@@ -632,6 +658,10 @@ export async function handoffReReviewImprovement(formData: FormData): Promise<vo
   const actor = await getJuryActor();
   if (!actor.ok) redirect(`/jury/reviews?result=${actor.reason}`);
   const improvementTaskId = String(formData.get('improvementTaskId') ?? '');
+  const improvementAccess = await guardImprovementFeature(actor, improvementTaskId, 'improvement.write');
+  if (!improvementAccess.ok) redirect(`/jury/reviews?result=${featureRedirectCode(improvementAccess)}`);
+  const agentAccess = await guardImprovementFeature(actor, improvementTaskId, 'agent.execute');
+  if (!agentAccess.ok) redirect(`/jury/reviews?result=${featureRedirectCode(agentAccess)}`);
   let target = '/jury/reviews?result=NOT_FOUND';
   try {
     const memberships = await listMembershipsForUser(actor.userId);
@@ -653,6 +683,8 @@ export async function runReReviewAgentExecution(formData: FormData): Promise<voi
   const actor = await getJuryActor();
   if (!actor.ok) redirect(`/jury/reviews?result=${actor.reason}`);
   const agentExecutionId = String(formData.get('agentExecutionId') ?? '');
+  const access = await guardAgentExecutionFeature(actor, agentExecutionId, 'agent.execute');
+  if (!access.ok) redirect(`/jury/reviews?result=${featureRedirectCode(access)}`);
   let target = '/jury/reviews?result=NOT_FOUND';
   try {
     const memberships = await listMembershipsForUser(actor.userId);
@@ -674,6 +706,8 @@ export async function runReReviewChangeGate(formData: FormData): Promise<void> {
   const actor = await getJuryActor();
   if (!actor.ok) redirect(`/jury/reviews?result=${actor.reason}`);
   const agentExecutionId = String(formData.get('agentExecutionId') ?? '');
+  const access = await guardAgentExecutionFeature(actor, agentExecutionId, 'agent.execute');
+  if (!access.ok) redirect(`/jury/reviews?result=${featureRedirectCode(access)}`);
   let target = '/jury/reviews?result=NOT_FOUND';
   try {
     const memberships = await listMembershipsForUser(actor.userId);
@@ -695,6 +729,8 @@ export async function runSecondReReview(formData: FormData): Promise<void> {
   const actor = await getJuryActor();
   if (!actor.ok) redirect(`/jury/reviews?result=${actor.reason}`);
   const agentExecutionId = String(formData.get('agentExecutionId') ?? '');
+  const access = await guardAgentExecutionFeature(actor, agentExecutionId, 'review.execute');
+  if (!access.ok) redirect(`/jury/reviews?result=${featureRedirectCode(access)}`);
   let target = '/jury/reviews?result=NOT_FOUND';
   try {
     const memberships = await listMembershipsForUser(actor.userId);
@@ -716,6 +752,8 @@ export async function approveSecondImprovementTask(formData: FormData): Promise<
   const actor = await getJuryActor();
   if (!actor.ok) redirect(`/jury/reviews?result=${actor.reason}`);
   const improvementTaskId = String(formData.get('improvementTaskId') ?? '');
+  const access = await guardImprovementFeature(actor, improvementTaskId, 'review.execute');
+  if (!access.ok) redirect(`/jury/reviews?result=${featureRedirectCode(access)}`);
   let target = '/jury/reviews?result=NOT_FOUND';
   try {
     const memberships = await listMembershipsForUser(actor.userId);
@@ -737,6 +775,10 @@ export async function handoffSecondImprovementTask(formData: FormData): Promise<
   const actor = await getJuryActor();
   if (!actor.ok) redirect(`/jury/reviews?result=${actor.reason}`);
   const improvementTaskId = String(formData.get('improvementTaskId') ?? '');
+  const improvementAccess = await guardImprovementFeature(actor, improvementTaskId, 'improvement.write');
+  if (!improvementAccess.ok) redirect(`/jury/reviews?result=${featureRedirectCode(improvementAccess)}`);
+  const agentAccess = await guardImprovementFeature(actor, improvementTaskId, 'agent.execute');
+  if (!agentAccess.ok) redirect(`/jury/reviews?result=${featureRedirectCode(agentAccess)}`);
   let target = '/jury/reviews?result=NOT_FOUND';
   try {
     const memberships = await listMembershipsForUser(actor.userId);
@@ -758,6 +800,8 @@ export async function runSecondChangeGate(formData: FormData): Promise<void> {
   const actor = await getJuryActor();
   if (!actor.ok) redirect(`/jury/reviews?result=${actor.reason}`);
   const agentExecutionId = String(formData.get('agentExecutionId') ?? '');
+  const access = await guardAgentExecutionFeature(actor, agentExecutionId, 'agent.execute');
+  if (!access.ok) redirect(`/jury/reviews?result=${featureRedirectCode(access)}`);
   let target = '/jury/reviews?result=NOT_FOUND';
   try {
     const memberships = await listMembershipsForUser(actor.userId);
@@ -779,6 +823,8 @@ export async function runLaterReReview(formData: FormData): Promise<void> {
   const actor = await getJuryActor();
   if (!actor.ok) redirect(`/jury/reviews?result=${actor.reason}`);
   const agentExecutionId = String(formData.get('agentExecutionId') ?? '');
+  const access = await guardAgentExecutionFeature(actor, agentExecutionId, 'review.execute');
+  if (!access.ok) redirect(`/jury/reviews?result=${featureRedirectCode(access)}`);
   let target = '/jury/reviews?result=NOT_FOUND';
   try {
     const memberships = await listMembershipsForUser(actor.userId);
@@ -800,6 +846,8 @@ export async function createLaterReReviewImprovementTask(formData: FormData): Pr
   const actor = await getJuryActor();
   if (!actor.ok) redirect(`/jury/reviews?result=${actor.reason}`);
   const reReviewResultId = String(formData.get('reReviewResultId') ?? '');
+  const access = await guardReviewFeature(actor, reReviewResultId, 'improvement.write');
+  if (!access.ok) redirect(`/jury/reviews?result=${featureRedirectCode(access)}`);
   let target = '/jury/reviews?result=NOT_FOUND';
   try {
     const memberships = await listMembershipsForUser(actor.userId);
@@ -821,6 +869,8 @@ export async function approveLaterImprovementTask(formData: FormData): Promise<v
   const actor = await getJuryActor();
   if (!actor.ok) redirect(`/jury/reviews?result=${actor.reason}`);
   const improvementTaskId = String(formData.get('improvementTaskId') ?? '');
+  const access = await guardImprovementFeature(actor, improvementTaskId, 'review.execute');
+  if (!access.ok) redirect(`/jury/reviews?result=${featureRedirectCode(access)}`);
   let target = '/jury/reviews?result=NOT_FOUND';
   try {
     const memberships = await listMembershipsForUser(actor.userId);
@@ -842,6 +892,10 @@ export async function handoffLaterImprovementTask(formData: FormData): Promise<v
   const actor = await getJuryActor();
   if (!actor.ok) redirect(`/jury/reviews?result=${actor.reason}`);
   const improvementTaskId = String(formData.get('improvementTaskId') ?? '');
+  const improvementAccess = await guardImprovementFeature(actor, improvementTaskId, 'improvement.write');
+  if (!improvementAccess.ok) redirect(`/jury/reviews?result=${featureRedirectCode(improvementAccess)}`);
+  const agentAccess = await guardImprovementFeature(actor, improvementTaskId, 'agent.execute');
+  if (!agentAccess.ok) redirect(`/jury/reviews?result=${featureRedirectCode(agentAccess)}`);
   let target = '/jury/reviews?result=NOT_FOUND';
   try {
     const memberships = await listMembershipsForUser(actor.userId);
@@ -863,6 +917,8 @@ export async function runLaterAgentExecution(formData: FormData): Promise<void> 
   const actor = await getJuryActor();
   if (!actor.ok) redirect(`/jury/reviews?result=${actor.reason}`);
   const agentExecutionId = String(formData.get('agentExecutionId') ?? '');
+  const access = await guardAgentExecutionFeature(actor, agentExecutionId, 'agent.execute');
+  if (!access.ok) redirect(`/jury/reviews?result=${featureRedirectCode(access)}`);
   let target = '/jury/reviews?result=NOT_FOUND';
   try {
     const memberships = await listMembershipsForUser(actor.userId);
@@ -884,6 +940,8 @@ export async function runLaterChangeGate(formData: FormData): Promise<void> {
   const actor = await getJuryActor();
   if (!actor.ok) redirect(`/jury/reviews?result=${actor.reason}`);
   const agentExecutionId = String(formData.get('agentExecutionId') ?? '');
+  const access = await guardAgentExecutionFeature(actor, agentExecutionId, 'agent.execute');
+  if (!access.ok) redirect(`/jury/reviews?result=${featureRedirectCode(access)}`);
   let target = '/jury/reviews?result=NOT_FOUND';
   try {
     const memberships = await listMembershipsForUser(actor.userId);
@@ -905,6 +963,8 @@ export async function runFollowingReReview(formData: FormData): Promise<void> {
   const actor = await getJuryActor();
   if (!actor.ok) redirect(`/jury/reviews?result=${actor.reason}`);
   const agentExecutionId = String(formData.get('agentExecutionId') ?? '');
+  const access = await guardAgentExecutionFeature(actor, agentExecutionId, 'review.execute');
+  if (!access.ok) redirect(`/jury/reviews?result=${featureRedirectCode(access)}`);
   let target = '/jury/reviews?result=NOT_FOUND';
   try {
     const memberships = await listMembershipsForUser(actor.userId);
@@ -1046,7 +1106,7 @@ export async function runConnectedServiceJuryReview(formData: FormData): Promise
     permission: null,
     capability: null,
   });
-  if (!reviewAccess.ok) redirect(`/jury/services/${connectionId}?result=${reviewAccess.reason === 'FORBIDDEN' ? 'FORBIDDEN' : 'NOT_FOUND'}`);
+  if (!reviewAccess.ok) redirect(`/jury/services/${connectionId}?result=${featureRedirectCode(reviewAccess)}`);
   let target = `/jury/services/${connectionId}?result=STORE_UNAVAILABLE`;
   try {
     const decision = await runConnectedServiceReview({

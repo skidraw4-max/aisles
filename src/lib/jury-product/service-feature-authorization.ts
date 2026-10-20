@@ -38,6 +38,9 @@ export type FeatureAuthorizationFailure =
   | 'TENANT_MISMATCH'
   | 'NOT_FOUND';
 
+/** Internal only. Callers map SERVICE_NOT_GRANTED to NOT_FOUND and never expose this value. */
+export type FeatureAuthorizationDenial = 'ROLE' | 'SERVICE_NOT_GRANTED';
+
 export function featurePolicy(feature: ServiceFeature): { action: JuryAction; permission: JuryServicePermission } {
   return FEATURE_POLICY[feature];
 }
@@ -60,7 +63,7 @@ export function authorizeJuryServiceFeature(input: {
   permission?: string | null;
   capability?: string | null;
   accessScope?: unknown;
-}): { ok: true; servicePermissions: JuryServicePermission[] } | { ok: false; reason: FeatureAuthorizationFailure } {
+}): { ok: true; servicePermissions: JuryServicePermission[] } | { ok: false; reason: FeatureAuthorizationFailure; denial?: FeatureAuthorizationDenial } {
   void input.clientTenantId;
   void input.actingUserId;
   void input.actorRole;
@@ -88,6 +91,13 @@ export function authorizeJuryServiceFeature(input: {
     && grant.connectionId === connection.id
     && grant.userId === membership.userId);
   const level = highestServicePermission(mine);
+  const permitted = hasJuryServicePermission({
+    membership,
+    connection,
+    grants: mine,
+    required: policy.permission,
+  });
+  if (!permitted || !level) return { ok: false, reason: 'FORBIDDEN', denial: 'SERVICE_NOT_GRANTED' };
   const roleAllowed = decideJuryMutation({
     actor,
     action: policy.action,
@@ -95,14 +105,7 @@ export function authorizeJuryServiceFeature(input: {
     clientTenantId: null,
     servicePermissions: level ? [level] : [],
   });
-  if (!roleAllowed.ok) return { ok: false, reason: 'FORBIDDEN' };
-  const permitted = hasJuryServicePermission({
-    membership,
-    connection,
-    grants: mine,
-    required: policy.permission,
-  });
-  if (!permitted || !level) return { ok: false, reason: 'FORBIDDEN' };
+  if (!roleAllowed.ok) return { ok: false, reason: 'FORBIDDEN', denial: 'ROLE' };
   return { ok: true, servicePermissions: [level] };
 }
 

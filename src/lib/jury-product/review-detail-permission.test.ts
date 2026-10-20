@@ -45,7 +45,7 @@ const AGENT_KEYS = [
 /** Create buttons post a re-review result id that lives in the Change Gate block. */
 const NEEDS_BOTH = ['canCreateReReviewImprovement', 'canCreateSecondImprovement', 'canCreateLaterImprovement'] as const;
 /** The general handoff opens an agent execution, so like the re-review handoffs it needs agent.execute too. */
-const NEEDS_IMPROVEMENT_AND_AGENT = [...NEEDS_BOTH, 'canHandoff'] as const;
+const NEEDS_IMPROVEMENT_AND_AGENT = [...NEEDS_BOTH, 'canHandoff', 'canHandoffReReviewAgent', 'canHandoffSecondImprovement', 'canHandoffLaterImprovement'] as const;
 
 const SECRET_IDS = [
   'trackb-task', 'trackb-exec', 'trackb-gate', 'trackb-rereview', 'trackb-rr-result', 'trackb-next-task',
@@ -385,13 +385,13 @@ test('t336 7: re-review based create buttons keep improvement.read plus agent.ex
   assert.equal(between(ui, 'export function LaterImprovementBody', 'export function LaterImprovementApprovalBody').includes('name="reReviewResultId" value={review.reviewResultId}'), true);
 });
 
-test('t336 8: the general handoff needs improvement.read and agent.execute; re-review handoffs keep improvement.read', () => {
+test('t336 8: the general and re-review handoffs need improvement.read and agent.execute', () => {
   const full = fullScreen();
   const flags = ['canHandoffReReviewAgent', 'canHandoffSecondImprovement', 'canHandoffLaterImprovement'] as const;
   for (const access of ACCESS) {
     const shown = restrictReviewConsoleScreen(full, access);
     assert.equal(shown.canHandoff, access.improvement && access.agent, `canHandoff ${JSON.stringify(access)}`);
-    for (const flag of flags) assert.equal(shown[flag], access.improvement, `${flag} ${JSON.stringify(access)}`);
+    for (const flag of flags) assert.equal(shown[flag], access.improvement && access.agent, `${flag} ${JSON.stringify(access)}`);
   }
   assert.equal(restrictReviewConsoleScreen(full, { improvement: true, agent: false }).canHandoff, false);
   assert.equal(restrictReviewConsoleScreen(full, { improvement: true, agent: true }).canHandoff, true);
