@@ -235,7 +235,7 @@ export type TraceFeatureGuard = (
   actor: Extract<JuryActor, { ok: true }>,
   taskId: string,
   feature: 'improvement.read',
-) => Promise<{ ok: true } | { ok: false; reason: string }>;
+) => Promise<{ ok: true } | { ok: false; reason: string; denial?: string }>;
 
 /**
  * Track A: the improvement trace is read only after the service feature guard allows improvement.read.
@@ -250,7 +250,7 @@ export async function readGuardedImprovementTrace<T>(input: {
   const access = await input.guard(input.actor, input.taskId, 'improvement.read');
   if (!access.ok) {
     if (access.reason === 'UNAUTHENTICATED' || access.reason === 'NO_MEMBERSHIP') return { ok: false, reason: access.reason };
-    if (access.reason === 'FORBIDDEN') return { ok: false, reason: 'FORBIDDEN' };
+    if (access.reason === 'FORBIDDEN') return { ok: false, reason: access.denial === 'SERVICE_NOT_GRANTED' ? 'NOT_FOUND' : 'FORBIDDEN' };
     return { ok: false, reason: 'NOT_FOUND' };
   }
   return { ok: true, value: await input.read() };

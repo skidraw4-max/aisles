@@ -1,5 +1,6 @@
 import { isJuryStoreUnavailable } from '@/lib/jury-product/jury-db';
 import { loadReviewConsole, restrictReviewConsoleScreen, reviewConsoleSections } from '@/lib/jury-product/review-console';
+import { externalFeatureDenial } from '@/lib/jury-product/service-feature-authorization';
 import { guardReviewFeature } from '@/lib/jury-product/service-feature-guard';
 import { getJuryActor } from '@/lib/jury-product/session';
 import { FollowingReReviewBody, HumanChangeGateBody, HumanReReviewBody, JuryChrome, ReReviewAgentHandoffBody, ReReviewNextImprovementBody, ReReviewAgentRunBody, ReReviewChangeGateBody, ReviewDetailBody, LaterAgentRunBody, LaterChangeGateBody, LaterImprovementApprovalBody, LaterImprovementBody, LaterImprovementHandoffBody, LaterReReviewBody, SecondChangeGateBody, SecondImprovementApprovalBody, SecondImprovementBody, SecondImprovementHandoffBody, SecondReReviewBody } from '../../ui';
@@ -58,7 +59,7 @@ export default async function JuryReviewDetailPage({
             {show.FollowingReReview ? <FollowingReReviewBody screen={screen} /> : null}
           </>
         ) : (
-          <p>{!access.ok && access.reason === 'FORBIDDEN' ? 'Not authorized' : '이 tenant에서 해당 Review를 찾을 수 없습니다.'}</p>
+          <p>{!access.ok && externalFeatureDenial(access) === 'FORBIDDEN' ? 'Not authorized' : '이 tenant에서 해당 Review를 찾을 수 없습니다.'}</p>
         )}
       </JuryChrome>
     );

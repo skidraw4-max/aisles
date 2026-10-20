@@ -360,8 +360,10 @@ test('Track A: the trace API reads a trace only after improvement.read passes fo
       assert.equal(outcome.ok, allowed, `${role} ${permission}`);
       assert.equal(reads, allowed ? 1 : 0, `${role} ${permission} read count`);
       if (!outcome.ok) {
-        assert.equal(outcome.reason, 'FORBIDDEN');
-        assert.equal(traceReadHttpStatus(outcome.reason), 403);
+        // Grant first: a missing or below-IMPROVE grant is NOT_FOUND (404); with the grant, a role shortfall is FORBIDDEN (403).
+        const granted = permission === 'AGENT' || permission === 'IMPROVE';
+        assert.equal(outcome.reason, granted ? 'FORBIDDEN' : 'NOT_FOUND', `${role} ${permission}`);
+        assert.equal(traceReadHttpStatus(outcome.reason), granted ? 403 : 404, `${role} ${permission}`);
       }
     }
   }

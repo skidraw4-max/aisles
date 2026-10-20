@@ -41,6 +41,13 @@ export type FeatureAuthorizationFailure =
 /** Internal only. Callers map SERVICE_NOT_GRANTED to NOT_FOUND and never expose this value. */
 export type FeatureAuthorizationDenial = 'ROLE' | 'SERVICE_NOT_GRANTED';
 
+/** External view of a feature denial: missing grant, missing resource and other tenant are NOT_FOUND; a role shortfall is FORBIDDEN. Other reasons return null. */
+export function externalFeatureDenial(access: { reason: string; denial?: unknown }): 'FORBIDDEN' | 'NOT_FOUND' | null {
+  if (access.reason === 'FORBIDDEN') return access.denial === 'SERVICE_NOT_GRANTED' ? 'NOT_FOUND' : 'FORBIDDEN';
+  if (access.reason === 'NOT_FOUND' || access.reason === 'TENANT_MISMATCH') return 'NOT_FOUND';
+  return null;
+}
+
 export function featurePolicy(feature: ServiceFeature): { action: JuryAction; permission: JuryServicePermission } {
   return FEATURE_POLICY[feature];
 }
