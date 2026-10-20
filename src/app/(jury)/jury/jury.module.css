@@ -272,6 +272,200 @@ a.inline {
   }
 }
 
+/* Dark visual refinement: keep the proposal's hierarchy while matching the Jury shell. */
+.wrap {
+  color: #e8eefc;
+  background:
+    radial-gradient(circle at 12% 0%, rgba(76, 110, 190, 0.12), transparent 32rem),
+    radial-gradient(circle at 92% 8%, rgba(111, 78, 170, 0.1), transparent 28rem);
+}
+
+.header {
+  border-color: rgba(148, 163, 184, 0.18);
+  background: linear-gradient(135deg, rgba(16, 24, 39, 0.96), rgba(10, 17, 29, 0.96));
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.22);
+}
+
+.title,
+.pageTitle,
+.panel h2,
+.panel h3 {
+  color: #f5f7ff;
+}
+
+.lead,
+.muted,
+.label,
+.pageDescription,
+.helperText {
+  color: #a8b5c9;
+}
+
+.navWrap {
+  border-color: rgba(148, 163, 184, 0.16);
+  background: rgba(13, 20, 34, 0.88);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.14);
+}
+
+.nav a {
+  color: #b8c5d9;
+}
+
+.nav a:hover,
+.navActive {
+  color: #07111d !important;
+  background: linear-gradient(135deg, #8ee7cf, #72c7f3);
+  box-shadow: 0 6px 16px rgba(114, 199, 243, 0.18);
+}
+
+.panel {
+  border-color: rgba(148, 163, 184, 0.16);
+  background: linear-gradient(145deg, rgba(16, 24, 39, 0.96), rgba(11, 18, 30, 0.96));
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
+}
+
+.nextAction {
+  border-color: rgba(114, 199, 243, 0.32);
+  background: linear-gradient(145deg, rgba(21, 48, 67, 0.72), rgba(14, 31, 47, 0.78));
+}
+
+.eyebrow {
+  color: #8ee7cf;
+}
+
+.primaryButton,
+.button {
+  border-color: #72c7f3;
+  background: linear-gradient(135deg, #287a9e, #3266a5);
+  color: #f7fbff;
+  box-shadow: 0 7px 18px rgba(38, 115, 157, 0.2);
+}
+
+.button:hover,
+.primaryButton:hover {
+  background: linear-gradient(135deg, #3994b8, #407ac0);
+}
+
+.secondaryButton {
+  border-color: rgba(142, 231, 207, 0.48);
+  color: #a9f0da;
+  background: rgba(24, 53, 57, 0.64);
+}
+
+.secondaryButton:hover {
+  background: rgba(38, 82, 82, 0.78);
+}
+
+.metric {
+  color: #f5f7ff;
+}
+
+.badge,
+.statusBadge {
+  border-color: rgba(142, 231, 207, 0.42);
+  color: #a9f0da;
+  background: rgba(44, 108, 93, 0.24);
+}
+
+.row,
+.table th,
+.table td {
+  border-color: rgba(148, 163, 184, 0.14);
+}
+
+.table {
+  border-color: rgba(148, 163, 184, 0.16);
+  background: rgba(10, 17, 29, 0.72);
+}
+
+.table th {
+  color: #dce5f5;
+  background: rgba(25, 37, 56, 0.72);
+}
+
+.table td {
+  color: #c4cfdf;
+}
+
+.inline,
+.technicalDetails summary {
+  color: #8dd7f7;
+}
+
+.field {
+  border-color: rgba(148, 163, 184, 0.28);
+  background: rgba(7, 12, 22, 0.78);
+  color: #eef4ff;
+}
+
+.field:focus {
+  border-color: #72c7f3;
+  outline: 3px solid rgba(114, 199, 243, 0.16);
+}
+
+.notice {
+  border-color: rgba(248, 199, 119, 0.35);
+  color: #f8d89e;
+  background: rgba(102, 71, 25, 0.34);
+}
+
+.stepper li,
+.adminCard {
+  border-color: rgba(148, 163, 184, 0.16);
+  color: #a8b5c9;
+  background: rgba(17, 27, 45, 0.78);
+}
+
+.stepper strong {
+  color: #a8b5c9;
+  background: rgba(148, 163, 184, 0.18);
+}
+
+.stepper .stepActive {
+  border-color: rgba(142, 231, 207, 0.36);
+  color: #a9f0da;
+  background: rgba(44, 108, 93, 0.22);
+}
+
+.stepper .stepActive strong {
+  color: #07111d;
+  background: #8ee7cf;
+}
+
+.technicalDetails {
+  border-color: rgba(148, 163, 184, 0.14);
+}
+
+.resultHighlight {
+  border-color: rgba(248, 199, 119, 0.34);
+  background: linear-gradient(145deg, rgba(89, 61, 24, 0.42), rgba(54, 39, 20, 0.36));
+}
+
+.resultHighlight strong {
+  color: #f8d89e;
+}
+
+.adminCard:hover {
+  border-color: rgba(142, 231, 207, 0.42);
+  background: rgba(30, 69, 69, 0.55);
+}
+
+.adminCard strong {
+  color: #eef4ff;
+}
+
+.adminCard span {
+  color: #a8b5c9;
+}
+
+@media (max-width: 720px) {
+  .menuButton {
+    border-color: #72c7f3;
+    background: linear-gradient(135deg, #287a9e, #3266a5);
+    color: #f7fbff;
+  }
+}
+
 /* UI proposal refresh: larger type, stronger contrast, and a calmer reading rhythm. */
 .wrap {
   max-width: 1180px;
