@@ -13,14 +13,27 @@ function mark(value: boolean): string {
   return value ? '✓' : '—';
 }
 
+function stateLabel(value: string): string {
+  const labels: Record<string, string> = {
+    AVAILABLE: '사용 가능',
+    LOCKED: '권한 없음',
+    NOT_READY: '준비 중',
+    CONNECTED: '연결됨',
+    READY: '준비 완료',
+    RUNNING: '진행 중',
+    COMPLETED: '완료',
+  };
+  return labels[value] ?? value.replaceAll('_', ' ').toLowerCase();
+}
+
 function NextAction({ model }: { model: ServiceOperationModel }) {
   const action = model.next;
   if (!action) return null;
   return (
     <section>
-      <h3>Next action</h3>
+      <h3>다음 할 일</h3>
       <p>{action.label}</p>
-      <p>State <span className={styles.badge}>{action.state}</span></p>
+      <p>상태 <span className={styles.badge}>{stateLabel(action.state)}</span></p>
       {action.state === 'AVAILABLE' && action.id === 'discover' ? (
         <form action={runOnboardingDiscovery}>
           <input type="hidden" name="connectionId" value={model.connectionId} />
@@ -50,8 +63,8 @@ function NextAction({ model }: { model: ServiceOperationModel }) {
       {action.state === 'AVAILABLE' && (action.id === 'review-improvement' || action.id === 'run-agent') && model.improvement.latestId ? (
         <p><Link className={styles.inline} href={juryHref(`/improvements/${model.improvement.latestId}`)}>{action.label}</Link></p>
       ) : null}
-      {action.state === 'LOCKED' ? <p className={styles.muted}>Your current service permission does not allow this action.</p> : null}
-      {action.state === 'NOT_READY' ? <p className={styles.muted}>This action is waiting on an earlier step.</p> : null}
+      {action.state === 'LOCKED' ? <p className={styles.muted}>현재 서비스 권한으로는 이 작업을 할 수 없습니다.</p> : null}
+      {action.state === 'NOT_READY' ? <p className={styles.muted}>앞 단계가 완료되면 이 작업을 할 수 있습니다.</p> : null}
     </section>
   );
 }

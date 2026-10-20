@@ -25,13 +25,10 @@ test('product shell navigation opens the console routes', () => {
     assert.equal(existsSync(path.resolve(process.cwd(), relative)), true, item.href);
   }
   assert.deepEqual(PRODUCT_NAV.map((item) => item.label), [
-    'Dashboard',
-    'Services',
-    'Evidence',
-    'Reviews',
-    'Improvements',
-    'Audit',
-    'Settings',
+    '홈',
+    '리뷰 요청',
+    '결과',
+    '관리',
   ]);
 });
 
@@ -128,6 +125,6 @@ test('auditor stays read-only and the shell does not fall back to fixtures', () 
   assert.equal(ui.includes('SHELL_UNAVAILABLE'), true);
   assert.equal(ui.includes('No services connected yet'), false);
   assert.equal(ui.includes('SHELL_EMPTY.services'), true);
-  assert.equal(ui.includes('Unauthorized'), true);
+  assert.equal(ui.includes('접근할 수 없습니다'), true);
   assert.equal(ui.includes('Logout'), true);
 });

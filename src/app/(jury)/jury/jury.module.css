@@ -271,3 +271,410 @@ a.inline {
     padding: 0.4rem 0.3rem;
   }
 }
+
+/* UI proposal refresh: larger type, stronger contrast, and a calmer reading rhythm. */
+.wrap {
+  max-width: 1180px;
+  padding: 2rem 1.5rem 5rem;
+  color: #172033;
+  font-size: 1rem;
+  line-height: 1.65;
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 2rem;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.25rem;
+  border: 1px solid #d7dee8;
+  border-radius: 16px;
+  background: #ffffff;
+  text-align: left;
+  box-shadow: 0 8px 24px rgba(11, 23, 48, 0.06);
+}
+
+.title {
+  color: #0b1730;
+  font-size: 1.85rem;
+  letter-spacing: -0.03em;
+}
+
+.lead,
+.muted,
+.label {
+  color: #52627a;
+}
+
+.lead {
+  max-width: 44rem;
+  font-size: 1rem;
+}
+
+.identity {
+  justify-content: flex-end;
+  margin-top: 0;
+  font-size: 0.92rem;
+}
+
+.navWrap {
+  margin: 0 0 1.5rem;
+  padding: 0.35rem;
+  border: 1px solid #d7dee8;
+  border-radius: 14px;
+  background: #f4f7fb;
+}
+
+.nav {
+  justify-content: flex-start;
+  gap: 0.35rem;
+  margin: 0;
+}
+
+.nav a {
+  display: inline-block;
+  padding: 0.55rem 1rem;
+  border-radius: 10px;
+  color: #33435d;
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.nav a:hover,
+.navActive {
+  color: #ffffff !important;
+  background: #0d7c83;
+  text-decoration: none;
+}
+
+.panel {
+  border: 1px solid #d7dee8;
+  border-radius: 14px;
+  padding: 1.35rem 1.5rem;
+  margin-bottom: 1.1rem;
+  background: #ffffff;
+  box-shadow: 0 5px 18px rgba(11, 23, 48, 0.04);
+}
+
+.panel h2,
+.panel h3 {
+  color: #0b1730;
+  font-size: 1.25rem;
+  line-height: 1.35;
+}
+
+.pageTitle {
+  margin-bottom: 0.25rem;
+  text-align: left;
+  color: #0b1730;
+  font-size: clamp(1.65rem, 3vw, 2.25rem);
+  letter-spacing: -0.04em;
+}
+
+.pageIntro {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.pageDescription {
+  margin: 0;
+  color: #52627a;
+  font-size: 1.05rem;
+}
+
+.eyebrow {
+  margin: 0 0 0.25rem;
+  color: #0d7c83;
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+}
+
+.nextAction {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border-color: #b7dcd8;
+  background: #eef8f7;
+}
+
+.nextAction h2 {
+  margin-bottom: 0.25rem;
+}
+
+.primaryButton,
+.secondaryButton,
+.button {
+  display: inline-block;
+  border-radius: 9px;
+  padding: 0.65rem 1rem;
+  font-weight: 800;
+  font-size: 0.98rem;
+  line-height: 1.2;
+  text-decoration: none;
+}
+
+.primaryButton,
+.button {
+  border: 1px solid #0d7c83;
+  background: #0d7c83;
+  color: #ffffff;
+}
+
+.button:hover,
+.primaryButton:hover {
+  background: #095f64;
+}
+
+.secondaryButton {
+  border: 1px solid #2b66c8;
+  color: #234f9e;
+  background: #ffffff;
+}
+
+.secondaryButton:hover {
+  background: #eef4ff;
+}
+
+.cards {
+  gap: 1rem;
+}
+
+.metric {
+  color: #0b1730;
+  font-size: 2.2rem;
+  line-height: 1.1;
+}
+
+.badge,
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid #9bcac5;
+  border-radius: 999px;
+  padding: 0.15rem 0.6rem;
+  color: #0d6268;
+  background: #eef8f7;
+  font-size: 0.84rem;
+  font-weight: 800;
+}
+
+.table {
+  display: block;
+  overflow-x: auto;
+  border: 1px solid #d7dee8;
+  border-radius: 10px;
+  background: #ffffff;
+}
+
+.table th,
+.table td {
+  min-width: 8rem;
+  padding: 0.75rem 0.8rem;
+  border-bottom: 1px solid #e3e8ef;
+  color: #27344a;
+  line-height: 1.5;
+}
+
+.table th {
+  color: #0b1730;
+  background: #f4f7fb;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.table tr:last-child td {
+  border-bottom: 0;
+}
+
+.inline {
+  color: #1556b4;
+  font-weight: 700;
+}
+
+.field {
+  min-height: 2.75rem;
+  margin: 0.45rem 0 0.75rem;
+  border-color: #aeb9c9;
+  background: #ffffff;
+  color: #172033;
+  font-size: 1rem;
+}
+
+.notice {
+  padding: 0.8rem 1rem;
+  border: 1px solid #e8c88b;
+  border-radius: 10px;
+  color: #7d4d00;
+  background: #fff7e8;
+  font-weight: 700;
+}
+
+.stepper {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.65rem;
+  margin: 0 0 1rem;
+  padding: 0;
+  list-style: none;
+}
+
+.stepper li {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.8rem 1rem;
+  border: 1px solid #d7dee8;
+  border-radius: 10px;
+  color: #52627a;
+  background: #f4f7fb;
+  font-weight: 700;
+}
+
+.stepper strong {
+  display: grid;
+  width: 1.6rem;
+  height: 1.6rem;
+  place-items: center;
+  border-radius: 50%;
+  color: #52627a;
+  background: #d7dee8;
+}
+
+.stepper .stepActive {
+  border-color: #b7dcd8;
+  color: #0d6268;
+  background: #eef8f7;
+}
+
+.stepper .stepActive strong {
+  color: #ffffff;
+  background: #0d7c83;
+}
+
+.helperText {
+  margin: 0 0 1.1rem;
+  color: #52627a;
+}
+
+.technicalDetails {
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #e3e8ef;
+}
+
+.technicalDetails summary {
+  color: #1556b4;
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.resultHighlight {
+  padding: 1rem 1.1rem;
+  border: 1px solid #e8c88b;
+  border-radius: 12px;
+  background: #fff7e8;
+}
+
+.resultHighlight strong {
+  display: block;
+  margin-top: 0.2rem;
+  color: #7d4d00;
+  font-size: 1.5rem;
+}
+
+.resultHighlight p,
+.resultSummary {
+  margin-bottom: 0;
+  font-size: 1.05rem;
+}
+
+.actionPanel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.2rem 0;
+}
+
+.adminGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.8rem;
+  margin-bottom: 1.1rem;
+}
+
+.adminCard {
+  display: grid;
+  gap: 0.2rem;
+  padding: 1rem;
+  border: 1px solid #d7dee8;
+  border-radius: 12px;
+  color: #172033;
+  background: #f4f7fb;
+  text-decoration: none;
+}
+
+.adminCard:hover {
+  border-color: #9bcac5;
+  background: #eef8f7;
+}
+
+.adminCard strong {
+  color: #0b1730;
+  font-size: 1.05rem;
+}
+
+.adminCard span {
+  color: #52627a;
+  font-size: 0.92rem;
+}
+
+@media (max-width: 720px) {
+  .wrap {
+    padding: 1rem 0.75rem 3rem;
+    font-size: 0.98rem;
+  }
+
+  .header,
+  .pageIntro,
+  .nextAction,
+  .actionPanel {
+    display: grid;
+    align-items: start;
+  }
+
+  .header {
+    padding: 1rem;
+  }
+
+  .identity {
+    justify-content: flex-start;
+  }
+
+  .panel {
+    padding: 1rem;
+  }
+
+  .nav {
+    display: none;
+  }
+
+  .navOpen {
+    display: grid;
+  }
+
+  .stepper,
+  .adminGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .table {
+    font-size: 0.92rem;
+  }
+}

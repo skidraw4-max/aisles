@@ -39,6 +39,33 @@ function compactIdentifier(value: string, start = 10, end = 8): string {
   return `${value.slice(0, start)}…${value.slice(-end)}`;
 }
 
+const STATUS_LABELS: Record<string, string> = {
+  AVAILABLE: '사용 가능',
+  CONNECTED: '연결됨',
+  DISCOVERY_PENDING: '서비스 확인 중',
+  PROPOSED: '승인 대기',
+  APPROVED: '승인됨',
+  PENDING: '처리 대기',
+  RUNNING: '진행 중',
+  COMPLETED: '완료',
+  BLOCKED: '중단됨',
+  NOT_READY: '준비 중',
+  LOCKED: '권한 없음',
+  VERIFY: '검증 필요',
+  REWORD: '수정 필요',
+  ACCEPT: '확인 완료',
+  OWNER: '소유자',
+  ADMIN: '관리자',
+  DEVELOPER: '개발자',
+  REVIEWER: '리뷰어',
+  VIEWER: '열람자',
+};
+
+function userLabel(value: string | null | undefined): string {
+  if (!value) return '확인 필요';
+  return STATUS_LABELS[value] ?? value.replaceAll('_', ' ').toLowerCase();
+}
+
 export async function JuryChrome({
   actor,
   notice,
@@ -63,29 +90,29 @@ export async function JuryChrome({
         <div>
           <h1 className={styles.title}>AIsles Jury</h1>
           <p className={styles.lead}>
-            제품 Console. 기존 운영위원회 화면과는 별도이며, 품질 판정은 v9.x Final Comparator 필드만 표시합니다.
+            리뷰 요청부터 결과 확인, 조직 관리까지 한 곳에서 진행합니다.
           </p>
         </div>
         {actor.ok ? (
           <div className={styles.identity}>
             <OrganizationSwitcher organizations={organizations} activeTenantId={actor.tenantId} />
             <p className={styles.muted}>
-              <Link className={styles.inline} href={juryHref('/organization/members')}>Members</Link>
+              <Link className={styles.inline} href={juryHref('/organization/members')}>멤버</Link>
               {' · '}
-              <Link className={styles.inline} href={juryHref('/organization/services')}>Service access</Link>
+              <Link className={styles.inline} href={juryHref('/organization/services')}>서비스 권한</Link>
               {' · '}
-              <Link className={styles.inline} href={juryHref('/organization/security')}>Security</Link>
+              <Link className={styles.inline} href={juryHref('/organization/security')}>보안</Link>
               {decideJuryMutation({ actor, action: 'membership.write', resourceTenantId: actor.tenantId }).ok ? (
                 <>
                   {' · '}
-                  <Link className={styles.inline} href={juryHref('/organization/invitations')}>Invitations</Link>
+                  <Link className={styles.inline} href={juryHref('/organization/invitations')}>초대</Link>
                 </>
               ) : null}
             </p>
             <p className={styles.muted}>
-              user <strong>{identity?.userLabel ?? SHELL_UNAVAILABLE}</strong>
+              사용자 <strong>{identity?.userLabel ?? SHELL_UNAVAILABLE}</strong>
               {' · '}
-              role <span className={styles.badge}>{actor.role}</span>
+              역할 <span className={styles.badge}>{actor.role}</span>
             </p>
             <LogoutButton />
           </div>
@@ -98,7 +125,7 @@ export async function JuryChrome({
         children
       ) : (
         <section className={styles.panel} role="alert">
-          <h2>Unauthorized</h2>
+          <h2>접근할 수 없습니다</h2>
           <p>{GATE_COPY[actor.reason]}</p>
           {actor.reason === 'UNAUTHENTICATED' ? (
             <p>
@@ -241,45 +268,62 @@ export function DashboardBody({ view }: { view: JuryConsoleView }) {
   if (!board.available) {
     return (
       <section className={styles.panel} role="alert">
-        <h2>Dashboard</h2>
+        <h2>홈</h2>
         <p>{SHELL_UNAVAILABLE}</p>
       </section>
     );
   }
   return (
     <>
-      <h2 className={styles.pageTitle}>Dashboard</h2>
+      <div className={styles.pageIntro}>
+        <div>
+          <p className={styles.eyebrow}>현재 메뉴 · 홈</p>
+          <h2 className={styles.pageTitle}>홈</h2>
+          <p className={styles.pageDescription}>지금 해야 할 일과 최근 결과를 한눈에 확인하세요.</p>
+        </div>
+        <Link className={styles.primaryButton} href={juryHref('/evidence')}>리뷰 요청 시작</Link>
+      </div>
+      <section className={`${styles.panel} ${styles.nextAction}`}>
+        <div>
+          <p className={styles.eyebrow}>지금 할 일</p>
+          <h2>최근 리뷰 결과를 확인하세요</h2>
+          <p className={styles.muted}>새로운 결과가 도착하면 주요 문제와 권장 조치를 바로 확인할 수 있습니다.</p>
+        </div>
+        <Link className={styles.primaryButton} href={juryHref('/reviews')}>결과 보기</Link>
+      </section>
       <div className={styles.cards}>
         <section className={styles.panel}>
-          <h2>Connected Services</h2>
+          <h2>연결된 서비스</h2>
           <p className={styles.metric}>{board.services}</p>
+          <p className={styles.muted}>정상 연결된 서비스</p>
         </section>
         <section className={styles.panel}>
-          <h2>Evidence</h2>
+          <h2>리뷰 자료</h2>
           <p className={styles.metric}>{board.evidence}</p>
+          <p className={styles.muted}>최근 분석에 사용된 자료</p>
         </section>
         <section className={styles.panel}>
-          <h2>Reviews</h2>
+          <h2>진행 중 리뷰</h2>
           <p className={styles.metric}>{board.reviews}</p>
           <p className={styles.muted}>{board.reviewDetail}</p>
         </section>
         <section className={styles.panel}>
-          <h2>Improvements</h2>
+          <h2>개선 작업</h2>
           <p className={styles.metric}>{board.openImprovements}</p>
-          <p className={styles.muted}>OPEN · {board.activeImprovements} in progress</p>
+          <p className={styles.muted}>진행 중 {board.activeImprovements}건</p>
         </section>
       </div>
       <section className={styles.panel}>
-        <h2>Recent Activity</h2>
+        <h2>최근 결과와 활동</h2>
         {board.activity.length === 0 ? <p>{SHELL_EMPTY.audit}</p> : (
           <table className={`${styles.table} ${styles.activityTable}`}>
             <thead>
               <tr>
-                <th>timestamp</th>
-                <th>actor</th>
-                <th>action</th>
-                <th>resource</th>
-                <th>status</th>
+                <th>시간</th>
+                <th>사용자</th>
+                <th>활동</th>
+                <th>대상</th>
+                <th>상태</th>
               </tr>
             </thead>
             <tbody>
@@ -287,9 +331,9 @@ export function DashboardBody({ view }: { view: JuryConsoleView }) {
                 <tr key={event.id}>
                   <td>{event.timestamp}</td>
                   <td className={styles.identifier} title={event.actor}>{compactIdentifier(event.actor)}</td>
-                  <td>{event.action}</td>
+                  <td>{userLabel(event.action)}</td>
                   <td className={styles.identifier} title={event.resource}>{compactIdentifier(event.resource)}</td>
-                  <td>{event.status}</td>
+                  <td><span className={styles.statusBadge}>{userLabel(event.status)}</span></td>
                 </tr>
               ))}
             </tbody>
@@ -435,17 +479,24 @@ function CatalogScopeForm({ actor, view }: { actor: JuryActor; view: JuryConsole
 export function ReviewsBody({ view }: { view: JuryConsoleView }) {
   return (
     <section className={styles.panel}>
-      <h2>Reviews</h2>
+      <div className={styles.pageIntro}>
+        <div>
+          <p className={styles.eyebrow}>현재 메뉴 · 결과</p>
+          <h2 className={styles.pageTitle}>결과</h2>
+          <p className={styles.pageDescription}>결론과 주요 문제, 권장 조치를 먼저 확인하세요.</p>
+        </div>
+        <Link className={styles.secondaryButton} href={juryHref('/evidence')}>새 리뷰 요청</Link>
+      </div>
       {view.results.length === 0 ? <p>{SHELL_EMPTY.reviews}</p> : (
         <table className={styles.table}>
           <thead>
             <tr>
-              <th>status</th>
-              <th>decision</th>
-              <th>completedAt</th>
-              <th>review type</th>
-              <th>evidence</th>
-              <th>summary</th>
+              <th>상태</th>
+              <th>결론</th>
+              <th>완료일</th>
+              <th>리뷰 유형</th>
+              <th>리뷰 자료</th>
+              <th>요약</th>
             </tr>
           </thead>
           <tbody>
@@ -454,7 +505,7 @@ export function ReviewsBody({ view }: { view: JuryConsoleView }) {
               return (
                 <tr key={row.id}>
                   <td>{request?.status ?? SHELL_UNAVAILABLE}</td>
-                  <td><Link className={styles.inline} href={juryHref(`/reviews/${row.id}`)}>{row.expectedDecision}</Link></td>
+                  <td><Link className={styles.inline} href={juryHref(`/reviews/${row.id}`)}>{userLabel(row.expectedDecision)}</Link></td>
                   <td>{row.completedAt}</td>
                   <td>{request?.reviewType ?? SHELL_UNAVAILABLE}</td>
                   <td>{request?.evidenceId ?? SHELL_UNAVAILABLE}</td>
@@ -473,60 +524,69 @@ export function ReviewDetailBody({ screen, noted }: { screen: ReviewConsoleScree
   return (
     <>
       <section className={styles.panel}>
-        <h2>Jury Review</h2>
-        <div className={styles.row}><span className={styles.label}>Review ID</span><span>{screen.reviewId}</span></div>
-        <div className={styles.row}><span className={styles.label}>Status</span><span>{screen.status ?? '없음'}</span></div>
-        <div className={styles.row}><span className={styles.label}>completedAt</span><span>{screen.completedAt}</span></div>
+        <p className={styles.eyebrow}>현재 메뉴 · 결과</p>
+        <h2 className={styles.pageTitle}>리뷰 결과</h2>
+        <div className={styles.resultHighlight}>
+          <span className={styles.label}>결론</span>
+          <strong>{userLabel(screen.decision)}</strong>
+          <p>{screen.decisionMeaning}</p>
+        </div>
+        <p className={styles.resultSummary}>{screen.summary || '요약이 없습니다.'}</p>
+        {screen.humanDecision ? <p className={styles.muted}>사용자 확인: {userLabel(screen.humanDecision)}</p> : null}
+        <details className={styles.technicalDetails}>
+          <summary>기술 정보 보기</summary>
+          <div className={styles.row}><span className={styles.label}>Review ID</span><span>{screen.reviewId}</span></div>
+          <div className={styles.row}><span className={styles.label}>상태</span><span>{userLabel(screen.status)}</span></div>
+          <div className={styles.row}><span className={styles.label}>완료일</span><span>{screen.completedAt}</span></div>
+        </details>
       </section>
       <section className={styles.panel}>
-        <h2>Decision</h2>
-        <p>Jury Decision: {screen.decision}</p>
-        <p className={styles.muted}>{screen.decisionMeaning}</p>
-        {screen.humanDecision ? <p>Human Decision: {screen.humanDecision}</p> : null}
-      </section>
-      <section className={styles.panel}>
-        <h2>Summary</h2>
-        <p>{screen.summary || '없음'}</p>
-      </section>
-      <section className={styles.panel}>
-        <h2>Top Problems</h2>
+        <h2>주요 문제</h2>
         {screen.topProblems.length === 0 ? <p className={styles.muted}>없음</p> : (
           <ul>{screen.topProblems.map((item) => <li key={item}>{item}</li>)}</ul>
         )}
       </section>
       <section className={styles.panel}>
-        <h2>Expected User Effect</h2>
-        <p>{screen.expectedUserEffect || '없음'}</p>
-      </section>
-      <section className={styles.panel}>
-        <h2>Risk</h2>
-        <p>{screen.risk || '없음'}</p>
-      </section>
-      <section className={styles.panel}>
-        <h2>측정된 사실</h2>
-        <p className={styles.muted}>Evidence</p>
-        <div className={styles.row}><span className={styles.label}>Evidence ID</span><span>{screen.evidenceId ?? '없음'}</span></div>
-        <Link className={styles.inline} href={juryHref('/evidence')}>Evidence 목록</Link>
-        {screen.measured.map((metric) => (
-          <div className={styles.row} key={metric.id}>
-            <span>{metric.metric}</span>
-            <span>{metric.text} ({metric.availability})</span>
+        <div className={styles.actionPanel}>
+          <div>
+            <h2>권장 조치</h2>
+            <p>{screen.expectedUserEffect || screen.risk || '추가 조치가 필요하지 않습니다.'}</p>
           </div>
-        ))}
+          {screen.humanChoices.length > 0 ? <span className={styles.badge}>확인 필요</span> : null}
+        </div>
+        <p className={styles.muted}>위험도: {screen.risk || '특이 사항 없음'}</p>
       </section>
       <section className={styles.panel}>
-        <h2>Jury 판단</h2>
-        <p className={styles.muted}>dimensionEvidence</p>
+        <details className={styles.technicalDetails}>
+          <summary>근거 자세히 보기</summary>
+          <h3>측정된 사실</h3>
+          <p className={styles.muted}>리뷰 자료</p>
+          <div className={styles.row}><span className={styles.label}>Evidence ID</span><span>{screen.evidenceId ?? '없음'}</span></div>
+          <Link className={styles.inline} href={juryHref('/evidence')}>리뷰 자료 목록</Link>
+          {screen.measured.map((metric) => (
+            <div className={styles.row} key={metric.id}>
+              <span>{metric.metric}</span>
+              <span>{metric.text} ({userLabel(metric.availability)})</span>
+            </div>
+          ))}
+        </details>
+      </section>
+      <section className={styles.panel}>
+        <details className={styles.technicalDetails}>
+        <summary>판단 근거 자세히 보기</summary>
+        <h2>판단 근거</h2>
         {screen.dimensionEvidence.length === 0 ? <p className={styles.muted}>없음</p> : (
           <ul>{screen.dimensionEvidence.map((item) => <li key={item}>{item}</li>)}</ul>
         )}
-        <p className={styles.muted}>supportedClaims</p>
+        <p className={styles.muted}>확인된 주장</p>
         {screen.supportedClaims.length === 0 ? <p className={styles.muted}>없음</p> : (
           <ul>{screen.supportedClaims.map((item) => <li key={item}>{item}</li>)}</ul>
         )}
+        </details>
       </section>
       <section className={styles.panel}>
-        <h2>아직 확인되지 않은 내용</h2>
+        <details className={styles.technicalDetails}>
+        <summary>아직 확인되지 않은 내용</summary>
         <p className={styles.muted}>hypotheses</p>
         {screen.hypotheses.length === 0 ? <p className={styles.muted}>없음</p> : (
           <ul>{screen.hypotheses.map((item) => <li key={item}>{item}</li>)}</ul>
@@ -535,6 +595,7 @@ export function ReviewDetailBody({ screen, noted }: { screen: ReviewConsoleScree
         {screen.partiallySupportedClaims.length === 0 ? <p className={styles.muted}>없음</p> : (
           <ul>{screen.partiallySupportedClaims.map((item) => <li key={item}>{item}</li>)}</ul>
         )}
+        </details>
       </section>
       <section className={styles.panel}>
         <h2>다음 행동</h2>
@@ -696,18 +757,31 @@ export function EvidenceBody({ actor, view }: { actor: JuryActor; view: JuryCons
   const evidence = projectConsoleEvidence(view);
   return (
     <section className={styles.panel}>
-      <h2>Evidence</h2>
+      <div className={styles.pageIntro}>
+        <div>
+          <p className={styles.eyebrow}>현재 메뉴 · 리뷰 요청</p>
+          <h2 className={styles.pageTitle}>리뷰 요청</h2>
+          <p className={styles.pageDescription}>서비스를 선택하고 분석 범위를 확인한 뒤 리뷰를 요청하세요.</p>
+        </div>
+      </div>
+      <ol className={styles.stepper} aria-label="리뷰 요청 단계">
+        <li className={styles.stepActive}><strong>1</strong><span>서비스 선택</span></li>
+        <li><strong>2</strong><span>범위·기간 확인</span></li>
+        <li><strong>3</strong><span>요청 완료</span></li>
+      </ol>
+      <p className={styles.helperText}>승인된 서비스와 리뷰 자료만 표시됩니다. 기술 정보는 필요한 경우에만 자세히 볼 수 있습니다.</p>
       {form.visible ? (
         form.scopes.length === 0 ? (
           <p className={styles.muted}>현재 승인된 Scope에는 입력 가능한 Catalog Metric이 없습니다.</p>
         ) : (
           form.scopes.map((scope) => (
             <form action={submitTenantEvidenceIntake} key={scope.scopeId}>
-              <p>Scope: {scope.label}</p>
+              <h3>2. 범위와 기간 확인</h3>
+              <p className={styles.muted}>선택한 서비스: {scope.label}</p>
               <input type="hidden" name="connectionId" value={scope.connectionId} />
               <input type="hidden" name="scopeId" value={scope.scopeId} />
               <label>
-                Metric
+                분석 항목
                 <select className={styles.field} name="metric" defaultValue={scope.metrics[0]}>
                   {scope.metrics.map((metric) => (
                     <option key={metric} value={metric}>{metric}</option>
@@ -715,7 +789,7 @@ export function EvidenceBody({ actor, view }: { actor: JuryActor; view: JuryCons
                 </select>
               </label>
               <label>
-                Availability
+                자료 상태
                 <select className={styles.field} name="availability" defaultValue="AVAILABLE">
                   {INTAKE_AVAILABILITY.map((availability) => (
                     <option key={availability} value={availability}>{availability}</option>
@@ -723,10 +797,10 @@ export function EvidenceBody({ actor, view }: { actor: JuryActor; view: JuryCons
                 </select>
               </label>
               <label>
-                Value
+                측정값
                 <input className={styles.field} name="value" inputMode="decimal" />
               </label>
-              <button className={styles.button} type="submit">Create Evidence</button>
+              <button className={styles.primaryButton} type="submit">리뷰 자료 만들기</button>
             </form>
           ))
         )
@@ -738,14 +812,15 @@ export function EvidenceBody({ actor, view }: { actor: JuryActor; view: JuryCons
         const stored = view.evidence.find((item) => item.id === row.id);
         return (
         <article key={row.id}>
-          <div className={styles.row}><span className={styles.label}>Evidence ID</span><span>{row.id}</span></div>
-          <div className={styles.row}><span className={styles.label}>purpose</span><span>{row.purpose}</span></div>
-          <div className={styles.row}><span className={styles.label}>period</span><span>{row.periodStart} – {row.periodEnd}</span></div>
-          <div className={styles.row}><span className={styles.label}>timezone</span><span>{stored?.timezone ?? SHELL_UNAVAILABLE}</span></div>
-          <div className={styles.row}><span className={styles.label}>adapter</span><span>{stored?.adapterKey ?? SHELL_UNAVAILABLE}</span></div>
-          <div className={styles.row}><span className={styles.label}>content hash</span><span>{stored?.contentHash ?? SHELL_UNAVAILABLE}</span></div>
-          <div className={styles.row}><span className={styles.label}>readOnly</span><span>{stored?.readOnly === true ? 'true' : stored?.readOnly === false ? 'false' : SHELL_UNAVAILABLE}</span></div>
-          <div className={styles.row}><span className={styles.label}>piiExcluded</span><span>{stored?.piiExcluded === true ? 'true' : stored?.piiExcluded === false ? 'false' : SHELL_UNAVAILABLE}</span></div>
+          <div className={styles.row}><span className={styles.label}>리뷰 자료</span><span>{row.purpose}</span></div>
+          <div className={styles.row}><span className={styles.label}>분석 기간</span><span>{row.periodStart} – {row.periodEnd}</span></div>
+          <details className={styles.technicalDetails}>
+            <summary>기술 정보 자세히 보기</summary>
+            <div className={styles.row}><span className={styles.label}>시간대</span><span>{stored?.timezone ?? SHELL_UNAVAILABLE}</span></div>
+            <div className={styles.row}><span className={styles.label}>연결 방식</span><span>{stored?.adapterKey ?? SHELL_UNAVAILABLE}</span></div>
+            <div className={styles.row}><span className={styles.label}>내부 식별자</span><span>{row.id}</span></div>
+            <div className={styles.row}><span className={styles.label}>읽기 전용</span><span>{stored?.readOnly === true ? '예' : stored?.readOnly === false ? '아니오' : SHELL_UNAVAILABLE}</span></div>
+          </details>
           <div className={styles.row}><span className={styles.label}>metric count</span><span>{row.metricCount}</span></div>
           {row.metrics.map((metric) => (
             <div className={styles.row} key={metric.id}>
@@ -757,7 +832,7 @@ export function EvidenceBody({ actor, view }: { actor: JuryActor; view: JuryCons
             <form action={submitTenantReview}>
               <input type="hidden" name="evidenceId" value={row.id} />
               <input type="hidden" name="reviewType" value="FULL_REVIEW" />
-              <button className={styles.button} type="submit">Run Jury Review</button>
+              <button className={styles.primaryButton} type="submit">3. 리뷰 요청하기</button>
             </form>
           ) : null}
         </article>
@@ -1066,23 +1141,41 @@ export function SettingsBody({
 }) {
   return (
     <>
+    <div className={styles.pageIntro}>
+      <div>
+        <p className={styles.eyebrow}>현재 메뉴 · 관리</p>
+        <h2 className={styles.pageTitle}>관리</h2>
+        <p className={styles.pageDescription}>서비스 연결, 멤버, 권한, 초대, 보안과 설정을 한 곳에서 관리합니다.</p>
+      </div>
+    </div>
+    <nav className={styles.adminGrid} aria-label="관리 메뉴">
+      <Link className={styles.adminCard} href={juryHref('/organization/services')}><strong>서비스 연결</strong><span>연결 상태와 서비스 권한</span></Link>
+      <Link className={styles.adminCard} href={juryHref('/organization/members')}><strong>멤버</strong><span>조직 역할과 상태</span></Link>
+      <Link className={styles.adminCard} href={juryHref('/organization/invitations')}><strong>초대</strong><span>이메일 초대와 대기 상태</span></Link>
+      <Link className={styles.adminCard} href={juryHref('/organization/security')}><strong>보안</strong><span>인증과 조직 보호</span></Link>
+      <Link className={styles.adminCard} href={juryHref('/audit')}><strong>감사 기록</strong><span>사람이 읽는 활동 기록</span></Link>
+      <Link className={styles.adminCard} href={juryHref('/automation')}><strong>자동화</strong><span>실행 상태와 중단</span></Link>
+    </nav>
     <section className={styles.panel}>
-      <h2>Tenant</h2>
-      <div className={styles.row}><span className={styles.label}>name</span><span>{tenantName ?? SHELL_UNAVAILABLE}</span></div>
-      <div className={styles.row}><span className={styles.label}>identifier</span><span>{view.tenantId}</span></div>
+      <h2>조직 정보</h2>
+      <div className={styles.row}><span className={styles.label}>조직 이름</span><span>{tenantName ?? SHELL_UNAVAILABLE}</span></div>
+      <details className={styles.technicalDetails}>
+        <summary>기술 정보 자세히 보기</summary>
+        <div className={styles.row}><span className={styles.label}>조직 식별자</span><span>{view.tenantId}</span></div>
+      </details>
     </section>
     <section className={styles.panel}>
-      <h2>Members</h2>
-      <p className={styles.muted}>OWNER와 ADMIN만 membership을 추가, 변경, 제거할 수 있습니다. 마지막 OWNER는 남깁니다.</p>
+      <h2>멤버와 역할</h2>
+      <p className={styles.muted}>OWNER와 ADMIN만 멤버를 추가·변경·제거할 수 있습니다. 마지막 OWNER는 보호됩니다.</p>
       {members.map((row) => (
         <div className={styles.row} key={row.id}>
-          <span>{row.role}</span>
-          <span className={styles.muted}>{row.userId}</span>
+          <span>{userLabel(row.role)}</span>
+          <span className={styles.muted}>멤버 {compactIdentifier(row.userId)}</span>
         </div>
       ))}
       {canShowWrite(actor, 'membership.write') ? (
         <form action={changeJuryMembership}>
-          <input className={styles.field} name="targetUserId" placeholder="대상 user id" required />
+          <label>멤버 선택 또는 사용자 이메일<input className={styles.field} name="targetUserId" placeholder="멤버 식별자" required /></label>
           <select className={styles.field} name="role" defaultValue="DEVELOPER">
             <option value="OWNER">OWNER</option>
             <option value="ADMIN">ADMIN</option>
@@ -1096,28 +1189,28 @@ export function SettingsBody({
             <option value="REMOVE_MEMBER">제거</option>
           </select>
           <input type="hidden" name="tenantId" value="client-supplied-tenant" />
-          <button className={styles.button} type="submit">
-            Membership 적용
+          <button className={styles.primaryButton} type="submit">
+            역할 적용
           </button>
         </form>
       ) : (
         <p className={styles.muted}>Membership 변경: 현재 역할에는 이 변경 권한이 없습니다.</p>
       )}
-      <WriteControl actor={actor} action="settings.write" label="설정 변경" returnTo={juryHref('/settings')} />
+      <WriteControl actor={actor} action="settings.write" label="조직 설정 변경" returnTo={juryHref('/settings')} />
     </section>
     <section className={styles.panel}>
-      <h2>Permissions</h2>
+      <h2>권한 요약</h2>
       <table className={styles.table}>
         <thead>
           <tr>
-            <th>permission</th>
-            <th>status</th>
+            <th>기능</th>
+            <th>상태</th>
           </tr>
         </thead>
         <tbody>
           {JURY_ACTIONS.map((action) => (
             <tr key={action}>
-              <td>{action}</td>
+              <td>{userLabel(action)}</td>
               <td>{canShowWrite(actor, action) ? 'Allowed' : 'Not granted'}</td>
             </tr>
           ))}
