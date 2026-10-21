@@ -19,3 +19,18 @@ export function Tabs({ items, activeId, label }: { items: readonly TabItem[]; ac
     </nav>
   );
 }
+
+/**
+ * Display-only hint for AI-generated English review text. No translation logic or API call:
+ * it only explains how to use the browser's own translation. The AI text itself is untouched.
+ */
+export function TranslationHint() {
+  return (
+    <details className={styles.technicalDetails}>
+      <summary>한글 번역 보기</summary>
+      <p className={styles.muted}>
+        AI 심사 원문은 영어로 제공됩니다. 브라우저의 번역 기능(Chrome: 마우스 오른쪽 클릭 → 한국어로 번역)을 사용하세요.
+      </p>
+    </details>
+  );
+}

@@ -677,18 +677,18 @@ test('follow-up 3: review, improvement and agent areas follow service review.rea
 
 test('follow-up 3: the UI gates review areas and list cells on hasReviewAccess and keeps empty states for permitted users', () => {
   const ui = readFileSync(new URL('../../app/(jury)/jury/service-operations-ui.tsx', import.meta.url), 'utf8');
-  assert.equal(ui.includes("<td>{hasReviewAccess(row) ? row.lastReview : '—'}</td>"), true);
-  assert.equal(ui.includes("<td>{hasReviewAccess(row) ? (row.review.decision ?? 'No review') : '—'}</td>"), true);
-  assert.equal(ui.includes("<td>{hasReviewAccess(row) ? (row.agent.status ?? 'No execution') : '—'}</td>"), true);
+  assert.equal(ui.includes("<td>{hasReviewAccess(row) ? displayText(row.lastReview) : '—'}</td>"), true);
+  assert.equal(ui.includes("<td>{hasReviewAccess(row) ? displayText(row.review.decision ?? 'No review') : '—'}</td>"), true);
+  assert.equal(ui.includes("<td>{hasReviewAccess(row) ? displayText(row.agent.status ?? 'No execution') : '—'}</td>"), true);
   const gate = ui.indexOf('{hasReviewAccess(model) ? (');
   assert.ok(gate > 0);
   const end = ui.indexOf(') : null}', gate);
   const gated = ui.slice(gate, end);
-  for (const text of ['<h3>Review</h3>', '<p>No review</p>', '<h3>Improvement</h3>', '<p>No improvement</p>', '<h3>Agent</h3>', '<p>No execution</p>']) {
+  for (const text of ['<h3>심사</h3>', '<p>심사 없음</p>', '<h3>개선</h3>', '<p>개선 없음</p>', '<h3>에이전트</h3>', '<p>실행 없음</p>']) {
     assert.equal(gated.includes(text), true, text);
     assert.equal(ui.split(text).length - 1, 1, `${text} renders only inside the gate`);
   }
-  const evidence = ui.indexOf('<h3>Evidence</h3>');
+  const evidence = ui.indexOf('<h3>검증 근거</h3>');
   assert.ok(evidence > 0 && evidence < gate, 'evidence stays outside the gate');
   assert.equal(ui.includes('{model.flow ? ('), true);
   assert.equal(ui.includes('if (!action) return null;'), true);

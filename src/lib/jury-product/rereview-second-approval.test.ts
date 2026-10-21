@@ -326,9 +326,9 @@ test('second approval reuses the stored human decision contract', () => {
     ui.indexOf('export function SecondImprovementApprovalBody'),
     ui.indexOf('export function SecondImprovementHandoffBody'),
   );
-  assert.equal(body.includes('Approve for Agent'), true);
-  assert.equal(body.includes('Approved for Agent'), true);
-  for (const label of ['Send to Agent', 'Run Agent', 'Run Change Gate', 'Run Re-review', 'Auto Fix', 'Run Loop']) {
+  assert.equal(body.includes('에이전트 작업 승인'), true);
+  assert.equal(body.includes('에이전트 승인 완료'), true);
+  for (const label of ['에이전트에 전달', '에이전트 실행', '변경 검사 실행', '재심사 실행', '자동 수정', '루프 실행']) {
     assert.equal(body.includes(label), false, label);
   }
 });

@@ -301,11 +301,11 @@ test('second change gate does not grow a new evaluator', () => {
   }
   const ui = readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/ui.tsx'), 'utf8');
   const body = ui.slice(ui.indexOf('export function ReReviewChangeGateBody'), ui.indexOf('export function SecondReReviewBody'));
-  assert.equal(body.includes('Run Change Gate'), true);
-  assert.equal(body.includes('Change Gate: APPROVED'), true);
-  assert.equal(body.includes('Change Gate: GATED'), true);
-  assert.equal(body.includes('Change Gate: BLOCKED'), true);
-  for (const label of ['Re-review', 'Run Jury', 'Auto Fix', 'Run Loop', 'Next Improvement']) {
+  assert.equal(body.includes('변경 검사 실행'), true);
+  assert.equal(body.includes('변경 검사: 승인됨'), true);
+  assert.equal(body.includes('변경 검사: 보류됨'), true);
+  assert.equal(body.includes('변경 검사: 차단됨'), true);
+  for (const label of ['재심사', 'Jury 심사 실행', '자동 수정', '루프 실행', '다음 개선']) {
     assert.equal(body.includes(label), false, label);
   }
 });

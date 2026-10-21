@@ -82,10 +82,10 @@ test('product handoff reuses the existing writer and does not call an adapter', 
   }
   const ui = readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/ui.tsx'), 'utf8');
   const body = ui.slice(ui.indexOf('export function ImprovementsBody'), ui.indexOf('export function ImprovementTraceBody'));
-  assert.equal(body.includes('Send to Agent'), true);
+  assert.equal(body.includes('에이전트에 전달'), true);
   assert.equal(body.includes('approval'), true);
-  const visible = body.replaceAll('Run Agent (Mock)', '').replaceAll('Run Change Gate', '').replaceAll('Run Re-review', '');
-  for (const label of ['Run Agent', 'Run Change Gate', 'Run Re-review', 'Auto Fix', 'Run Loop']) {
+  const visible = body.replaceAll('에이전트 실행 (Mock)', '').replaceAll('변경 검사 실행', '').replaceAll('재심사 실행', '');
+  for (const label of ['에이전트 실행', '변경 검사 실행', '재심사 실행', '자동 수정', '루프 실행']) {
     assert.equal(visible.includes(label), false, label);
   }
 });

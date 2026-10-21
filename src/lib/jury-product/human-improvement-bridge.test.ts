@@ -304,9 +304,9 @@ test('human improvement bridge stays off host collectors and agent execution', (
   assert.equal(fn.includes('humanDecisionId'), false);
   const ui = readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/ui.tsx'), 'utf8');
   const body = ui.slice(ui.indexOf('export function ReviewDetailBody'), ui.indexOf('const INTAKE_AVAILABILITY'));
-  assert.equal(body.includes('Create Improvement Task'), true);
-  assert.equal(body.includes('Improvement Task Created'), true);
-  for (const label of ['Send to Cursor', 'Run Agent', 'Auto Fix', 'Execute Improvement', 'Re-review']) {
+  assert.equal(body.includes('개선 작업 만들기'), true);
+  assert.equal(body.includes('개선 작업을 만들었습니다'), true);
+  for (const label of ['Cursor로 보내기', '에이전트 실행', '자동 수정', '개선 실행', '재심사']) {
     assert.equal(body.includes(label), false, label);
   }
 });

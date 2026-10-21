@@ -19,11 +19,11 @@ export function OrganizationSwitcher({
     <div className={styles.switcher}>
       <form action={switchJuryOrganization}>
         <label className={styles.label}>
-          Organization
+          조직
           <select
             name="tenantId"
             defaultValue={active}
-            aria-label="Organization"
+            aria-label="조직"
             onChange={(event) => event.currentTarget.form?.requestSubmit()}
           >
             {organizations.map((organization) => (
@@ -35,7 +35,7 @@ export function OrganizationSwitcher({
         </label>
       </form>
       <Link className={styles.create} href={juryHref('/organization/create')}>
-        Create organization
+        조직 만들기
       </Link>
     </div>
   );

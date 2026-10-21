@@ -354,11 +354,11 @@ test('human change gate reuses the existing evaluator', () => {
   }
   const ui = readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/ui.tsx'), 'utf8');
   const body = ui.slice(ui.indexOf('export function ReviewDetailBody'), ui.indexOf('const INTAKE_AVAILABILITY'));
-  assert.equal(body.includes('Change Gate'), false);
+  assert.equal(body.includes('변경 검사'), false);
   const gateBody = ui.slice(ui.indexOf('export function HumanChangeGateBody'), ui.indexOf('export function EvidenceBody'));
-  assert.equal(gateBody.includes('Run Change Gate'), true);
-  assert.equal(gateBody.includes('Change Gate:'), true);
-  for (const label of ['Re-review', 'Run Jury', 'Auto Fix', 'Retry Loop', 'Apply Change', 'Deploy']) {
+  assert.equal(gateBody.includes('변경 검사 실행'), true);
+  assert.equal(gateBody.includes('변경 검사:'), true);
+  for (const label of ['재심사', 'Jury 심사 실행', '자동 수정', '루프 재시도', '변경 적용', '배포']) {
     assert.equal(gateBody.includes(label), false, label);
   }
 });

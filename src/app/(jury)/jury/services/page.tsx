@@ -24,7 +24,7 @@ export default async function JuryServicesPage({
   const error = !actor.ok
     ? actor.reason === 'STORE_UNAVAILABLE'
       ? 'Jury 저장소가 아직 준비되지 않았습니다.'
-      : 'Service operations could not be loaded.'
+      : '서비스 정보를 불러오지 못했습니다.'
     : operations && !operations.ok
       ? 'Jury 저장소가 아직 준비되지 않았습니다.'
       : null;

@@ -285,7 +285,7 @@ test('t336 1: the Re-review section and its title render only with agent.execute
     }
   }
   const body = between(readSource(UI), 'export function HumanReReviewBody', 'export function ReReviewNextImprovementBody');
-  assert.equal(body.includes('<h2>Re-review</h2>'), true);
+  assert.equal(body.includes('<h2>재심사</h2>'), true);
   assert.equal(readSource(PAGE).includes('{show.HumanReReview ? <HumanReReviewBody screen={screen} /> : null}'), true);
 });
 
@@ -303,10 +303,10 @@ test('t336 3: the next improvement block renders only the task id, type, and sta
   const ui = readSource(UI);
   const body = between(ui, 'export function ReReviewNextImprovementBody', 'export function HumanChangeGateBody');
   assert.equal(ui.indexOf('export function HumanReReviewBody') < ui.indexOf('export function ReReviewNextImprovementBody'), true);
-  for (const field of ['<h2>Next Improvement Task</h2>', '{task.id}', '{task.taskType}', '{task.status}']) {
+  for (const field of ['<h2>다음 개선 작업</h2>', '{task.id}', '{task.taskType}', '{task.status}']) {
     assert.equal(body.includes(field), true, field);
   }
-  for (const token of ['reReview', 'decision', 'Decision', 'reviewResultId', 'completedAt', 'agentExecution', 'AgentExecution', 'changeGate', 'Re-review', '<form', 'name=', 'Approve', 'Send to Agent', 'Run ', 'Create ']) {
+  for (const token of ['reReview', 'decision', 'Decision', 'reviewResultId', 'completedAt', 'agentExecution', 'AgentExecution', 'changeGate', 'Re-review', '<form', 'name=', 'Approve', 'Send to Agent', 'Run ', 'Create ', '결론', '재심사', '승인', '에이전트에 전달', '실행', '만들기']) {
     assert.equal(body.includes(token), false, token);
   }
   assert.deepEqual(body.match(/screen\.\w+/g), ['screen.nextImprovement']);
@@ -321,7 +321,7 @@ test('t336 4: with improvement.read and agent.execute the layout stays as before
   assert.equal(sections.HumanReReview, true);
   assert.equal(sections.ReReviewNextImprovement, false);
   const reviewBody = between(readSource(UI), 'export function HumanReReviewBody', 'export function ReReviewNextImprovementBody');
-  for (const label of ['Next Improvement Task', '{screen.nextImprovement.id}', '{screen.nextImprovement.taskType}', '{screen.nextImprovement.status}']) {
+  for (const label of ['다음 개선 작업', '{screen.nextImprovement.id}', '{screen.nextImprovement.taskType}', '{screen.nextImprovement.status}']) {
     assert.equal(reviewBody.includes(label), true, label);
   }
   assert.equal(readSource(PAGE).includes([
@@ -397,7 +397,7 @@ test('t336 8: the general and re-review handoffs need improvement.read and agent
   assert.equal(restrictReviewConsoleScreen(full, { improvement: true, agent: true }).canHandoff, true);
   const ui = readSource(UI);
   assert.equal(between(ui, 'export function ReviewDetailBody', 'const INTAKE_AVAILABILITY').includes('name="improvementTaskId" value={screen.improvementTask.id}'), true);
-  assert.equal(between(ui, 'export function ReReviewAgentHandoffBody', 'export function HumanReReviewBody').includes('Send to Agent'), true);
+  assert.equal(between(ui, 'export function ReReviewAgentHandoffBody', 'export function HumanReReviewBody').includes('에이전트에 전달'), true);
   assert.equal(between(ui, 'export function SecondImprovementHandoffBody', 'export function SecondChangeGateBody').includes('name="improvementTaskId" value={task.id}'), true);
   assert.equal(between(ui, 'export function LaterImprovementHandoffBody', 'export function LaterAgentRunBody').includes('name="improvementTaskId" value={task.id}'), true);
 });
@@ -406,32 +406,32 @@ test('t336 existing ui source checks around the Re-review body still hold', () =
   const ui = readSource(UI);
   // human-re-review.test.ts
   const gateBody = between(ui, 'export function HumanChangeGateBody', 'export function EvidenceBody');
-  assert.equal(gateBody.includes('Re-review'), false);
+  assert.equal(gateBody.includes('재심사'), false);
   const reviewBody = between(ui, 'export function HumanReReviewBody', 'export function HumanChangeGateBody');
-  assert.equal(reviewBody.includes('Run Re-review'), true);
-  assert.equal(reviewBody.includes('Original Review'), true);
-  assert.equal(reviewBody.includes('Re-review:'), true);
+  assert.equal(reviewBody.includes('재심사 실행'), true);
+  assert.equal(reviewBody.includes('원래 심사'), true);
+  assert.equal(reviewBody.includes('재심사:'), true);
   // rereview-improvement-bridge.test.ts
-  assert.equal(reviewBody.includes('Create Improvement Task'), true);
-  assert.equal(reviewBody.includes('No improvement required'), true);
-  assert.equal(reviewBody.includes('Next Improvement Task'), true);
-  for (const label of ['Send to Agent', 'Run Change Gate', 'Auto Fix', 'Run Loop']) {
+  assert.equal(reviewBody.includes('개선 작업 만들기'), true);
+  assert.equal(reviewBody.includes('개선이 필요하지 않습니다'), true);
+  assert.equal(reviewBody.includes('다음 개선 작업'), true);
+  for (const label of ['에이전트에 전달', '변경 검사 실행', '자동 수정', '루프 실행']) {
     assert.equal(reviewBody.includes(label), false, label);
   }
   // rereview-agent-handoff.test.ts
   const handoff = between(ui, 'export function ReReviewAgentHandoffBody', 'export function HumanReReviewBody');
-  assert.equal(handoff.includes('Approve for Agent'), true);
-  assert.equal(handoff.includes('Send to Agent'), true);
-  assert.equal(handoff.includes('Agent Pending'), true);
-  for (const label of ['Run Agent', 'Execute Agent', 'Run Change Gate', 'Run Re-review', 'Auto Fix', 'Run Loop']) {
+  assert.equal(handoff.includes('에이전트 작업 승인'), true);
+  assert.equal(handoff.includes('에이전트에 전달'), true);
+  assert.equal(handoff.includes('에이전트 대기 중'), true);
+  for (const label of ['에이전트 실행', '에이전트 실행 요청', '변경 검사 실행', '재심사 실행', '자동 수정', '루프 실행']) {
     assert.equal(handoff.includes(label), false, label);
   }
   // rereview-agent-execution.test.ts
   const run = between(ui, 'export function ReReviewAgentRunBody', 'export function ReReviewChangeGateBody');
-  assert.equal(run.includes('Run Agent'), true);
-  assert.equal(run.includes('Agent Running'), true);
-  assert.equal(run.includes('Agent Completed'), true);
-  for (const label of ['Run Change Gate', 'Re-review', 'Auto Fix', 'Run Loop', 'Run Again', 'Execute Agent']) {
+  assert.equal(run.includes('에이전트 실행'), true);
+  assert.equal(run.includes('에이전트 진행 중'), true);
+  assert.equal(run.includes('에이전트 완료'), true);
+  for (const label of ['변경 검사 실행', '재심사', '자동 수정', '루프 실행', '다시 실행', '에이전트 실행 요청']) {
     assert.equal(run.includes(label), false, label);
   }
 });

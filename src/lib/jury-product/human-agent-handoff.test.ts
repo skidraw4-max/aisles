@@ -319,10 +319,10 @@ test('human agent handoff stays off host collectors and execution', () => {
   }
   const ui = readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/ui.tsx'), 'utf8');
   const body = ui.slice(ui.indexOf('export function ReviewDetailBody'), ui.indexOf('const INTAKE_AVAILABILITY'));
-  assert.equal(body.includes('Send to Agent'), true);
-  assert.equal(body.includes('Status:'), true);
-  assert.equal(body.includes('Provider:'), true);
-  for (const label of ['Run Agent', 'Auto Fix', 'Apply Fix', 'Send to Cursor and Run', 'Re-review', 'Change Gate']) {
+  assert.equal(body.includes('에이전트에 전달'), true);
+  assert.equal(body.includes('상태:'), true);
+  assert.equal(body.includes('제공자:'), true);
+  for (const label of ['에이전트 실행', '자동 수정', '수정 적용', 'Cursor로 보내 실행', '재심사', '변경 검사']) {
     assert.equal(body.includes(label), false, label);
   }
 });

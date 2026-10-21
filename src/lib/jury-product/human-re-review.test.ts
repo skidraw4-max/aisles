@@ -237,11 +237,11 @@ test('human re-review reuses the existing change-gate review', () => {
   }
   const ui = readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/ui.tsx'), 'utf8');
   const gateBody = ui.slice(ui.indexOf('export function HumanChangeGateBody'), ui.indexOf('export function EvidenceBody'));
-  assert.equal(gateBody.includes('Re-review'), false);
+  assert.equal(gateBody.includes('재심사'), false);
   const reviewBody = ui.slice(ui.indexOf('export function HumanReReviewBody'), ui.indexOf('export function HumanChangeGateBody'));
-  assert.equal(reviewBody.includes('Run Re-review'), true);
-  assert.equal(reviewBody.includes('Original Review'), true);
-  assert.equal(reviewBody.includes('Re-review:'), true);
+  assert.equal(reviewBody.includes('재심사 실행'), true);
+  assert.equal(reviewBody.includes('원래 심사'), true);
+  assert.equal(reviewBody.includes('재심사:'), true);
 });
 
 function run(agentExecutionId: string, core: ProductReviewCore, actor: JuryMembership = owner) {

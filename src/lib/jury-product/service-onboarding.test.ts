@@ -74,12 +74,12 @@ test('onboarding source reuses mock discovery and does not call the network', ()
     assert.equal(source.includes(token), false, token);
   }
   const ui = readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/service-onboarding-ui.tsx'), 'utf8');
-  assert.equal(ui.includes('Add Service') || readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/ui.tsx'), 'utf8').includes('Add Service'), true);
+  assert.equal(ui.includes('서비스 추가') || readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/ui.tsx'), 'utf8').includes('서비스 추가'), true);
   assert.equal(ui.includes('No access scopes proposed.'), false);
   assert.equal(ui.includes('ONBOARDING_EMPTY_SCOPES'), true);
   assert.equal(ui.includes('Approve'), true);
   assert.equal(ui.includes('Reject'), true);
-  for (const label of ['Run Agent', 'Run Change Gate', 'Run Re-review', 'Auto Fix', 'Run Loop']) {
+  for (const label of ['에이전트 실행', '변경 검사 실행', '재심사 실행', '자동 수정', '루프 실행']) {
     assert.equal(ui.includes(label), false, label);
   }
   assert.equal(existsSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/services/new/page.tsx')), true);

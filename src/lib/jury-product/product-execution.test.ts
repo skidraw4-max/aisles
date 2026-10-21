@@ -76,10 +76,10 @@ test('product execution reuses the human writer and does not call a live agent',
   }
   const ui = readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/ui.tsx'), 'utf8');
   const body = ui.slice(ui.indexOf('export function ImprovementsBody'), ui.indexOf('export function ImprovementTraceBody'));
-  assert.equal(body.includes('Run Agent (Mock)'), true);
-  assert.equal(body.includes('Completed'), true);
+  assert.equal(body.includes('에이전트 실행 (Mock)'), true);
+  assert.equal(body.includes('완료'), true);
   assert.equal(body.includes('Mock'), true);
-  assert.equal(body.includes('Blocked'), true);
+  assert.equal(body.includes('중단됨'), true);
 });
 
 test('a product pending execution completes once through the fake adapter', { timeout: 540_000 }, async () => {
