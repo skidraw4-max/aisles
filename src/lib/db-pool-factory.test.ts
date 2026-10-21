@@ -148,3 +148,24 @@ test('module load: importing prisma.ts in Preview without ref config throws BLOC
   assert.match(out, /BLOCKED_PREVIEW_DB/);
   assert.equal(out.includes(PW), false);
 });
+
+test('A-2 txn pooler flag: shared pooler 6543 builds a pool only for DATABASE_URL with the exact flag', () => {
+  const { Pool, calls } = fakePool();
+  const base = { VERCEL_ENV: 'preview', ...REFS, DATABASE_URL: urls.poolerTxn };
+  const isBlocked = (e: Error) => e.message === 'BLOCKED_PREVIEW_DB';
+  assert.throws(() => createGuardedPool(urls.poolerTxn, base, { max: 2 }, { Pool }), isBlocked);
+  for (const v of ['true', '0', '', ' 1', 'TRUE']) {
+    assert.throws(() => createGuardedPool(urls.poolerTxn, { ...base, JURY_PREVIEW_DB_TXN_POOLER: v }, { max: 2 }, { Pool }), isBlocked);
+  }
+  const directTxn = { ...base, JURY_PREVIEW_DB_TXN_POOLER: '1', DATABASE_URL: urls.pooler, DIRECT_URL: urls.poolerTxn };
+  assert.throws(() => createGuardedPool(urls.pooler, directTxn, { max: 2 }, { Pool }), isBlocked);
+  assert.equal(calls.length, 0);
+  createGuardedPool(urls.poolerTxn, { ...base, JURY_PREVIEW_DB_TXN_POOLER: '1', DIRECT_URL: urls.pooler }, { max: 2 }, { Pool });
+  assert.equal(calls.length, 1);
+  const ssl = calls[0]!.ssl as { rejectUnauthorized: boolean; servername: string; ca: string; checkServerIdentity: unknown };
+  assert.equal(ssl.rejectUnauthorized, true);
+  assert.equal(ssl.servername, new URL(urls.poolerTxn).hostname);
+  assert.equal(typeof ssl.checkServerIdentity, 'function');
+  assert.match(ssl.ca, /BEGIN CERTIFICATE/);
+  assert.equal(calls[0]!.max, 2);
+});

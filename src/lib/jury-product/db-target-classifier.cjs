@@ -19,6 +19,13 @@ const DIRECT_PORTS = ['5432', '6543'];
 // Preview ref from its username does not verify that mode's TLS chain or Prisma/pg
 // compatibility; do not widen the allowed ports until that has been verified.
 const POOLER_PORT = '5432';
+// Transaction pooler (shared pooler 6543): runtime DATABASE_URL only, and only when
+// JURY_PREVIEW_DB_TXN_POOLER === '1'. Never for DIRECT_URL; Prisma CLI, seed and test guards
+// call classifyConnectionUrl without options and keep rejecting 6543.
+const POOLER_TXN_PORT = '6543';
+function txnPoolerEnabled(env) {
+  return (env || {}).JURY_PREVIEW_DB_TXN_POOLER === '1';
+}
 // URL parameters that pg / libpq turn into their own TLS behaviour. Only
 // sslmode=verify-full is tolerated (aligned with preview-db-tls.ts, plus sslaccept).
 const SSL_URL_PARAMS = ['ssl', 'sslmode', 'sslrootcert', 'sslcert', 'sslkey', 'sslpassword', 'sslaccept', 'uselibpqcompat'];
@@ -105,7 +112,8 @@ function hasWeakSslParams(url) {
  * verifiable Preview ref is 'allowed'. The stricter whole-env rules (Production ref
  * anywhere, ssl-weakening params) are applied in classifyDbTarget.
  */
-function classifyConnectionUrl(value, refs) {
+function classifyConnectionUrl(value, refs, opts) {
+  const allowTxn = !!(opts && opts.allowTxnPooler === true);
   if (!validRefConfig(refs)) return 'rejected';
   const url = parsePostgresUrl(value);
   if (!url) return 'rejected';
@@ -122,7 +130,9 @@ function classifyConnectionUrl(value, refs) {
   }
   if (POOLER_HOST.test(url.hostname)) {
     // Host alone never identifies the project: the username must carry the Preview ref.
-    return url.port === POOLER_PORT && ref === refs.previewRef ? 'allowed' : 'rejected';
+    if (ref !== refs.previewRef) return 'rejected';
+    if (url.port === POOLER_PORT) return 'allowed';
+    return allowTxn && url.port === POOLER_TXN_PORT ? 'allowed' : 'rejected';
   }
   return 'rejected';
 }
@@ -144,8 +154,11 @@ function classifyDbTarget(env) {
   const refs = readRefConfig(e);
   if (!refs || e.JURY_PREVIEW_DB !== '1' || database === null) return 'config';
   let verdict = 'ok';
-  for (const value of present) {
-    const c = classifyConnectionUrl(value, refs);
+  // Per variable: only DATABASE_URL may use the transaction pooler (flag-gated); DIRECT_URL never.
+  const allowTxn = txnPoolerEnabled(e);
+  const targets = [[database, allowTxn], [direct, false]].filter(([v]) => v !== null);
+  for (const [value, txn] of targets) {
+    const c = classifyConnectionUrl(value, refs, { allowTxnPooler: txn });
     if (c === 'production') return 'production';
     const url = parsePostgresUrl(value);
     if (c !== 'allowed' || !url || hasWeakSslParams(url)) verdict = 'unverified';
@@ -197,7 +210,7 @@ function diagnoseUrl(name, env) {
     const isDirect = url.hostname === `db.${refs.previewRef}.supabase.co`;
     const isPooler = POOLER_HOST.test(url.hostname);
     base.hostClass = isDirect ? 'direct_preview' : isPooler ? 'shared_pooler' : 'other';
-    const c = classifyConnectionUrl(value, refs);
+    const c = classifyConnectionUrl(value, refs, { allowTxnPooler: varName === 'DATABASE_URL' && txnPoolerEnabled(e) });
     if (c === 'production') return { ...base, reason: 'PRODUCTION_REF' };
     // Mirror classifyConnectionUrl's branch order.
     let reason;
@@ -207,8 +220,9 @@ function diagnoseUrl(name, env) {
       else if (ref !== null && ref !== refs.previewRef) reason = 'USER_REF_MISSING';
       else reason = 'OK';
     } else if (isPooler) {
-      if (port === '6543') reason = 'PORT_6543';
-      else if (port !== POOLER_PORT) reason = 'PORT_OTHER';
+      const txnOk = varName === 'DATABASE_URL' && txnPoolerEnabled(e);
+      if (port === POOLER_TXN_PORT && !txnOk) reason = 'PORT_6543';
+      else if (port !== POOLER_PORT && port !== POOLER_TXN_PORT) reason = 'PORT_OTHER';
       else if (ref !== refs.previewRef) reason = 'USER_REF_MISSING';
       else reason = 'OK';
     } else reason = 'HOST_OTHER';

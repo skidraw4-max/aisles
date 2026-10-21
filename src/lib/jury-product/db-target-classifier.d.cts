@@ -7,7 +7,12 @@ export declare function validRefConfig(refs: RefConfig | null | undefined): refs
 export declare function readRefConfig(env: DbTargetEnv): RefConfig | null;
 export declare function readProductionRefs(env: DbTargetEnv): string[];
 export declare function parsePostgresUrl(value: string): URL | null;
-export declare function classifyConnectionUrl(value: string, refs: RefConfig | null | undefined): ConnectionClass;
+export type ClassifyConnectionOptions = { allowTxnPooler?: boolean };
+export declare function classifyConnectionUrl(
+  value: string,
+  refs: RefConfig | null | undefined,
+  opts?: ClassifyConnectionOptions,
+): ConnectionClass;
 export declare function classifyDbTarget(env: DbTargetEnv): DbTargetClass;
 
 export type DiagnosticVar = 'DATABASE_URL' | 'DIRECT_URL';
