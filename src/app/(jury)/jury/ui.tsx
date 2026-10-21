@@ -25,6 +25,8 @@ import type { ProductReReviewState } from '@/lib/jury-product/product-change-gat
 import { loadShellIdentity } from './load';
 import { LogoutButton, ProductNav } from './shell-client';
 import { TranslationHint } from './ui-primitives';
+import { CopyIdButton, ReviewSummaryDialog } from './ReviewSummaryDialog';
+import { formatKstFull, formatKstShort, shortId } from './review-summary-format';
 import { ConfidenceLine, reviewTabHref } from './review-tabs-ui';
 import type { JuryMembership } from '@/lib/jury-product/records';
 import { auditActionLabel, DECISION_GUIDANCE, displayText, traceLabel, userLabel } from '@/lib/jury-product/ui-labels';
@@ -465,7 +467,16 @@ export function ReviewsBody({ view }: { view: JuryConsoleView }) {
       </div>
       {view.results.length > 0 ? <TranslationHint /> : null}
       {view.results.length === 0 ? <p>{displayText(SHELL_EMPTY.reviews)}</p> : (
-        <table className={styles.table}>
+        <div className={styles.reviewsTableWrap}>
+        <table className={`${styles.table} ${styles.reviewsTable}`}>
+          <colgroup>
+            <col style={{ width: 88 }} />
+            <col style={{ width: 96 }} />
+            <col style={{ width: 104 }} />
+            <col style={{ width: 88 }} />
+            <col style={{ width: 112 }} />
+            <col />
+          </colgroup>
           <thead>
             <tr>
               <th>상태</th>
@@ -479,19 +490,44 @@ export function ReviewsBody({ view }: { view: JuryConsoleView }) {
           <tbody>
             {view.results.map((row) => {
               const request = view.requests.find((item) => item.id === row.reviewRequestId) ?? null;
+              const statusLabel = request?.status ? userLabel(request.status) : displayText(SHELL_UNAVAILABLE);
+              const decisionLabel = userLabel(row.expectedDecision);
+              const detailHref = juryHref(`/reviews/${row.id}`);
+              const evidenceId = request?.evidenceId ?? null;
+              const summary = row.finalSurface.statusSummary;
               return (
                 <tr key={row.id}>
-                  <td title={request?.status}>{request?.status ? userLabel(request.status) : displayText(SHELL_UNAVAILABLE)}</td>
-                  <td><Link className={styles.inline} href={juryHref(`/reviews/${row.id}`)}>{userLabel(row.expectedDecision)}</Link></td>
-                  <td>{row.completedAt}</td>
+                  <td title={request?.status}><span className={styles.badge}>{statusLabel}</span></td>
+                  <td title={row.expectedDecision}><Link className={styles.inline} href={detailHref}><span className={styles.badge}>{decisionLabel}</span></Link></td>
+                  <td title={formatKstFull(row.completedAt)}>{formatKstShort(row.completedAt)}</td>
                   <td title={request?.reviewType}>{request?.reviewType ? userLabel(request.reviewType) : displayText(SHELL_UNAVAILABLE)}</td>
-                  <td>{request?.evidenceId ?? displayText(SHELL_UNAVAILABLE)}</td>
-                  <td lang="en">{row.finalSurface.statusSummary}</td>
+                  <td>
+                    {evidenceId ? (
+                      <span className={styles.evidenceCell}>
+                        <span className={styles.evidenceId} title={evidenceId}>{shortId(evidenceId)}</span>
+                        <CopyIdButton value={evidenceId} />
+                      </span>
+                    ) : displayText(SHELL_UNAVAILABLE)}
+                  </td>
+                  <td>
+                    <span className={styles.summaryCell}>
+                      <span className={styles.summaryPreview} lang="en" title={summary}>{summary}</span>
+                      <ReviewSummaryDialog
+                        summary={summary}
+                        decisionLabel={decisionLabel}
+                        statusLabel={statusLabel}
+                        completedAtFull={formatKstFull(row.completedAt)}
+                        evidenceId={evidenceId}
+                        detailHref={detailHref}
+                      />
+                    </span>
+                  </td>
                 </tr>
               );
             })}
           </tbody>
         </table>
+        </div>
       )}
     </section>
   );
