@@ -28,6 +28,9 @@ test('product shell navigation opens the console routes', () => {
     '홈',
     '리뷰 요청',
     '결과',
+    '서비스',
+    '개선',
+    '감사 이력',
     '관리',
   ]);
 });
