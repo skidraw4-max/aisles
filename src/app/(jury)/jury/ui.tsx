@@ -470,11 +470,11 @@ export function ReviewsBody({ view }: { view: JuryConsoleView }) {
         <div className={styles.reviewsTableWrap}>
         <table className={`${styles.table} ${styles.reviewsTable}`}>
           <colgroup>
-            <col style={{ width: 88 }} />
-            <col style={{ width: 96 }} />
-            <col style={{ width: 104 }} />
-            <col style={{ width: 88 }} />
+            <col style={{ width: 80 }} />
             <col style={{ width: 112 }} />
+            <col style={{ width: 120 }} />
+            <col style={{ width: 104 }} />
+            <col style={{ width: 136 }} />
             <col />
           </colgroup>
           <thead>

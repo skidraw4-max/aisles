@@ -1225,7 +1225,7 @@ a.inline {
 .table.reviewsTable {
   display: table;
   width: 100%;
-  min-width: 720px;
+  min-width: 840px;
   table-layout: fixed;
   overflow: visible;
 }
@@ -1362,4 +1362,14 @@ a.inline {
   justify-content: space-between;
   align-items: center;
   margin-top: 0.75rem;
+}
+
+.table.reviewsTable th:nth-child(-n + 5),
+.table.reviewsTable td:nth-child(-n + 5) {
+  padding-left: 0.3rem;
+  padding-right: 0.3rem;
+}
+
+.table.reviewsTable .badge {
+  white-space: nowrap;
 }
