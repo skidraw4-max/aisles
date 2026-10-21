@@ -4,16 +4,19 @@ import { externalFeatureDenial } from '@/lib/jury-product/service-feature-author
 import { guardReviewFeature } from '@/lib/jury-product/service-feature-guard';
 import { getJuryActor } from '@/lib/jury-product/session';
 import { FollowingReReviewBody, HumanChangeGateBody, HumanReReviewBody, JuryChrome, ReReviewAgentHandoffBody, ReReviewNextImprovementBody, ReReviewAgentRunBody, ReReviewChangeGateBody, ReviewDetailBody, LaterAgentRunBody, LaterChangeGateBody, LaterImprovementApprovalBody, LaterImprovementBody, LaterImprovementHandoffBody, LaterReReviewBody, SecondChangeGateBody, SecondImprovementApprovalBody, SecondImprovementBody, SecondImprovementHandoffBody, SecondReReviewBody } from '../../ui';
+import { ReviewEvidenceTab, ReviewHistoryHint, ReviewHistoryIntro, ReviewMembersTab, ReviewTabs, reviewTabFrom } from '../../review-tabs-ui';
 
 export default async function JuryReviewDetailPage({
   params,
   searchParams,
 }: {
   params: Promise<{ reviewId: string }>;
-  searchParams: Promise<{ human?: string | string[] }>;
+  searchParams: Promise<{ human?: string | string[]; tab?: string | string[] }>;
 }) {
   const { reviewId } = await params;
-  const noted = (await searchParams).human === 'NOTED';
+  const query = await searchParams;
+  const noted = query.human === 'NOTED';
+  const tab = reviewTabFrom(query.tab);
   const actor = await getJuryActor();
   if (!actor.ok) {
     return (
@@ -38,7 +41,14 @@ export default async function JuryReviewDetailPage({
       <JuryChrome actor={actor}>
         {screen && show ? (
           <>
-            <ReviewDetailBody screen={screen} noted={noted} />
+            <ReviewTabs reviewId={screen.reviewId} active={tab} />
+            {tab === 'summary' ? <ReviewDetailBody screen={screen} noted={noted} /> : null}
+            {tab === 'summary' ? <ReviewHistoryHint reviewId={screen.reviewId} hasHistory={Object.values(show).some(Boolean)} /> : null}
+            {tab === 'members' ? <ReviewMembersTab screen={screen} /> : null}
+            {tab === 'evidence' ? <ReviewEvidenceTab screen={screen} /> : null}
+            {tab === 'history' ? <ReviewHistoryIntro hasHistory={Object.values(show).some(Boolean)} /> : null}
+            {tab === 'history' ? (
+          <>
             {show.HumanChangeGate ? <HumanChangeGateBody screen={screen} /> : null}
             {show.HumanReReview ? <HumanReReviewBody screen={screen} /> : null}
             {show.ReReviewNextImprovement ? <ReReviewNextImprovementBody screen={screen} /> : null}
@@ -57,6 +67,8 @@ export default async function JuryReviewDetailPage({
             {show.LaterAgentRun ? <LaterAgentRunBody screen={screen} /> : null}
             {show.LaterChangeGate ? <LaterChangeGateBody screen={screen} /> : null}
             {show.FollowingReReview ? <FollowingReReviewBody screen={screen} /> : null}
+          </>
+            ) : null}
           </>
         ) : (
           <p>{!access.ok && externalFeatureDenial(access) === 'FORBIDDEN' ? 'Not authorized' : '이 tenant에서 해당 Review를 찾을 수 없습니다.'}</p>

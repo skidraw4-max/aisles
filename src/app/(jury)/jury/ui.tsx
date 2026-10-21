@@ -25,8 +25,9 @@ import type { ProductReReviewState } from '@/lib/jury-product/product-change-gat
 import { loadShellIdentity } from './load';
 import { LogoutButton, ProductNav } from './shell-client';
 import { TranslationHint } from './ui-primitives';
+import { ConfidenceLine, reviewTabHref } from './review-tabs-ui';
 import type { JuryMembership } from '@/lib/jury-product/records';
-import { auditActionLabel, displayText, traceLabel, userLabel } from '@/lib/jury-product/ui-labels';
+import { auditActionLabel, DECISION_GUIDANCE, displayText, traceLabel, userLabel } from '@/lib/jury-product/ui-labels';
 import styles from './jury.module.css';
 
 const GATE_COPY: Record<Exclude<JuryActor, { ok: true }>['reason'], string> = {
@@ -497,16 +498,19 @@ export function ReviewsBody({ view }: { view: JuryConsoleView }) {
 }
 
 export function ReviewDetailBody({ screen, noted }: { screen: ReviewConsoleScreen; noted: boolean }) {
+  const missing = screen.partiallySupportedClaims.length + screen.hypotheses.length;
   return (
     <>
       <section className={styles.panel}>
-        <p className={styles.eyebrow}>현재 메뉴 · 결과</p>
+        <p className={styles.eyebrow}>현재 메뉴 · 결과 · 요약</p>
         <h2 className={styles.pageTitle}>리뷰 결과</h2>
         <div className={styles.resultHighlight}>
           <span className={styles.label}>결론</span>
-          <strong>{userLabel(screen.decision)}</strong>
-          <p>{screen.decisionMeaning}</p>
+          <strong><span className={styles.badge}>{userLabel(screen.decision)}</span></strong>
+          <p>왜: {screen.decisionMeaning}</p>
+          <p className={styles.muted}>{DECISION_GUIDANCE[screen.decision] ?? ''}</p>
         </div>
+        <ConfidenceLine screen={screen} />
         <p className={styles.resultSummary} lang={screen.summary ? 'en' : undefined}>{screen.summary || '요약이 없습니다.'}</p>
         <TranslationHint />
         {screen.humanDecision ? <p className={styles.muted}>사용자 확인: {userLabel(screen.humanDecision)}</p> : null}
@@ -534,45 +538,19 @@ export function ReviewDetailBody({ screen, noted }: { screen: ReviewConsoleScree
         <p className={styles.muted}>위험도: <span lang={screen.risk ? 'en' : undefined}>{screen.risk || '특이 사항 없음'}</span></p>
       </section>
       <section className={styles.panel}>
-        <details className={styles.technicalDetails}>
-          <summary>근거 자세히 보기</summary>
-          <h3>측정된 사실</h3>
-          <p className={styles.muted}>리뷰 자료</p>
-          <div className={styles.row}><span className={styles.label}>Evidence ID</span><span>{screen.evidenceId ?? '없음'}</span></div>
-          <Link className={styles.inline} href={juryHref('/evidence')}>리뷰 자료 목록</Link>
-          {screen.measured.map((metric) => (
-            <div className={styles.row} key={metric.id}>
-              <span>{metric.metric}</span>
-              <span>{metric.text} ({userLabel(metric.availability)})</span>
-            </div>
-          ))}
-        </details>
-      </section>
-      <section className={styles.panel}>
-        <details className={styles.technicalDetails}>
-        <summary>판단 근거 자세히 보기</summary>
-        <h2>판단 근거</h2>
-        {screen.dimensionEvidence.length === 0 ? <p className={styles.muted}>없음</p> : (
-          <ul lang="en">{screen.dimensionEvidence.map((item) => <li key={item}>{item}</li>)}</ul>
-        )}
-        <p className={styles.muted}>확인된 주장</p>
-        {screen.supportedClaims.length === 0 ? <p className={styles.muted}>없음</p> : (
-          <ul lang="en">{screen.supportedClaims.map((item) => <li key={item}>{item}</li>)}</ul>
-        )}
-        </details>
-      </section>
-      <section className={styles.panel}>
-        <details className={styles.technicalDetails}>
-        <summary>아직 확인되지 않은 내용</summary>
-        <p className={styles.muted}>hypotheses</p>
-        {screen.hypotheses.length === 0 ? <p className={styles.muted}>없음</p> : (
-          <ul>{screen.hypotheses.map((item) => <li key={item}>{item}</li>)}</ul>
-        )}
-        <p className={styles.muted}>partiallySupportedClaims</p>
-        {screen.partiallySupportedClaims.length === 0 ? <p className={styles.muted}>없음</p> : (
-          <ul>{screen.partiallySupportedClaims.map((item) => <li key={item}>{item}</li>)}</ul>
-        )}
-        </details>
+        <h2>근거 요약</h2>
+        <div className={styles.row}>
+          <span className={styles.label}>핵심 근거</span>
+          <span>확인된 주장 {screen.supportedClaims.length}개 · <Link className={styles.inline} href={reviewTabHref(screen.reviewId, 'evidence')}>검증 근거 탭에서 보기</Link></span>
+        </div>
+        <div className={styles.row}>
+          <span className={styles.label}>검증 상태</span>
+          <span>부족한 근거 {missing}개 · <Link className={styles.inline} href={reviewTabHref(screen.reviewId, 'evidence')}>부족한 근거 보기</Link></span>
+        </div>
+        <div className={styles.row}>
+          <span className={styles.label}>위원 의견</span>
+          <span><Link className={styles.inline} href={reviewTabHref(screen.reviewId, 'members')}>위원 의견 탭에서 보기</Link></span>
+        </div>
       </section>
       <section className={styles.panel}>
         <h2>다음 행동</h2>
@@ -738,44 +716,48 @@ export function EvidenceBody({ actor, view }: { actor: JuryActor; view: JuryCons
         <div>
           <p className={styles.eyebrow}>현재 메뉴 · 리뷰 요청</p>
           <h2 className={styles.pageTitle}>리뷰 요청</h2>
-          <p className={styles.pageDescription}>서비스를 선택하고 분석 범위를 확인한 뒤 리뷰를 요청하세요.</p>
+          <p className={styles.pageDescription}>한 화면에서 리뷰 자료를 입력하고, 아래 목록에서 리뷰를 요청하세요.</p>
         </div>
       </div>
-      <ol className={styles.stepper} aria-label="리뷰 요청 단계">
-        <li className={styles.stepActive}><strong>1</strong><span>서비스 선택</span></li>
-        <li><strong>2</strong><span>범위·기간 확인</span></li>
-        <li><strong>3</strong><span>요청 완료</span></li>
-      </ol>
-      <p className={styles.helperText}>승인된 서비스와 리뷰 자료만 표시됩니다. 기술 정보는 필요한 경우에만 자세히 볼 수 있습니다.</p>
+      <p className={styles.helperText}>
+        <span className={styles.requiredMark}>필수</span> 항목은 반드시 입력해야 하고, <span className={styles.optionalMark}>선택</span> 항목은 비워 둘 수 있습니다. 승인된 서비스와 리뷰 자료만 표시됩니다.
+      </p>
       {form.visible ? (
         form.scopes.length === 0 ? (
           <p className={styles.muted}>현재 승인된 Scope에는 입력 가능한 Catalog Metric이 없습니다.</p>
         ) : (
           form.scopes.map((scope) => (
             <form action={submitTenantEvidenceIntake} key={scope.scopeId}>
-              <h3>2. 범위와 기간 확인</h3>
+              <h3>리뷰 자료 입력</h3>
               <p className={styles.muted}>선택한 서비스: {scope.label}</p>
               <input type="hidden" name="connectionId" value={scope.connectionId} />
               <input type="hidden" name="scopeId" value={scope.scopeId} />
               <label>
-                분석 항목
-                <select className={styles.field} name="metric" defaultValue={scope.metrics[0]}>
+                분석 항목<span className={styles.requiredMark}>필수</span>
+                <select className={styles.field} name="metric" defaultValue={scope.metrics[0]} required>
                   {scope.metrics.map((metric) => (
                     <option key={metric} value={metric}>{metric}</option>
                   ))}
                 </select>
               </label>
               <label>
-                자료 상태
-                <select className={styles.field} name="availability" defaultValue="AVAILABLE">
+                자료 상태<span className={styles.requiredMark}>필수</span>
+                <select className={styles.field} name="availability" defaultValue="AVAILABLE" required>
                   {INTAKE_AVAILABILITY.map((availability) => (
                     <option key={availability} value={availability}>{userLabel(availability)}</option>
                   ))}
                 </select>
               </label>
               <label>
-                측정값
-                <input className={styles.field} name="value" inputMode="decimal" />
+                측정값<span className={styles.optionalMark}>선택</span>
+                <input
+                  className={styles.field}
+                  name="value"
+                  inputMode="decimal"
+                  pattern="-?[0-9]+(\.[0-9]+)?"
+                  title="숫자만 입력하세요. 예: 120 또는 12.5"
+                  placeholder="예: 120"
+                />
               </label>
               <button className={styles.primaryButton} type="submit">리뷰 자료 만들기</button>
             </form>
@@ -809,7 +791,7 @@ export function EvidenceBody({ actor, view }: { actor: JuryActor; view: JuryCons
             <form action={submitTenantReview}>
               <input type="hidden" name="evidenceId" value={row.id} />
               <input type="hidden" name="reviewType" value="FULL_REVIEW" />
-              <button className={styles.primaryButton} type="submit">3. 리뷰 요청하기</button>
+              <button className={styles.primaryButton} type="submit">리뷰 요청하기</button>
             </form>
           ) : null}
         </article>

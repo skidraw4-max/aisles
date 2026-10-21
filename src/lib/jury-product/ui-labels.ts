@@ -235,3 +235,46 @@ export const TRACE_LABELS: Readonly<Record<string, string>> = {
 export function traceLabel(value: string): string {
   return TRACE_LABELS[value] ?? value;
 }
+
+/** Committee member roles (A~E) for the review result 위원 의견 tab. Display only. */
+export const COMMITTEE_ROLE_LABELS: Readonly<Record<string, string>> = {
+  A: 'UX/UI',
+  B: '트렌드·유입',
+  C: '경쟁 서비스',
+  D: '기술·성능',
+  E: '커뮤니티·성장',
+};
+
+export function committeeRoleLabel(memberId: string): string {
+  return COMMITTEE_ROLE_LABELS[memberId] ?? memberId;
+}
+
+/** Evidence strength shown as a fallback confidence for results stored before member opinions. */
+export const EVIDENCE_STRENGTH_LABELS: Readonly<Record<string, string>> = {
+  strong: '높음',
+  moderate: '보통',
+  unknown: '확인 불가',
+};
+
+/** 0..1 confidence → "72%". null → 확인 불가. */
+export function confidenceLabel(value: number | null | undefined): string {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return '확인 불가';
+  return `${Math.round(Math.min(Math.max(value, 0), 1) * 100)}%`;
+}
+
+/** Notices for the 위원 의견 tab. */
+export const MEMBER_OPINION_NOTICE = {
+  LEGACY: '이 심사는 위원 의견 저장 기능 이전에 실행되어 위원별 의견이 없습니다. 재심사 시 표시됩니다.',
+  SECRET: '보안상 위원 의견을 표시하지 않습니다.',
+  EMPTY: '표시할 위원 의견이 없습니다.',
+} as const;
+
+/**
+ * Decision → next-step guidance shown instead of a "failure" wording.
+ * Keys are the stored decision codes; codes themselves are unchanged.
+ */
+export const DECISION_GUIDANCE: Readonly<Record<string, string>> = {
+  ACCEPT: '추가 조치 없이 결과를 확인하면 됩니다.',
+  VERIFY: '근거가 부족한 주장이 있습니다. 검증 근거 탭에서 부족한 근거를 확인한 뒤 자료를 보완해 다시 요청하세요.',
+  REWORD: '표현이 근거보다 강합니다. 검증 근거 탭에서 근거를 확인하고 표현을 수정한 뒤 다시 요청하세요.',
+};

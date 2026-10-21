@@ -5,12 +5,14 @@ import { useRouter } from 'next/navigation';
 import { changeJuryMemberRole, removeJuryMember } from '@/app/(jury)/jury/organization/members/actions';
 import styles from './jury-entry.module.css';
 import listStyles from './invitation.module.css';
+import { userLabel } from '@/lib/jury-product/ui-labels';
 
+/** Role values are unchanged; labels come from the shared Korean dictionary. */
 const ROLES = [
-  ['ADMIN', 'Administrator'],
-  ['REVIEWER', 'Reviewer'],
-  ['DEVELOPER', 'Developer'],
-  ['VIEWER', 'Viewer'],
+  ['ADMIN', userLabel('ADMIN')],
+  ['REVIEWER', userLabel('REVIEWER')],
+  ['DEVELOPER', userLabel('DEVELOPER')],
+  ['VIEWER', userLabel('VIEWER')],
 ] as const;
 
 export function JuryMemberRoleControl({
@@ -104,7 +106,7 @@ export function JuryMemberRemoveControl({
     <div className={listStyles.confirm}>
       <p>Remove this member?</p>
       <p>email: {email}</p>
-      <p>role: {roleLabel}</p>
+      <p>역할: {roleLabel}</p>
       <p>Removing this member will also remove their access to services in this organization.</p>
       {message ? <p className={styles.alert} role="alert">{message}</p> : null}
       <div className={listStyles.confirmActions}>

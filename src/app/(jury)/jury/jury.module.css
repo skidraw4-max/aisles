@@ -1177,3 +1177,41 @@ a.inline {
 .tab { padding: 8px 12px; color: var(--jury-text-muted, #a8b5c9); text-decoration: none; border-bottom: 2px solid transparent; }
 .tab:hover { color: var(--jury-text, #eef4ff); }
 .tabActive { color: var(--jury-accent, #72c7f3); border-bottom-color: var(--jury-accent, #72c7f3); font-weight: 700; }
+
+/* Review result tabs (phase 3). Existing palette tokens only. */
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin: 0 0 1rem;
+  border-bottom: 1px solid var(--jury-c-148-163-184-0_16, rgba(148, 163, 184, 0.16));
+}
+
+.tab {
+  padding: 0.5rem 0.9rem;
+  border-bottom: 2px solid transparent;
+  color: var(--jury-text-muted, #a8b5c9);
+  text-decoration: none;
+}
+
+.tab:hover {
+  color: var(--jury-text-bright, #f5f7ff);
+}
+
+.tabActive {
+  border-bottom-color: var(--jury-accent, #72c7f3);
+  color: var(--jury-text-bright, #f5f7ff);
+  font-weight: 600;
+}
+
+.requiredMark {
+  color: var(--jury-c-f0d2a0, #f0d2a0);
+  margin-left: 0.25rem;
+  font-size: 0.8rem;
+}
+
+.optionalMark {
+  color: var(--jury-text-muted, #a8b5c9);
+  margin-left: 0.25rem;
+  font-size: 0.8rem;
+}

@@ -192,7 +192,7 @@ test('console intake does not call the host adapter or put tenant in the form', 
   const ui = readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/ui.tsx'), 'utf8');
   const body = ui.slice(ui.indexOf('export function EvidenceBody'), ui.indexOf('export function ImprovementsBody'));
   assert.equal(body.includes('tenantId'), false);
-  assert.equal(body.includes('Create Evidence'), true);
+  assert.equal(body.includes('리뷰 자료 만들기'), true);
   assert.equal(body.includes('name="metric"'), true);
   assert.equal(body.includes('name="availability"'), true);
   assert.equal(body.includes('name="value"'), true);

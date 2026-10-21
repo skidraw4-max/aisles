@@ -8,8 +8,8 @@ import { decideJuryMutation, resolveJuryActor, type JuryActor } from './access';
 import { containsSecret } from './agent-execution';
 import { humanImprovementTaskType, isHumanImprovementProvenance } from './human-improvement-bridge';
 import { REREVIEW_IMPROVEMENT_KIND, reReviewImprovementTaskId } from './rereview-improvement-bridge';
-import type { JuryDecision, JuryFinalSurface, JuryMembership } from './records';
-import { JURY_CORE_CONTRACT_VERSION, JURY_DECISIONS, JURY_REVIEW_STATUSES } from './records';
+import type { JuryDecision, JuryEvidenceStrength, JuryFinalSurface, JuryMemberOpinion, JuryMembership } from './records';
+import { JURY_CORE_CONTRACT_VERSION, JURY_DECISIONS, JURY_EVIDENCE_STRENGTHS, JURY_MEMBER_OPINION_IDS, JURY_REVIEW_STATUSES } from './records';
 
 export const REVIEW_DECISION_MEANING = {
   ACCEPT: '현재 Evidence와 표현 수준에서 추가 조치가 필요하지 않음',
@@ -61,6 +61,16 @@ export type ReviewConsoleScreen = {
   supportedClaims: string[];
   partiallySupportedClaims: string[];
   hypotheses: string[];
+  /** Display-only committee view (phase 3). null = stored before member opinions were saved. */
+  memberOpinions?: JuryMemberOpinion[] | null;
+  memberOpinionsOmitted?: 'SECRET' | null;
+  opinionDifferences?: string[];
+  disputedPoints?: string[];
+  confidence?: {
+    value: number | null;
+    source: 'BOARD' | 'EVIDENCE_STRENGTH' | 'NONE';
+    evidenceStrength: JuryEvidenceStrength | null;
+  };
   humanDecision: JuryDecision | null;
   humanChoices: Array<{ code: JuryDecision; label: string }>;
   improvementTask: { id: string; taskType: 'VERIFICATION' | 'REWORD' } | null;
@@ -152,6 +162,7 @@ export function projectReviewConsole(input: {
     expectedDecision: JuryDecision;
     finalSurface: JuryFinalSurface;
     completedAt: string;
+    evidenceStrength?: JuryEvidenceStrength | null;
   };
   status: string | null;
   evidenceId: string | null;
@@ -513,6 +524,7 @@ export function projectReviewConsole(input: {
       supportedClaims: [...input.result.finalSurface.supportedClaims],
       partiallySupportedClaims: [...input.result.finalSurface.partiallySupportedClaims],
       hypotheses: [...input.result.finalSurface.hypotheses],
+      ...committeeView(input.result.finalSurface, input.result.evidenceStrength ?? null),
       humanDecision: stored,
       humanChoices,
       improvementTask,
@@ -706,6 +718,7 @@ export async function loadReviewConsole(
       tenantId: true,
       expectedDecision: true,
       finalSurface: true,
+      evidenceStrength: true,
       completedAt: true,
       contractVersion: true,
       humanDecision: {
@@ -953,6 +966,7 @@ export async function loadReviewConsole(
       expectedDecision: decision,
       finalSurface: surface,
       completedAt: row.completedAt.toISOString(),
+      evidenceStrength: oneOf(JURY_EVIDENCE_STRENGTHS, String(row.evidenceStrength)),
     },
     status,
     evidenceId: evidence?.id ?? null,
@@ -1295,6 +1309,56 @@ function asSurface(value: unknown): JuryFinalSurface | null {
     supportedClaims: parsed.supportedClaims!,
     partiallySupportedClaims: parsed.partiallySupportedClaims!,
     hypotheses: parsed.hypotheses!,
+    ...committeeFields(row),
+  };
+}
+
+/** Optional phase-3 fields. Missing or malformed values are dropped, never fatal. */
+function committeeFields(row: Record<string, unknown>): Partial<JuryFinalSurface> {
+  const out: Partial<JuryFinalSurface> = {};
+  if (typeof row.boardConfidence === 'number' && Number.isFinite(row.boardConfidence)) out.boardConfidence = row.boardConfidence;
+  const differences = asStrings(row.opinionDifferences);
+  if (differences) out.opinionDifferences = differences;
+  const disputed = asStrings(row.disputedPoints);
+  if (disputed) out.disputedPoints = disputed;
+  if (row.memberOpinionsOmitted === 'SECRET') out.memberOpinionsOmitted = 'SECRET';
+  if (Array.isArray(row.memberOpinions)) {
+    out.memberOpinions = row.memberOpinions.flatMap((item): JuryMemberOpinion[] => {
+      if (!item || typeof item !== 'object') return [];
+      const entry = item as Record<string, unknown>;
+      const memberId = oneOf(JURY_MEMBER_OPINION_IDS, String(entry.memberId));
+      if (!memberId || typeof entry.opinion !== 'string') return [];
+      return [{
+        memberId,
+        opinion: entry.opinion,
+        basis: typeof entry.basis === 'string' ? entry.basis : '',
+        problems: asStrings(entry.problems) ?? [],
+        confidence: typeof entry.confidence === 'number' && Number.isFinite(entry.confidence) ? entry.confidence : null,
+        revised: typeof entry.revised === 'boolean' ? entry.revised : null,
+      }];
+    });
+  }
+  return out;
+}
+
+/** Display-only: board confidence first, evidenceStrength as the fallback for older results. */
+export function committeeView(
+  surface: JuryFinalSurface,
+  evidenceStrength: JuryEvidenceStrength | null,
+): Pick<ReviewConsoleScreen, 'memberOpinions' | 'memberOpinionsOmitted' | 'opinionDifferences' | 'disputedPoints' | 'confidence'> {
+  const omitted = surface.memberOpinionsOmitted === 'SECRET' ? 'SECRET' : null;
+  const board = typeof surface.boardConfidence === 'number' ? surface.boardConfidence : null;
+  const hide = (value: string) => !containsSecret(value);
+  return {
+    memberOpinions: omitted ? [] : surface.memberOpinions ? surface.memberOpinions.filter((item) => !containsSecret(item)) : null,
+    memberOpinionsOmitted: omitted,
+    opinionDifferences: (surface.opinionDifferences ?? []).filter(hide),
+    disputedPoints: (surface.disputedPoints ?? []).filter(hide),
+    confidence: {
+      value: board,
+      source: board !== null ? 'BOARD' : evidenceStrength ? 'EVIDENCE_STRENGTH' : 'NONE',
+      evidenceStrength,
+    },
   };
 }
 

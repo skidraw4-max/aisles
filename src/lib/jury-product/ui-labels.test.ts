@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { auditActionLabel, displayText, STATUS_LABELS, userLabel } from './ui-labels';
+import { auditActionLabel, committeeRoleLabel, confidenceLabel, DECISION_GUIDANCE, displayText, MEMBER_OPINION_NOTICE, STATUS_LABELS, userLabel } from './ui-labels';
 
 test('status labels follow the glossary and keep raw values as keys', () => {
   assert.equal(userLabel('PENDING'), '대기 중');
@@ -37,4 +37,18 @@ test('relative ages are localized', () => {
   assert.equal(displayText('10 min ago'), '10분 전');
   assert.equal(displayText('3 d ago'), '3일 전');
   assert.equal(displayText('just now'), '방금 전');
+});
+
+test('committee labels, confidence and decision guidance are display-only Korean text', () => {
+  assert.equal(committeeRoleLabel('A'), 'UX/UI');
+  assert.equal(committeeRoleLabel('Z'), 'Z');
+  assert.equal(confidenceLabel(0.64), '64%');
+  assert.equal(confidenceLabel(null), '확인 불가');
+  assert.equal(MEMBER_OPINION_NOTICE.LEGACY.includes('재심사 시 표시됩니다'), true);
+  for (const code of ['ACCEPT', 'VERIFY', 'REWORD']) {
+    assert.equal(DECISION_GUIDANCE[code].length > 0, true, code);
+    assert.equal(DECISION_GUIDANCE[code].includes('실패'), false, code);
+  }
+  assert.equal(userLabel('REWORD'), '수정 필요');
+  assert.equal(userLabel('VERIFY'), '검증 필요');
 });

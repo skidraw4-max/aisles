@@ -8,7 +8,8 @@ import { decideJuryMutation } from '@/lib/jury-product/access';
 import { listOrganizationMembers } from '@/lib/jury-product/jury-db';
 import { countOrganizationServiceAccess } from '@/lib/jury-product/service-member-db';
 import { juryHref, juryLoginHref } from '@/lib/jury-product/jury-url';
-import { canManageMember, juryRoleLabel } from '@/lib/jury-product/member-management';
+import { canManageMember } from '@/lib/jury-product/member-management';
+import { userLabel } from '@/lib/jury-product/ui-labels';
 import { getJuryEntry } from '@/lib/jury-product/session';
 import { JuryChrome } from '../../ui';
 import { readJurySessionEmail } from '../../load';
@@ -63,16 +64,16 @@ export default async function JuryMembersPage() {
                 <tr key={member.membershipId}>
                   <td>{member.displayName ?? member.email}</td>
                   <td>{member.email}</td>
-                  <td>{juryRoleLabel(member.role)}</td>
+                  <td>{userLabel(member.role)}</td>
                   <td>{member.joinedAt.slice(0, 16).replace('T', ' ')}</td>
                   <td>{serviceAccess[member.userId] ?? 0}</td>
                   <td>
                     {manageable && ASSIGNABLE.has(member.role) ? (
                       <>
                         <JuryMemberRoleControl memberUserId={member.userId} role={member.role as 'ADMIN' | 'REVIEWER' | 'DEVELOPER' | 'VIEWER'} />
-                        <JuryMemberRemoveControl memberUserId={member.userId} email={member.email} roleLabel={juryRoleLabel(member.role)} />
+                        <JuryMemberRemoveControl memberUserId={member.userId} email={member.email} roleLabel={userLabel(member.role)} />
                       </>
-                    ) : <span>{juryRoleLabel(member.role)}</span>}
+                    ) : <span>{userLabel(member.role)}</span>}
                   </td>
                 </tr>
               );

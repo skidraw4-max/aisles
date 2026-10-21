@@ -27,6 +27,8 @@ const REVIEW_KEYS = [
   'reviewId', 'tenantId', 'status', 'completedAt', 'decision', 'decisionMeaning', 'summary', 'topProblems',
   'expectedUserEffect', 'risk', 'evidenceId', 'measured', 'dimensionEvidence', 'supportedClaims',
   'partiallySupportedClaims', 'hypotheses', 'humanDecision', 'humanChoices',
+  // phase 3: display-only committee view belongs to the review block
+  'memberOpinions', 'memberOpinionsOmitted', 'opinionDifferences', 'disputedPoints', 'confidence',
 ] as const;
 const IMPROVEMENT_KEYS = [
   'improvementTask', 'canCreateImprovement', 'canHandoff', 'nextImprovement', 'canCreateReReviewImprovement',
@@ -433,5 +435,17 @@ test('t336 existing ui source checks around the Re-review body still hold', () =
   assert.equal(run.includes('에이전트 완료'), true);
   for (const label of ['변경 검사 실행', '재심사', '자동 수정', '루프 실행', '다시 실행', '에이전트 실행 요청']) {
     assert.equal(run.includes(label), false, label);
+  }
+});
+
+test('phase 3: review tabs keep the permission blocks verbatim inside the 이력 tab', () => {
+  const page = readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/reviews/[reviewId]/page.tsx'), 'utf8').replace(/\r\n/g, '\n');
+  const tabs = readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/review-tabs-ui.tsx'), 'utf8');
+  assert.equal(page.includes('reviewTabFrom(query.tab)'), true);
+  assert.equal(page.indexOf("{tab === 'history' ? (") < page.indexOf('{show.HumanChangeGate ? <HumanChangeGateBody screen={screen} /> : null}'), true);
+  assert.equal(page.includes("{tab === 'summary' ? <ReviewDetailBody screen={screen} noted={noted} /> : null}"), true);
+  for (const label of ['요약', '위원 의견', '검증 근거', '이력']) assert.equal(tabs.includes(`'${label}'`), true, label);
+  for (const token of ['prisma', 'runReviewBoardPipeline', 'formData', "'use server'", 'action={']) {
+    assert.equal(tabs.includes(token), false, token);
   }
 });

@@ -327,9 +327,9 @@ test('review console source stays off host collectors and improvement actions', 
   assert.equal(body.includes('name="tenantId"'), false);
   assert.equal(body.includes('sourceRef'), false);
   assert.equal(body.includes('선택 완료'), true);
-  assert.equal(body.includes('Jury Decision:'), true);
-  assert.equal(body.includes('Human Decision:'), true);
-  assert.equal(body.includes('아직 확인되지 않은 내용'), true);
+  assert.equal(body.includes('결론'), true);
+  assert.equal(body.includes('사용자 확인:'), true);
+  assert.equal(body.includes('부족한 근거'), true);
   assert.equal(body.includes('개선 작업 만들기'), true);
   assert.equal(body.includes('개선 작업을 만들었습니다'), true);
   assert.equal(body.includes('createHumanImprovementTask'), true);
