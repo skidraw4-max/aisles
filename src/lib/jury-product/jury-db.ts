@@ -765,6 +765,10 @@ export async function loadJuryCatalog(tenantId: string): Promise<JuryConsoleCata
         status: status as JuryReviewStatus,
         coreRootDir: JURY_PRODUCT_DATA_ROOT,
         ...(row.requestedByUserId ? { requestedByUserId: row.requestedByUserId } : {}),
+        ...(row.resultSource === 'REAL_MODEL' || row.resultSource === 'MOCK' || row.resultSource === 'FIXTURE' || row.resultSource === 'VERIFIED_REAL'
+          ? { resultSource: row.resultSource }
+          : {}),
+        ...(row.failureReason ? { failureReason: row.failureReason } : {}),
       };
       if (reviewType === 'CLAIM_VALIDATION') {
         if (!row.claim || row.claim.trim().length === 0) return [];

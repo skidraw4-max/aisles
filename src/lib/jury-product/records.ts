@@ -246,6 +246,10 @@ type JuryReviewRequestBase = {
   /** Product runs use JURY_PRODUCT_DATA_ROOT, not data/ai-review-board. */
   coreRootDir: typeof JURY_PRODUCT_DATA_ROOT;
   requestedByUserId?: string;
+  /** RM-01 stored source; omitted when UNKNOWN_LEGACY or not loaded. Display only (AGG-01). */
+  resultSource?: 'REAL_MODEL' | 'MOCK' | 'FIXTURE' | 'VERIFIED_REAL';
+  /** RM-01 stored failure reason; display only. */
+  failureReason?: string;
 };
 
 /** A claim sentence is required only when the review exists to validate that sentence. */

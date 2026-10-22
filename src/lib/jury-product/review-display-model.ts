@@ -187,10 +187,10 @@ export function buildReviewDisplayModel(input: ReviewDisplayInput): ReviewDispla
   if (!surface || !top || !sup || !part || !hyp || !decisionKnown) return emptyModel('SCHEMA_INVALID', false);
 
   // M-003 (CT-07): problems are strings without severity.
-  const problemSeen = new Set<string>();
-  const problems = dedupe(top, problemSeen);
-  if (problems.dropped > 0) flags.add('DUPLICATE_PROBLEM');
-  const problemState: CountState = problems.kept.length > 0 ? 'LISTED' : 'NONE_LISTED';
+  const problemSummary = summarizeProblems(result.expectedDecision, top);
+  for (const flag of problemSummary.flags) flags.add(flag);
+  const problems = { kept: problemSummary.items };
+  const problemState: CountState = problemSummary.state;
 
   // M-005/M-016 (CT-08): a claim counts once, at its highest confirmation stage.
   const seen = new Set<string>();
@@ -202,8 +202,7 @@ export function buildReviewDisplayModel(input: ReviewDisplayInput): ReviewDispla
   if (claimTotal === 0) flags.add('NO_CLAIMS');
   else if (p.kept.length + h.kept.length > 0) flags.add('PARTIAL_CONFIRMATION');
 
-  // M-002 (CT-01, CT-12): never imply "no further action" when the verdict asks for change.
-  if (result.expectedDecision !== 'ACCEPT' && problemState === 'NONE_LISTED') flags.add('DECISION_PROBLEM_MISMATCH');
+  // M-002 (CT-12); CT-01 is handled in summarizeProblems.
   if (result.revisionRequired === true && result.expectedDecision === 'ACCEPT') flags.add('DECISION_REVISION_MISMATCH');
 
   // M-008/M-004 (CT-09): unlinked evidence withholds the verdict.
@@ -261,4 +260,99 @@ export function buildReviewDisplayModel(input: ReviewDisplayInput): ReviewDispla
     compositeScore: null,
     flags: [...flags],
   };
+}
+
+export type ProblemSummary = {
+  state: CountState;
+  count: number | null;
+  items: string[];
+  severityNote: string | null;
+  /** Text to show when there is no list. Never "없음"/"no problem". */
+  emptyText: string | null;
+  flags: DisplayFlag[];
+};
+
+/**
+ * AGG-01 M-003 for screens that only carry a decision + topProblems (operations, onboarding).
+ * Shared with buildReviewDisplayModel so every screen counts the same way.
+ */
+export function summarizeProblems(decision: string | null | undefined, topProblems: unknown): ProblemSummary {
+  const list = strings(topProblems);
+  if (!list) {
+    return { state: 'UNAVAILABLE', count: null, items: [], severityNote: null, emptyText: '집계 불가', flags: ['SCHEMA_INVALID'] };
+  }
+  const flags: DisplayFlag[] = [];
+  const { kept, dropped } = dedupe(list, new Set<string>());
+  if (dropped > 0) flags.push('DUPLICATE_PROBLEM');
+  if (kept.length === 0 && decision && decision !== 'ACCEPT') flags.push('DECISION_PROBLEM_MISMATCH');
+  return {
+    state: kept.length > 0 ? 'LISTED' : 'NONE_LISTED',
+    count: kept.length,
+    items: kept,
+    severityNote: kept.length > 0 ? `심각도 미기록 ${kept.length}건` : null,
+    emptyText: kept.length > 0 ? null : flags.includes('DECISION_PROBLEM_MISMATCH') ? '문제 목록 없음 — 판정과 불일치' : '문제 목록 없음',
+    flags,
+  };
+}
+
+/** Catalog rows (console view) -> display model. Used by the list and home screens. */
+export function displayModelForCatalogRow(
+  result: {
+    id: string;
+    boardRunId?: string | null;
+    expectedDecision: string;
+    finalSurface: unknown;
+    evidenceStrength?: string | null;
+    claimStrength?: string | null;
+    revisionRequired?: boolean | null;
+    conflictDetected?: boolean | null;
+    overclaimDetected?: boolean | null;
+  },
+  request: { status?: string | null; resultSource?: string | null; failureReason?: string | null; evidenceId?: string | null } | null,
+  evidenceRows?: readonly { id: string; metricIds?: readonly string[] | unknown }[],
+): ReviewDisplayModel {
+  let evidence: ReviewDisplayInput['evidence'];
+  if (evidenceRows && request) {
+    const row = request.evidenceId ? evidenceRows.find((item) => item.id === request.evidenceId) : undefined;
+    // Not visible to this reader (or not loaded) is NOT the same as unlinked: keep it NOT_LOADED.
+    if (!request.evidenceId) evidence = null;
+    else if (row) {
+      evidence = { id: row.id, metricIds: Array.isArray(row.metricIds) ? row.metricIds.filter((id): id is string => typeof id === 'string') : [] };
+    }
+  }
+  return buildReviewDisplayModel({ result, request, evidence });
+}
+
+export type ReviewDisplaySummary = {
+  total: number;
+  /** Only VERIFIED_REAL results count toward aggregates (currently expected 0). */
+  aggregatable: number;
+  realUnverified: number;
+  nonReal: number;
+  unknownSource: number;
+  withWarnings: number;
+};
+
+export function summarizeDisplayModels(models: readonly ReviewDisplayModel[]): ReviewDisplaySummary {
+  return {
+    total: models.length,
+    aggregatable: models.filter((m) => m.source.countsTowardAggregates).length,
+    realUnverified: models.filter((m) => m.source.value === 'REAL_MODEL').length,
+    nonReal: models.filter((m) => m.source.value === 'MOCK' || m.source.value === 'FIXTURE').length,
+    unknownSource: models.filter((m) => m.source.value === 'UNKNOWN_LEGACY').length,
+    withWarnings: models.filter((m) =>
+      m.flags.some((f) => f !== 'UNKNOWN_SOURCE' && f !== 'NON_REAL_SOURCE' && f !== 'PARTIAL_CONFIRMATION'),
+    ).length,
+  };
+}
+
+/**
+ * RM-02b: decision-cycle status label for the automation screen. A cycle stays ACTIVE while a
+ * human decision is pending; that is not "automation running" when the auto loop is off.
+ */
+export function cycleStatusLabel(status: string, loopEnabled: boolean): string {
+  if (status === 'ACTIVE') return loopEnabled ? '진행 중 (자동 Loop 켜짐)' : '결정 대기 (자동 실행 아님)';
+  if (status === 'COMPLETED') return '완료';
+  if (status === 'BLOCKED') return '중단됨';
+  return status;
 }
