@@ -6,6 +6,7 @@
  * latency, start time. Prompts, responses, evidence text and keys are never recorded.
  */
 import type { ReviewBoardLlm } from '../ai-review-board/llm';
+import { describeLlmCallModel, runInNewLlmCallContext, withLlmCallContext } from '../llm-call-context';
 
 export type JuryResultSourceValue = 'REAL_MODEL' | 'MOCK' | 'FIXTURE' | 'UNKNOWN_LEGACY' | 'VERIFIED_REAL';
 export const JURY_RESULT_SOURCES: readonly JuryResultSourceValue[] = [
@@ -70,25 +71,26 @@ export function instrumentReviewBoardLlm(
     get(target, prop, receiver) {
       const value = Reflect.get(target, prop, receiver) as unknown;
       if (typeof value !== 'function' || typeof prop !== 'string') return value;
-      return async (...args: unknown[]) => {
+      return (...args: unknown[]) => runInNewLlmCallContext(async (ctx) => {
         const start = clock();
         const memberId = typeof args[0] === 'string' && MEMBER_ID.test(args[0]) ? args[0] : null;
         const base = {
           provider: meta.provider,
-          model: meta.model ?? null,
           operation: prop,
           memberId,
           startedAt: new Date(start).toISOString(),
         };
+        // model: actual responding model + fallback/request count when the transport reports it (no schema change).
+        const model = () => describeLlmCallModel(ctx) ?? meta.model ?? null;
         try {
           const out = await (value as (...a: unknown[]) => unknown).apply(target, args);
-          recorder.push({ ...base, status: 'OK', errorCode: null, latencyMs: Math.max(0, clock() - start) });
+          recorder.push({ ...base, model: model(), status: 'OK', errorCode: null, latencyMs: Math.max(0, clock() - start) });
           return out;
         } catch (error) {
-          recorder.push({ ...base, status: 'ERROR', errorCode: llmErrorCode(error), latencyMs: Math.max(0, clock() - start) });
+          recorder.push({ ...base, model: model(), status: 'ERROR', errorCode: llmErrorCode(error), latencyMs: Math.max(0, clock() - start) });
           throw error;
         }
-      };
+      });
     },
   });
 }
@@ -122,21 +124,29 @@ export function withLlmBudget(
     get(target, prop, receiver) {
       const value = Reflect.get(target, prop, receiver) as unknown;
       if (typeof value !== 'function' || typeof prop !== 'string') return value;
-      return (...args: unknown[]) => {
+      return (...args: unknown[]) => withLlmCallContext((ctx) => {
         const remaining = budget.totalMs === null ? null : budget.totalMs - (clock() - startedAt);
         if (remaining !== null && remaining <= 0) return Promise.reject(new Error('LLM_BUDGET_EXCEEDED'));
         const limits = [budget.perCallMs, remaining].filter((v): v is number => v !== null);
         const limit = Math.min(...limits);
         const code = remaining !== null && (budget.perCallMs === null || remaining < budget.perCallMs) ? 'LLM_BUDGET_EXCEEDED' : 'LLM_TIMEOUT';
+        // Abort the in-flight provider request on timeout instead of leaving it running (D-16).
+        const controller = new AbortController();
+        ctx.signal = controller.signal;
         let handle: ReturnType<typeof setTimeout> | undefined;
         const timeout = new Promise<never>((_, reject) => {
-          handle = timers.set(() => reject(new Error(code)), limit);
+          handle = timers.set(() => {
+            const err = new Error(code);
+            controller.abort(err);
+            reject(err);
+          }, limit);
         });
         const call = Promise.resolve((value as (...a: unknown[]) => unknown).apply(target, args));
+        call.catch(() => undefined); // the provider's own rejection after abort is expected
         return Promise.race([call, timeout]).finally(() => {
           if (handle !== undefined) timers.clear(handle);
         });
-      };
+      });
     },
   });
 }
