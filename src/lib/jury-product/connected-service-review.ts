@@ -14,6 +14,7 @@ import { JURY_INTERACTIVE_TRANSACTION, notePersistenceFailure } from './persiste
 import { projectEvidenceToPack } from './projection';
 import { isGithubInstallationConnection } from './services/github/onboarding-discovery';
 import type { ProductReviewCore } from './review-boundary';
+import { recordReviewAudit } from './review-audit';
 import {
   JURY_CLAIM_STRENGTHS,
   JURY_CORE_CONTRACT_VERSION,
@@ -444,12 +445,29 @@ function reviewStartedAudit(actorUserId: string, tenantId: string, evidence: Jur
   };
 }
 
-async function markReviewFailed(requestId: string, tenantId: string): Promise<void> {
+async function markReviewFailed(
+  requestId: string,
+  tenantId: string,
+  audit?: { actorUserId: string; evidenceId: string; failureReason: string },
+): Promise<void> {
   const prisma = await loadPrisma();
   await prisma.juryReviewRequest.updateMany({
     where: { id: requestId, tenantId, status: 'RUNNING' },
     data: { status: 'FAILED' },
   });
+  // RM-08: terminal audit event for failed reviews (best-effort; STARTED is written in the claim tx).
+  if (audit) {
+    await recordReviewAudit(prisma, {
+      tenantId,
+      actorUserId: audit.actorUserId,
+      action: 'REVIEW_FAILED',
+      evidenceId: audit.evidenceId,
+      reviewId: requestId,
+      path: 'CONNECTED_SERVICE',
+      reviewType: 'FULL_REVIEW',
+      failureReason: audit.failureReason,
+    });
+  }
 }
 
 export async function runConnectedServiceReview(
@@ -560,11 +578,11 @@ export async function runConnectedServiceReview(
       evidence: projection.pack,
     });
   } catch {
-    await markReviewFailed(requestId, actor.tenantId);
+    await markReviewFailed(requestId, actor.tenantId, { actorUserId: actor.userId, evidenceId: evidence.id, failureReason: 'REVIEW_NOT_EXECUTED' });
     return { ok: false, reason: 'REVIEW_NOT_EXECUTED' };
   }
   if (!(JURY_DECISIONS as readonly string[]).includes(reading.expectedDecision)) {
-    await markReviewFailed(requestId, actor.tenantId);
+    await markReviewFailed(requestId, actor.tenantId, { actorUserId: actor.userId, evidenceId: evidence.id, failureReason: 'DECISION_NOT_IN_CONTRACT' });
     return { ok: false, reason: 'DECISION_NOT_IN_CONTRACT' };
   }
   if (
@@ -573,7 +591,7 @@ export async function runConnectedServiceReview(
     typeof reading.boardRunId !== 'string' ||
     reading.boardRunId.length === 0
   ) {
-    await markReviewFailed(requestId, actor.tenantId);
+    await markReviewFailed(requestId, actor.tenantId, { actorUserId: actor.userId, evidenceId: evidence.id, failureReason: 'CORE_READING_REJECTED' });
     return { ok: false, reason: 'CORE_READING_REJECTED' };
   }
   const decision = reading.expectedDecision as JuryDecision;
@@ -637,7 +655,7 @@ export async function runConnectedServiceReview(
         status: 'COMPLETED',
       };
     }
-    await markReviewFailed(requestId, actor.tenantId);
+    await markReviewFailed(requestId, actor.tenantId, { actorUserId: actor.userId, evidenceId: evidence.id, failureReason: 'PERSISTENCE_FAILED' });
     return { ok: false, reason: 'PERSISTENCE_FAILED' };
   }
   return { ok: true, reused: false, requestId, resultId, decision, status: 'COMPLETED' };

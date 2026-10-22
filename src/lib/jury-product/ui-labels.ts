@@ -91,6 +91,7 @@ export const AUDIT_ACTION_LABELS: Readonly<Record<string, string>> = {
   EVIDENCE_INTAKE_COMPLETED: '검증 근거 입력 완료',
   REVIEW_STARTED: '심사 시작',
   REVIEW_COMPLETED: '심사 완료',
+  REVIEW_FAILED: '심사 실패',
   REVIEW_DECISION_RESOLVED: '심사 결론 확정',
   REVIEW_REREVIEW_REQUESTED: '재심사 요청',
   REVIEW_REREVIEW_STARTED: '재심사 시작',

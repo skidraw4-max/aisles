@@ -8,6 +8,7 @@ import type { ProductReviewCore } from './review-boundary';
 import { persistProductReview } from './review-store';
 import { createLlmCallRecorder } from './llm-call-log';
 import { finishReviewAttempt, startReviewAttempt } from './review-tracking';
+import { recordReviewAudit } from './review-audit';
 import type { ProductReviewTrace } from './review-boundary';
 import {
   JURY_CORE_CONTRACT_VERSION,
@@ -222,11 +223,31 @@ export async function runTenantReview(
     reviewType,
     startedAt: new Date(),
   });
+  // RM-08 (I-005): audit start/terminal events on this path too (best-effort).
+  const audit = (action: 'REVIEW_STARTED' | 'REVIEW_COMPLETED' | 'REVIEW_FAILED', extra: { reviewId?: string; decision?: string; failureReason?: string | null } = {}) =>
+    recordReviewAudit(prisma, {
+      tenantId: actor.tenantId,
+      actorUserId: actor.userId,
+      action,
+      evidenceId: evidence.id,
+      reviewId: extra.reviewId ?? requestId,
+      decision: extra.decision ?? null,
+      path: 'TENANT_EVIDENCE',
+      reviewType,
+      failureReason: extra.failureReason ?? null,
+    });
+  await audit('REVIEW_STARTED');
   const finish = async (
     status: 'COMPLETED' | 'FAILED',
     failureReason: TenantReviewFailure | null,
     boardRunId?: string,
+    result?: { id: string; decision: string },
   ): Promise<void> => {
+    await audit(status === 'COMPLETED' ? 'REVIEW_COMPLETED' : 'REVIEW_FAILED', {
+      reviewId: result?.id,
+      decision: result?.decision,
+      failureReason,
+    });
     await finishReviewAttempt(prisma, attemptId, {
       tenantId: actor.tenantId,
       reviewRequestKey: requestId,
@@ -317,7 +338,7 @@ export async function runTenantReview(
     }
     return fail('PERSISTENCE_FAILED', reading.boardRunId);
   }
-  await finish('COMPLETED', null, reading.boardRunId);
+  await finish('COMPLETED', null, reading.boardRunId, { id: result.id, decision: result.expectedDecision });
   return { ok: true, reused: false, request, result };
 }
 
