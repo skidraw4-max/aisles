@@ -14,11 +14,11 @@
 3. `rm01-prod-apply.sql` 실행 (lock 대기 5s 초과 시 실패→재시도).
 4. 검증 SELECT: `JuryReviewAttempt`/`JuryLlmCallLog` 존재·RLS on, `JuryReviewRequest.resultSource` 전부 UNKNOWN_LEGACY(5건), `_prisma_migrations` rm01 1행 finished.
 5. 같은 창에서 #10 포함 그룹 B 머지 → 배포 READY → 스모크: 두 도메인 홈 200, /jury 리뷰 목록·상세 읽기, 런타임 오류 로그 확인.
-6. (RM-01b 별도 승인 시) `backfill-rm01b-createdat.sql`.
+6. **RM-01b (JD 결정 A, 2026-10-22)**: 4단계 검증 직후·그룹 B 머지 전 `backfill-rm01b-createdat.sql` 실행 → `UPDATE 5` 기대, 재실행 `UPDATE 0`.
 
 ## 롤백
 - `rm01-down.sql`: 두 테이블·4컬럼·enum 삭제 + 이력 행 삭제. **파괴적**(적용 후 쌓인 attempt/LLM 로그와 failureReason/resultSource 소실). 앱을 #10 이전으로 되돌린 뒤에만. 사본에서 마이그레이션 전 카탈로그로 정확히 복원 확인.
 
-## RM-01b (별도 결정)
+## RM-01b — 결정: A (즉시 실행)
 - A 즉시(4단계 직후): 기존 5건 createdAt/updatedAt ← 결과 completedAt. 사본 dry-run 5건 → 재실행 0건.
 - B 보류: O-지표 30일 집계가 기존 5건을 적용일 기준으로 셈(5건 수준 왜곡).

@@ -39,3 +39,6 @@
 ## 추가 승인 (2026-10-22 19:07 KST)
 - Preview env `JURY_LLM_CALL_TIMEOUT_MS=60000`, `JURY_LLM_TOTAL_BUDGET_MS=240000` 설정 완료(Preview만, 이후 Preview 빌드부터 적용).
 - D-16 호출 상한 증액은 **미승인** → 실모델 검증 미실행(현재 상한 ~50회 = 리뷰 1회분).
+
+## RM-01b 확정 (2026-10-22 19:34 KST)
+- JD 결정: **A** — 운영 롤아웃에서 RM-01 적용 직후 `backfill-rm01b-createdat.sql` 실행(사본 dry-run 5건→재실행 0건). 실행 자체는 롤아웃 시점 실행 승인에 포함해 진행, 현재 미실행.
