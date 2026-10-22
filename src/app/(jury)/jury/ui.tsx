@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import type { ReactNode } from 'react';
 import { DISPLAY_FLAG_LABELS, cycleStatusLabel, displayModelForCatalogRow } from '@/lib/jury-product/review-display-model';
 import { buildRequestStatusRows } from '@/lib/jury-product/review-request-status';
 import { redirect } from 'next/navigation';
@@ -109,7 +110,7 @@ export async function JuryChrome({
           <p>{GATE_COPY[actor.reason]}</p>
           {actor.reason === 'UNAUTHENTICATED' ? (
             <p>
-              <Link className={styles.inline} href="/login">
+              <Link className={styles.inline} href={juryHref('/login')}>
                 로그인
               </Link>
             </p>
@@ -207,21 +208,37 @@ export function canShowWrite(actor: JuryActor, action: JuryAction): boolean {
   return decideJuryMutation({ actor, action, resourceTenantId: actor.tenantId }).ok;
 }
 
+/** RM-05 (D-11): re-review chains run with the mock review-board LLM (change-gate-rereview-store defaultCore). */
+export const MOCK_RE_REVIEW_NOTICE = 'Mock AI 응답으로 만든 결과이며 실제 심사가 아닙니다.';
+
 export function WriteControl({
   actor,
   action,
   label,
   returnTo,
   resourceId,
+  disabledHint,
 }: {
   actor: JuryActor;
   action: JuryAction;
   label: string;
   returnTo: string;
   resourceId?: string;
+  /** RM-05 (I-006): server action not implemented yet (planJuryCommand -> NOT_IMPLEMENTED); render disabled '준비 중' instead of a submit. */
+  disabledHint?: ReactNode;
 }) {
   if (!canShowWrite(actor, action)) {
     return <p className={styles.muted}>{label}: 현재 역할에는 이 변경 권한이 없습니다.</p>;
+  }
+  if (disabledHint !== undefined) {
+    return (
+      <div>
+        <button className={styles.button} type="button" disabled aria-disabled="true">
+          {label} (준비 중)
+        </button>
+        <p className={styles.muted}>{disabledHint}</p>
+      </div>
+    );
   }
   return (
     <form action={submitJuryAction}>
@@ -716,7 +733,8 @@ export function HumanReReviewBody({ screen }: { screen: ReviewConsoleScreen }) {
       {screen.canRunReReview && screen.agentExecution ? (
         <form action={runHumanReReview}>
           <input type="hidden" name="agentExecutionId" value={screen.agentExecution.id} />
-          <button className={styles.button} type="submit">재심사 실행</button>
+          <button className={styles.button} type="submit">재심사 실행 (Mock)</button>
+          <p className={styles.muted}>{MOCK_RE_REVIEW_NOTICE}</p>
         </form>
       ) : null}
       {screen.reReview?.decision === 'ACCEPT' ? <p>개선이 필요하지 않습니다</p> : null}
@@ -970,7 +988,8 @@ export function ImprovementsBody({
                     ) : canReview ? (
                       <form action={runProductChangeGateReReview}>
                         <input type="hidden" name="agentExecutionId" value={task.agentExecutionId} />
-                        <button className={styles.button} type="submit">재심사 실행</button>
+                        <button className={styles.button} type="submit">재심사 실행 (Mock)</button>
+          <p className={styles.muted}>{MOCK_RE_REVIEW_NOTICE}</p>
                       </form>
                     ) : null
                   ) : null}
@@ -989,7 +1008,7 @@ export function ImprovementsBody({
           </tbody>
         </table>
       )}
-      <WriteControl actor={actor} action="improvement.write" label="개선 Task 작성" returnTo={juryHref('/improvements')} resourceId={view.tasks[0]?.id} />
+      <WriteControl actor={actor} action="improvement.write" label="개선 Task 작성" returnTo={juryHref('/improvements')} resourceId={view.tasks[0]?.id} disabledHint={<>아직 저장 기능이 없습니다. <Link className={styles.inline} href={juryHref('/reviews')}>결과</Link>에서 리뷰 상세를 열어 「개선 작업 만들기」를 사용하세요.</>} />
     </section>
   );
 }
@@ -1055,7 +1074,7 @@ export function AgentsBody({ actor, view }: { actor: JuryActor; view: JuryConsol
           <span className={styles.muted}>{row.status}</span>
         </div>
       ))}
-      <WriteControl actor={actor} action="agent.execute" label="Agent 실행" returnTo={juryHref('/agents')} resourceId={view.executions[0]?.id} />
+      <WriteControl actor={actor} action="agent.execute" label="Agent 실행" returnTo={juryHref('/agents')} resourceId={view.executions[0]?.id} disabledHint={<>아직 저장 기능이 없습니다. <Link className={styles.inline} href={juryHref('/reviews')}>결과</Link>에서 리뷰 상세의 에이전트 실행을 사용하세요.</>} />
     </section>
   );
 }
@@ -1238,7 +1257,7 @@ export function SettingsBody({
       ) : (
         <p className={styles.muted}>Membership 변경: 현재 역할에는 이 변경 권한이 없습니다.</p>
       )}
-      <WriteControl actor={actor} action="settings.write" label="조직 설정 변경" returnTo={juryHref('/settings')} />
+      <WriteControl actor={actor} action="settings.write" label="조직 설정 변경" returnTo={juryHref('/settings')} disabledHint="아직 저장 기능이 없습니다." />
     </section>
     <section className={styles.panel}>
       <h2>권한 요약</h2>
@@ -1320,7 +1339,8 @@ export function SecondReReviewBody({ screen }: { screen: ReviewConsoleScreen }) 
       {screen.canRunSecondReReview && execution ? (
         <form action={runSecondReReview}>
           <input type="hidden" name="agentExecutionId" value={execution.id} />
-          <button className={styles.button} type="submit">재심사 실행</button>
+          <button className={styles.button} type="submit">재심사 실행 (Mock)</button>
+          <p className={styles.muted}>{MOCK_RE_REVIEW_NOTICE}</p>
         </form>
       ) : null}
       {review?.status === 'RUNNING' ? <p>재심사 진행 중</p> : null}
@@ -1416,7 +1436,8 @@ export function LaterReReviewBody({ screen }: { screen: ReviewConsoleScreen }) {
       {screen.canRunLaterReReview && execution ? (
         <form action={runLaterReReview}>
           <input type="hidden" name="agentExecutionId" value={execution.id} />
-          <button className={styles.button} type="submit">재심사 실행</button>
+          <button className={styles.button} type="submit">재심사 실행 (Mock)</button>
+          <p className={styles.muted}>{MOCK_RE_REVIEW_NOTICE}</p>
         </form>
       ) : null}
       {review?.status === 'EXECUTED' ? <p>두 번째 재심사 결과</p> : null}
@@ -1530,7 +1551,8 @@ export function FollowingReReviewBody({ screen }: { screen: ReviewConsoleScreen 
       {screen.canRunFollowingReReview && execution ? (
         <form action={runFollowingReReview}>
           <input type="hidden" name="agentExecutionId" value={execution.id} />
-          <button className={styles.button} type="submit">재심사 실행</button>
+          <button className={styles.button} type="submit">재심사 실행 (Mock)</button>
+          <p className={styles.muted}>{MOCK_RE_REVIEW_NOTICE}</p>
         </form>
       ) : null}
       {review?.decision ? <p>결론: {review.decision}</p> : null}
