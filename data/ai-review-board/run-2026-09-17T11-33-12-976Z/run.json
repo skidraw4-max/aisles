@@ -1,0 +1,3564 @@
+{
+  "runId": "run-2026-09-17T11-33-12-976Z",
+  "status": "completed",
+  "createdAt": "2026-09-17T11:33:12.977Z",
+  "updatedAt": "2026-09-17T11:35:26.079Z",
+  "evidence": {
+    "generatedAt": "2026-09-17T11:33:12.974Z",
+    "site": {
+      "name": "AIsle",
+      "corridors": [
+        "LAB/RECIPE",
+        "GALLERY",
+        "LOUNGE",
+        "GOSSIP",
+        "BUILD",
+        "LAUNCH",
+        "AI_FORTUNE"
+      ],
+      "stackNotes": [
+        "Next.js 15 App Router + React 19",
+        "Prisma 7 + PostgreSQL (Supabase Auth)",
+        "Gemini (@google/generative-ai) for LAB/news/fortune",
+        "Vercel hosting + GitHub Actions cron",
+        "Capacitor mobile shell"
+      ]
+    },
+    "aggregates": {
+      "userCount": 14,
+      "usersLast7d": 0,
+      "newUsersLast7d": 0,
+      "activeUsersLast7d": null,
+      "postCount": 3369,
+      "postsLast7d": 138,
+      "commentsLast7d": 0,
+      "viewsLast7d": null,
+      "totalViews": 247539,
+      "commentCount": 4,
+      "postsByCategory": {
+        "LOUNGE": 3281,
+        "AI_FORTUNE": 17,
+        "GALLERY": 23,
+        "RECIPE": 16,
+        "LAUNCH": 6,
+        "BUILD": 5,
+        "GOSSIP": 21
+      }
+    },
+    "metricDefinitions": {
+      "userCount": "전체 회원 수 (User 테이블 row count).",
+      "usersLast7d": "DEPRECATED. newUsersLast7d 와 동일한 값(최근 7일 신규 가입). 활성 사용자/DAU/WAU/방문자가 아님. 절대 active users 로 해석하지 말 것.",
+      "newUsersLast7d": "최근 7일 신규 가입자 수 (User.createdAt >= now-7d). NOT active users, NOT DAU/WAU, NOT visitors.",
+      "activeUsersLast7d": "최근 7일 활성 사용자. 현재 신뢰 가능한 활동 정의 없음 → 반드시 null. 신규 가입(newUsersLast7d)으로 대체·추정 금지.",
+      "postCount": "전체 게시글 수 (Post count).",
+      "postsLast7d": "최근 7일 작성 게시글 수 (Post.createdAt >= now-7d).",
+      "commentsLast7d": "최근 7일 작성 댓글 수 (Comment.createdAt >= now-7d).",
+      "viewsLast7d": "최근 7일 조회수. Post.views 는 누적만 존재 → 현재 null. totalViews 로 추정 금지.",
+      "totalViews": "전체 기간 게시글 조회수 합 (Post.views sum). 최근 7일 조회수가 아님.",
+      "commentCount": "전체 댓글 수 (Comment count).",
+      "postsByCategory": "카테고리별 게시글 수."
+    },
+    "docsHints": [
+      "docs/geo-optimization.md — GEO/SEO 가이드",
+      "docs/performance-seo.md",
+      "docs/cron-operations.md",
+      "복도형 커뮤니티 + AI Work/Fortune/Games",
+      "CRITICAL: newUsersLast7d/usersLast7d = signups only, NEVER active users/DAU",
+      "CRITICAL: activeUsersLast7d and viewsLast7d are null (unsupported); do not invent",
+      "commentsLast7d = Comment.createdAt last 7d; totalViews is all-time only"
+    ],
+    "piiExcluded": true,
+    "readOnly": true
+  },
+  "independent": [
+    {
+      "memberId": "A",
+      "currentState": "The platform has a low number of new users and comments, with no recent activity metrics available. Content creation in terms of posts is moderate, with a significant portion concentrated in the 'LOUNGE' category. No specific mobile UX or accessibility metrics are provided.",
+      "strengths": [
+        "Moderate post creation activity, indicating content generation.",
+        "Clear categorization of posts, aiding information organization."
+      ],
+      "problems": [
+        "Extremely low new user signups (0 in the last 7 days).",
+        "No comments created in the last 7 days.",
+        "No reliable active user or recent view metrics are available.",
+        "Lack of data for mobile-specific UX and accessibility."
+      ],
+      "trendGap": "While posts are being created, the lack of new user signups and engagement (comments, recent views) suggests a significant gap in user acquisition and retention, indicating a potential failure to attract or retain users beyond initial content consumption.",
+      "improvementNeed": "The platform needs to focus on strategies to increase new user acquisition and foster community engagement, as current metrics show a severe lack of both. Additionally, understanding and improving the mobile user experience and accessibility is crucial given modern usage patterns.",
+      "improvements": [
+        {
+          "id": "ACQ001",
+          "title": "Implement User Acquisition Campaigns",
+          "priority": 1,
+          "expectedEffect": "Increase newUsersLast7d and potentially activeUsersLast7d.",
+          "difficulty": "medium",
+          "risk": "low",
+          "rationale": "Current new user signups are zero, indicating a critical need for acquisition efforts. This directly addresses the most pressing problem identified."
+        },
+        {
+          "id": "ENG001",
+          "title": "Enhance Community Interaction Features",
+          "priority": 2,
+          "expectedEffect": "Increase commentsLast7d and potentially activeUsersLast7d.",
+          "difficulty": "medium",
+          "risk": "medium",
+          "rationale": "Zero comments in the last 7 days suggest a lack of engagement. Improving features that encourage discussion is vital for community building."
+        },
+        {
+          "id": "UXM001",
+          "title": "Conduct Mobile UX Audit",
+          "priority": 3,
+          "expectedEffect": "Identify and address usability issues specific to mobile users, potentially improving retention and engagement on mobile devices.",
+          "difficulty": "medium",
+          "risk": "low",
+          "rationale": "No mobile-specific metrics are available, making it impossible to assess or improve the mobile experience. This is a foundational step for a platform that might be accessed on mobile."
+        },
+        {
+          "id": "UXA001",
+          "title": "Perform Accessibility Audit",
+          "priority": 4,
+          "expectedEffect": "Ensure the platform is usable by individuals with disabilities, broadening the potential user base and improving overall usability.",
+          "difficulty": "medium",
+          "risk": "low",
+          "rationale": "No accessibility metrics or considerations are mentioned. Ensuring accessibility is a key aspect of inclusive UX design."
+        }
+      ],
+      "scores": [
+        {
+          "dimension": "ui_ux",
+          "score": 20,
+          "evidence": [
+            {
+              "kind": "observation",
+              "text": "No specific mobile UX metrics are available, making it impossible to assess the current state of the mobile user experience.",
+              "source": "EvidencePack JSON"
+            },
+            {
+              "kind": "observation",
+              "text": "No accessibility metrics or considerations are present in the provided data.",
+              "source": "EvidencePack JSON"
+            }
+          ]
+        },
+        {
+          "dimension": "visual",
+          "score": null,
+          "evidence": []
+        },
+        {
+          "dimension": "mobile",
+          "score": 20,
+          "evidence": [
+            {
+              "kind": "observation",
+              "text": "The EvidencePack does not contain any metrics or information related to mobile UX or performance.",
+              "source": "EvidencePack JSON"
+            }
+          ]
+        },
+        {
+          "dimension": "web_tech",
+          "score": null,
+          "evidence": []
+        },
+        {
+          "dimension": "performance",
+          "score": null,
+          "evidence": []
+        },
+        {
+          "dimension": "a11y",
+          "score": null,
+          "evidence": []
+        },
+        {
+          "dimension": "usability",
+          "score": 40,
+          "evidence": [
+            {
+              "kind": "observation",
+              "text": "Zero new users in the last 7 days and zero comments in the last 7 days suggest potential usability issues that hinder user acquisition and engagement.",
+              "source": "EvidencePack JSON"
+            },
+            {
+              "kind": "observation",
+              "text": "The platform has a moderate amount of posts, indicating that content creation is possible, but user interaction is severely lacking.",
+              "source": "EvidencePack JSON"
+            }
+          ]
+        },
+        {
+          "dimension": "content",
+          "score": null,
+          "evidence": []
+        },
+        {
+          "dimension": "community",
+          "score": 20,
+          "evidence": [
+            {
+              "kind": "metric",
+              "text": "commentsLast7d: 0",
+              "source": "EvidencePack JSON"
+            },
+            {
+              "kind": "observation",
+              "text": "The lack of comments suggests a very low level of community interaction.",
+              "source": "EvidencePack JSON"
+            }
+          ]
+        },
+        {
+          "dimension": "ai_usage",
+          "score": null,
+          "evidence": []
+        },
+        {
+          "dimension": "competitive",
+          "score": null,
+          "evidence": []
+        },
+        {
+          "dimension": "acquisition",
+          "score": 20,
+          "evidence": [
+            {
+              "kind": "metric",
+              "text": "newUsersLast7d: 0",
+              "source": "EvidencePack JSON"
+            }
+          ]
+        },
+        {
+          "dimension": "retention",
+          "score": 20,
+          "evidence": [
+            {
+              "kind": "metric",
+              "text": "newUsersLast7d: 0",
+              "source": "EvidencePack JSON"
+            },
+            {
+              "kind": "metric",
+              "text": "commentsLast7d: 0",
+              "source": "EvidencePack JSON"
+            }
+          ]
+        },
+        {
+          "dimension": "seo",
+          "score": null,
+          "evidence": []
+        },
+        {
+          "dimension": "geo",
+          "score": null,
+          "evidence": []
+        },
+        {
+          "dimension": "security",
+          "score": null,
+          "evidence": []
+        },
+        {
+          "dimension": "scalability",
+          "score": null,
+          "evidence": []
+        }
+      ],
+      "judgmentBasis": "The assessment is based solely on the provided EvidencePack, focusing on the UX/UI, visual, mobile, and usability aspects. Key metrics like new user signups, recent comments, and the absence of active user or recent view data are central to the evaluation. The lack of specific mobile UX and accessibility data is also a significant factor.",
+      "confidence": 0.9,
+      "originalOpinion": "The platform is currently failing to attract new users and foster community engagement, as evidenced by zero new signups and zero comments in the last 7 days. The absence of crucial metrics for mobile UX and accessibility prevents a comprehensive evaluation in these areas, highlighting a significant gap in understanding and optimizing the user experience across different contexts."
+    },
+    {
+      "memberId": "B",
+      "currentState": "AIsle은 2025-2026년 웹 트렌드에 대비하여 사용자 참여 및 콘텐츠 소비 측정에 있어 중요한 측정 지표가 누락되거나 정의되지 않은 상태입니다. 특히 활성 사용자(activeUsersLast7d)와 최근 7일 조회수(viewsLast7d)는 현재 측정되지 않고 있으며, 신규 가입자 수(newUsersLast7d)만이 유일하게 7일간의 사용자 활동을 나타내는 지표로 활용되고 있습니다. 커뮤니티 측면에서는 'LOUNGE' 복도가 가장 많은 게시글을 보유하고 있으나, 댓글 활동은 최근 7일간 0건으로 나타나 전반적인 참여도에 대한 우려가 있습니다. AI 활용은 'LAB/RECIPE', 'AI_FORTUNE' 복도에서 Gemini를 통해 이루어지고 있습니다.",
+      "strengths": [
+        "최신 웹 기술 스택 (Next.js 15, React 19, Prisma 7, Supabase Auth)을 활용하고 있습니다.",
+        "AI 기능 (Gemini)을 'LAB/RECIPE', 'AI_FORTUNE' 복도에 통합하여 활용하고 있습니다.",
+        "'LOUNGE' 복도를 중심으로 상당한 양의 콘텐츠가 축적되어 있습니다."
+      ],
+      "problems": [
+        "활성 사용자(activeUsersLast7d)에 대한 신뢰할 수 있는 측정 지표가 부재합니다.",
+        "최근 7일간의 콘텐츠 조회수(viewsLast7d)를 측정할 수 없습니다.",
+        "최근 7일간의 댓글 활동(commentsLast7d)이 0건으로, 사용자 참여도가 매우 낮음을 시사합니다.",
+        "신규 가입자 수(newUsersLast7d)만이 유일한 사용자 활동 지표로 사용되고 있어, 실제 사용자 행동에 대한 깊이 있는 분석이 어렵습니다."
+      ],
+      "trendGap": "2025-2026년에는 사용자 참여도, 콘텐츠 소비 패턴, 그리고 AI 기반 개인화 경험이 웹 서비스의 핵심 경쟁력이 될 것입니다. AIsle은 현재 활성 사용자 및 콘텐츠 조회수와 같은 핵심 참여 지표를 측정하지 못하고 있어, 이러한 트렌드에 효과적으로 대응하고 사용자 경험을 최적화하는 데 필요한 데이터를 확보하지 못하고 있습니다. 또한, 낮은 댓글 활동은 커뮤니티 활성화 측면에서 큰 격차를 보여줍니다.",
+      "improvementNeed": "사용자 참여 및 콘텐츠 소비를 정확하게 측정할 수 있는 지표를 도입하고, 커뮤니티 활성화를 위한 전략을 수립해야 합니다. 또한, AI 활용 범위를 확장하고 그 효과를 측정할 수 있는 방안을 모색해야 합니다.",
+      "improvements": [
+        {
+          "id": "METRIC_ACTIVE_USERS",
+          "title": "활성 사용자 측정 지표 도입",
+          "priority": 1,
+          "expectedEffect": "사용자 참여도 및 서비스 활성도를 정확하게 파악하고, 개인화 및 추천 기능 개선의 기반을 마련합니다.",
+          "difficulty": "medium",
+          "risk": "medium",
+          "rationale": "activeUsersLast7d가 null로 측정되고 있어, 서비스의 실제 사용자 활동 수준을 파악할 수 없습니다. 신뢰할 수 있는 활동 정의 및 측정이 시급합니다."
+        },
+        {
+          "id": "METRIC_VIEWS_LAST7D",
+          "title": "최근 7일 조회수 측정 도입",
+          "priority": 2,
+          "expectedEffect": "콘텐츠 소비 트렌드를 파악하고, 인기 있는 콘텐츠 유형을 식별하여 콘텐츠 전략을 개선합니다.",
+          "difficulty": "medium",
+          "risk": "medium",
+          "rationale": "viewsLast7d가 null로 측정되어 콘텐츠 소비 현황을 파악할 수 없습니다. totalViews는 누적값이므로 최근 트렌드 분석에 부적합합니다."
+        },
+        {
+          "id": "COMMUNITY_ENGAGEMENT",
+          "title": "커뮤니티 참여 활성화 전략 수립 및 실행",
+          "priority": 3,
+          "expectedEffect": "댓글, 좋아요 등 사용자 간 상호작용을 증진시켜 커뮤니티 활성도를 높이고, 사용자 유지율을 개선합니다.",
+          "difficulty": "medium",
+          "risk": "medium",
+          "rationale": "commentsLast7d가 0으로 측정되어 커뮤니티 활동이 거의 없음을 나타냅니다. 이는 사용자 유지 및 관계 형성에 부정적인 영향을 미칠 수 있습니다."
+        },
+        {
+          "id": "AI_USAGE_EXPANSION",
+          "title": "AI 활용 범위 확장 및 효과 측정",
+          "priority": 4,
+          "expectedEffect": "AI를 활용한 개인화된 경험을 제공하고, 새로운 서비스 기능 개발을 통해 경쟁 우위를 확보합니다.",
+          "difficulty": "medium",
+          "risk": "medium",
+          "rationale": "현재 AI 활용이 특정 복도에 국한되어 있으며, 그 효과를 측정할 수 있는 지표가 부족합니다. AI 기반 서비스의 잠재력을 최대한 활용하기 위한 노력이 필요합니다."
+        }
+      ],
+      "scores": [
+        {
+          "dimension": "ui_ux",
+          "score": null,
+          "evidence": []
+        },
+        {
+          "dimension": "visual",
+          "score": null,
+          "evidence": []
+        },
+        {
+          "dimension": "mobile",
+          "score": null,
+          "evidence": []
+        },
+        {
+          "dimension": "web_tech",
+          "score": 100,
+          "evidence": [
+            {
+              "kind": "observation",
+              "text": "Next.js 15 App Router + React 19, Prisma 7 + PostgreSQL (Supabase Auth) 등 최신 기술 스택을 사용하고 있습니다."
+            }
+          ]
+        },
+        {
+          "dimension": "performance",
+          "score": null,
+          "evidence": []
+        },
+        {
+          "dimension": "a11y",
+          "score": null,
+          "evidence": []
+        },
+        {
+          "dimension": "usability",
+          "score": null,
+          "evidence": []
+        },
+        {
+          "dimension": "content",
+          "score": null,
+          "evidence": []
+        },
+        {
+          "dimension": "community",
+          "score": 20,
+          "evidence": [
+            {
+              "kind": "observation",
+              "text": "commentsLast7d가 0으로 측정되어 커뮤니티 활동이 매우 저조합니다."
+            },
+            {
+              "kind": "observation",
+              "text": "'LOUNGE' 복도에 3281개의 게시글이 존재합니다."
+            }
+          ]
+        },
+        {
+          "dimension": "ai_usage",
+          "score": 60,
+          "evidence": [
+            {
+              "kind": "observation",
+              "text": "Gemini (@google/generative-ai)를 LAB/news/fortune에 활용하고 있습니다."
+            },
+            {
+              "kind": "observation",
+              "text": "AI 활용이 특정 복도에 국한되어 있으며, 효과 측정 방안이 미흡합니다."
+            }
+          ]
+        },
+        {
+          "dimension": "competitive",
+          "score": null,
+          "evidence": []
+        },
+        {
+          "dimension": "acquisition",
+          "score": 20,
+          "evidence": [
+            {
+              "kind": "observation",
+              "text": "newUsersLast7d가 0으로 측정되어 신규 사용자 유입이 없는 상태입니다."
+            }
+          ]
+        },
+        {
+          "dimension": "retention",
+          "score": 20,
+          "evidence": [
+            {
+              "kind": "observation",
+              "text": "activeUsersLast7d가 null이고, commentsLast7d가 0으로 측정되어 사용자 유지 및 참여에 대한 우려가 큽니다."
+            }
+          ]
+        },
+        {
+          "dimension": "seo",
+          "score": null,
+          "evidence": []
+        },
+        {
+          "dimension": "geo",
+          "score": null,
+          "evidence": []
+        },
+        {
+          "dimension": "security",
+          "score": null,
+          "evidence": []
+        },
+        {
+          "dimension": "scalability",
+          "score": null,
+          "evidence": []
+        }
+      ],
+      "judgmentBasis": "EvidencePack의 metricDefinitions 및 docsHints를 기반으로, AIsle의 현재 상태, 강점, 문제점, 그리고 2025-2026년 웹 트렌드 대비 잠재적 격차를 분석했습니다. 특히, 'activeUsersLast7d'와 'viewsLast7d'가 null로 측정되는 점, 'commentsLast7d'가 0인 점은 사용자 참여 및 콘텐츠 소비 측정에 있어 심각한 결함을 나타냅니다. 이는 최신 웹 트렌드에서 중요하게 다루는 사용자 경험 최적화 및 개인화 서비스 제공에 필요한 데이터를 확보하지 못하고 있음을 의미합니다.",
+      "confidence": 0.9,
+      "originalOpinion": "AIsle은 최신 기술 스택을 갖추고 있으나, 사용자 참여 및 콘텐츠 소비에 대한 핵심 지표 측정이 부재하여 2025-2026년 트렌드에 효과적으로 대응하기 어렵습니다. 특히 활성 사용자 측정 불가, 낮은 댓글 활동은 서비스의 지속적인 성장과 사용자 만족도 향상에 큰 걸림돌이 될 것입니다. AI 활용도 확장 및 측정 방안 마련이 시급합니다."
+    },
+    {
+      "memberId": "C",
+      "currentState": "AIsle은 최근 7일간 신규 가입자 및 활동이 없는 상태이며, 전체 회원 수는 14명입니다. 게시글 작성은 활발하나 댓글은 없는 상황입니다. 조회수 관련 지표는 측정되지 않고 있습니다. 커뮤니티 기능은 LOUNGE, GOSSIP, GALLERY, AI_FORTUNE 등 다양한 코리더를 통해 제공되고 있으나, 사용자 참여 지표가 낮아 활성화에 어려움을 겪고 있습니다.",
+      "strengths": [
+        "다양한 주제의 코리더(LAB/RECIPE, GALLERY, LOUNGE, GOSSIP, BUILD, LAUNCH, AI_FORTUNE)를 통해 폭넓은 콘텐츠 제공 가능",
+        "최근 7일간 138개의 게시글이 작성되어 콘텐츠 생성 활동은 꾸준함",
+        "AI 기능을 활용한 LAB/news/fortune 코리더 운영 (Gemini 활용)"
+      ],
+      "problems": [
+        "최근 7일간 신규 가입자 및 활동 사용자 없음 (newUsersLast7d: 0, activeUsersLast7d: null)",
+        "최근 7일간 댓글 작성 없음 (commentsLast7d: 0)",
+        "최근 7일간 조회수 데이터 없음 (viewsLast7d: null)",
+        "전체 회원 수가 14명으로 매우 적음",
+        "활성 사용자 지표(activeUsersLast7d)가 null로, 실제 사용자 활동 파악 불가"
+      ],
+      "trendGap": "신규 사용자 확보 및 기존 사용자 참여 유도에 대한 명확한 전략 부재. 콘텐츠 생성은 이루어지고 있으나, 사용자 간 상호작용(댓글) 및 콘텐츠 소비(조회수) 지표가 매우 낮아 커뮤니티로서의 기능이 활성화되지 못하고 있음. 경쟁 서비스 대비 사용자 유입 및 참여를 견인할 만한 차별화된 요소나 마케팅 활동이 부족해 보임.",
+      "improvementNeed": "사용자 참여 증진을 위한 전략 수립 및 실행이 시급합니다. 특히, 신규 사용자 유입 경로를 다각화하고, 기존 사용자의 활동을 독려할 수 있는 방안이 필요합니다. 또한, 커뮤니티 활성화를 위한 콘텐츠 기획 및 이벤트, 사용자 간 소통을 강화하는 기능 개선이 요구됩니다.",
+      "improvements": [
+        {
+          "id": "user_acquisition_001",
+          "title": "신규 사용자 유입 채널 다각화 및 홍보 강화",
+          "priority": 1,
+          "expectedEffect": "신규 사용자 수 증가 및 플랫폼 인지도 향상",
+          "difficulty": "medium",
+          "risk": "low",
+          "rationale": "현재 신규 사용자 유입이 전혀 없는 상황이므로, 외부 홍보 및 파트너십 등을 통해 적극적인 사용자 확보 노력이 필요합니다."
+        },
+        {
+          "id": "community_engagement_001",
+          "title": "댓글 및 상호작용 활성화를 위한 기능 개선 및 이벤트 기획",
+          "priority": 2,
+          "expectedEffect": "사용자 간 소통 증진 및 커뮤니티 활성화",
+          "difficulty": "medium",
+          "risk": "medium",
+          "rationale": "댓글 수가 0인 점은 심각한 문제이며, 사용자들이 콘텐츠에 반응하고 소통할 수 있도록 댓글 기능 개선, 참여 유도 이벤트 등을 기획해야 합니다."
+        },
+        {
+          "id": "content_discovery_001",
+          "title": "콘텐츠 추천 및 탐색 기능 강화",
+          "priority": 3,
+          "expectedEffect": "콘텐츠 소비 증진 및 사용자 체류 시간 증가",
+          "difficulty": "medium",
+          "risk": "low",
+          "rationale": "조회수 데이터가 없는 것은 사용자들이 콘텐츠를 소비하지 않거나, 소비하더라도 이를 측정할 수 없음을 의미합니다. 개인화된 추천 기능 등을 통해 콘텐츠 발견성을 높여야 합니다."
+        },
+        {
+          "id": "metric_tracking_001",
+          "title": "활성 사용자 및 조회수 관련 지표 측정 시스템 구축",
+          "priority": 4,
+          "expectedEffect": "정확한 사용자 활동 데이터 기반의 의사결정 지원",
+          "difficulty": "high",
+          "risk": "low",
+          "rationale": "activeUsersLast7d와 viewsLast7d가 null인 것은 데이터 기반의 서비스 개선을 불가능하게 합니다. 신뢰할 수 있는 지표 추적 시스템을 구축해야 합니다."
+        }
+      ],
+      "scores": [
+        {
+          "dimension": "ui_ux",
+          "score": null,
+          "evidence": []
+        },
+        {
+          "dimension": "visual",
+          "score": null,
+          "evidence": []
+        },
+        {
+          "dimension": "mobile",
+          "score": null,
+          "evidence": []
+        },
+        {
+          "dimension": "web_tech",
+          "score": null,
+          "evidence": []
+        },
+        {
+          "dimension": "performance",
+          "score": null,
+          "evidence": []
+        },
+        {
+          "dimension": "a11y",
+          "score": null,
+          "evidence": []
+        },
+        {
+          "dimension": "usability",
+          "score": null,
+          "evidence": []
+        },
+        {
+          "dimension": "content",
+          "score": 80,
+          "evidence": [
+            {
+              "kind": "observation",
+              "text": "최근 7일간 138개의 게시글이 작성되어 콘텐츠 생성은 꾸준하나, 조회수 및 댓글 지표가 없어 콘텐츠 소비 및 반응을 파악하기 어려움.",
+              "source": "aggregates.postsLast7d, aggregates.commentsLast7d, aggregates.viewsLast7d"
+            }
+          ]
+        },
+        {
+          "dimension": "community",
+          "score": 40,
+          "evidence": [
+            {
+              "kind": "observation",
+              "text": "다양한 주제의 코리더가 존재하나, 사용자 간 상호작용(댓글 0건)이 전혀 없어 커뮤니티로서 기능하지 못하고 있음. 콘텐츠 생성은 이루어지나 소비 및 반응 부재.",
+              "source": "site.corridors, aggregates.commentsLast7d"
+            }
+          ]
+        },
+        {
+          "dimension": "ai_usage",
+          "score": null,
+          "evidence": []
+        },
+        {
+          "dimension": "competitive",
+          "score": 20,
+          "evidence": [
+            {
+              "kind": "observation",
+              "text": "신규 사용자 유입 및 활동 지표가 전무하여 경쟁 서비스 대비 매우 열위한 상태임. 사용자 확보 및 참여 유도 전략 부재.",
+              "source": "aggregates.newUsersLast7d, aggregates.activeUsersLast7d"
+            }
+          ]
+        },
+        {
+          "dimension": "acquisition",
+          "score": 20,
+          "evidence": [
+            {
+              "kind": "observation",
+              "text": "최근 7일간 신규 가입자가 0명으로, 사용자 확보에 심각한 문제가 있음. 명확한 유입 전략 부재.",
+              "source": "aggregates.newUsersLast7d"
+            }
+          ]
+        },
+        {
+          "dimension": "retention",
+          "score": null,
+          "evidence": []
+        },
+        {
+          "dimension": "seo",
+          "score": null,
+          "evidence": []
+        },
+        {
+          "dimension": "geo",
+          "score": null,
+          "evidence": []
+        },
+        {
+          "dimension": "security",
+          "score": null,
+          "evidence": []
+        },
+        {
+          "dimension": "scalability",
+          "score": null,
+          "evidence": []
+        }
+      ],
+      "judgmentBasis": "EvidencePack에 제공된 지표(newUsersLast7d, activeUsersLast7d, commentsLast7d, viewsLast7d 등)를 기반으로 AIsle의 현재 상태를 평가했습니다. 특히 사용자 참여 및 활동 지표가 전무한 점을 중점적으로 고려하여 경쟁력, 커뮤니티 활성화, 콘텐츠 소비, 사용자 확보 측면에서 낮은 점수를 부여했습니다. AI 기능 활용 가능성은 있으나, 현재로서는 사용자 기반이 없어 잠재력을 발휘하지 못하고 있습니다.",
+      "confidence": 0.9,
+      "originalOpinion": "AIsle은 현재 사용자 활동 및 참여가 거의 없는 상태로, 커뮤니티로서의 기능을 전혀 수행하지 못하고 있습니다. 신규 사용자 확보와 기존 사용자 참여를 유도하기 위한 근본적인 전략 수정 및 실행이 시급하며, 이를 위한 데이터 추적 시스템 구축이 선행되어야 합니다."
+    },
+    {
+      "memberId": "D",
+      "currentState": "The AIsle platform is built on a modern Next.js 15 App Router and React 19 stack, utilizing Prisma 7 with PostgreSQL for data management and Supabase Auth for authentication. Gemini is integrated for AI-driven features in specific corridors. Deployment is handled by Vercel with GitHub Actions for cron jobs, and a Capacitor mobile shell is employed. The platform shows a significant number of posts but very low recent comment activity and no new user signups in the last 7 days.",
+      "strengths": [
+        "Modern and robust web technology stack (Next.js 15, React 19, Prisma 7, PostgreSQL).",
+        "Integration of AI capabilities with Gemini.",
+        "Scalable hosting solution with Vercel.",
+        "Automated operations with GitHub Actions cron jobs.",
+        "Potential for mobile presence via Capacitor."
+      ],
+      "problems": [
+        "Zero new users and zero comments in the last 7 days, indicating a potential lack of recent user engagement or acquisition.",
+        "`activeUsersLast7d` and `viewsLast7d` are null, meaning these key engagement and content consumption metrics are not being measured.",
+        "A very high number of posts (`postCount`) compared to comments (`commentCount`) and recent posts (`postsLast7d`), especially in the 'LOUNGE' category, might suggest a content-heavy but low-interaction environment."
+      ],
+      "trendGap": "The platform has a strong foundation in technology and content volume, but there's a significant gap in recent user activity and engagement, as evidenced by zero new users and zero comments in the last week. This suggests a potential issue with user acquisition, retention, or the platform's ability to foster interaction.",
+      "improvementNeed": "There is a critical need to understand and address the lack of recent user acquisition and engagement. Furthermore, implementing reliable tracking for active users and content views is essential for performance analysis and strategic decision-making.",
+      "improvements": [
+        {
+          "id": "AI_PERF_001",
+          "title": "Implement Active User and View Tracking",
+          "priority": 1,
+          "expectedEffect": "Enable accurate measurement of user engagement and content consumption, providing data for performance analysis and strategic improvements.",
+          "difficulty": "medium",
+          "risk": "medium",
+          "rationale": "The `activeUsersLast7d` and `viewsLast7d` metrics are currently null. Implementing robust tracking for these is fundamental for understanding user behavior and platform health. This aligns with best practices for performance monitoring."
+        },
+        {
+          "id": "AI_COMM_001",
+          "title": "Investigate and Address Low Recent Engagement",
+          "priority": 2,
+          "expectedEffect": "Increase new user signups and comment activity, leading to a more vibrant and engaged community.",
+          "difficulty": "medium",
+          "risk": "medium",
+          "rationale": "Zero new users and comments in the last 7 days is a significant concern. This requires a deep dive into acquisition strategies, community building efforts, and user experience to identify and resolve underlying issues."
+        }
+      ],
+      "scores": [
+        {
+          "dimension": "ui_ux",
+          "score": null,
+          "evidence": []
+        },
+        {
+          "dimension": "visual",
+          "score": null,
+          "evidence": []
+        },
+        {
+          "dimension": "mobile",
+          "score": null,
+          "evidence": []
+        },
+        {
+          "dimension": "web_tech",
+          "score": 100,
+          "evidence": [
+            {
+              "kind": "observation",
+              "text": "Next.js 15 App Router + React 19, Prisma 7 + PostgreSQL (Supabase Auth), Gemini (@google/generative-ai), Vercel hosting + GitHub Actions cron, Capacitor mobile shell"
+            }
+          ]
+        },
+        {
+          "dimension": "performance",
+          "score": 40,
+          "evidence": [
+            {
+              "kind": "metric",
+              "text": "activeUsersLast7d is null",
+              "source": "aggregates"
+            },
+            {
+              "kind": "metric",
+              "text": "viewsLast7d is null",
+              "source": "aggregates"
+            },
+            {
+              "kind": "metric",
+              "text": "newUsersLast7d is 0",
+              "source": "aggregates"
+            },
+            {
+              "kind": "metric",
+              "text": "commentsLast7d is 0",
+              "source": "aggregates"
+            }
+          ]
+        },
+        {
+          "dimension": "a11y",
+          "score": null,
+          "evidence": []
+        },
+        {
+          "dimension": "usability",
+          "score": null,
+          "evidence": []
+        },
+        {
+          "dimension": "content",
+          "score": null,
+          "evidence": []
+        },
+        {
+          "dimension": "community",
+          "score": 20,
+          "evidence": [
+            {
+              "kind": "metric",
+              "text": "newUsersLast7d is 0",
+              "source": "aggregates"
+            },
+            {
+              "kind": "metric",
+              "text": "commentsLast7d is 0",
+              "source": "aggregates"
+            },
+            {
+              "kind": "metric",
+              "text": "commentCount is 4",
+              "source": "aggregates"
+            }
+          ]
+        },
+        {
+          "dimension": "ai_usage",
+          "score": 80,
+          "evidence": [
+            {
+              "kind": "observation",
+              "text": "Gemini (@google/generative-ai) for LAB/news/fortune"
+            }
+          ]
+        },
+        {
+          "dimension": "competitive",
+          "score": null,
+          "evidence": []
+        },
+        {
+          "dimension": "acquisition",
+          "score": null,
+          "evidence": []
+        },
+        {
+          "dimension": "retention",
+          "score": null,
+          "evidence": []
+        },
+        {
+          "dimension": "seo",
+          "score": null,
+          "evidence": []
+        },
+        {
+          "dimension": "geo",
+          "score": null,
+          "evidence": []
+        },
+        {
+          "dimension": "security",
+          "score": 60,
+          "evidence": [
+            {
+              "kind": "observation",
+              "text": "Supabase Auth"
+            }
+          ]
+        },
+        {
+          "dimension": "scalability",
+          "score": 80,
+          "evidence": [
+            {
+              "kind": "observation",
+              "text": "Vercel hosting"
+            },
+            {
+              "kind": "observation",
+              "text": "PostgreSQL"
+            }
+          ]
+        }
+      ],
+      "judgmentBasis": "The evaluation is based on the provided EvidencePack, focusing on the `site.stackNotes` for web technology and infrastructure, and `aggregates` for key performance and engagement metrics. The `metricDefinitions` and `docsHints` were used to correctly interpret the meaning of each metric, particularly emphasizing that `newUsersLast7d` is not an indicator of active users and that `activeUsersLast7d` and `viewsLast7d` are currently unmeasured.",
+      "confidence": 0.9,
+      "originalOpinion": "The AIsle platform leverages a modern and capable technology stack, including Next.js 15, React 19, and Gemini for AI features, hosted on Vercel. However, critical engagement metrics such as active users and recent views are not being tracked (`activeUsersLast7d` and `viewsLast7d` are null). More concerningly, there have been zero new user signups and zero comments in the last 7 days, indicating a severe lack of recent user acquisition and interaction. While the platform has a large volume of posts, the extremely low comment count suggests a passive content consumption model or a significant issue with community engagement and user retention. Immediate focus should be on enabling the tracking of key engagement metrics and investigating the root causes of the zero new user and comment activity."
+    },
+    {
+      "memberId": "E",
+      "currentState": "The platform shows minimal recent user acquisition and engagement. There are no new users or comments in the last 7 days, and the number of posts is relatively low compared to the total post count. Views for the last 7 days are not measured. The majority of content is concentrated in the 'LOUNGE' category.",
+      "strengths": [
+        "A substantial number of total posts exist, indicating a history of content creation.",
+        "The 'LOUNGE' category is well-populated, suggesting it's a primary area of interest."
+      ],
+      "problems": [
+        "No new user signups in the last 7 days (newUsersLast7d = 0).",
+        "No comments created in the last 7 days (commentsLast7d = 0).",
+        "Active users in the last 7 days are not measured (activeUsersLast7d = null).",
+        "Views in the last 7 days are not measured (viewsLast7d = null).",
+        "Low recent content creation (postsLast7d = 138 out of 3369 total posts)."
+      ],
+      "trendGap": "There is a significant gap between the historical content volume and recent activity, with a complete lack of new user acquisition and community interaction in the past week.",
+      "improvementNeed": "Immediate focus is needed on driving user acquisition and fostering community engagement to revitalize the platform.",
+      "improvements": [
+        {
+          "id": "ACQ-001",
+          "title": "Implement user acquisition campaigns",
+          "priority": 1,
+          "expectedEffect": "Increase newUsersLast7d and potentially activeUsersLast7d.",
+          "difficulty": "medium",
+          "risk": "low",
+          "rationale": "Directly addresses the zero new user signups."
+        },
+        {
+          "id": "COM-001",
+          "title": "Introduce community engagement initiatives",
+          "priority": 2,
+          "expectedEffect": "Increase commentsLast7d and potentially activeUsersLast7d.",
+          "difficulty": "medium",
+          "risk": "low",
+          "rationale": "Addresses the zero comments and lack of recent activity."
+        },
+        {
+          "id": "CNT-001",
+          "title": "Promote existing content and encourage new posts",
+          "priority": 3,
+          "expectedEffect": "Increase postsLast7d and potentially viewsLast7d.",
+          "difficulty": "low",
+          "risk": "low",
+          "rationale": "Leverages existing content and aims to boost recent creation."
+        },
+        {
+          "id": "MET-001",
+          "title": "Define and implement tracking for activeUsersLast7d and viewsLast7d",
+          "priority": 4,
+          "expectedEffect": "Enable accurate measurement of user activity and content consumption.",
+          "difficulty": "medium",
+          "risk": "low",
+          "rationale": "Crucial for understanding user behavior and measuring the impact of other improvements."
+        }
+      ],
+      "scores": [
+        {
+          "dimension": "ui_ux",
+          "score": null,
+          "evidence": []
+        },
+        {
+          "dimension": "visual",
+          "score": null,
+          "evidence": []
+        },
+        {
+          "dimension": "mobile",
+          "score": null,
+          "evidence": []
+        },
+        {
+          "dimension": "web_tech",
+          "score": null,
+          "evidence": []
+        },
+        {
+          "dimension": "performance",
+          "score": null,
+          "evidence": []
+        },
+        {
+          "dimension": "a11y",
+          "score": null,
+          "evidence": []
+        },
+        {
+          "dimension": "usability",
+          "score": null,
+          "evidence": [
+            {
+              "kind": "metric",
+              "text": "viewsLast7d is null, preventing assessment of content consumption.",
+              "source": "aggregates.viewsLast7d"
+            }
+          ]
+        },
+        {
+          "dimension": "content",
+          "score": 30,
+          "evidence": [
+            {
+              "kind": "metric",
+              "text": "postsLast7d is 138, which is a small fraction of the total postCount (3369).",
+              "source": "aggregates.postsLast7d"
+            },
+            {
+              "kind": "metric",
+              "text": "The majority of content is in the 'LOUNGE' category.",
+              "source": "aggregates.postsByCategory.LOUNGE"
+            }
+          ]
+        },
+        {
+          "dimension": "community",
+          "score": 0,
+          "evidence": [
+            {
+              "kind": "metric",
+              "text": "commentsLast7d is 0.",
+              "source": "aggregates.commentsLast7d"
+            }
+          ]
+        },
+        {
+          "dimension": "ai_usage",
+          "score": null,
+          "evidence": []
+        },
+        {
+          "dimension": "competitive",
+          "score": null,
+          "evidence": []
+        },
+        {
+          "dimension": "acquisition",
+          "score": 0,
+          "evidence": [
+            {
+              "kind": "metric",
+              "text": "newUsersLast7d is 0.",
+              "source": "aggregates.newUsersLast7d"
+            }
+          ]
+        },
+        {
+          "dimension": "retention",
+          "score": null,
+          "evidence": [
+            {
+              "kind": "metric",
+              "text": "activeUsersLast7d is null, indicating no reliable measure of recent user activity.",
+              "source": "aggregates.activeUsersLast7d"
+            }
+          ]
+        },
+        {
+          "dimension": "seo",
+          "score": null,
+          "evidence": []
+        },
+        {
+          "dimension": "geo",
+          "score": null,
+          "evidence": []
+        },
+        {
+          "dimension": "security",
+          "score": null,
+          "evidence": []
+        },
+        {
+          "dimension": "scalability",
+          "score": null,
+          "evidence": []
+        }
+      ],
+      "judgmentBasis": "The assessment is based on the provided `aggregates` data and `metricDefinitions`. Key metrics for recent user acquisition (`newUsersLast7d`), community interaction (`commentsLast7d`), and content creation (`postsLast7d`) are critically low or zero. Furthermore, crucial metrics for measuring recent user activity (`activeUsersLast7d`) and content engagement (`viewsLast7d`) are explicitly marked as null and not measured, hindering a comprehensive understanding of user behavior.",
+      "confidence": 1,
+      "originalOpinion": "The platform is experiencing a severe drought in user acquisition and community engagement. With zero new users and zero comments in the last week, and unmeasured active users and views, the platform appears dormant. While there's a historical content base, recent activity is negligible. Urgent interventions are required to attract users and stimulate interaction."
+    }
+  ],
+  "debate": [
+    {
+      "memberId": "A",
+      "agreement": [
+        "The platform has zero new users and zero comments in the last 7 days, indicating a severe lack of recent user acquisition and engagement. (All reviewers)",
+        "Active users and recent views metrics are null and not being measured. (All reviewers)",
+        "The platform has a moderate amount of content creation in terms of posts, but very low community interaction. (All reviewers)",
+        "There is a critical need to implement tracking for active users and recent views. (Reviewers A, B, C, D, E)",
+        "There is a critical need to address the lack of new user acquisition and community engagement. (Reviewers A, B, C, D, E)"
+      ],
+      "disagreement": [],
+      "weakEvidence": [
+        "Reviewer E's assessment of 'Low recent content creation (postsLast7d = 138 out of 3369 total posts)' is subjective. While 138 is a fraction, it's still a significant number of posts created in a week, and the comparison to total posts might not be the most relevant metric for recent activity. The focus should be on the absolute number and its trend, not just its proportion to the total.",
+        "Reviewer C's score of 80 for 'content' is not well-supported by the evidence provided. While postsLast7d is 138, the lack of viewsLast7d and commentsLast7d makes it impossible to assess content consumption or reaction, which are crucial aspects of content effectiveness. The evidence only supports that content is being created, not that it's being consumed or interacted with."
+      ],
+      "missed": [
+        "No reviewer explicitly discussed the information architecture or navigation structure of the platform, which falls under my UX/UI purview.",
+        "No reviewer specifically analyzed the visual hierarchy or design elements of the platform, which is part of my UX/UI evaluation.",
+        "No reviewer mentioned the interaction design patterns used on the platform, which is a key aspect of UX/UI evaluation."
+      ],
+      "needsVerification": [
+        "Reviewer D's assertion that 'The platform has a significant number of posts but very low recent comment activity and no new user signups in the last 7 days' is accurate based on the metrics, but the interpretation that this 'might suggest a content-heavy but low-interaction environment' is an inference. While likely true, it's not directly stated in the evidence.",
+        "Reviewer E's statement that 'The majority of content is concentrated in the 'LOUNGE' category' is supported by the data (3281 out of 3369 posts), but the subsequent point that this 'suggesting it's a primary area of interest' is an interpretation of user interest rather than a direct metric."
+      ]
+    },
+    {
+      "memberId": "B",
+      "agreement": [],
+      "disagreement": [],
+      "weakEvidence": [
+        "Peer E's assessment that 'The platform shows minimal recent user acquisition and engagement' is weakly evidenced by the specific metrics. While `newUsersLast7d` and `commentsLast7d` are 0, and `activeUsersLast7d` and `viewsLast7d` are null, stating 'minimal' implies a degree of activity that is not directly supported by the data. The data points to a complete absence of new users and comments in the last 7 days, which is a stronger statement than 'minimal'.",
+        "Peer A's assessment that 'The platform has a low number of new users and comments' is weakly evidenced. The metrics clearly state 0 for both `newUsersLast7d` and `commentsLast7d`, which is not merely 'low' but zero, indicating a complete lack of new users and comments in the last 7 days. This phrasing understates the severity of the situation.",
+        "Peer C's assessment that 'AIsle은 최근 7일간 신규 가입자 및 활동이 없는 상태이며, 전체 회원 수는 14명입니다.' is weakly evidenced in its implication. While new users and activity are indeed zero, the statement '전체 회원 수는 14명입니다' (total member count is 14) is not directly related to the *lack* of recent activity and might be misinterpreted as a small user base being the *cause* of zero activity, rather than a consequence or unrelated fact. The evidence for zero activity is strong, but the connection to the total user count as presented is weak.",
+        "Peer D's assessment that 'The platform shows a significant number of posts but very low recent comment activity and no new user signups in the last 7 days.' is weakly evidenced. While the low comment activity and no new signups are accurate, 'significant number of posts' is subjective. The `postCount` is 3369, and `postsLast7d` is 138. While 138 is a moderate number, calling the total 'significant' without context is weak. More importantly, the 'very low recent comment activity' is also an understatement; the `commentsLast7d` is 0, which is an absence, not just 'low'."
+      ],
+      "missed": [
+        "Peer A missed the specific technical stack details provided in the EvidencePack, such as Next.js 15, React 19, Prisma 7, Gemini integration, Vercel hosting, and Capacitor, which are relevant to the platform's capabilities and future trends.",
+        "Peer C missed the specific technical stack details provided in the EvidencePack, such as Next.js 15, React 19, Prisma 7, Gemini integration, Vercel hosting, and Capacitor, which are relevant to the platform's capabilities and future trends.",
+        "Peer E missed the specific technical stack details provided in the EvidencePack, such as Next.js 15, React 19, Prisma 7, Gemini integration, Vercel hosting, and Capacitor, which are relevant to the platform's capabilities and future trends."
+      ],
+      "needsVerification": []
+    },
+    {
+      "memberId": "C",
+      "agreement": [
+        "All reviewers agree that there is a severe lack of user acquisition and engagement, as evidenced by 0 new users and 0 comments in the last 7 days.",
+        "All reviewers agree that `activeUsersLast7d` and `viewsLast7d` are null and not measured, which prevents a clear understanding of user activity and content consumption.",
+        "All reviewers agree on the modern tech stack, with members A, B, and D highlighting it as a strength.",
+        "All reviewers agree that the platform has a low level of community interaction, with member E scoring it 0 and others giving low scores.",
+        "All reviewers agree that immediate action is needed to address user acquisition and engagement."
+      ],
+      "disagreement": [],
+      "weakEvidence": [
+        "Member A's assessment of 'usability' at 40 is based on zero new users and comments, which are critical indicators but might not encompass all aspects of usability.",
+        "Member E's 'content' score of 30 is based on `postsLast7d` being a small fraction of `postCount`, and the concentration in 'LOUNGE'. While valid observations, the impact on content quality or discoverability is not directly measured.",
+        "Member D's 'performance' score of 40 is derived from the null metrics and zero activity, which is a direct reflection of the problems but doesn't assess underlying technical performance."
+      ],
+      "missed": [
+        "No reviewer explicitly analyzed the 'AI_USAGE' dimension in relation to competitive positioning or community impact, beyond noting its presence (Member B and D).",
+        "No reviewer provided a detailed analysis of the 'competitive' landscape, beyond stating that AIsle is performing poorly in acquisition and engagement (Members C and E). A direct comparison of features or user base with specific competitors is missing.",
+        "No reviewer assessed the 'seo' or 'geo' dimensions, despite 'docs/geo-optimization.md' and 'docs/performance-seo.md' being present in `docsHints`.",
+        "No reviewer assessed 'scalability' beyond noting Vercel hosting and PostgreSQL (Member D).",
+        "No reviewer assessed 'security' beyond noting Supabase Auth (Member D)."
+      ],
+      "needsVerification": [
+        "The potential for mobile presence via Capacitor (Member D) is mentioned but not verified with any mobile-specific metrics or user feedback.",
+        "The impact of AI integration (Gemini) on user engagement or content creation is not quantified or verified by any reviewer, beyond its existence in specific corridors."
+      ]
+    },
+    {
+      "memberId": "D",
+      "agreement": [
+        "All reviewers agree that the platform has critical issues with user acquisition and engagement, as evidenced by zero new users and zero comments in the last 7 days.",
+        "All reviewers note that `activeUsersLast7d` and `viewsLast7d` are null and not measured, which prevents a full understanding of user activity and content consumption.",
+        "Reviewers A, B, C, and E highlight the lack of recent user activity and engagement as a major problem.",
+        "Reviewers A, B, C, and E propose improvements related to user acquisition and community engagement.",
+        "Reviewers B, C, and E identify the need to implement tracking for `activeUsersLast7d` and `viewsLast7d`."
+      ],
+      "disagreement": [],
+      "weakEvidence": [
+        "Reviewer A's proposed improvements for 'Mobile UX Audit' (UXM001) and 'Accessibility Audit' (UXA001) are not directly supported by specific evidence in the EvidencePack regarding mobile or accessibility metrics being present or absent. While the absence of data is noted, the direct need for an audit is an inference.",
+        "Reviewer C's 'competitive' score of 20 is based on the observation of zero new users and active users, which is a valid point, but the 'competitive' dimension itself is not explicitly defined in the provided metrics, making the score an interpretation rather than a direct measurement."
+      ],
+      "missed": [
+        "No reviewer explicitly addresses the 'web_tech' dimension's score of 100 from reviewer D, nor the 'ai_usage' score of 80, nor the 'scalability' score of 80. While these are strengths, their implications for the overall platform health and future potential could be further discussed.",
+        "Reviewer E's 'content' score of 30 is based on `postsLast7d` being a small fraction of `postCount`. While true, the rationale for the score itself (30) is not detailed, and the 'content' dimension's criteria are not fully elaborated upon by any reviewer."
+      ],
+      "needsVerification": [
+        "The specific impact and effectiveness of Gemini for 'LAB/news/fortune' (mentioned by D and B) are not quantifiable with the current metrics. Further details on how this AI integration is performing would be beneficial.",
+        "The rationale behind the 'security' score of 60 by reviewer D, based solely on 'Supabase Auth', could be further elaborated. While Supabase Auth is a good starting point, a score of 60 suggests potential areas for improvement that are not detailed."
+      ]
+    },
+    {
+      "memberId": "E",
+      "agreement": [
+        "All reviewers agree that there is a critical lack of recent user acquisition and engagement, evidenced by `newUsersLast7d` being 0 and `commentsLast7d` being 0.",
+        "All reviewers agree that `activeUsersLast7d` and `viewsLast7d` are null and therefore not measured, hindering a full assessment of user activity and content consumption.",
+        "All reviewers agree on the platform's strong technical foundation, citing the modern tech stack (Next.js, React, Prisma, etc.) as a strength."
+      ],
+      "disagreement": [],
+      "weakEvidence": [
+        "Reviewer C's assessment of 'content' score at 80 is weak because while `postsLast7d` is 138, the lack of `viewsLast7d` and `commentsLast7d` makes it difficult to definitively state content is performing well, even with a decent number of recent posts. The evidence cited (postsLast7d, commentsLast7d, viewsLast7d) directly points to the *lack* of consumption and interaction data, not its presence."
+      ],
+      "missed": [
+        "No reviewer explicitly mentioned the `usersLast7d` metric, which is deprecated but present in the aggregates and defined as being identical to `newUsersLast7d`. While `newUsersLast7d` is correctly identified as 0, the explicit mention of `usersLast7d` could reinforce the lack of recent user activity.",
+        "No reviewer explicitly discussed the `postCount` (3369) in relation to the very low `commentCount` (4) as a potential indicator of a content-heavy but interaction-poor environment, beyond general observations about low comments. Reviewer D touched on this, but it could be more central to the 'community' dimension."
+      ],
+      "needsVerification": [
+        "The rationale for improvement IDs like 'ACQ-001', 'COM-001', 'CNT-001', 'MET-001' (Reviewer E), 'ACQ001', 'ENG001', 'UXM001', 'UXA001' (Reviewer A), 'METRIC_ACTIVE_USERS', 'METRIC_VIEWS_LAST7D', 'COMMUNITY_ENGAGEMENT', 'AI_USAGE_EXPANSION' (Reviewer B), 'user_acquisition_001', 'community_engagement_001', 'content_discovery_001', 'metric_tracking_001' (Reviewer C), and 'AI_PERF_001', 'AI_COMM_001' (Reviewer D) are all based on the current data. Their effectiveness and feasibility would need verification once implemented and measured."
+      ]
+    }
+  ],
+  "claimCalibrations": [
+    {
+      "memberId": "A",
+      "claims": [
+        {
+          "claimId": "C001",
+          "claimText": "최근 7일간 신규 사용자 유입이 전혀 없어 사용자 확보에 심각한 문제가 있음을 시사합니다.",
+          "evidenceRefs": [
+            "newUsersLast7d: 0"
+          ],
+          "evidenceType": "DIRECT_FACT",
+          "supportLevel": "SUPPORTED",
+          "reason": "EvidencePack에 따르면 최근 7일간 신규 가입자 수가 0명으로, 이는 사용자 확보 전략의 부재 또는 비효율성을 직접적으로 나타냅니다.",
+          "missingEvidence": [],
+          "evidenceImpact": "CRITICAL",
+          "riskOfOverclaiming": "LOW"
+        },
+        {
+          "claimId": "C002",
+          "claimText": "최근 7일간 댓글이 전혀 생성되지 않아 커뮤니티 참여가 매우 저조합니다.",
+          "evidenceRefs": [
+            "commentsLast7d: 0"
+          ],
+          "evidenceType": "DIRECT_FACT",
+          "supportLevel": "SUPPORTED",
+          "reason": "EvidencePack의 'commentsLast7d' 지표가 0으로, 이는 최근 7일간 사용자 간의 상호작용이 거의 없음을 명확히 보여줍니다.",
+          "missingEvidence": [],
+          "evidenceImpact": "HIGH",
+          "riskOfOverclaiming": "LOW"
+        },
+        {
+          "claimId": "C003",
+          "claimText": "최근 7일간 활성 사용자 수 및 조회수 관련 신뢰할 수 있는 지표가 없어 사용자 활동 수준을 파악할 수 없습니다.",
+          "evidenceRefs": [
+            "activeUsersLast7d: null",
+            "viewsLast7d: null"
+          ],
+          "evidenceType": "UNKNOWN",
+          "supportLevel": "SUPPORTED",
+          "reason": "EvidencePack에서 'activeUsersLast7d'와 'viewsLast7d' 지표가 null로 표시되어, 해당 기간 동안의 실제 사용자 활동 및 콘텐츠 소비량을 측정할 수 없습니다.",
+          "missingEvidence": [
+            "activeUsersLast7d",
+            "viewsLast7d"
+          ],
+          "evidenceImpact": "HIGH",
+          "riskOfOverclaiming": "LOW"
+        },
+        {
+          "claimId": "C004",
+          "claimText": "최근 7일간 게시글 작성 수는 138건으로, 콘텐츠 생성 활동은 꾸준히 이루어지고 있습니다.",
+          "evidenceRefs": [
+            "postsLast7d: 138"
+          ],
+          "evidenceType": "DIRECT_FACT",
+          "supportLevel": "SUPPORTED",
+          "reason": "EvidencePack에 따르면 최근 7일간 138개의 게시글이 작성되어, 콘텐츠 생산 측면에서는 일정 수준의 활동이 있음을 나타냅니다.",
+          "missingEvidence": [],
+          "evidenceImpact": "MEDIUM",
+          "riskOfOverclaiming": "LOW"
+        },
+        {
+          "claimId": "C005",
+          "claimText": "전체 회원 수는 14명으로, 소규모 커뮤니티를 형성하고 있습니다.",
+          "evidenceRefs": [
+            "userCount: 14"
+          ],
+          "evidenceType": "DIRECT_FACT",
+          "supportLevel": "SUPPORTED",
+          "reason": "EvidencePack의 'userCount' 지표는 전체 회원 수가 14명임을 명확히 보여줍니다.",
+          "missingEvidence": [],
+          "evidenceImpact": "NONE",
+          "riskOfOverclaiming": "LOW"
+        },
+        {
+          "claimId": "C006",
+          "claimText": "모바일 UX 및 접근성 관련 측정 지표가 없어 해당 영역의 사용자 경험을 평가할 수 없습니다.",
+          "evidenceRefs": [],
+          "evidenceType": "UNKNOWN",
+          "supportLevel": "SUPPORTED",
+          "reason": "제공된 EvidencePack에는 모바일 UX 또는 접근성 관련 지표가 전혀 포함되어 있지 않아, 이 부분에 대한 평가가 불가능합니다.",
+          "missingEvidence": [
+            "mobile UX metrics",
+            "accessibility metrics"
+          ],
+          "evidenceImpact": "HIGH",
+          "riskOfOverclaiming": "LOW"
+        }
+      ]
+    },
+    {
+      "memberId": "B",
+      "claims": [
+        {
+          "claimId": "C001",
+          "claimText": "AIsle platform has a critical gap in measuring user engagement due to null values for activeUsersLast7d and viewsLast7d.",
+          "evidenceRefs": [
+            "metricDefinitions.activeUsersLast7d",
+            "metricDefinitions.viewsLast7d",
+            "docsHints.CRITICAL: activeUsersLast7d and viewsLast7d are null (unsupported); do not invent"
+          ],
+          "evidenceType": "DIRECT_FACT",
+          "supportLevel": "SUPPORTED",
+          "reason": "The metric definitions explicitly state that 'activeUsersLast7d' and 'viewsLast7d' are currently null and cannot be substituted or invented. The docs hints reinforce this by marking them as critical and unsupported.",
+          "missingEvidence": [],
+          "evidenceImpact": "CRITICAL",
+          "riskOfOverclaiming": "LOW"
+        },
+        {
+          "claimId": "C002",
+          "claimText": "There were no new user signups or comments created on the AIsle platform in the last 7 days.",
+          "evidenceRefs": [
+            "aggregates.newUsersLast7d",
+            "aggregates.commentsLast7d",
+            "metricDefinitions.newUsersLast7d",
+            "metricDefinitions.commentsLast7d"
+          ],
+          "evidenceType": "DIRECT_FACT",
+          "supportLevel": "SUPPORTED",
+          "reason": "The aggregates clearly show `newUsersLast7d` as 0 and `commentsLast7d` as 0, directly indicating no new signups or comments within the specified 7-day period.",
+          "missingEvidence": [],
+          "evidenceImpact": "HIGH",
+          "riskOfOverclaiming": "LOW"
+        },
+        {
+          "claimId": "C003",
+          "claimText": "The AIsle platform utilizes a modern technology stack, including Next.js 15, React 19, Prisma 7, and Gemini for AI features.",
+          "evidenceRefs": [
+            "site.stackNotes"
+          ],
+          "evidenceType": "DIRECT_FACT",
+          "supportLevel": "SUPPORTED",
+          "reason": "The `site.stackNotes` explicitly lists the technologies used, confirming the adoption of the latest versions of Next.js, React, Prisma, and the integration of Gemini.",
+          "missingEvidence": [],
+          "evidenceImpact": "NONE",
+          "riskOfOverclaiming": "LOW"
+        },
+        {
+          "claimId": "C004",
+          "claimText": "The 'LOUNGE' corridor has the highest number of posts, but overall community interaction is minimal due to zero recent comments.",
+          "evidenceRefs": [
+            "aggregates.postsByCategory.LOUNGE",
+            "aggregates.commentsLast7d"
+          ],
+          "evidenceType": "INFERENCE",
+          "supportLevel": "PARTIALLY_SUPPORTED",
+          "reason": "While 'LOUNGE' has the most posts (3281), the `commentsLast7d` being 0 indicates a lack of recent interaction. The claim infers 'minimal overall community interaction' from this, but the evidence only directly supports the lack of recent comments, not the overall interaction level across all corridors or timeframes.",
+          "missingEvidence": [
+            "Data on commentsLast7d for other corridors.",
+            "Data on other forms of interaction (likes, shares, etc.) for any corridor."
+          ],
+          "evidenceImpact": "MEDIUM",
+          "riskOfOverclaiming": "MEDIUM"
+        },
+        {
+          "claimId": "C005",
+          "claimText": "AIsle's lack of measurable active users and recent content views poses a significant gap for 2025-2026 web trends focused on user engagement and personalization.",
+          "evidenceRefs": [
+            "metricDefinitions.activeUsersLast7d",
+            "metricDefinitions.viewsLast7d",
+            "docsHints.CRITICAL: activeUsersLast7d and viewsLast7d are null (unsupported); do not invent"
+          ],
+          "evidenceType": "HYPOTHESIS",
+          "supportLevel": "NOT_SUPPORTED",
+          "reason": "While the metrics for active users and views are null, the claim that this represents a 'significant gap for 2025-2026 web trends focused on user engagement and personalization' is a hypothetical future-looking statement that cannot be directly supported by the current evidence pack. The evidence pack does not contain information about future trends or their specific requirements.",
+          "missingEvidence": [
+            "Information on 2025-2026 web trends and their key metrics.",
+            "Data correlating specific metrics (like active users, views) with success in future trends."
+          ],
+          "evidenceImpact": "HIGH",
+          "riskOfOverclaiming": "HIGH"
+        }
+      ]
+    },
+    {
+      "memberId": "C",
+      "claims": [
+        {
+          "claimId": "C001",
+          "claimText": "AIsle has zero new users and zero comments in the last 7 days, indicating a complete lack of recent user acquisition and interaction.",
+          "evidenceRefs": [
+            "aggregates.newUsersLast7d",
+            "aggregates.commentsLast7d"
+          ],
+          "evidenceType": "DIRECT_FACT",
+          "supportLevel": "SUPPORTED",
+          "reason": "The EvidencePack explicitly states `newUsersLast7d` is 0 and `commentsLast7d` is 0.",
+          "missingEvidence": [],
+          "evidenceImpact": "CRITICAL",
+          "riskOfOverclaiming": "LOW"
+        },
+        {
+          "claimId": "C002",
+          "claimText": "Active user and recent view metrics are unavailable, preventing an assessment of current platform engagement and content consumption.",
+          "evidenceRefs": [
+            "aggregates.activeUsersLast7d",
+            "aggregates.viewsLast7d"
+          ],
+          "evidenceType": "DIRECT_FACT",
+          "supportLevel": "SUPPORTED",
+          "reason": "The EvidencePack explicitly states `activeUsersLast7d` and `viewsLast7d` are null.",
+          "missingEvidence": [
+            "Definition of 'active user' for `activeUsersLast7d`",
+            "Mechanism for tracking `viewsLast7d`"
+          ],
+          "evidenceImpact": "CRITICAL",
+          "riskOfOverclaiming": "LOW"
+        },
+        {
+          "claimId": "C003",
+          "claimText": "Despite a low total user base (14 users), AIsle generates a consistent volume of new posts (138 in the last 7 days), primarily in the 'LOUNGE' category.",
+          "evidenceRefs": [
+            "aggregates.userCount",
+            "aggregates.postsLast7d",
+            "aggregates.postsByCategory.LOUNGE"
+          ],
+          "evidenceType": "DIRECT_FACT",
+          "supportLevel": "SUPPORTED",
+          "reason": "The EvidencePack provides the exact numbers for `userCount`, `postsLast7d`, and the breakdown for `postsByCategory.LOUNGE`.",
+          "missingEvidence": [],
+          "evidenceImpact": "MEDIUM",
+          "riskOfOverclaiming": "LOW"
+        },
+        {
+          "claimId": "C004",
+          "claimText": "AIsle's community engagement is severely lacking, evidenced by the complete absence of comments and the null status of active user and view metrics, suggesting a failure to foster interaction and content consumption.",
+          "evidenceRefs": [
+            "aggregates.commentsLast7d",
+            "aggregates.activeUsersLast7d",
+            "aggregates.viewsLast7d"
+          ],
+          "evidenceType": "INFERENCE",
+          "supportLevel": "SUPPORTED",
+          "reason": "The combination of zero comments, null active users, and null recent views strongly infers a lack of community engagement and content consumption, even though these metrics are not directly measuring 'engagement' as a single score.",
+          "missingEvidence": [
+            "A defined metric for 'active users' and 'viewsLast7d'."
+          ],
+          "evidenceImpact": "CRITICAL",
+          "riskOfOverclaiming": "MEDIUM"
+        },
+        {
+          "claimId": "C005",
+          "claimText": "The platform's user acquisition strategy is ineffective, as indicated by zero new users in the last 7 days, despite the existence of multiple community corridors and AI features.",
+          "evidenceRefs": [
+            "aggregates.newUsersLast7d",
+            "site.corridors",
+            "site.stackNotes"
+          ],
+          "evidenceType": "INFERENCE",
+          "supportLevel": "PARTIALLY_SUPPORTED",
+          "reason": "While `newUsersLast7d` being 0 directly supports the lack of acquisition, inferring that the *strategy* is ineffective is an interpretation. The presence of corridors and AI features is contextual but doesn't directly prove or disprove strategy effectiveness.",
+          "missingEvidence": [
+            "Details of AIsle's user acquisition strategy.",
+            "Metrics on user acquisition channels."
+          ],
+          "evidenceImpact": "HIGH",
+          "riskOfOverclaiming": "MEDIUM"
+        }
+      ]
+    },
+    {
+      "memberId": "D",
+      "claims": [
+        {
+          "claimId": "C001",
+          "claimText": "The AIsle platform utilizes a modern and robust web technology stack, including Next.js 15 App Router, React 19, Prisma 7, and PostgreSQL.",
+          "evidenceRefs": [
+            "site.stackNotes"
+          ],
+          "evidenceType": "DIRECT_FACT",
+          "supportLevel": "SUPPORTED",
+          "reason": "The stackNotes explicitly list Next.js 15 App Router + React 19 and Prisma 7 + PostgreSQL.",
+          "missingEvidence": [],
+          "evidenceImpact": "NONE",
+          "riskOfOverclaiming": "LOW"
+        },
+        {
+          "claimId": "C002",
+          "claimText": "The platform has zero new user signups and zero comments in the last 7 days, indicating a severe lack of recent user acquisition and interaction.",
+          "evidenceRefs": [
+            "aggregates.newUsersLast7d",
+            "aggregates.commentsLast7d"
+          ],
+          "evidenceType": "DIRECT_FACT",
+          "supportLevel": "SUPPORTED",
+          "reason": "The aggregates clearly show `newUsersLast7d` as 0 and `commentsLast7d` as 0.",
+          "missingEvidence": [],
+          "evidenceImpact": "CRITICAL",
+          "riskOfOverclaiming": "LOW"
+        },
+        {
+          "claimId": "C003",
+          "claimText": "Key engagement and content consumption metrics, specifically `activeUsersLast7d` and `viewsLast7d`, are not being measured.",
+          "evidenceRefs": [
+            "aggregates.activeUsersLast7d",
+            "aggregates.viewsLast7d",
+            "metricDefinitions.activeUsersLast7d",
+            "metricDefinitions.viewsLast7d"
+          ],
+          "evidenceType": "DIRECT_FACT",
+          "supportLevel": "SUPPORTED",
+          "reason": "The `aggregates` show `activeUsersLast7d` and `viewsLast7d` as null. The `metricDefinitions` confirm that `activeUsersLast7d` is null due to the absence of a reliable activity definition and `viewsLast7d` is null because only cumulative views exist.",
+          "missingEvidence": [],
+          "evidenceImpact": "HIGH",
+          "riskOfOverclaiming": "LOW"
+        },
+        {
+          "claimId": "C004",
+          "claimText": "The platform integrates AI capabilities using Gemini for specific features.",
+          "evidenceRefs": [
+            "site.stackNotes"
+          ],
+          "evidenceType": "DIRECT_FACT",
+          "supportLevel": "SUPPORTED",
+          "reason": "The `stackNotes` explicitly mention 'Gemini (@google/generative-ai) for LAB/news/fortune'.",
+          "missingEvidence": [],
+          "evidenceImpact": "NONE",
+          "riskOfOverclaiming": "LOW"
+        },
+        {
+          "claimId": "C005",
+          "claimText": "The platform has a large volume of posts but very low overall comment activity.",
+          "evidenceRefs": [
+            "aggregates.postCount",
+            "aggregates.commentCount"
+          ],
+          "evidenceType": "INFERENCE",
+          "supportLevel": "SUPPORTED",
+          "reason": "The platform has 3369 posts (`postCount`) but only 4 total comments (`commentCount`), suggesting a content-heavy but low-interaction environment.",
+          "missingEvidence": [],
+          "evidenceImpact": "MEDIUM",
+          "riskOfOverclaiming": "LOW"
+        },
+        {
+          "claimId": "C006",
+          "claimText": "The platform has a scalable infrastructure with Vercel hosting and PostgreSQL.",
+          "evidenceRefs": [
+            "site.stackNotes"
+          ],
+          "evidenceType": "DIRECT_FACT",
+          "supportLevel": "SUPPORTED",
+          "reason": "The `stackNotes` list 'Vercel hosting' and 'PostgreSQL'.",
+          "missingEvidence": [],
+          "evidenceImpact": "NONE",
+          "riskOfOverclaiming": "LOW"
+        }
+      ]
+    },
+    {
+      "memberId": "E",
+      "claims": [
+        {
+          "claimId": "C001",
+          "claimText": "최근 7일 동안 신규 사용자 유입이 전혀 없었습니다.",
+          "evidenceRefs": [
+            "aggregates.newUsersLast7d"
+          ],
+          "evidenceType": "DIRECT_FACT",
+          "supportLevel": "SUPPORTED",
+          "reason": "Provided `newUsersLast7d` metric is 0.",
+          "missingEvidence": [],
+          "evidenceImpact": "CRITICAL",
+          "riskOfOverclaiming": "LOW"
+        },
+        {
+          "claimId": "C002",
+          "claimText": "최근 7일 동안 커뮤니티 활동(댓글)이 전혀 없었습니다.",
+          "evidenceRefs": [
+            "aggregates.commentsLast7d"
+          ],
+          "evidenceType": "DIRECT_FACT",
+          "supportLevel": "SUPPORTED",
+          "reason": "Provided `commentsLast7d` metric is 0.",
+          "missingEvidence": [],
+          "evidenceImpact": "CRITICAL",
+          "riskOfOverclaiming": "LOW"
+        },
+        {
+          "claimId": "C003",
+          "claimText": "최근 7일간의 활성 사용자 수와 조회수는 측정되지 않아 플랫폼의 현재 활동 수준을 파악할 수 없습니다.",
+          "evidenceRefs": [
+            "aggregates.activeUsersLast7d",
+            "aggregates.viewsLast7d"
+          ],
+          "evidenceType": "DIRECT_FACT",
+          "supportLevel": "SUPPORTED",
+          "reason": "Both `activeUsersLast7d` and `viewsLast7d` are explicitly null in the provided aggregates, and metric definitions confirm they are not currently measured.",
+          "missingEvidence": [
+            "Definition and reliable measurement of `activeUsersLast7d`.",
+            "Reliable measurement of `viewsLast7d`."
+          ],
+          "evidenceImpact": "HIGH",
+          "riskOfOverclaiming": "LOW"
+        },
+        {
+          "claimId": "C004",
+          "claimText": "최근 7일간의 게시글 작성 수가 전체 게시글 수에 비해 상대적으로 적습니다.",
+          "evidenceRefs": [
+            "aggregates.postsLast7d",
+            "aggregates.postCount"
+          ],
+          "evidenceType": "INFERENCE",
+          "supportLevel": "SUPPORTED",
+          "reason": "While `postsLast7d` is 138, the total `postCount` is 3369. This suggests a significant drop-off in recent content creation compared to the historical volume.",
+          "missingEvidence": [],
+          "evidenceImpact": "MEDIUM",
+          "riskOfOverclaiming": "LOW"
+        },
+        {
+          "claimId": "C005",
+          "claimText": "플랫폼의 대부분의 콘텐츠는 'LOUNGE' 카테고리에 집중되어 있습니다.",
+          "evidenceRefs": [
+            "aggregates.postsByCategory.LOUNGE"
+          ],
+          "evidenceType": "DIRECT_FACT",
+          "supportLevel": "SUPPORTED",
+          "reason": "The `postsByCategory` data shows a disproportionately high number of posts in the 'LOUNGE' category compared to others.",
+          "missingEvidence": [],
+          "evidenceImpact": "LOW",
+          "riskOfOverclaiming": "LOW"
+        }
+      ]
+    }
+  ],
+  "evidenceSemantics": [
+    {
+      "memberId": "A",
+      "claims": [
+        {
+          "claimId": "C001",
+          "claimText": "최근 7일간 신규 사용자 유입이 전혀 없어 사용자 확보에 심각한 문제가 있음을 시사합니다.",
+          "evidenceRelation": "DIRECTLY_SUPPORTS",
+          "entailmentLevel": "DIRECT",
+          "directEvidenceRefs": [
+            "newUsersLast7d: 0"
+          ],
+          "supportingEvidenceRefs": [],
+          "missingEvidence": [],
+          "inferenceSteps": [
+            "The claim states that there are no new users in the last 7 days, indicating a severe problem with user acquisition.",
+            "The EvidencePack shows that 'newUsersLast7d' is 0.",
+            "According to the metric definitions and docs hints, 'newUsersLast7d' specifically refers to new signups in the last 7 days and is not to be confused with active users.",
+            "Therefore, the metric directly supports the claim that there were no new users in the last 7 days, which can be interpreted as a problem with user acquisition."
+          ],
+          "unsupportedLeap": false,
+          "semanticRisk": "LOW",
+          "explanation": "The 'newUsersLast7d' metric being 0 directly supports the claim that there were no new users in the last 7 days. This is a critical metric for user acquisition."
+        },
+        {
+          "claimId": "C002",
+          "claimText": "최근 7일간 댓글이 전혀 생성되지 않아 커뮤니티 참여가 매우 저조합니다.",
+          "evidenceRelation": "DIRECTLY_SUPPORTS",
+          "entailmentLevel": "DIRECT",
+          "directEvidenceRefs": [
+            "commentsLast7d: 0"
+          ],
+          "supportingEvidenceRefs": [],
+          "missingEvidence": [],
+          "inferenceSteps": [
+            "The claim states that no comments were generated in the last 7 days, indicating very low community engagement.",
+            "The EvidencePack shows that 'commentsLast7d' is 0.",
+            "The metric definition for 'commentsLast7d' is '최근 7일 작성 댓글 수'.",
+            "Therefore, the metric directly supports the claim that no comments were generated in the last 7 days."
+          ],
+          "unsupportedLeap": false,
+          "semanticRisk": "LOW",
+          "explanation": "The 'commentsLast7d' metric being 0 directly supports the claim that no comments were generated in the last 7 days, indicating low community engagement."
+        },
+        {
+          "claimId": "C003",
+          "claimText": "최근 7일간 활성 사용자 수 및 조회수 관련 신뢰할 수 있는 지표가 없어 사용자 활동 수준을 파악할 수 없습니다.",
+          "evidenceRelation": "DIRECTLY_SUPPORTS",
+          "entailmentLevel": "DIRECT",
+          "directEvidenceRefs": [
+            "activeUsersLast7d: null",
+            "viewsLast7d: null"
+          ],
+          "supportingEvidenceRefs": [],
+          "missingEvidence": [],
+          "inferenceSteps": [
+            "The claim states that there are no reliable metrics for active users and views in the last 7 days, making it impossible to assess user activity.",
+            "The EvidencePack shows that 'activeUsersLast7d' is null.",
+            "The EvidencePack also shows that 'viewsLast7d' is null.",
+            "The metric definitions explicitly state that 'activeUsersLast7d' is null because there is no reliable activity definition, and 'viewsLast7d' is null because only cumulative views exist.",
+            "The docs hints also emphasize that 'activeUsersLast7d' and 'viewsLast7d' are null and should not be invented.",
+            "Therefore, the null values for these metrics directly support the claim that user activity levels cannot be determined from reliable data."
+          ],
+          "unsupportedLeap": false,
+          "semanticRisk": "LOW",
+          "explanation": "The 'activeUsersLast7d' and 'viewsLast7d' metrics being null directly supports the claim that reliable data for user activity and views in the last 7 days is unavailable."
+        },
+        {
+          "claimId": "C004",
+          "claimText": "최근 7일간 게시글 작성 수는 138건으로, 콘텐츠 생성 활동은 꾸준히 이루어지고 있습니다.",
+          "evidenceRelation": "DIRECTLY_SUPPORTS",
+          "entailmentLevel": "DIRECT",
+          "directEvidenceRefs": [
+            "postsLast7d: 138"
+          ],
+          "supportingEvidenceRefs": [],
+          "missingEvidence": [],
+          "inferenceSteps": [
+            "The claim states that 138 posts were created in the last 7 days, indicating consistent content creation activity.",
+            "The EvidencePack shows that 'postsLast7d' is 138.",
+            "The metric definition for 'postsLast7d' is '최근 7일 작성 게시글 수'.",
+            "Therefore, the metric directly supports the claim that 138 posts were created in the last 7 days."
+          ],
+          "unsupportedLeap": false,
+          "semanticRisk": "LOW",
+          "explanation": "The 'postsLast7d' metric being 138 directly supports the claim that 138 posts were created in the last 7 days, indicating content creation activity."
+        },
+        {
+          "claimId": "C005",
+          "claimText": "전체 회원 수는 14명으로, 소규모 커뮤니티를 형성하고 있습니다.",
+          "evidenceRelation": "DIRECTLY_SUPPORTS",
+          "entailmentLevel": "DIRECT",
+          "directEvidenceRefs": [
+            "userCount: 14"
+          ],
+          "supportingEvidenceRefs": [],
+          "missingEvidence": [],
+          "inferenceSteps": [
+            "The claim states that the total number of members is 14, forming a small community.",
+            "The EvidencePack shows that 'userCount' is 14.",
+            "The metric definition for 'userCount' is '전체 회원 수'.",
+            "Therefore, the metric directly supports the claim that the total number of members is 14."
+          ],
+          "unsupportedLeap": false,
+          "semanticRisk": "LOW",
+          "explanation": "The 'userCount' metric being 14 directly supports the claim that the total number of members is 14."
+        },
+        {
+          "claimId": "C006",
+          "claimText": "모바일 UX 및 접근성 관련 측정 지표가 없어 해당 영역의 사용자 경험을 평가할 수 없습니다.",
+          "evidenceRelation": "UNKNOWN",
+          "entailmentLevel": "UNSUPPORTED",
+          "directEvidenceRefs": [],
+          "supportingEvidenceRefs": [],
+          "missingEvidence": [
+            "mobile UX metrics",
+            "accessibility metrics"
+          ],
+          "inferenceSteps": [
+            "The claim asserts that there are no metrics for mobile UX and accessibility, preventing evaluation of user experience in these areas.",
+            "The provided EvidencePack contains metrics related to user counts, posts, comments, and views.",
+            "There is no mention or data within the EvidencePack or its associated metric definitions and docs hints that pertains to mobile UX or accessibility.",
+            "Therefore, the absence of such metrics in the EvidencePack supports the claim that they are not available for evaluation."
+          ],
+          "unsupportedLeap": false,
+          "semanticRisk": "LOW",
+          "explanation": "The EvidencePack does not contain any metrics related to mobile UX or accessibility. Therefore, the claim that these metrics are unavailable for evaluation is supported by the absence of such data."
+        }
+      ]
+    },
+    {
+      "memberId": "B",
+      "claims": [
+        {
+          "claimId": "C001",
+          "claimText": "AIsle platform has a critical gap in measuring user engagement due to null values for activeUsersLast7d and viewsLast7d.",
+          "evidenceRelation": "DOES_NOT_SUPPORT",
+          "entailmentLevel": "UNSUPPORTED",
+          "directEvidenceRefs": [
+            "metricDefinitions.activeUsersLast7d",
+            "metricDefinitions.viewsLast7d",
+            "docsHints.CRITICAL: activeUsersLast7d and viewsLast7d are null (unsupported); do not invent"
+          ],
+          "supportingEvidenceRefs": [],
+          "missingEvidence": [],
+          "inferenceSteps": [
+            "The metricDefinitions for 'activeUsersLast7d' and 'viewsLast7d' are explicitly stated as null.",
+            "The docsHints reinforce that these metrics are null and unsupported, highlighting a critical issue.",
+            "The claim directly reflects this state of missing measurable data for user engagement."
+          ],
+          "unsupportedLeap": true,
+          "semanticRisk": "HIGH",
+          "explanation": "The evidence directly states that 'activeUsersLast7d' and 'viewsLast7d' are null and unsupported. This directly supports the claim of a critical gap in measuring user engagement. | heuristic: Causal claim lacks direct causal evidence in pack"
+        },
+        {
+          "claimId": "C002",
+          "claimText": "There were no new user signups or comments created on the AIsle platform in the last 7 days.",
+          "evidenceRelation": "DIRECTLY_SUPPORTS",
+          "entailmentLevel": "DIRECT",
+          "directEvidenceRefs": [
+            "aggregates.newUsersLast7d",
+            "aggregates.commentsLast7d"
+          ],
+          "supportingEvidenceRefs": [],
+          "missingEvidence": [],
+          "inferenceSteps": [
+            "The 'aggregates' section shows 'newUsersLast7d' as 0.",
+            "The 'aggregates' section shows 'commentsLast7d' as 0.",
+            "These values directly indicate zero new signups and zero comments created in the last 7 days."
+          ],
+          "unsupportedLeap": false,
+          "semanticRisk": "LOW",
+          "explanation": "The aggregate data for 'newUsersLast7d' and 'commentsLast7d' are both explicitly 0, directly supporting the claim that no new users signed up or comments were created in the last 7 days."
+        },
+        {
+          "claimId": "C003",
+          "claimText": "The AIsle platform utilizes a modern technology stack, including Next.js 15, React 19, Prisma 7, and Gemini for AI features.",
+          "evidenceRelation": "DIRECTLY_SUPPORTS",
+          "entailmentLevel": "DIRECT",
+          "directEvidenceRefs": [
+            "site.stackNotes"
+          ],
+          "supportingEvidenceRefs": [],
+          "missingEvidence": [],
+          "inferenceSteps": [
+            "The 'site.stackNotes' field lists the technologies used by the platform.",
+            "This list includes 'Next.js 15 App Router + React 19', 'Prisma 7 + PostgreSQL', and 'Gemini (@google/generative-ai) for LAB/news/fortune'.",
+            "These directly confirm the technologies mentioned in the claim."
+          ],
+          "unsupportedLeap": false,
+          "semanticRisk": "LOW",
+          "explanation": "The 'site.stackNotes' directly lists the technologies used, including Next.js 15, React 19, Prisma 7, and Gemini, confirming the claim."
+        },
+        {
+          "claimId": "C004",
+          "claimText": "The 'LOUNGE' corridor has the highest number of posts, but overall community interaction is minimal due to zero recent comments.",
+          "evidenceRelation": "DOES_NOT_SUPPORT",
+          "entailmentLevel": "UNSUPPORTED",
+          "directEvidenceRefs": [
+            "aggregates.postsByCategory.LOUNGE"
+          ],
+          "supportingEvidenceRefs": [
+            "aggregates.commentsLast7d"
+          ],
+          "missingEvidence": [
+            "Data on commentsLast7d for other corridors.",
+            "Data on other forms of interaction (likes, shares, etc.) for any corridor.",
+            "Definition or measurement of 'overall community interaction'."
+          ],
+          "inferenceSteps": [
+            "The 'aggregates.postsByCategory.LOUNGE' value (3281) is the highest among all categories, supporting the first part of the claim.",
+            "The 'aggregates.commentsLast7d' value is 0, supporting the idea of a lack of recent comments.",
+            "The claim infers 'overall community interaction is minimal' from the zero recent comments. This is an inference, as 'minimal interaction' is not directly measured, and other forms of interaction are not provided.",
+            "The evidence does not provide a baseline or definition for 'minimal' interaction."
+          ],
+          "unsupportedLeap": true,
+          "semanticRisk": "HIGH",
+          "explanation": "The evidence directly supports that 'LOUNGE' has the most posts and that recent comments are zero. However, the claim's assertion of 'overall community interaction is minimal' is an inference that goes beyond the directly provided data, as 'interaction' is not fully defined or measured, and the impact of zero recent comments on 'overall' interaction is not quantified. | heuristic: Causal claim lacks direct causal evidence in pack"
+        },
+        {
+          "claimId": "C005",
+          "claimText": "AIsle's lack of measurable active users and recent content views poses a significant gap for 2025-2026 web trends focused on user engagement and personalization.",
+          "evidenceRelation": "DOES_NOT_SUPPORT",
+          "entailmentLevel": "UNSUPPORTED",
+          "directEvidenceRefs": [],
+          "supportingEvidenceRefs": [
+            "metricDefinitions.activeUsersLast7d",
+            "metricDefinitions.viewsLast7d",
+            "docsHints.CRITICAL: activeUsersLast7d and viewsLast7d are null (unsupported); do not invent"
+          ],
+          "missingEvidence": [
+            "Information defining 2025-2026 web trends.",
+            "Information on what metrics are crucial for those trends.",
+            "Data or analysis linking the null metrics to a 'significant gap' in relation to future trends."
+          ],
+          "inferenceSteps": [
+            "The evidence confirms that 'activeUsersLast7d' and 'viewsLast7d' are null and unsupported.",
+            "The claim asserts this lack of data creates a 'significant gap' for future web trends (2025-2026) related to engagement and personalization.",
+            "The evidence pack contains no information about future web trends, their requirements, or how the current data gaps specifically impact them.",
+            "Therefore, the link between the current data gap and the future trend impact is not supported by the evidence."
+          ],
+          "unsupportedLeap": true,
+          "semanticRisk": "HIGH",
+          "explanation": "While the evidence confirms the lack of measurable active users and recent content views, it does not provide any information about 2025-2026 web trends, their focus on engagement and personalization, or how the current data gaps specifically create a 'significant gap' in relation to those future trends. This part of the claim is a significant leap beyond the provided evidence."
+        }
+      ]
+    },
+    {
+      "memberId": "C",
+      "claims": [
+        {
+          "claimId": "C001",
+          "claimText": "AIsle has zero new users and zero comments in the last 7 days, indicating a complete lack of recent user acquisition and interaction.",
+          "evidenceRelation": "DIRECTLY_SUPPORTS",
+          "entailmentLevel": "DIRECT",
+          "directEvidenceRefs": [
+            "aggregates.newUsersLast7d",
+            "aggregates.commentsLast7d"
+          ],
+          "supportingEvidenceRefs": [],
+          "missingEvidence": [],
+          "inferenceSteps": [
+            "The claim states zero new users in the last 7 days, which is directly supported by `aggregates.newUsersLast7d` being 0.",
+            "The claim states zero comments in the last 7 days, which is directly supported by `aggregates.commentsLast7d` being 0.",
+            "The interpretation that this indicates a 'complete lack of recent user acquisition and interaction' is a direct consequence of these zero values, as per the metric definitions which specify these metrics relate to recent activity."
+          ],
+          "unsupportedLeap": false,
+          "semanticRisk": "LOW",
+          "explanation": "The evidence directly provides the values for `newUsersLast7d` and `commentsLast7d` as 0. The claim's interpretation of these values as indicating a lack of recent acquisition and interaction is a direct and logical conclusion based on the metric definitions."
+        },
+        {
+          "claimId": "C002",
+          "claimText": "Active user and recent view metrics are unavailable, preventing an assessment of current platform engagement and content consumption.",
+          "evidenceRelation": "DIRECTLY_SUPPORTS",
+          "entailmentLevel": "DIRECT",
+          "directEvidenceRefs": [
+            "aggregates.activeUsersLast7d",
+            "aggregates.viewsLast7d"
+          ],
+          "supportingEvidenceRefs": [],
+          "missingEvidence": [
+            "Definition of 'active user' for `activeUsersLast7d`",
+            "Mechanism for tracking `viewsLast7d`"
+          ],
+          "inferenceSteps": [
+            "The claim states active user metrics are unavailable, which is directly supported by `aggregates.activeUsersLast7d` being null.",
+            "The claim states recent view metrics are unavailable, which is directly supported by `aggregates.viewsLast7d` being null.",
+            "The conclusion that this prevents an assessment of current platform engagement and content consumption is a direct consequence of these metrics being unavailable."
+          ],
+          "unsupportedLeap": false,
+          "semanticRisk": "LOW",
+          "explanation": "The EvidencePack explicitly states that `activeUsersLast7d` and `viewsLast7d` are null. This directly supports the claim that these metrics are unavailable. The conclusion drawn about the inability to assess engagement and content consumption is a direct logical consequence."
+        },
+        {
+          "claimId": "C003",
+          "claimText": "Despite a low total user base (14 users), AIsle generates a consistent volume of new posts (138 in the last 7 days), primarily in the 'LOUNGE' category.",
+          "evidenceRelation": "DIRECTLY_SUPPORTS",
+          "entailmentLevel": "DIRECT",
+          "directEvidenceRefs": [
+            "aggregates.userCount",
+            "aggregates.postsLast7d",
+            "aggregates.postsByCategory.LOUNGE"
+          ],
+          "supportingEvidenceRefs": [],
+          "missingEvidence": [],
+          "inferenceSteps": [
+            "The claim states a low total user base of 14 users, directly supported by `aggregates.userCount` being 14.",
+            "The claim states a consistent volume of new posts (138 in the last 7 days), directly supported by `aggregates.postsLast7d` being 138.",
+            "The claim states posts are primarily in the 'LOUNGE' category, directly supported by `aggregates.postsByCategory.LOUNGE` being 3281, which is the largest value among categories.",
+            "The use of 'despite' implies a relationship between user count and posts, which is an interpretation but the core facts are directly supported."
+          ],
+          "unsupportedLeap": false,
+          "semanticRisk": "LOW",
+          "explanation": "All factual components of the claim are directly supported by specific metrics in the EvidencePack: `userCount`, `postsLast7d`, and `postsByCategory.LOUNGE`. The relative comparison of 'primarily' is also supported by the data."
+        },
+        {
+          "claimId": "C004",
+          "claimText": "AIsle's community engagement is severely lacking, evidenced by the complete absence of comments and the null status of active user and view metrics, suggesting a failure to foster interaction and content consumption.",
+          "evidenceRelation": "DIRECTLY_SUPPORTS",
+          "entailmentLevel": "STRONG_INFERENCE",
+          "directEvidenceRefs": [
+            "aggregates.commentsLast7d",
+            "aggregates.activeUsersLast7d",
+            "aggregates.viewsLast7d"
+          ],
+          "supportingEvidenceRefs": [],
+          "missingEvidence": [
+            "A defined metric for 'active users' and 'viewsLast7d'."
+          ],
+          "inferenceSteps": [
+            "The claim states a complete absence of comments, directly supported by `aggregates.commentsLast7d` being 0.",
+            "The claim states the null status of active user metrics, directly supported by `aggregates.activeUsersLast7d` being null.",
+            "The claim states the null status of view metrics, directly supported by `aggregates.viewsLast7d` being null.",
+            "The inference that 'community engagement is severely lacking' is drawn from the combination of zero comments and the unavailability of active user/view metrics, which are proxies for engagement and content consumption.",
+            "The suggestion of 'a failure to foster interaction and content consumption' is a reasonable inference from the lack of these indicators."
+          ],
+          "unsupportedLeap": false,
+          "semanticRisk": "MEDIUM",
+          "explanation": "While the absence of comments, null active users, and null views are directly supported, the conclusion that this indicates 'severely lacking' engagement and a 'failure to foster interaction' is an inference. However, given the direct evidence (zero comments) and the lack of data for key engagement indicators (active users, views), this inference is strongly supported."
+        },
+        {
+          "claimId": "C005",
+          "claimText": "The platform's user acquisition strategy is ineffective, as indicated by zero new users in the last 7 days, despite the existence of multiple community corridors and AI features.",
+          "evidenceRelation": "PARTIALLY_SUPPORTS",
+          "entailmentLevel": "WEAK_INFERENCE",
+          "directEvidenceRefs": [
+            "aggregates.newUsersLast7d"
+          ],
+          "supportingEvidenceRefs": [
+            "site.corridors",
+            "site.stackNotes"
+          ],
+          "missingEvidence": [
+            "Details of AIsle's user acquisition strategy.",
+            "Metrics on user acquisition channels."
+          ],
+          "inferenceSteps": [
+            "The claim states zero new users in the last 7 days, directly supported by `aggregates.newUsersLast7d` being 0.",
+            "The claim implies this indicates an 'ineffective user acquisition strategy'. This is an inference, as the evidence only shows the outcome (zero new users) and not the strategy itself or its intended effectiveness.",
+            "The existence of multiple community corridors (`site.corridors`) and AI features (`site.stackNotes`) is provided as context for the platform's offerings, but does not directly support or refute the effectiveness of the acquisition strategy."
+          ],
+          "unsupportedLeap": true,
+          "semanticRisk": "MEDIUM",
+          "explanation": "The evidence directly supports the fact of zero new users (`aggregates.newUsersLast7d`). However, inferring that the *strategy* is ineffective based solely on this number, without any information about the strategy itself or its goals, is an unsupported leap. The presence of corridors and AI features is contextual information that doesn't directly validate or invalidate the strategy's effectiveness."
+        }
+      ]
+    },
+    {
+      "memberId": "D",
+      "claims": [
+        {
+          "claimId": "C001",
+          "claimText": "The AIsle platform utilizes a modern and robust web technology stack, including Next.js 15 App Router, React 19, Prisma 7, and PostgreSQL.",
+          "evidenceRelation": "DIRECTLY_SUPPORTS",
+          "entailmentLevel": "DIRECT",
+          "directEvidenceRefs": [
+            "site.stackNotes"
+          ],
+          "supportingEvidenceRefs": [],
+          "missingEvidence": [],
+          "inferenceSteps": [],
+          "unsupportedLeap": false,
+          "semanticRisk": "LOW",
+          "explanation": "The `site.stackNotes` explicitly lists 'Next.js 15 App Router + React 19' and 'Prisma 7 + PostgreSQL', directly supporting the claim."
+        },
+        {
+          "claimId": "C002",
+          "claimText": "The platform has zero new user signups and zero comments in the last 7 days, indicating a severe lack of recent user acquisition and interaction.",
+          "evidenceRelation": "DIRECTLY_SUPPORTS",
+          "entailmentLevel": "DIRECT",
+          "directEvidenceRefs": [
+            "aggregates.newUsersLast7d",
+            "aggregates.commentsLast7d"
+          ],
+          "supportingEvidenceRefs": [],
+          "missingEvidence": [],
+          "inferenceSteps": [
+            "The claim states 'zero new user signups' which is directly supported by `aggregates.newUsersLast7d` being 0.",
+            "The claim states 'zero comments in the last 7 days' which is directly supported by `aggregates.commentsLast7d` being 0.",
+            "The interpretation that this indicates 'a severe lack of recent user acquisition and interaction' is an inference based on these zero values."
+          ],
+          "unsupportedLeap": false,
+          "semanticRisk": "LOW",
+          "explanation": "The `aggregates.newUsersLast7d` and `aggregates.commentsLast7d` are both reported as 0, directly supporting the quantitative aspects of the claim. The interpretation of 'severe lack of recent user acquisition and interaction' is a reasonable inference from these zero values."
+        },
+        {
+          "claimId": "C003",
+          "claimText": "Key engagement and content consumption metrics, specifically `activeUsersLast7d` and `viewsLast7d`, are not being measured.",
+          "evidenceRelation": "DIRECTLY_SUPPORTS",
+          "entailmentLevel": "DIRECT",
+          "directEvidenceRefs": [
+            "aggregates.activeUsersLast7d",
+            "aggregates.viewsLast7d",
+            "metricDefinitions.activeUsersLast7d",
+            "metricDefinitions.viewsLast7d"
+          ],
+          "supportingEvidenceRefs": [],
+          "missingEvidence": [],
+          "inferenceSteps": [
+            "The claim states `activeUsersLast7d` is not measured, which is supported by `aggregates.activeUsersLast7d` being null and `metricDefinitions.activeUsersLast7d` stating '현재 신뢰 가능한 활동 정의 없음 → 반드시 null'.",
+            "The claim states `viewsLast7d` is not measured, which is supported by `aggregates.viewsLast7d` being null and `metricDefinitions.viewsLast7d` stating 'Post.views 는 누적만 존재 → 현재 null'."
+          ],
+          "unsupportedLeap": false,
+          "semanticRisk": "LOW",
+          "explanation": "The `aggregates` show both `activeUsersLast7d` and `viewsLast7d` as null. The `metricDefinitions` further clarify that `activeUsersLast7d` is null due to the lack of a reliable activity definition and `viewsLast7d` is null because only cumulative views are available, directly supporting the claim that these metrics are not being measured."
+        },
+        {
+          "claimId": "C004",
+          "claimText": "The platform integrates AI capabilities using Gemini for specific features.",
+          "evidenceRelation": "DIRECTLY_SUPPORTS",
+          "entailmentLevel": "DIRECT",
+          "directEvidenceRefs": [
+            "site.stackNotes"
+          ],
+          "supportingEvidenceRefs": [],
+          "missingEvidence": [],
+          "inferenceSteps": [],
+          "unsupportedLeap": false,
+          "semanticRisk": "LOW",
+          "explanation": "The `site.stackNotes` explicitly mention 'Gemini (@google/generative-ai) for LAB/news/fortune', directly confirming the use of Gemini for AI capabilities in specific features."
+        },
+        {
+          "claimId": "C005",
+          "claimText": "The platform has a large volume of posts but very low overall comment activity.",
+          "evidenceRelation": "DIRECTLY_SUPPORTS",
+          "entailmentLevel": "STRONG_INFERENCE",
+          "directEvidenceRefs": [
+            "aggregates.postCount",
+            "aggregates.commentCount"
+          ],
+          "supportingEvidenceRefs": [],
+          "missingEvidence": [],
+          "inferenceSteps": [
+            "The claim states 'large volume of posts'. `aggregates.postCount` is 3369, which can be considered a large volume in many contexts.",
+            "The claim states 'very low overall comment activity'. `aggregates.commentCount` is 4, which is objectively a very low number compared to the post count.",
+            "The inference is that the ratio of posts to comments indicates low interaction relative to content creation."
+          ],
+          "unsupportedLeap": false,
+          "semanticRisk": "LOW",
+          "explanation": "The evidence shows a `postCount` of 3369 and a `commentCount` of 4. The significant disparity between these two numbers strongly supports the inference that the platform has a large volume of posts relative to its comment activity."
+        },
+        {
+          "claimId": "C006",
+          "claimText": "The platform has a scalable infrastructure with Vercel hosting and PostgreSQL.",
+          "evidenceRelation": "DIRECTLY_SUPPORTS",
+          "entailmentLevel": "DIRECT",
+          "directEvidenceRefs": [
+            "site.stackNotes"
+          ],
+          "supportingEvidenceRefs": [],
+          "missingEvidence": [],
+          "inferenceSteps": [],
+          "unsupportedLeap": false,
+          "semanticRisk": "LOW",
+          "explanation": "The `site.stackNotes` explicitly lists 'Vercel hosting' and 'PostgreSQL', which are commonly associated with scalable infrastructure, directly supporting the claim."
+        }
+      ]
+    },
+    {
+      "memberId": "E",
+      "claims": [
+        {
+          "claimId": "C001",
+          "claimText": "최근 7일 동안 신규 사용자 유입이 전혀 없었습니다.",
+          "evidenceRelation": "DIRECTLY_SUPPORTS",
+          "entailmentLevel": "DIRECT",
+          "directEvidenceRefs": [
+            "aggregates.newUsersLast7d"
+          ],
+          "supportingEvidenceRefs": [],
+          "missingEvidence": [],
+          "inferenceSteps": [],
+          "unsupportedLeap": false,
+          "semanticRisk": "LOW",
+          "explanation": "The metric `newUsersLast7d` is 0, directly supporting the claim that there were no new user signups in the last 7 days."
+        },
+        {
+          "claimId": "C002",
+          "claimText": "최근 7일 동안 커뮤니티 활동(댓글)이 전혀 없었습니다.",
+          "evidenceRelation": "DIRECTLY_SUPPORTS",
+          "entailmentLevel": "DIRECT",
+          "directEvidenceRefs": [
+            "aggregates.commentsLast7d"
+          ],
+          "supportingEvidenceRefs": [],
+          "missingEvidence": [],
+          "inferenceSteps": [],
+          "unsupportedLeap": false,
+          "semanticRisk": "LOW",
+          "explanation": "The metric `commentsLast7d` is 0, directly supporting the claim that there were no community activities (comments) in the last 7 days."
+        },
+        {
+          "claimId": "C003",
+          "claimText": "최근 7일간의 활성 사용자 수와 조회수는 측정되지 않아 플랫폼의 현재 활동 수준을 파악할 수 없습니다.",
+          "evidenceRelation": "DIRECTLY_SUPPORTS",
+          "entailmentLevel": "DIRECT",
+          "directEvidenceRefs": [
+            "aggregates.activeUsersLast7d",
+            "aggregates.viewsLast7d"
+          ],
+          "supportingEvidenceRefs": [],
+          "missingEvidence": [
+            "Definition and reliable measurement of `activeUsersLast7d`.",
+            "Reliable measurement of `viewsLast7d`."
+          ],
+          "inferenceSteps": [
+            "The `activeUsersLast7d` metric is null.",
+            "The `viewsLast7d` metric is null.",
+            "Metric definitions confirm that `activeUsersLast7d` is not reliably measured due to lack of activity definition.",
+            "Metric definitions confirm that `viewsLast7d` is not currently measured (only totalViews exists)."
+          ],
+          "unsupportedLeap": false,
+          "semanticRisk": "LOW",
+          "explanation": "Both `activeUsersLast7d` and `viewsLast7d` are null, and the metric definitions explicitly state they are not measured, directly supporting the claim that current activity levels cannot be determined from these metrics."
+        },
+        {
+          "claimId": "C004",
+          "claimText": "최근 7일간의 게시글 작성 수가 전체 게시글 수에 비해 상대적으로 적습니다.",
+          "evidenceRelation": "DIRECTLY_SUPPORTS",
+          "entailmentLevel": "STRONG_INFERENCE",
+          "directEvidenceRefs": [],
+          "supportingEvidenceRefs": [
+            "aggregates.postsLast7d",
+            "aggregates.postCount"
+          ],
+          "missingEvidence": [],
+          "inferenceSteps": [
+            "The number of posts in the last 7 days (`postsLast7d`) is 138.",
+            "The total number of posts (`postCount`) is 3369.",
+            "Comparing 138 to 3369 indicates a significantly lower rate of recent post creation compared to the historical total."
+          ],
+          "unsupportedLeap": false,
+          "semanticRisk": "LOW",
+          "explanation": "The ratio of `postsLast7d` (138) to `postCount` (3369) suggests a substantial decrease in recent content creation compared to the overall history, supporting the claim of relative scarcity."
+        },
+        {
+          "claimId": "C005",
+          "claimText": "플랫폼의 대부분의 콘텐츠는 'LOUNGE' 카테고리에 집중되어 있습니다.",
+          "evidenceRelation": "DIRECTLY_SUPPORTS",
+          "entailmentLevel": "STRONG_INFERENCE",
+          "directEvidenceRefs": [],
+          "supportingEvidenceRefs": [
+            "aggregates.postsByCategory"
+          ],
+          "missingEvidence": [],
+          "inferenceSteps": [
+            "The `postsByCategory` metric shows the distribution of posts across different categories.",
+            "The 'LOUNGE' category has 3281 posts.",
+            "All other categories combined have significantly fewer posts (e.g., AI_FORTUNE: 17, GALLERY: 23, RECIPE: 16, LAUNCH: 6, BUILD: 5, GOSSIP: 21).",
+            "The high number of posts in 'LOUNGE' compared to all other categories indicates that the majority of content is concentrated there."
+          ],
+          "unsupportedLeap": false,
+          "semanticRisk": "LOW",
+          "explanation": "The `postsByCategory` data clearly shows that 'LOUNGE' has a vastly higher number of posts (3281) than any other category, strongly supporting the claim that most content is concentrated in 'LOUNGE'."
+        }
+      ]
+    }
+  ],
+  "revisions": [
+    {
+      "memberId": "A",
+      "revisionStatus": "UNCHANGED",
+      "revised": false,
+      "originalOpinion": "The platform is currently failing to attract new users and foster community engagement, as evidenced by zero new signups and zero comments in the last 7 days. The absence of crucial metrics for mobile UX and accessibility prevents a comprehensive evaluation in these areas, highlighting a significant gap in understanding and optimizing the user experience across different contexts.",
+      "revisionReason": null,
+      "retainReason": "The original opinion accurately reflects the critical lack of user acquisition and engagement, supported by direct metrics (newUsersLast7d: 0, commentsLast7d: 0) and the absence of key activity metrics (activeUsersLast7d: null, viewsLast7d: null). No new evidence or direct rebuttals have emerged that fundamentally alter this core assessment. The calibration analysis also confirms that the core claims remain supported by the evidence, with no significant overclaiming risk.",
+      "changedClaims": [],
+      "newEvidenceAccepted": [],
+      "rejectedArguments": [],
+      "confidenceBefore": 0.9,
+      "confidenceAfter": 0.9,
+      "confidenceChangeReason": "The confidence remains high as the core claims are directly supported by the available metrics and the absence of others. The peer reviews and claim calibration did not introduce contradictory evidence or reveal significant evidence gaps that undermine the original assessment's core assertions regarding user acquisition and engagement.",
+      "finalOpinion": "The platform is currently failing to attract new users and foster community engagement, as evidenced by zero new signups and zero comments in the last 7 days. The absence of crucial metrics for mobile UX and accessibility prevents a comprehensive evaluation in these areas, highlighting a significant gap in understanding and optimizing the user experience across different contexts.",
+      "revisionAnswers": {
+        "q1_coreClaim": "The platform is failing to attract new users and foster community engagement, evidenced by zero new signups and zero comments in the last 7 days. The absence of crucial metrics for mobile UX and accessibility prevents a comprehensive evaluation in these areas.",
+        "q2_strongestRebuttal": "No single rebuttal directly contradicts the core claims. Peer reviews generally align with the assessment of low engagement and acquisition, though some offer different interpretations of content volume or focus on technology stack strengths.",
+        "q3_rebuttalEvidenceKind": "Inferences and interpretations of existing data, rather than direct counter-evidence.",
+        "q4_evidenceGapsFound": "The primary evidence gaps identified relate to the lack of specific metrics for mobile UX and accessibility, as noted in the original opinion and confirmed by claim calibration (C006). While not directly impacting the core claims about acquisition and engagement, they limit the scope of the UX/UI evaluation.",
+        "q5_gapAffectsCoreClaim": "No, the identified evidence gaps (mobile UX, accessibility metrics) do not affect the core claims regarding the critical lack of user acquisition and community engagement, which are supported by direct metrics.",
+        "q6_directlySupportedScope": "The core claims about zero new users (C001) and zero comments (C002) in the last 7 days are directly supported by metrics. The lack of active user and view metrics (C003) and mobile/accessibility metrics (C006) are also directly supported by their null or absent status. The claim of ongoing content creation (C004) is supported by postsLast7d.",
+        "q7_overclaimCheck": "No, the wording accurately reflects the metrics. For example, 'failing to attract new users' is directly supported by 'newUsersLast7d: 0'. 'Prevents a comprehensive evaluation' for mobile UX/accessibility is accurate due to the lack of data.",
+        "q8_whyRetainIfUnchanged": "The original opinion remains valid because the core assertions regarding critically low user acquisition (0 new users) and engagement (0 comments) are directly supported by the provided metrics. The absence of key activity metrics (active users, recent views) further solidifies the assessment of a dormant platform in these areas. Peer reviews and claim calibration did not introduce contradictory evidence or reveal significant evidence gaps that undermine these central points.",
+        "q9_claimsToChangeIfPartial": "N/A, revisionStatus is UNCHANGED.",
+        "q10_groundsForFullRevision": "N/A, revisionStatus is UNCHANGED.",
+        "q11_chosenStatus": "UNCHANGED",
+        "q12_confidenceChange": "Confidence remains at 0.9. The original assessment is strongly supported by direct metrics (newUsersLast7d: 0, commentsLast7d: 0) and the acknowledged absence of key performance indicators (activeUsersLast7d: null, viewsLast7d: null). Peer reviews and the claim calibration process did not uncover contradictory evidence or significant evidence gaps that would necessitate a change in confidence level. The identified gaps (mobile UX, accessibility) are acknowledged but do not undermine the core claims about acquisition and engagement."
+      },
+      "calibrationImpactAssessment": {
+        "materiallyAffected": true,
+        "affectedClaims": [
+          {
+            "claimId": "C001",
+            "calibrationSupportLevel": "SUPPORTED",
+            "calibrationEvidenceImpact": "CRITICAL",
+            "calibrationRiskOfOverclaiming": "LOW",
+            "revisionAction": "NO_ACTION_NEEDED",
+            "actionReason": "The claim that there are no new users in the last 7 days is directly supported by the metric 'newUsersLast7d: 0', with no overclaiming risk. The evidence impact is critical for user acquisition."
+          },
+          {
+            "claimId": "C002",
+            "calibrationSupportLevel": "SUPPORTED",
+            "calibrationEvidenceImpact": "HIGH",
+            "calibrationRiskOfOverclaiming": "LOW",
+            "revisionAction": "NO_ACTION_NEEDED",
+            "actionReason": "The claim of zero comments in the last 7 days is directly supported by 'commentsLast7d: 0', with a high evidence impact on community engagement and low overclaiming risk."
+          },
+          {
+            "claimId": "C003",
+            "calibrationSupportLevel": "SUPPORTED",
+            "calibrationEvidenceImpact": "HIGH",
+            "calibrationRiskOfOverclaiming": "LOW",
+            "revisionAction": "NO_ACTION_NEEDED",
+            "actionReason": "The claim that active user and view metrics are unavailable is directly supported by 'activeUsersLast7d: null' and 'viewsLast7d: null'. This has a high impact on understanding user activity and poses no overclaiming risk."
+          },
+          {
+            "claimId": "C004",
+            "calibrationSupportLevel": "SUPPORTED",
+            "calibrationEvidenceImpact": "MEDIUM",
+            "calibrationRiskOfOverclaiming": "LOW",
+            "revisionAction": "NO_ACTION_NEEDED",
+            "actionReason": "The claim of 138 posts in the last 7 days is directly supported by 'postsLast7d: 138'. This has a medium impact and low overclaiming risk, indicating content creation is occurring."
+          },
+          {
+            "claimId": "C005",
+            "calibrationSupportLevel": "SUPPORTED",
+            "calibrationEvidenceImpact": "NONE",
+            "calibrationRiskOfOverclaiming": "LOW",
+            "revisionAction": "NO_ACTION_NEEDED",
+            "actionReason": "The claim of 14 total users is directly supported by 'userCount: 14'. This has no impact on the core assessment of engagement and acquisition issues."
+          },
+          {
+            "claimId": "C006",
+            "calibrationSupportLevel": "SUPPORTED",
+            "calibrationEvidenceImpact": "HIGH",
+            "calibrationRiskOfOverclaiming": "LOW",
+            "revisionAction": "NO_ACTION_NEEDED",
+            "actionReason": "The claim that mobile UX and accessibility metrics are unavailable is supported by the absence of such data in the EvidencePack. This has a high impact on the UX/UI evaluation, and no overclaiming risk."
+          }
+        ]
+      }
+    },
+    {
+      "memberId": "B",
+      "revisionStatus": "PARTIAL",
+      "revised": true,
+      "originalOpinion": "AIsle은 최신 기술 스택을 갖추고 있으나, 사용자 참여 및 콘텐츠 소비에 대한 핵심 지표 측정이 부재하여 2025-2026년 트렌드에 효과적으로 대응하기 어렵습니다. 특히 활성 사용자 측정 불가, 낮은 댓글 활동은 서비스의 지속적인 성장과 사용자 만족도 향상에 큰 걸림돌이 될 것입니다. AI 활용도 확장 및 측정 방안 마련이 시급합니다.",
+      "revisionReason": "The core claim that AIsle has a critical gap in measuring user engagement and faces challenges in meeting 2025-2026 web trends is retained. However, the strength of the claim regarding the *impact* of this gap on future trends (C005) and the characterization of community interaction (C004) need to be softened due to insufficient evidence. Specifically, the claim about the future trend gap is a hypothesis not supported by the evidence pack, and the 'minimal' community interaction is an understatement of the 'zero' observed activity.",
+      "retainReason": null,
+      "changedClaims": [
+        "C004: The assertion 'overall community interaction is minimal' needs to be reworded to reflect the direct evidence of 'zero comments' rather than an inference of 'minimal' interaction. C005: The claim that the current data gaps create a 'significant gap for 2025-2026 web trends' needs to be softened or qualified, as it's a hypothesis unsupported by evidence regarding future trends."
+      ],
+      "newEvidenceAccepted": [],
+      "rejectedArguments": [],
+      "confidenceBefore": 0.9,
+      "confidenceAfter": 0.8,
+      "confidenceChangeReason": "Confidence is slightly reduced because the calibration analysis revealed that the claim linking current data gaps to future trend impact (C005) is a hypothesis not supported by the provided evidence. This requires softening the assertion about the 'significant gap' for future trends, making the overall assessment less definitive in that specific aspect.",
+      "finalOpinion": "AIsle possesses a modern technology stack but faces a critical gap in measuring user engagement due to unmeasured active users and recent views. Furthermore, there has been a complete absence of new user signups and comments in the last 7 days, indicating a severe lack of recent activity. While the 'LOUNGE' corridor has the most posts, the platform's community interaction is effectively zero based on recent comment data. The extent to which these current data deficiencies create a 'significant gap' for future 2025-2026 web trends is a hypothesis not directly supported by the provided evidence, necessitating a more cautious conclusion on that specific point.",
+      "revisionAnswers": {
+        "q1_coreClaim": "AIsle has a critical gap in measuring user engagement due to null values for activeUsersLast7d and viewsLast7d, and zero recent user activity (newUsersLast7d, commentsLast7d), which poses challenges for adapting to 2025-2026 web trends.",
+        "q2_strongestRebuttal": "The claim that the current data gaps create a 'significant gap for 2025-2026 web trends' (C005) is not supported by evidence. The EvidencePack lacks information about future trends and how current metrics specifically relate to them, making this connection a hypothesis.",
+        "q3_rebuttalEvidenceKind": "inference/hypothesis",
+        "q4_evidenceGapsFound": "The EvidencePack does not contain information about 2025-2026 web trends, their key metrics, or data correlating current AIsle metrics to success in those future trends. This gap prevents a direct, evidence-based assertion of a 'significant gap' for future trends.",
+        "q5_gapAffectsCoreClaim": "Yes, it affects the claim about the platform's preparedness for future trends by making that specific link a hypothesis rather than a direct conclusion.",
+        "q6_directlySupportedScope": "The core issues of null active user and view metrics (C001), and zero new users and comments (C002), are directly supported. The modern tech stack (C003) is also directly supported. The claim about 'LOUNGE' having the most posts is supported, but the inference about 'overall community interaction' being 'minimal' is not fully supported (C004).",
+        "q7_overclaimCheck": "Yes. The claim that the current data gaps create a 'significant gap for 2025-2026 web trends' (C005) is an overclaim because it asserts a direct link and significance without providing evidence for future trends or the specific impact of current gaps on them. The characterization of 'minimal' community interaction (C004) is also an overstatement of the observed 'zero' comments.",
+        "q8_whyRetainIfUnchanged": "N/A (Revision is PARTIAL)",
+        "q9_claimsToChangeIfPartial": "C004: The assertion 'overall community interaction is minimal' needs to be reworded to reflect the direct evidence of 'zero comments' rather than an inference of 'minimal' interaction. C005: The claim that the current data gaps create a 'significant gap for 2025-2026 web trends' needs to be softened or qualified, as it's a hypothesis unsupported by evidence regarding future trends.",
+        "q10_groundsForFullRevision": "No grounds for FULL revision. The core problem of missing metrics and zero recent activity remains valid and critical. The revision is focused on refining specific claims based on evidence limitations, not a wholesale change of the core opinion.",
+        "q11_chosenStatus": "PARTIAL",
+        "q12_confidenceChange": "Confidence decreased from 0.9 to 0.8. The primary reason is the identification that claim C005, linking current data gaps to future trends, is a hypothesis unsupported by the EvidencePack. This necessitates a more cautious stance on the predictive impact of the current data deficiencies on future trends, reducing the overall certainty of that specific aspect of the assessment."
+      },
+      "calibrationImpactAssessment": {
+        "materiallyAffected": true,
+        "affectedClaims": [
+          {
+            "claimId": "C001",
+            "calibrationSupportLevel": "SUPPORTED",
+            "calibrationEvidenceImpact": "CRITICAL",
+            "calibrationRiskOfOverclaiming": "LOW",
+            "revisionAction": "RETAIN_WITH_JUSTIFICATION",
+            "actionReason": "The evidence directly supports that activeUsersLast7d and viewsLast7d are null and unsupported, creating a critical gap in measuring user engagement. This claim is factually accurate based on the EvidencePack."
+          },
+          {
+            "claimId": "C002",
+            "calibrationSupportLevel": "SUPPORTED",
+            "calibrationEvidenceImpact": "HIGH",
+            "calibrationRiskOfOverclaiming": "LOW",
+            "revisionAction": "NO_ACTION_NEEDED",
+            "actionReason": "The aggregate data for newUsersLast7d and commentsLast7d are explicitly 0, directly supporting the claim of no new users or comments in the last 7 days."
+          },
+          {
+            "claimId": "C003",
+            "calibrationSupportLevel": "SUPPORTED",
+            "calibrationEvidenceImpact": "NONE",
+            "calibrationRiskOfOverclaiming": "LOW",
+            "revisionAction": "NO_ACTION_NEEDED",
+            "actionReason": "The 'site.stackNotes' directly lists the technologies used, confirming the claim about the modern technology stack."
+          },
+          {
+            "claimId": "C004",
+            "calibrationSupportLevel": "PARTIALLY_SUPPORTED",
+            "calibrationEvidenceImpact": "MEDIUM",
+            "calibrationRiskOfOverclaiming": "MEDIUM",
+            "revisionAction": "REWORD",
+            "actionReason": "The claim states 'overall community interaction is minimal'. While commentsLast7d is 0, the term 'minimal' is an understatement and an inference. The evidence directly supports zero comments, not just minimal interaction. The rewording should reflect the direct evidence of zero comments."
+          },
+          {
+            "claimId": "C005",
+            "calibrationSupportLevel": "NOT_SUPPORTED",
+            "calibrationEvidenceImpact": "HIGH",
+            "calibrationRiskOfOverclaiming": "HIGH",
+            "revisionAction": "DOWNGRADE_CONFIDENCE",
+            "actionReason": "This claim posits a 'significant gap for 2025-2026 web trends' based on current data. However, the EvidencePack provides no information on future web trends or their specific metrics, making this connection a hypothesis unsupported by the provided evidence. The confidence in this specific causal link needs to be downgraded."
+          }
+        ]
+      }
+    },
+    {
+      "memberId": "C",
+      "revisionStatus": "UNCHANGED",
+      "revised": false,
+      "originalOpinion": "AIsle은 현재 사용자 활동 및 참여가 거의 없는 상태로, 커뮤니티로서의 기능을 전혀 수행하지 못하고 있습니다. 신규 사용자 확보와 기존 사용자 참여를 유도하기 위한 근본적인 전략 수정 및 실행이 시급하며, 이를 위한 데이터 추적 시스템 구축이 선행되어야 합니다.",
+      "revisionReason": null,
+      "retainReason": "The core claim that AIsle is experiencing a severe lack of user acquisition and engagement, with no recent activity metrics, remains strongly supported by the direct evidence in the EvidencePack (newUsersLast7d=0, commentsLast7d=0, activeUsersLast7d=null, viewsLast7d=null). The peer reviews did not introduce any counter-evidence that would invalidate this core assessment. While some peer reviews suggested further analysis in areas like SEO, geo, scalability, and security, these are outside the scope of the current core claim which focuses on immediate user activity and engagement.",
+      "changedClaims": [],
+      "newEvidenceAccepted": [],
+      "rejectedArguments": [],
+      "confidenceBefore": 0.9,
+      "confidenceAfter": 0.9,
+      "confidenceChangeReason": "The confidence remains high as the core claim is directly supported by the provided metrics and the peer reviews did not introduce evidence to challenge this core assessment. The lack of data in certain dimensions (SEO, geo, etc.) does not invalidate the existing, strong evidence regarding user activity.",
+      "finalOpinion": "AIsle is currently in a state of severe user inactivity and lack of engagement, with no new users or comments in the last 7 days. Crucial metrics for active users and recent views are unmeasured, preventing a full assessment of platform engagement. While content creation exists, the complete absence of recent interaction and acquisition indicates a critical need for strategic intervention to drive user acquisition and foster community interaction.",
+      "revisionAnswers": {
+        "q1_coreClaim": "AIsle is currently in a state of severe user inactivity and lack of engagement, with no new users or comments in the last 7 days. Crucial metrics for active users and recent views are unmeasured, preventing a full assessment of platform engagement. While content creation exists, the complete absence of recent interaction and acquisition indicates a critical need for strategic intervention to drive user acquisition and foster community interaction.",
+        "q2_strongestRebuttal": "The strongest rebuttal is the claim that the user acquisition strategy is ineffective (C005), which is only partially supported by the evidence of zero new users. The evidence semantics note this as a weak inference with a medium risk of overclaiming, as the strategy itself is unknown.",
+        "q3_rebuttalEvidenceKind": "inference",
+        "q4_evidenceGapsFound": "The primary evidence gaps identified relate to the user acquisition strategy itself (details of the strategy, metrics on acquisition channels) which prevents a definitive conclusion on its effectiveness. Additionally, the absence of defined metrics for 'active users' and 'viewsLast7d' is noted as a missing piece for a complete assessment of engagement.",
+        "q5_gapAffectsCoreClaim": "The gap related to the user acquisition strategy directly affects the claim that the strategy is ineffective (C005), leading to it being classified as 'PARTIALLY_SUPPORTED' and necessitating a caveat. The gaps in active user and view metrics reinforce the core claim's assessment of current inactivity and lack of engagement, as these are critical indicators that are currently unavailable.",
+        "q6_directlySupportedScope": "Claims C001, C002, and C003 are directly supported by factual data from the EvidencePack. C001 is supported by `aggregates.newUsersLast7d` and `aggregates.commentsLast7d`. C002 is supported by `aggregates.activeUsersLast7d` and `aggregates.viewsLast7d` being null. C003 is supported by `aggregates.userCount`, `aggregates.postsLast7d`, and `aggregates.postsByCategory.LOUNGE`.",
+        "q7_overclaimCheck": "The claim C005, 'The platform's user acquisition strategy is ineffective, as indicated by zero new users in the last 7 days, despite the existence of multiple community corridors and AI features,' is an overclaim. While zero new users is a fact, inferring the ineffectiveness of the *strategy* without knowing the strategy is an unsupported leap. The evidence semantics highlight this as a weak inference with a medium risk of overclaiming.",
+        "q8_whyRetainIfUnchanged": "The core claim remains unchanged because the direct evidence (zero new users, zero comments, null active users/views) strongly supports the assessment of severe inactivity and lack of engagement. Peer reviews did not provide counter-evidence. The claim about the acquisition strategy being ineffective (C005) is addressed by adding a caveat to acknowledge the inferential nature of this conclusion.",
+        "q9_claimsToChangeIfPartial": "Claim C005 will be modified by adding a caveat to acknowledge that the ineffectiveness of the user acquisition strategy is inferred from the lack of results, rather than directly proven, due to the absence of information about the strategy itself.",
+        "q10_groundsForFullRevision": "No grounds for a FULL revision exist as the core assessment remains valid based on the provided evidence. The primary issues identified are well-supported, and no new evidence fundamentally alters the overall judgment.",
+        "q11_chosenStatus": "UNCHANGED",
+        "q12_confidenceChange": "Confidence remains at 0.9. The core claim is robustly supported by direct metrics. While one claim (C005) has been qualified with a caveat due to an inferential leap, this does not undermine the overall assessment of critical inactivity. The peer reviews did not introduce any evidence that contradicts the main findings."
+      },
+      "calibrationImpactAssessment": {
+        "materiallyAffected": true,
+        "affectedClaims": [
+          {
+            "claimId": "C001",
+            "calibrationSupportLevel": "SUPPORTED",
+            "calibrationEvidenceImpact": "CRITICAL",
+            "calibrationRiskOfOverclaiming": "LOW",
+            "revisionAction": "NO_ACTION_NEEDED",
+            "actionReason": "The claim is directly supported by factual data (newUsersLast7d=0, commentsLast7d=0) and the evidence semantics confirm direct support with low risk. No revision is needed."
+          },
+          {
+            "claimId": "C002",
+            "calibrationSupportLevel": "SUPPORTED",
+            "calibrationEvidenceImpact": "CRITICAL",
+            "calibrationRiskOfOverclaiming": "LOW",
+            "revisionAction": "NO_ACTION_NEEDED",
+            "actionReason": "The claim is directly supported by factual data (activeUsersLast7d=null, viewsLast7d=null) and the evidence semantics confirm direct support with low risk. No revision is needed."
+          },
+          {
+            "claimId": "C003",
+            "calibrationSupportLevel": "SUPPORTED",
+            "calibrationEvidenceImpact": "MEDIUM",
+            "calibrationRiskOfOverclaiming": "LOW",
+            "revisionAction": "NO_ACTION_NEEDED",
+            "actionReason": "The claim is directly supported by factual data (userCount, postsLast7d, postsByCategory.LOUNGE) and the evidence semantics confirm direct support with low risk. No revision is needed."
+          },
+          {
+            "claimId": "C004",
+            "calibrationSupportLevel": "SUPPORTED",
+            "calibrationEvidenceImpact": "CRITICAL",
+            "calibrationRiskOfOverclaiming": "MEDIUM",
+            "revisionAction": "RETAIN_WITH_JUSTIFICATION",
+            "actionReason": "The claim is strongly inferred from direct evidence (commentsLast7d=0, activeUsersLast7d=null, viewsLast7d=null) and the evidence semantics indicate strong inference with medium risk. While the risk of overclaiming is medium, the direct evidence of zero comments and lack of active user/view data strongly supports the inference of lacking engagement. No change in wording is necessary as the inference is well-supported by the available data."
+          },
+          {
+            "claimId": "C005",
+            "calibrationSupportLevel": "PARTIALLY_SUPPORTED",
+            "calibrationEvidenceImpact": "HIGH",
+            "calibrationRiskOfOverclaiming": "MEDIUM",
+            "revisionAction": "ADD_CAVEAT",
+            "actionReason": "The claim that the user acquisition strategy is ineffective is partially supported by the direct fact of zero new users. However, inferring the *ineffectiveness of the strategy* solely from this metric, without knowledge of the strategy itself, is an unsupported leap. The evidence semantics highlight this as a weak inference with a medium risk of overclaiming. To mitigate this, a caveat should be added to acknowledge that the ineffectiveness of the strategy is inferred from the lack of results, rather than directly proven."
+          }
+        ]
+      }
+    },
+    {
+      "memberId": "D",
+      "revisionStatus": "UNCHANGED",
+      "revised": false,
+      "originalOpinion": "The AIsle platform leverages a modern and capable technology stack, including Next.js 15, React 19, and Gemini for AI features, hosted on Vercel. However, critical engagement metrics such as active users and recent views are not being tracked (`activeUsersLast7d` and `viewsLast7d` are null). More concerningly, there have been zero new user signups and zero comments in the last 7 days, indicating a severe lack of recent user acquisition and interaction. While the platform has a large volume of posts, the extremely low comment count suggests a passive content consumption model or a significant issue with community engagement and user retention. Immediate focus should be on enabling the tracking of key engagement metrics and investigating the root causes of the zero new user and comment activity.",
+      "revisionReason": null,
+      "retainReason": "The core claims regarding the modern tech stack, severe lack of recent engagement (zero new users and comments), and unmeasured key metrics (`activeUsersLast7d`, `viewsLast7d`) remain strongly supported by direct evidence. The peer analyses did not introduce new evidence or direct rebuttals that undermine these core assertions. The existing evidence and interpretations are robust enough to maintain the original opinion without modification.",
+      "changedClaims": [],
+      "newEvidenceAccepted": [],
+      "rejectedArguments": [],
+      "confidenceBefore": 0.9,
+      "confidenceAfter": 0.9,
+      "confidenceChangeReason": "The confidence remains high as the original assessment was based on direct evidence from the EvidencePack and the peer reviews did not invalidate the core claims or introduce significant new evidence that would alter the confidence level. The existing evidence strongly supports the identified problems and the need for improvements.",
+      "finalOpinion": "The AIsle platform leverages a modern and capable technology stack, including Next.js 15, React 19, and Gemini for AI features, hosted on Vercel. However, critical engagement metrics such as active users and recent views are not being tracked (`activeUsersLast7d` and `viewsLast7d` are null). More concerningly, there have been zero new user signups and zero comments in the last 7 days, indicating a severe lack of recent user acquisition and interaction. While the platform has a large volume of posts, the extremely low comment count suggests a passive content consumption model or a significant issue with community engagement and user retention. Immediate focus should be on enabling the tracking of key engagement metrics and investigating the root causes of the zero new user and comment activity.",
+      "revisionAnswers": {
+        "q1_coreClaim": "The AIsle platform leverages a modern and capable technology stack, including Next.js 15, React 19, and Gemini for AI features, hosted on Vercel. However, critical engagement metrics such as active users and recent views are not being tracked (`activeUsersLast7d` and `viewsLast7d` are null). More concerningly, there have been zero new user signups and zero comments in the last 7 days, indicating a severe lack of recent user acquisition and interaction. While the platform has a large volume of posts, the extremely low comment count suggests a passive content consumption model or a significant issue with community engagement and user retention. Immediate focus should be on enabling the tracking of key engagement metrics and investigating the root causes of the zero new user and comment activity.",
+        "q2_strongestRebuttal": "No single rebuttal strongly undermines the core claims. However, the general sentiment across peer reviews is that while the technical stack is modern, the platform is failing significantly in user acquisition and engagement, which is the central problem identified in the original opinion. Some reviewers suggested additional improvements (e.g., mobile UX audit, accessibility audit) that were not explicitly part of the original opinion's focus, but these do not negate the primary findings.",
+        "q3_rebuttalEvidenceKind": "Inference/Hypothesis (regarding the need for additional audits not directly evidenced by current metrics).",
+        "q4_evidenceGapsFound": "Peer reviews highlighted potential gaps such as the lack of specific mobile UX and accessibility metrics (Reviewer A), the unquantified impact of Gemini AI integration (Reviewer D), and the rationale behind certain scores (e.g., 'competitive' score by Reviewer C, 'content' score by Reviewer E). However, these are areas for further investigation rather than evidence that invalidates the current core claims.",
+        "q5_gapAffectsCoreClaim": "No. The identified gaps do not affect the core claims about the current state of the platform's technology, lack of engagement, and unmeasured metrics. They point to areas for potential future improvement or deeper analysis, but the fundamental assessment of the platform's current critical issues remains valid.",
+        "q6_directlySupportedScope": "The core claims are directly supported by explicit data in the EvidencePack: the modern tech stack (site.stackNotes), zero new users and comments (aggregates.newUsersLast7d, aggregates.commentsLast7d), and null values for active users and recent views (aggregates.activeUsersLast7d, aggregates.viewsLast7d). The inference about low interaction is supported by the disparity between postCount and commentCount.",
+        "q7_overclaimCheck": "No. The original opinion accurately reflects the data. Phrases like 'severe lack' and 'critical engagement metrics' are justified by the direct evidence of zero new users/comments and null active user/view metrics.",
+        "q8_whyRetainIfUnchanged": "The original opinion is retained because the core assertions are directly supported by the EvidencePack. Peer reviews did not introduce contradictory evidence or compelling arguments that invalidate the assessment of the modern tech stack, the critical lack of user acquisition and engagement (zero new users/comments), and the absence of key performance metrics (`activeUsersLast7d`, `viewsLast7d`). The identified issues remain the most pressing concerns based on the provided data.",
+        "q9_claimsToChangeIfPartial": "N/A, as the status is UNCHANGED.",
+        "q10_groundsForFullRevision": "N/A, as the status is UNCHANGED. A FULL revision would require new, substantial evidence that fundamentally alters the understanding of the platform's technology, engagement, or performance, which was not presented.",
+        "q11_chosenStatus": "UNCHANGED",
+        "q12_confidenceChange": "Confidence remains 0.9. The original opinion was grounded in direct, critical metrics from the EvidencePack. Peer reviews corroborated the severity of the engagement and acquisition issues and the lack of measured metrics, reinforcing the original assessment rather than challenging it. No new information was introduced that would significantly increase or decrease this confidence level."
+      },
+      "calibrationImpactAssessment": {
+        "materiallyAffected": true,
+        "affectedClaims": [
+          {
+            "claimId": "C001",
+            "calibrationSupportLevel": "SUPPORTED",
+            "calibrationEvidenceImpact": "NONE",
+            "calibrationRiskOfOverclaiming": "LOW",
+            "revisionAction": "NO_ACTION_NEEDED",
+            "actionReason": "The claim is directly supported by explicit mentions in `site.stackNotes` and no new evidence or arguments contradict it."
+          },
+          {
+            "claimId": "C002",
+            "calibrationSupportLevel": "SUPPORTED",
+            "calibrationEvidenceImpact": "CRITICAL",
+            "calibrationRiskOfOverclaiming": "LOW",
+            "revisionAction": "NO_ACTION_NEEDED",
+            "actionReason": "The claim is directly supported by `aggregates.newUsersLast7d` and `aggregates.commentsLast7d` being 0. The interpretation of 'severe lack' is a reasonable inference from these critical zero values, and no counter-evidence was presented."
+          },
+          {
+            "claimId": "C003",
+            "calibrationSupportLevel": "SUPPORTED",
+            "calibrationEvidenceImpact": "HIGH",
+            "calibrationRiskOfOverclaiming": "LOW",
+            "revisionAction": "NO_ACTION_NEEDED",
+            "actionReason": "The claim is directly supported by `activeUsersLast7d` and `viewsLast7d` being null in `aggregates`, and further clarified by `metricDefinitions`. No evidence suggests these metrics are actually being measured."
+          },
+          {
+            "claimId": "C004",
+            "calibrationSupportLevel": "SUPPORTED",
+            "calibrationEvidenceImpact": "NONE",
+            "calibrationRiskOfOverclaiming": "LOW",
+            "revisionAction": "NO_ACTION_NEEDED",
+            "actionReason": "The claim is directly supported by `site.stackNotes` mentioning Gemini integration, and no counter-evidence exists."
+          },
+          {
+            "claimId": "C005",
+            "calibrationSupportLevel": "SUPPORTED",
+            "calibrationEvidenceImpact": "MEDIUM",
+            "calibrationRiskOfOverclaiming": "LOW",
+            "revisionAction": "NO_ACTION_NEEDED",
+            "actionReason": "The claim is a strong inference supported by the stark contrast between `postCount` (3369) and `commentCount` (4). No evidence contradicts this inference."
+          },
+          {
+            "claimId": "C006",
+            "calibrationSupportLevel": "SUPPORTED",
+            "calibrationEvidenceImpact": "NONE",
+            "calibrationRiskOfOverclaiming": "LOW",
+            "revisionAction": "NO_ACTION_NEEDED",
+            "actionReason": "The claim is directly supported by `site.stackNotes` listing Vercel hosting and PostgreSQL, and no counter-evidence was provided."
+          }
+        ]
+      }
+    },
+    {
+      "memberId": "E",
+      "revisionStatus": "UNCHANGED",
+      "revised": false,
+      "originalOpinion": "The platform is experiencing a severe drought in user acquisition and community engagement. With zero new users and zero comments in the last week, and unmeasured active users and views, the platform appears dormant. While there's a historical content base, recent activity is negligible. Urgent interventions are required to attract users and stimulate interaction.",
+      "revisionReason": null,
+      "retainReason": "The core claims regarding the lack of recent user acquisition and engagement, and the absence of measured active user and view data, remain strongly supported by the direct metrics provided in the EvidencePack. Peer reviews did not introduce contradictory evidence or significantly undermine these core assertions. The rebuttal regarding the `usersLast7d` metric being deprecated and identical to `newUsersLast7d` does not change the core claim's validity, but rather reinforces it. The point about `postCount` vs `commentCount` is an interpretation that, while valid, does not invalidate the primary claims about zero recent activity and unmeasured engagement metrics.",
+      "changedClaims": [],
+      "newEvidenceAccepted": [],
+      "rejectedArguments": [
+        {
+          "argument": "Reviewer C's assessment of 'content' score at 80 is weak because while `postsLast7d` is 138, the lack of `viewsLast7d` and `commentsLast7d` makes it difficult to definitively state content is performing well, even with a decent number of recent posts. The evidence cited (postsLast7d, commentsLast7d, viewsLast7d) directly points to the *lack* of consumption and interaction data, not its presence.",
+          "reason": "This argument is a critique of a peer's scoring, not a direct rebuttal to the core claims about zero new users, zero comments, and unmeasured active users/views. While the point about interpreting content performance with missing data is valid, it does not invalidate the direct factual claims being assessed."
+        }
+      ],
+      "confidenceBefore": 1,
+      "confidenceAfter": 1,
+      "confidenceChangeReason": "The core claims are directly supported by objective metrics (newUsersLast7d=0, commentsLast7d=0, activeUsersLast7d=null, viewsLast7d=null). No new evidence or strong counterarguments were presented that would necessitate a change in confidence. The peer reviews largely aligned with the initial assessment of these critical metrics.",
+      "finalOpinion": "The platform is experiencing a severe drought in user acquisition and community engagement. With zero new users and zero comments in the last week, and unmeasured active users and views, the platform appears dormant. While there's a historical content base, recent activity is negligible. Urgent interventions are required to attract users and stimulate interaction.",
+      "revisionAnswers": {
+        "q1_coreClaim": "The platform is experiencing a severe drought in user acquisition and community engagement, with zero new users and zero comments in the last week, and unmeasured active users and views, suggesting the platform is dormant and requires urgent intervention.",
+        "q2_strongestRebuttal": "No single rebuttal directly contradicted the core claims. However, the discussion around `usersLast7d` being deprecated and identical to `newUsersLast7d` (which is 0) could be seen as a point that reinforces the lack of new user activity rather than a rebuttal. Peer reviews generally aligned with the initial assessment.",
+        "q3_rebuttalEvidenceKind": "The points raised by peers were primarily interpretations of existing data or suggestions for additional analysis (e.g., `postCount` vs `commentCount`). The mention of `usersLast7d` being deprecated is a factual observation about the data, which, in this case, supports the original claim rather than refuting it.",
+        "q4_evidenceGapsFound": "Peer reviews highlighted that `usersLast7d` metric was present but deprecated and identical to `newUsersLast7d`. They also noted that the comparison between `postCount` and `commentCount` could be more central to the 'community' dimension, suggesting a potential for deeper analysis rather than a gap in the core claims.",
+        "q5_gapAffectsCoreClaim": "No. The identified 'gaps' did not affect the core claims. The deprecation of `usersLast7d` actually reinforces the finding that `newUsersLast7d` is 0. The suggestion to analyze `postCount` vs `commentCount` further is an opportunity for deeper insight but does not invalidate the current assessment of zero recent activity and unmeasured engagement.",
+        "q6_directlySupportedScope": "The core claims are directly supported by the metrics `newUsersLast7d = 0`, `commentsLast7d = 0`, `activeUsersLast7d = null`, and `viewsLast7d = null`. The claim about `postsLast7d` being relatively low is supported by comparing it to `postCount`. The claim about content concentration in 'LOUNGE' is directly supported by `postsByCategory.LOUNGE`.",
+        "q7_overclaimCheck": "No. The original opinion accurately reflects the data: zero new users, zero comments, and unmeasured active users/views directly lead to the conclusion of dormancy and the need for intervention. The language used ('severe drought', 'dormant', 'negligible') is strong but justified by the complete absence of recent activity metrics.",
+        "q8_whyRetainIfUnchanged": "The core claims regarding the lack of recent user acquisition and engagement, and the absence of measured active user and view data, remain strongly supported by the direct metrics provided in the EvidencePack. Peer reviews did not introduce contradictory evidence or significantly undermine these core assertions. The rebuttal regarding the `usersLast7d` metric being deprecated and identical to `newUsersLast7d` does not change the core claim's validity, but rather reinforces it. The point about `postCount` vs `commentCount` is an interpretation that, while valid, does not invalidate the primary claims about zero recent activity and unmeasured engagement metrics.",
+        "q9_claimsToChangeIfPartial": "N/A, as the revision status is UNCHANGED.",
+        "q10_groundsForFullRevision": "N/A, as the revision status is UNCHANGED. No new evidence or strong counterarguments were presented that would necessitate a complete revision of the core claims.",
+        "q11_chosenStatus": "UNCHANGED",
+        "q12_confidenceChange": "Confidence remains at 1. The core claims are directly supported by objective metrics (newUsersLast7d=0, commentsLast7d=0, activeUsersLast7d=null, viewsLast7d=null). No new evidence or strong counterarguments were presented that would necessitate a change in confidence. The peer reviews largely aligned with the initial assessment of these critical metrics."
+      },
+      "calibrationImpactAssessment": {
+        "materiallyAffected": true,
+        "affectedClaims": [
+          {
+            "claimId": "C001",
+            "calibrationSupportLevel": "SUPPORTED",
+            "calibrationEvidenceImpact": "CRITICAL",
+            "calibrationRiskOfOverclaiming": "LOW",
+            "revisionAction": "NO_ACTION_NEEDED",
+            "actionReason": "The claim is directly supported by `newUsersLast7d = 0` and the semantic analysis confirms direct support with low risk. No changes are warranted."
+          },
+          {
+            "claimId": "C002",
+            "calibrationSupportLevel": "SUPPORTED",
+            "calibrationEvidenceImpact": "CRITICAL",
+            "calibrationRiskOfOverclaiming": "LOW",
+            "revisionAction": "NO_ACTION_NEEDED",
+            "actionReason": "The claim is directly supported by `commentsLast7d = 0` and the semantic analysis confirms direct support with low risk. No changes are warranted."
+          },
+          {
+            "claimId": "C003",
+            "calibrationSupportLevel": "SUPPORTED",
+            "calibrationEvidenceImpact": "HIGH",
+            "calibrationRiskOfOverclaiming": "LOW",
+            "revisionAction": "NO_ACTION_NEEDED",
+            "actionReason": "The claim is directly supported by `activeUsersLast7d = null` and `viewsLast7d = null`, and the semantic analysis confirms direct support with low risk. No changes are warranted."
+          },
+          {
+            "claimId": "C004",
+            "calibrationSupportLevel": "SUPPORTED",
+            "calibrationEvidenceImpact": "MEDIUM",
+            "calibrationRiskOfOverclaiming": "LOW",
+            "revisionAction": "NO_ACTION_NEEDED",
+            "actionReason": "The claim is supported by the ratio of `postsLast7d` to `postCount`, and the semantic analysis confirms strong inference with low risk. No changes are warranted."
+          },
+          {
+            "claimId": "C005",
+            "calibrationSupportLevel": "SUPPORTED",
+            "calibrationEvidenceImpact": "LOW",
+            "calibrationRiskOfOverclaiming": "LOW",
+            "revisionAction": "NO_ACTION_NEEDED",
+            "actionReason": "The claim is directly supported by `postsByCategory` data, and the semantic analysis confirms strong inference with low risk. No changes are warranted."
+          }
+        ]
+      }
+    }
+  ],
+  "calibrationRevisionChecks": [
+    {
+      "memberId": "A",
+      "claimId": "C001",
+      "calibrationSupportLevel": "SUPPORTED",
+      "calibrationEvidenceImpact": "CRITICAL",
+      "calibrationRiskOfOverclaiming": "LOW",
+      "revisionStatus": "UNCHANGED",
+      "revisionAction": "NO_ACTION_NEEDED",
+      "consistency": "CONSISTENT",
+      "severity": "INFO",
+      "reason": "Supported direct fact retained",
+      "flags": []
+    },
+    {
+      "memberId": "A",
+      "claimId": "C002",
+      "calibrationSupportLevel": "SUPPORTED",
+      "calibrationEvidenceImpact": "HIGH",
+      "calibrationRiskOfOverclaiming": "LOW",
+      "revisionStatus": "UNCHANGED",
+      "revisionAction": "NO_ACTION_NEEDED",
+      "consistency": "CONSISTENT",
+      "severity": "INFO",
+      "reason": "Supported direct fact retained",
+      "flags": []
+    },
+    {
+      "memberId": "A",
+      "claimId": "C003",
+      "calibrationSupportLevel": "SUPPORTED",
+      "calibrationEvidenceImpact": "HIGH",
+      "calibrationRiskOfOverclaiming": "LOW",
+      "revisionStatus": "UNCHANGED",
+      "revisionAction": "NO_ACTION_NEEDED",
+      "consistency": "INCONSISTENT",
+      "severity": "HIGH",
+      "reason": "UNKNOWN_AS_NEGATIVE_EVIDENCE",
+      "flags": [
+        "UNKNOWN_AS_NEGATIVE_EVIDENCE"
+      ]
+    },
+    {
+      "memberId": "A",
+      "claimId": "C004",
+      "calibrationSupportLevel": "SUPPORTED",
+      "calibrationEvidenceImpact": "MEDIUM",
+      "calibrationRiskOfOverclaiming": "LOW",
+      "revisionStatus": "UNCHANGED",
+      "revisionAction": "NO_ACTION_NEEDED",
+      "consistency": "CONSISTENT",
+      "severity": "INFO",
+      "reason": "Supported direct fact retained",
+      "flags": []
+    },
+    {
+      "memberId": "A",
+      "claimId": "C005",
+      "calibrationSupportLevel": "SUPPORTED",
+      "calibrationEvidenceImpact": "NONE",
+      "calibrationRiskOfOverclaiming": "LOW",
+      "revisionStatus": "UNCHANGED",
+      "revisionAction": "NO_ACTION_NEEDED",
+      "consistency": "CONSISTENT",
+      "severity": "INFO",
+      "reason": "Supported direct fact retained",
+      "flags": []
+    },
+    {
+      "memberId": "A",
+      "claimId": "C006",
+      "calibrationSupportLevel": "SUPPORTED",
+      "calibrationEvidenceImpact": "HIGH",
+      "calibrationRiskOfOverclaiming": "LOW",
+      "revisionStatus": "UNCHANGED",
+      "revisionAction": "NO_ACTION_NEEDED",
+      "consistency": "INCONSISTENT",
+      "severity": "HIGH",
+      "reason": "UNKNOWN_AS_NEGATIVE_EVIDENCE",
+      "flags": [
+        "UNKNOWN_AS_NEGATIVE_EVIDENCE"
+      ]
+    },
+    {
+      "memberId": "B",
+      "claimId": "C001",
+      "calibrationSupportLevel": "SUPPORTED",
+      "calibrationEvidenceImpact": "CRITICAL",
+      "calibrationRiskOfOverclaiming": "LOW",
+      "revisionStatus": "PARTIAL",
+      "revisionAction": "RETAIN_WITH_JUSTIFICATION",
+      "consistency": "PARTIALLY_CONSISTENT",
+      "severity": "LOW",
+      "reason": "DIRECT_FACT SUPPORTED claim weakened without clear need",
+      "flags": [
+        "SUPPORTED_FACT_UNNECESSARILY_DOWNGRADED"
+      ]
+    },
+    {
+      "memberId": "B",
+      "claimId": "C002",
+      "calibrationSupportLevel": "SUPPORTED",
+      "calibrationEvidenceImpact": "HIGH",
+      "calibrationRiskOfOverclaiming": "LOW",
+      "revisionStatus": "PARTIAL",
+      "revisionAction": "NO_ACTION_NEEDED",
+      "consistency": "PARTIALLY_CONSISTENT",
+      "severity": "LOW",
+      "reason": "DIRECT_FACT SUPPORTED claim weakened without clear need",
+      "flags": [
+        "SUPPORTED_FACT_UNNECESSARILY_DOWNGRADED"
+      ]
+    },
+    {
+      "memberId": "B",
+      "claimId": "C003",
+      "calibrationSupportLevel": "SUPPORTED",
+      "calibrationEvidenceImpact": "NONE",
+      "calibrationRiskOfOverclaiming": "LOW",
+      "revisionStatus": "PARTIAL",
+      "revisionAction": "NO_ACTION_NEEDED",
+      "consistency": "PARTIALLY_CONSISTENT",
+      "severity": "LOW",
+      "reason": "DIRECT_FACT SUPPORTED claim weakened without clear need",
+      "flags": [
+        "SUPPORTED_FACT_UNNECESSARILY_DOWNGRADED"
+      ]
+    },
+    {
+      "memberId": "B",
+      "claimId": "C004",
+      "calibrationSupportLevel": "PARTIALLY_SUPPORTED",
+      "calibrationEvidenceImpact": "MEDIUM",
+      "calibrationRiskOfOverclaiming": "MEDIUM",
+      "revisionStatus": "PARTIAL",
+      "revisionAction": "REWORD",
+      "consistency": "CONSISTENT",
+      "severity": "INFO",
+      "reason": "Calibration and revision aligned",
+      "flags": []
+    },
+    {
+      "memberId": "B",
+      "claimId": "C005",
+      "calibrationSupportLevel": "NOT_SUPPORTED",
+      "calibrationEvidenceImpact": "HIGH",
+      "calibrationRiskOfOverclaiming": "HIGH",
+      "revisionStatus": "PARTIAL",
+      "revisionAction": "DOWNGRADE_CONFIDENCE",
+      "consistency": "INCONSISTENT",
+      "severity": "HIGH",
+      "reason": "CAUSAL_CLAIM_WITHOUT_EVIDENCE",
+      "flags": [
+        "CAUSAL_CLAIM_WITHOUT_EVIDENCE"
+      ]
+    },
+    {
+      "memberId": "C",
+      "claimId": "C001",
+      "calibrationSupportLevel": "SUPPORTED",
+      "calibrationEvidenceImpact": "CRITICAL",
+      "calibrationRiskOfOverclaiming": "LOW",
+      "revisionStatus": "UNCHANGED",
+      "revisionAction": "NO_ACTION_NEEDED",
+      "consistency": "CONSISTENT",
+      "severity": "INFO",
+      "reason": "Supported direct fact retained",
+      "flags": []
+    },
+    {
+      "memberId": "C",
+      "claimId": "C002",
+      "calibrationSupportLevel": "SUPPORTED",
+      "calibrationEvidenceImpact": "CRITICAL",
+      "calibrationRiskOfOverclaiming": "LOW",
+      "revisionStatus": "UNCHANGED",
+      "revisionAction": "NO_ACTION_NEEDED",
+      "consistency": "CONSISTENT",
+      "severity": "INFO",
+      "reason": "Supported direct fact retained",
+      "flags": []
+    },
+    {
+      "memberId": "C",
+      "claimId": "C003",
+      "calibrationSupportLevel": "SUPPORTED",
+      "calibrationEvidenceImpact": "MEDIUM",
+      "calibrationRiskOfOverclaiming": "LOW",
+      "revisionStatus": "UNCHANGED",
+      "revisionAction": "NO_ACTION_NEEDED",
+      "consistency": "CONSISTENT",
+      "severity": "INFO",
+      "reason": "Supported direct fact retained",
+      "flags": []
+    },
+    {
+      "memberId": "C",
+      "claimId": "C004",
+      "calibrationSupportLevel": "SUPPORTED",
+      "calibrationEvidenceImpact": "CRITICAL",
+      "calibrationRiskOfOverclaiming": "MEDIUM",
+      "revisionStatus": "UNCHANGED",
+      "revisionAction": "RETAIN_WITH_JUSTIFICATION",
+      "consistency": "CONSISTENT",
+      "severity": "INFO",
+      "reason": "Calibration and revision aligned",
+      "flags": []
+    },
+    {
+      "memberId": "C",
+      "claimId": "C005",
+      "calibrationSupportLevel": "PARTIALLY_SUPPORTED",
+      "calibrationEvidenceImpact": "HIGH",
+      "calibrationRiskOfOverclaiming": "MEDIUM",
+      "revisionStatus": "UNCHANGED",
+      "revisionAction": "ADD_CAVEAT",
+      "consistency": "CONSISTENT",
+      "severity": "INFO",
+      "reason": "Softening action ADD_CAVEAT applied for high-impact partial claim",
+      "flags": []
+    },
+    {
+      "memberId": "D",
+      "claimId": "C001",
+      "calibrationSupportLevel": "SUPPORTED",
+      "calibrationEvidenceImpact": "NONE",
+      "calibrationRiskOfOverclaiming": "LOW",
+      "revisionStatus": "UNCHANGED",
+      "revisionAction": "NO_ACTION_NEEDED",
+      "consistency": "CONSISTENT",
+      "severity": "INFO",
+      "reason": "Supported direct fact retained",
+      "flags": []
+    },
+    {
+      "memberId": "D",
+      "claimId": "C002",
+      "calibrationSupportLevel": "SUPPORTED",
+      "calibrationEvidenceImpact": "CRITICAL",
+      "calibrationRiskOfOverclaiming": "LOW",
+      "revisionStatus": "UNCHANGED",
+      "revisionAction": "NO_ACTION_NEEDED",
+      "consistency": "CONSISTENT",
+      "severity": "INFO",
+      "reason": "Supported direct fact retained",
+      "flags": []
+    },
+    {
+      "memberId": "D",
+      "claimId": "C003",
+      "calibrationSupportLevel": "SUPPORTED",
+      "calibrationEvidenceImpact": "HIGH",
+      "calibrationRiskOfOverclaiming": "LOW",
+      "revisionStatus": "UNCHANGED",
+      "revisionAction": "NO_ACTION_NEEDED",
+      "consistency": "CONSISTENT",
+      "severity": "INFO",
+      "reason": "Supported direct fact retained",
+      "flags": []
+    },
+    {
+      "memberId": "D",
+      "claimId": "C004",
+      "calibrationSupportLevel": "SUPPORTED",
+      "calibrationEvidenceImpact": "NONE",
+      "calibrationRiskOfOverclaiming": "LOW",
+      "revisionStatus": "UNCHANGED",
+      "revisionAction": "NO_ACTION_NEEDED",
+      "consistency": "CONSISTENT",
+      "severity": "INFO",
+      "reason": "Supported direct fact retained",
+      "flags": []
+    },
+    {
+      "memberId": "D",
+      "claimId": "C005",
+      "calibrationSupportLevel": "SUPPORTED",
+      "calibrationEvidenceImpact": "MEDIUM",
+      "calibrationRiskOfOverclaiming": "LOW",
+      "revisionStatus": "UNCHANGED",
+      "revisionAction": "NO_ACTION_NEEDED",
+      "consistency": "CONSISTENT",
+      "severity": "INFO",
+      "reason": "Calibration and revision aligned",
+      "flags": []
+    },
+    {
+      "memberId": "D",
+      "claimId": "C006",
+      "calibrationSupportLevel": "SUPPORTED",
+      "calibrationEvidenceImpact": "NONE",
+      "calibrationRiskOfOverclaiming": "LOW",
+      "revisionStatus": "UNCHANGED",
+      "revisionAction": "NO_ACTION_NEEDED",
+      "consistency": "CONSISTENT",
+      "severity": "INFO",
+      "reason": "Supported direct fact retained",
+      "flags": []
+    },
+    {
+      "memberId": "E",
+      "claimId": "C001",
+      "calibrationSupportLevel": "SUPPORTED",
+      "calibrationEvidenceImpact": "CRITICAL",
+      "calibrationRiskOfOverclaiming": "LOW",
+      "revisionStatus": "UNCHANGED",
+      "revisionAction": "NO_ACTION_NEEDED",
+      "consistency": "CONSISTENT",
+      "severity": "INFO",
+      "reason": "Supported direct fact retained",
+      "flags": []
+    },
+    {
+      "memberId": "E",
+      "claimId": "C002",
+      "calibrationSupportLevel": "SUPPORTED",
+      "calibrationEvidenceImpact": "CRITICAL",
+      "calibrationRiskOfOverclaiming": "LOW",
+      "revisionStatus": "UNCHANGED",
+      "revisionAction": "NO_ACTION_NEEDED",
+      "consistency": "CONSISTENT",
+      "severity": "INFO",
+      "reason": "Supported direct fact retained",
+      "flags": []
+    },
+    {
+      "memberId": "E",
+      "claimId": "C003",
+      "calibrationSupportLevel": "SUPPORTED",
+      "calibrationEvidenceImpact": "HIGH",
+      "calibrationRiskOfOverclaiming": "LOW",
+      "revisionStatus": "UNCHANGED",
+      "revisionAction": "NO_ACTION_NEEDED",
+      "consistency": "CONSISTENT",
+      "severity": "INFO",
+      "reason": "Supported direct fact retained",
+      "flags": []
+    },
+    {
+      "memberId": "E",
+      "claimId": "C004",
+      "calibrationSupportLevel": "SUPPORTED",
+      "calibrationEvidenceImpact": "MEDIUM",
+      "calibrationRiskOfOverclaiming": "LOW",
+      "revisionStatus": "UNCHANGED",
+      "revisionAction": "NO_ACTION_NEEDED",
+      "consistency": "CONSISTENT",
+      "severity": "INFO",
+      "reason": "Calibration and revision aligned",
+      "flags": []
+    },
+    {
+      "memberId": "E",
+      "claimId": "C005",
+      "calibrationSupportLevel": "SUPPORTED",
+      "calibrationEvidenceImpact": "LOW",
+      "calibrationRiskOfOverclaiming": "LOW",
+      "revisionStatus": "UNCHANGED",
+      "revisionAction": "NO_ACTION_NEEDED",
+      "consistency": "CONSISTENT",
+      "severity": "INFO",
+      "reason": "Supported direct fact retained",
+      "flags": []
+    }
+  ],
+  "critic": {
+    "factVsSpeculationOk": false,
+    "evidenceSufficient": false,
+    "scoresWithoutEvidence": [
+      "A:visual",
+      "A:web_tech",
+      "A:performance",
+      "A:a11y",
+      "A:content",
+      "A:ai_usage",
+      "A:competitive",
+      "A:seo",
+      "A:geo",
+      "A:security",
+      "A:scalability",
+      "B:ui_ux",
+      "B:visual",
+      "B:mobile",
+      "B:performance",
+      "B:a11y",
+      "B:usability",
+      "B:content",
+      "B:competitive",
+      "B:seo",
+      "B:geo",
+      "B:security",
+      "B:scalability",
+      "C:ui_ux",
+      "C:visual",
+      "C:mobile",
+      "C:web_tech",
+      "C:performance",
+      "C:a11y",
+      "C:usability",
+      "C:ai_usage",
+      "C:retention",
+      "C:seo",
+      "C:geo",
+      "C:security",
+      "C:scalability",
+      "D:ui_ux",
+      "D:visual",
+      "D:mobile",
+      "D:a11y",
+      "D:usability",
+      "D:content",
+      "D:competitive",
+      "D:acquisition",
+      "D:retention",
+      "D:seo",
+      "D:geo",
+      "E:ui_ux",
+      "E:visual",
+      "E:mobile",
+      "E:web_tech",
+      "E:performance",
+      "E:a11y",
+      "E:ai_usage",
+      "E:competitive",
+      "E:seo",
+      "E:geo",
+      "E:security",
+      "E:scalability"
+    ],
+    "herdingDetected": false,
+    "dominantMemberInfluence": "A",
+    "trendEvidenceOk": false,
+    "userBenefitLikely": false,
+    "existingFeatureRisk": false,
+    "overEngineering": false,
+    "notes": [
+      "Member A's claims C003 and C006 use the absence of data (null values, missing metrics) as direct evidence. While this is a valid observation, it's flagged as 'unknownAsEvidenceFlags' to highlight that the absence of data is being treated as affirmative proof of inability to assess.",
+      "Member B's claim C004 infers 'minimal community interaction' from zero comments, which is a causal leap. Claim C005 makes a causal leap linking current data gaps to future trends, which is unsupported.",
+      "Member C's claim C005 infers an 'ineffective user acquisition strategy' from zero new users, which is a causal leap.",
+      "All members correctly identify the critical lack of new users and comments, and the null status of active users and recent views. The primary divergence lies in the strength of inferences drawn from this data, particularly regarding causal links and future impacts.",
+      "v6 consistency: consistent=21 partial=3 inconsistent=3",
+      "v7 semantics: flaggedClaims=5 mismatch=0 unknownNeg=0"
+    ],
+    "confidence": 0.85,
+    "revisionIntegrity": {
+      "ok": true,
+      "flags": []
+    },
+    "evidenceGrounding": {
+      "ok": true,
+      "flags": []
+    },
+    "overclaiming": {
+      "ok": false,
+      "flags": [
+        "B:C005:overclaim_risk"
+      ]
+    },
+    "herding": {
+      "ok": true,
+      "flags": []
+    },
+    "confidenceIntegrity": {
+      "ok": true,
+      "flags": []
+    },
+    "fabrication": {
+      "ok": true,
+      "flags": []
+    },
+    "statusConsistency": {
+      "ok": true,
+      "flags": []
+    },
+    "claimCalibrationIntegrity": {
+      "ok": true,
+      "flags": []
+    },
+    "evidenceMappingIntegrity": {
+      "ok": true,
+      "flags": []
+    },
+    "unsupportedClaimFlags": {
+      "ok": false,
+      "flags": []
+    },
+    "overclaimingFlags": {
+      "ok": false,
+      "flags": [
+        "B:C005:overclaim_risk"
+      ]
+    },
+    "unknownAsEvidenceFlags": {
+      "ok": false,
+      "flags": [
+        "A:C003:unknown_as_evidence",
+        "A:C006:unknown_as_evidence",
+        "A:C003:UNKNOWN_AS_NEGATIVE_EVIDENCE",
+        "A:C006:UNKNOWN_AS_NEGATIVE_EVIDENCE"
+      ]
+    },
+    "causalClaimWithoutEvidenceFlags": {
+      "ok": false,
+      "flags": [
+        "B:C005:CAUSAL_CLAIM_WITHOUT_EVIDENCE",
+        "B:C001:UNSUPPORTED_CAUSAL_CLAIM",
+        "B:C002:UNSUPPORTED_CAUSAL_CLAIM",
+        "B:C003:UNSUPPORTED_CAUSAL_CLAIM",
+        "B:C004:UNSUPPORTED_CAUSAL_CLAIM",
+        "B:C005:UNSUPPORTED_CAUSAL_CLAIM"
+      ]
+    },
+    "confidenceCalibrationFlags": {
+      "ok": false,
+      "flags": []
+    },
+    "herdingFlags": {
+      "ok": false,
+      "flags": []
+    },
+    "calibrationRevisionIntegrity": {
+      "status": "FAIL",
+      "issues": [
+        "A/C003: INCONSISTENT [UNKNOWN_AS_NEGATIVE_EVIDENCE] — UNKNOWN_AS_NEGATIVE_EVIDENCE",
+        "A/C006: INCONSISTENT [UNKNOWN_AS_NEGATIVE_EVIDENCE] — UNKNOWN_AS_NEGATIVE_EVIDENCE",
+        "B/C001: PARTIALLY_CONSISTENT [SUPPORTED_FACT_UNNECESSARILY_DOWNGRADED] — DIRECT_FACT SUPPORTED claim weakened without clear need",
+        "B/C002: PARTIALLY_CONSISTENT [SUPPORTED_FACT_UNNECESSARILY_DOWNGRADED] — DIRECT_FACT SUPPORTED claim weakened without clear need",
+        "B/C003: PARTIALLY_CONSISTENT [SUPPORTED_FACT_UNNECESSARILY_DOWNGRADED] — DIRECT_FACT SUPPORTED claim weakened without clear need",
+        "B/C005: INCONSISTENT [CAUSAL_CLAIM_WITHOUT_EVIDENCE] — CAUSAL_CLAIM_WITHOUT_EVIDENCE"
+      ],
+      "summary": "consistent=21 partial=3 inconsistent=3"
+    },
+    "calibrationRevisionMismatchFlags": {
+      "ok": true,
+      "flags": []
+    },
+    "overclaimRetainedFlags": {
+      "ok": true,
+      "flags": []
+    },
+    "unjustifiedConfidenceFlags": {
+      "ok": true,
+      "flags": []
+    },
+    "majorityDrivenRevisionFlags": {
+      "ok": true,
+      "flags": []
+    },
+    "evidenceSemanticsIntegrity": {
+      "status": "FAIL",
+      "issues": [
+        "B/C001: [UNSUPPORTED_CAUSAL_CLAIM] Causal claim lacks direct causal evidence in pack",
+        "B/C002: [UNSUPPORTED_CAUSAL_CLAIM] No strong pattern match; relation unknown",
+        "B/C003: [UNSUPPORTED_CAUSAL_CLAIM] No strong pattern match; relation unknown",
+        "B/C004: [UNSUPPORTED_CAUSAL_CLAIM] Causal claim lacks direct causal evidence in pack",
+        "B/C005: [UNSUPPORTED_CAUSAL_CLAIM] No strong pattern match; relation unknown"
+      ],
+      "summary": "flaggedClaims=5 mismatch=0 unknownNeg=0"
+    },
+    "evidenceClaimSemanticMismatchFlags": {
+      "ok": true,
+      "flags": []
+    },
+    "absenceOfEvidenceAsAbsenceFlags": {
+      "ok": true,
+      "flags": []
+    },
+    "unsupportedCausalClaimFlags": {
+      "ok": false,
+      "flags": [
+        "B:C001:UNSUPPORTED_CAUSAL_CLAIM",
+        "B:C002:UNSUPPORTED_CAUSAL_CLAIM",
+        "B:C003:UNSUPPORTED_CAUSAL_CLAIM",
+        "B:C004:UNSUPPORTED_CAUSAL_CLAIM",
+        "B:C005:UNSUPPORTED_CAUSAL_CLAIM"
+      ]
+    },
+    "unsupportedRelativeClaimFlags": {
+      "ok": true,
+      "flags": []
+    },
+    "unsupportedTimeTrendFlags": {
+      "ok": true,
+      "flags": []
+    },
+    "unsupportedLeapFlags": {
+      "ok": true,
+      "flags": []
+    },
+    "contextMistakenAsEvidenceFlags": {
+      "ok": true,
+      "flags": []
+    },
+    "peerOpinionAsEvidenceFlags": {
+      "ok": true,
+      "flags": []
+    },
+    "unknownAsNegativeEvidenceFlags": {
+      "ok": false,
+      "flags": [
+        "A:C003:UNKNOWN_AS_NEGATIVE_EVIDENCE",
+        "A:C006:UNKNOWN_AS_NEGATIVE_EVIDENCE"
+      ]
+    }
+  },
+  "final": {
+    "statusSummary": "The AIsle platform is characterized by a severe lack of recent user acquisition and engagement, with zero new users and zero comments in the last 7 days. Key metrics for active users and recent views are unmeasured, preventing a comprehensive assessment of platform activity. While the platform utilizes a modern technology stack and has a history of content creation, its current state indicates a critical need for strategic intervention to drive user acquisition and foster community interaction.",
+    "overallTrendScore": 38,
+    "dimensionScores": [
+      {
+        "dimension": "ui_ux",
+        "score": 20,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "No specific mobile UX metrics are available, making it impossible to assess the current state of the mobile user experience.",
+            "source": "EvidencePack JSON"
+          },
+          {
+            "kind": "observation",
+            "text": "No accessibility metrics or considerations are present in the provided data.",
+            "source": "EvidencePack JSON"
+          }
+        ]
+      },
+      {
+        "dimension": "visual",
+        "score": null,
+        "evidence": []
+      },
+      {
+        "dimension": "mobile",
+        "score": 20,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "The EvidencePack does not contain any metrics or information related to mobile UX or performance.",
+            "source": "EvidencePack JSON"
+          }
+        ]
+      },
+      {
+        "dimension": "web_tech",
+        "score": 100,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "Next.js 15 App Router + React 19, Prisma 7 + PostgreSQL (Supabase Auth) 등 최신 기술 스택을 사용하고 있습니다."
+          },
+          {
+            "kind": "observation",
+            "text": "Next.js 15 App Router + React 19, Prisma 7 + PostgreSQL (Supabase Auth), Gemini (@google/generative-ai), Vercel hosting + GitHub Actions cron, Capacitor mobile shell"
+          }
+        ]
+      },
+      {
+        "dimension": "performance",
+        "score": 40,
+        "evidence": [
+          {
+            "kind": "metric",
+            "text": "activeUsersLast7d is null",
+            "source": "aggregates"
+          },
+          {
+            "kind": "metric",
+            "text": "viewsLast7d is null",
+            "source": "aggregates"
+          },
+          {
+            "kind": "metric",
+            "text": "newUsersLast7d is 0",
+            "source": "aggregates"
+          },
+          {
+            "kind": "metric",
+            "text": "commentsLast7d is 0",
+            "source": "aggregates"
+          }
+        ]
+      },
+      {
+        "dimension": "a11y",
+        "score": null,
+        "evidence": []
+      },
+      {
+        "dimension": "usability",
+        "score": 40,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "Zero new users in the last 7 days and zero comments in the last 7 days suggest potential usability issues that hinder user acquisition and engagement.",
+            "source": "EvidencePack JSON"
+          },
+          {
+            "kind": "observation",
+            "text": "The platform has a moderate amount of posts, indicating that content creation is possible, but user interaction is severely lacking.",
+            "source": "EvidencePack JSON"
+          },
+          {
+            "kind": "metric",
+            "text": "viewsLast7d is null, preventing assessment of content consumption.",
+            "source": "aggregates.viewsLast7d"
+          }
+        ]
+      },
+      {
+        "dimension": "content",
+        "score": 51,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "최근 7일간 138개의 게시글이 작성되어 콘텐츠 생성은 꾸준하나, 조회수 및 댓글 지표가 없어 콘텐츠 소비 및 반응을 파악하기 어려움.",
+            "source": "aggregates.postsLast7d, aggregates.commentsLast7d, aggregates.viewsLast7d"
+          },
+          {
+            "kind": "metric",
+            "text": "postsLast7d is 138, which is a small fraction of the total postCount (3369).",
+            "source": "aggregates.postsLast7d"
+          },
+          {
+            "kind": "metric",
+            "text": "The majority of content is in the 'LOUNGE' category.",
+            "source": "aggregates.postsByCategory.LOUNGE"
+          }
+        ]
+      },
+      {
+        "dimension": "community",
+        "score": 20,
+        "evidence": [
+          {
+            "kind": "metric",
+            "text": "commentsLast7d: 0",
+            "source": "EvidencePack JSON"
+          },
+          {
+            "kind": "observation",
+            "text": "The lack of comments suggests a very low level of community interaction.",
+            "source": "EvidencePack JSON"
+          },
+          {
+            "kind": "observation",
+            "text": "commentsLast7d가 0으로 측정되어 커뮤니티 활동이 매우 저조합니다."
+          },
+          {
+            "kind": "observation",
+            "text": "'LOUNGE' 복도에 3281개의 게시글이 존재합니다."
+          },
+          {
+            "kind": "observation",
+            "text": "다양한 주제의 코리더가 존재하나, 사용자 간 상호작용(댓글 0건)이 전혀 없어 커뮤니티로서 기능하지 못하고 있음. 콘텐츠 생성은 이루어지나 소비 및 반응 부재.",
+            "source": "site.corridors, aggregates.commentsLast7d"
+          },
+          {
+            "kind": "metric",
+            "text": "newUsersLast7d is 0",
+            "source": "aggregates"
+          },
+          {
+            "kind": "metric",
+            "text": "commentsLast7d is 0",
+            "source": "aggregates"
+          },
+          {
+            "kind": "metric",
+            "text": "commentCount is 4",
+            "source": "aggregates"
+          }
+        ]
+      },
+      {
+        "dimension": "ai_usage",
+        "score": 69,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "Gemini (@google/generative-ai)를 LAB/news/fortune에 활용하고 있습니다."
+          },
+          {
+            "kind": "observation",
+            "text": "AI 활용이 특정 복도에 국한되어 있으며, 효과 측정 방안이 미흡합니다."
+          },
+          {
+            "kind": "observation",
+            "text": "Gemini (@google/generative-ai) for LAB/news/fortune"
+          }
+        ]
+      },
+      {
+        "dimension": "competitive",
+        "score": 20,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "신규 사용자 유입 및 활동 지표가 전무하여 경쟁 서비스 대비 매우 열위한 상태임. 사용자 확보 및 참여 유도 전략 부재.",
+            "source": "aggregates.newUsersLast7d, aggregates.activeUsersLast7d"
+          }
+        ]
+      },
+      {
+        "dimension": "acquisition",
+        "score": 15,
+        "evidence": [
+          {
+            "kind": "metric",
+            "text": "newUsersLast7d: 0",
+            "source": "EvidencePack JSON"
+          },
+          {
+            "kind": "observation",
+            "text": "newUsersLast7d가 0으로 측정되어 신규 사용자 유입이 없는 상태입니다."
+          },
+          {
+            "kind": "observation",
+            "text": "최근 7일간 신규 가입자가 0명으로, 사용자 확보에 심각한 문제가 있음. 명확한 유입 전략 부재.",
+            "source": "aggregates.newUsersLast7d"
+          },
+          {
+            "kind": "metric",
+            "text": "newUsersLast7d is 0.",
+            "source": "aggregates.newUsersLast7d"
+          }
+        ]
+      },
+      {
+        "dimension": "retention",
+        "score": 20,
+        "evidence": [
+          {
+            "kind": "metric",
+            "text": "newUsersLast7d: 0",
+            "source": "EvidencePack JSON"
+          },
+          {
+            "kind": "metric",
+            "text": "commentsLast7d: 0",
+            "source": "EvidencePack JSON"
+          },
+          {
+            "kind": "observation",
+            "text": "activeUsersLast7d가 null이고, commentsLast7d가 0으로 측정되어 사용자 유지 및 참여에 대한 우려가 큽니다."
+          },
+          {
+            "kind": "metric",
+            "text": "activeUsersLast7d is null, indicating no reliable measure of recent user activity.",
+            "source": "aggregates.activeUsersLast7d"
+          }
+        ]
+      },
+      {
+        "dimension": "seo",
+        "score": null,
+        "evidence": []
+      },
+      {
+        "dimension": "geo",
+        "score": null,
+        "evidence": []
+      },
+      {
+        "dimension": "security",
+        "score": 60,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "Supabase Auth"
+          }
+        ]
+      },
+      {
+        "dimension": "scalability",
+        "score": 80,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "Vercel hosting"
+          },
+          {
+            "kind": "observation",
+            "text": "PostgreSQL"
+          }
+        ]
+      }
+    ],
+    "topProblems": [
+      "Zero new users and zero comments in the last 7 days, indicating a severe lack of recent user acquisition and engagement.",
+      "Active user and recent view metrics are null and not being measured, preventing a clear understanding of user activity and content consumption.",
+      "The platform has a low level of community interaction, with zero recent comments.",
+      "The absence of crucial metrics for mobile UX and accessibility prevents a comprehensive evaluation in these areas."
+    ],
+    "improvements": [
+      {
+        "id": "ACQ001",
+        "title": "Implement User Acquisition Campaigns",
+        "priority": 1,
+        "expectedEffect": "Increase newUsersLast7d and potentially activeUsersLast7d.",
+        "difficulty": "medium",
+        "risk": "low",
+        "rationale": "Current new user signups are zero, indicating a critical need for acquisition efforts. This directly addresses the most pressing problem identified."
+      },
+      {
+        "id": "ENG001",
+        "title": "Enhance Community Interaction Features",
+        "priority": 2,
+        "expectedEffect": "Increase commentsLast7d and potentially activeUsersLast7d.",
+        "difficulty": "medium",
+        "risk": "medium",
+        "rationale": "Zero comments in the last 7 days suggest a lack of engagement. Improving features that encourage discussion is vital for community building."
+      },
+      {
+        "id": "METRIC_ACTIVE_USERS",
+        "title": "Implement Active User and View Tracking",
+        "priority": 1,
+        "expectedEffect": "Enable accurate measurement of user engagement and content consumption, providing data for performance analysis and strategic improvements.",
+        "difficulty": "medium",
+        "risk": "medium",
+        "rationale": "The `activeUsersLast7d` and `viewsLast7d` metrics are currently null. Implementing robust tracking for these is fundamental for understanding user behavior and platform health."
+      },
+      {
+        "id": "user_acquisition_001",
+        "title": "신규 사용자 유입 채널 다각화 및 홍보 강화",
+        "priority": 1,
+        "expectedEffect": "신규 사용자 수 증가 및 플랫폼 인지도 향상",
+        "difficulty": "medium",
+        "risk": "low",
+        "rationale": "현재 신규 사용자 유입이 전혀 없는 상황이므로, 외부 홍보 및 파트너십 등을 통해 적극적인 사용자 확보 노력이 필요합니다."
+      },
+      {
+        "id": "community_engagement_001",
+        "title": "댓글 및 상호작용 활성화를 위한 기능 개선 및 이벤트 기획",
+        "priority": 2,
+        "expectedEffect": "사용자 간 소통 증진 및 커뮤니티 활성화",
+        "difficulty": "medium",
+        "risk": "medium",
+        "rationale": "댓글 수가 0인 점은 심각한 문제이며, 사용자들이 콘텐츠에 반응하고 소통할 수 있도록 댓글 기능 개선, 참여 유도 이벤트 등을 기획해야 합니다."
+      },
+      {
+        "id": "metric_tracking_001",
+        "title": "활성 사용자 및 조회수 관련 지표 측정 시스템 구축",
+        "priority": 4,
+        "expectedEffect": "정확한 사용자 활동 데이터 기반의 의사결정 지원",
+        "difficulty": "high",
+        "risk": "low",
+        "rationale": "activeUsersLast7d와 viewsLast7d가 null인 것은 데이터 기반의 서비스 개선을 불가능하게 합니다. 신뢰할 수 있는 지표 추적 시스템을 구축해야 합니다."
+      }
+    ],
+    "expectedUserEffect": "Increased user acquisition and engagement, leading to a more active community and better understanding of user behavior.",
+    "expectedDifficulty": "Medium",
+    "risk": "Medium",
+    "improvementEvidence": [],
+    "opinionDifferences": [],
+    "confidence": 0.9,
+    "needsFurtherVerification": [
+      "The effectiveness and feasibility of proposed improvements (e.g., ACQ001, ENG001, METRIC_ACTIVE_USERS, user_acquisition_001, community_engagement_001, metric_tracking_001) need to be verified once implemented and measured.",
+      "The specific impact and effectiveness of Gemini for 'LAB/news/fortune' integration.",
+      "The rationale behind the 'security' score of 60 by reviewer D.",
+      "The potential for mobile presence via Capacitor."
+    ],
+    "confirmedFacts": [
+      "The platform has zero new users in the last 7 days (`newUsersLast7d: 0`).",
+      "The platform has zero comments in the last 7 days (`commentsLast7d: 0`).",
+      "Active user and recent view metrics are null and not measured (`activeUsersLast7d: null`, `viewsLast7d: null`).",
+      "The platform utilizes a modern technology stack including Next.js 15, React 19, Prisma 7, and Gemini.",
+      "The platform has a large volume of posts (3369) but very low overall comment count (4).",
+      "The platform has a total of 14 users (`userCount: 14`).",
+      "The 'LOUNGE' category has the highest number of posts (3281)."
+    ],
+    "unknownMissingData": [
+      "Active user metrics (`activeUsersLast7d`) are null due to the absence of a reliable activity definition.",
+      "Recent view metrics (`viewsLast7d`) are null as only cumulative views are available.",
+      "Mobile UX metrics.",
+      "Accessibility metrics.",
+      "Details of AIsle's user acquisition strategy.",
+      "Metrics on user acquisition channels.",
+      "Information about 2025-2026 web trends and their specific metric requirements.",
+      "Data correlating current AIsle metrics to success in future trends.",
+      "Data on commentsLast7d for other corridors.",
+      "Data on other forms of interaction (likes, shares, etc.) for any corridor.",
+      "Definition or measurement of 'overall community interaction'."
+    ],
+    "hypotheses": [
+      "The platform's user acquisition strategy is ineffective.",
+      "The current data gaps create a significant gap for 2025-2026 web trends focused on user engagement and personalization."
+    ],
+    "disputedPoints": [],
+    "validatedImprovements": [],
+    "supportedClaims": [],
+    "partiallySupportedClaims": [],
+    "unsupportedHypothesisClaims": [],
+    "calibrationRevisionFindings": [
+      "Consistency: CONSISTENT=21, PARTIALLY_CONSISTENT=3, INCONSISTENT=3",
+      "UNKNOWN_AS_NEGATIVE_EVIDENCE: 2",
+      "SUPPORTED_FACT_UNNECESSARILY_DOWNGRADED: 3",
+      "CAUSAL_CLAIM_WITHOUT_EVIDENCE: 1",
+      "A/C003 INCONSISTENT: UNKNOWN_AS_NEGATIVE_EVIDENCE",
+      "A/C006 INCONSISTENT: UNKNOWN_AS_NEGATIVE_EVIDENCE",
+      "B/C001 PARTIALLY_CONSISTENT: DIRECT_FACT SUPPORTED claim weakened without clear need",
+      "B/C002 PARTIALLY_CONSISTENT: DIRECT_FACT SUPPORTED claim weakened without clear need",
+      "B/C003 PARTIALLY_CONSISTENT: DIRECT_FACT SUPPORTED claim weakened without clear need",
+      "B/C005 INCONSISTENT: CAUSAL_CLAIM_WITHOUT_EVIDENCE"
+    ],
+    "evidenceSemanticsFindings": [
+      "Evidence relations: DIRECTLY_SUPPORTS=22, UNKNOWN=1, DOES_NOT_SUPPORT=3, PARTIALLY_SUPPORTS=1",
+      "UNSUPPORTED_CAUSAL_CLAIM: 5",
+      "B/C001: UNSUPPORTED_CAUSAL_CLAIM",
+      "B/C002: UNSUPPORTED_CAUSAL_CLAIM",
+      "B/C003: UNSUPPORTED_CAUSAL_CLAIM",
+      "B/C004: UNSUPPORTED_CAUSAL_CLAIM",
+      "B/C005: UNSUPPORTED_CAUSAL_CLAIM"
+    ],
+    "directlySupportedClaims": [
+      "C001: 최근 7일간 신규 사용자 유입이 전혀 없어 사용자 확보에 심각한 문제가 있음을 시사합니다.",
+      "C002: 최근 7일간 댓글이 전혀 생성되지 않아 커뮤니티 참여가 매우 저조합니다.",
+      "C003: 최근 7일간 활성 사용자 수 및 조회수 관련 신뢰할 수 있는 지표가 없어 사용자 활동 수준을 파악할 수 없습니다.",
+      "C004: 최근 7일간 게시글 작성 수는 138건으로, 콘텐츠 생성 활동은 꾸준히 이루어지고 있습니다.",
+      "C005: 전체 회원 수는 14명으로, 소규모 커뮤니티를 형성하고 있습니다.",
+      "C002: There were no new user signups or comments created on the AIsle platform in the last 7 days.",
+      "C003: The AIsle platform utilizes a modern technology stack, including Next.js 15, React 19, Prisma 7, and Gemini for AI features.",
+      "C001: AIsle has zero new users and zero comments in the last 7 days, indicating a complete lack of recent user acquisition and interaction.",
+      "C002: Active user and recent view metrics are unavailable, preventing an assessment of current platform engagement and content consumption.",
+      "C003: Despite a low total user base (14 users), AIsle generates a consistent volume of new posts (138 in the last 7 days), primarily in the 'LOUNGE' category.",
+      "C004: AIsle's community engagement is severely lacking, evidenced by the complete absence of comments and the null status of active user and view metrics, suggesting a failure to foster interaction and content consumption.",
+      "C001: The AIsle platform utilizes a modern and robust web technology stack, including Next.js 15 App Router, React 19, Prisma 7, and PostgreSQL.",
+      "C002: The platform has zero new user signups and zero comments in the last 7 days, indicating a severe lack of recent user acquisition and interaction.",
+      "C003: Key engagement and content consumption metrics, specifically `activeUsersLast7d` and `viewsLast7d`, are not being measured.",
+      "C004: The platform integrates AI capabilities using Gemini for specific features.",
+      "C005: The platform has a large volume of posts but very low overall comment activity.",
+      "C006: The platform has a scalable infrastructure with Vercel hosting and PostgreSQL.",
+      "C001: 최근 7일 동안 신규 사용자 유입이 전혀 없었습니다.",
+      "C002: 최근 7일 동안 커뮤니티 활동(댓글)이 전혀 없었습니다.",
+      "C003: 최근 7일간의 활성 사용자 수와 조회수는 측정되지 않아 플랫폼의 현재 활동 수준을 파악할 수 없습니다.",
+      "C004: 최근 7일간의 게시글 작성 수가 전체 게시글 수에 비해 상대적으로 적습니다.",
+      "C005: 플랫폼의 대부분의 콘텐츠는 'LOUNGE' 카테고리에 집중되어 있습니다."
+    ],
+    "supportedInferences": [
+      "C004: AIsle's community engagement is severely lacking, evidenced by the complete absence of comments and the null status of active user and view metrics, suggesting a failure to foster interaction and content consumption.",
+      "C005: The platform's user acquisition strategy is ineffective, as indicated by zero new users in the last 7 days, despite the existence of multiple community corridors and AI features.",
+      "C005: The platform has a large volume of posts but very low overall comment activity.",
+      "C004: 최근 7일간의 게시글 작성 수가 전체 게시글 수에 비해 상대적으로 적습니다.",
+      "C005: 플랫폼의 대부분의 콘텐츠는 'LOUNGE' 카테고리에 집중되어 있습니다."
+    ],
+    "weakLimitedInferences": [
+      "C001: AIsle platform has a critical gap in measuring user engagement due to null values for activeUsersLast7d and viewsLast7d.",
+      "C004: The 'LOUNGE' corridor has the highest number of posts, but overall community interaction is minimal due to zero recent comments.",
+      "C005: AIsle's lack of measurable active users and recent content views poses a significant gap for 2025-2026 web trends focused on user engagement and personalization.",
+      "C005: The platform's user acquisition strategy is ineffective, as indicated by zero new users in the last 7 days, despite the existence of multiple community corridors and AI features."
+    ],
+    "revisionSummary": {
+      "unchanged": [],
+      "partial": [],
+      "full": [],
+      "confidenceShifts": [],
+      "claimSofteningFromEvidenceGap": [],
+      "herdingRisks": []
+    }
+  },
+  "budget": {
+    "maxCalls": 40,
+    "usedCalls": 27,
+    "estimatedCostUsd": 0.405,
+    "warnings": []
+  }
+}

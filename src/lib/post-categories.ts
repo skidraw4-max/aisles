@@ -1,0 +1,131 @@
+import type { Category } from '@prisma/client';
+import { defaultPostCategoryOptions } from '@/lib/ui-config-defaults';
+
+/** 메인 `?category=` 쿼리 (LAB ↔ Prisma RECIPE) */
+const HOME_QUERY_TO_CATEGORY: Record<string, Category> = {
+  LAB: 'RECIPE',
+  GALLERY: 'GALLERY',
+  LOUNGE: 'LOUNGE',
+  GOSSIP: 'GOSSIP',
+  BUILD: 'BUILD',
+  LAUNCH: 'LAUNCH',
+  TREND: 'TREND',
+  AI_FORTUNE: 'AI_FORTUNE',
+};
+
+export function parseHomeCategoryQuery(
+  raw: string | string[] | undefined | null
+): Category | null {
+  const v = Array.isArray(raw) ? raw[0] : raw;
+  if (!v || typeof v !== 'string') return null;
+  const k = v.trim().toUpperCase();
+  return HOME_QUERY_TO_CATEGORY[k] ?? null;
+}
+
+/** 메인 `?category=` 쿼리 문자열 (RECIPE → LAB) */
+export function categoryToHomeQuery(category: Category): string {
+  switch (category) {
+    case 'RECIPE':
+      return 'LAB';
+    case 'GALLERY':
+      return 'GALLERY';
+    case 'LOUNGE':
+      return 'LOUNGE';
+    case 'GOSSIP':
+      return 'GOSSIP';
+    case 'BUILD':
+      return 'BUILD';
+    case 'LAUNCH':
+      return 'LAUNCH';
+    case 'TREND':
+      return 'TREND';
+    case 'AI_FORTUNE':
+      return 'AI_FORTUNE';
+    default:
+      return 'GALLERY';
+  }
+}
+
+export function homeHrefForCategory(category: Category): string {
+  return `/?category=${categoryToHomeQuery(category)}`;
+}
+
+/** UI 라벨 ↔ Prisma `Post.category` (기본값은 시드와 동일; 런타임 동기화는 `corridorLabel` + DB) */
+export const POST_CATEGORY_OPTIONS: { value: Category; label: string }[] = defaultPostCategoryOptions();
+
+/** /upload 셀렉트 순서 (표시 라벨은 UI 설정 `corridor.*`와 동기화). AI_FORTUNE은 크론 전용. */
+export const UPLOAD_CATEGORY_ORDER: Category[] = [
+  'RECIPE',
+  'GALLERY',
+  'LOUNGE',
+  'GOSSIP',
+  'BUILD',
+  'LAUNCH',
+];
+
+const VALUES = new Set(POST_CATEGORY_OPTIONS.map((o) => o.value));
+const USER_UPLOAD_CATEGORIES = new Set<Category>(UPLOAD_CATEGORY_ORDER);
+
+export function parsePostCategory(raw: string | null | undefined): Category | null {
+  if (!raw || !VALUES.has(raw as Category)) return null;
+  return raw as Category;
+}
+
+/** 사용자 글쓰기·업로드 API — AI_FORTUNE 등 자동 게시 복도 제외 */
+export function parseUserUploadCategory(raw: string | null | undefined): Category | null {
+  const cat = parsePostCategory(raw);
+  if (!cat || !USER_UPLOAD_CATEGORIES.has(cat)) return null;
+  return cat;
+}
+
+/** 썸네일 없이 글 작성 가능 (제목 + 본문) — 커뮤니티 복도 */
+export function categoryAllowsOptionalThumbnail(category: Category): boolean {
+  return category === 'LOUNGE' || category === 'GOSSIP' || category === 'AI_FORTUNE';
+}
+
+/** LAB(RECIPE) 프롬프트 유형 — 이미지·비주얼 vs 마케팅·카피(텍스트) */
+export type LabPromptKind = 'visual' | 'marketing';
+
+export function labKindFromMetadataParams(params: unknown): LabPromptKind {
+  if (!params || typeof params !== 'object' || params === null) return 'visual';
+  const k = (params as { labPromptKind?: unknown }).labPromptKind;
+  return k === 'marketing' ? 'marketing' : 'visual';
+}
+
+/** 요청 본문의 labPromptKind — 없거나 형식이 아니면 null (기본값은 호출부에서 처리) */
+export function parseLabPromptKindFromBody(raw: unknown): LabPromptKind | null {
+  if (typeof raw !== 'string') return null;
+  const t = raw.trim();
+  if (t === 'marketing') return 'marketing';
+  if (t === 'visual') return 'visual';
+  return null;
+}
+
+/**
+ * LOUNGE/GOSSIP 또는 LAB에서 「마케팅·카피」 선택 시 대표 미디어 없이 저장 가능
+ */
+export function categoryAllowsOptionalMedia(
+  category: Category,
+  recipeLabKind?: LabPromptKind | null
+): boolean {
+  if (categoryAllowsOptionalThumbnail(category)) return true;
+  return category === 'RECIPE' && recipeLabKind === 'marketing';
+}
+
+/** 메인 피드: 퀘이사존식 한 줄 리스트 (LAB·GALLERY는 그리드) */
+export function isFeedBoardListCategory(category: Category | null): boolean {
+  return category === 'LOUNGE' || category === 'GOSSIP' || category === 'AI_FORTUNE';
+}
+
+const RECENT_SIDEBAR_HIDE_AUTHOR = new Set<Category>(['LOUNGE', 'AI_FORTUNE']);
+const FEED_HIDE_AUTHOR = new Set<Category>(['LOUNGE', 'AI_FORTUNE']);
+
+/** 우측 "최근 게시물" 사이드바 — 작성자 표시 생략 */
+export function shouldHideAuthorInRecentSidebar(category: Category): boolean {
+  return RECENT_SIDEBAR_HIDE_AUTHOR.has(category);
+}
+
+/** 메인 피드·보드 리스트 — BUILD/LAUNCH/GALLERY는 작성자 표시 */
+export function shouldHideAuthorInFeedList(category: Category): boolean {
+  return FEED_HIDE_AUTHOR.has(category);
+}

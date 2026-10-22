@@ -1,0 +1,52 @@
+/* BrickInvasion Design Tokens — Cute Cartoon Edition */
+:root {
+  /* Atmosphere — soft cozy night */
+  --bg-void: #12101c;
+  --bg-orbit: #1a1630;
+  --bg-panel: #241f3d;
+  --bg-panel-2: #2e2850;
+  --star: #ffe8a3;
+
+  /* Earth / Player — candy gold + soft cyan */
+  --plasma: #7af0ff;
+  --plasma-deep: #3ec7e8;
+  --plasma-glow: rgba(122, 240, 255, 0.4);
+  --cannon-gold: #ffd56a;
+  --cannon-metal: #f0a820;
+  --cannon-steel: #fff3c4;
+
+  /* Voidswarm — pastel candy enemies */
+  --swarm-1: #9dff5c;
+  --swarm-1-dark: #6ed635;
+  --swarm-2: #ff7eb3;
+  --swarm-2-dark: #ff4d8d;
+  --swarm-3: #ffb35a;
+  --swarm-3-dark: #ff9a3c;
+  --hive-core: #ff6b8a;
+  --hive-shell: #5a1d2c;
+  --hive-glow: rgba(255, 107, 138, 0.45);
+
+  /* Environment */
+  --wall: #9aabbe;
+  --wall-dark: #7e8fa5;
+  --wall-rivet: #c5d0de;
+
+  /* UI */
+  --text: #fff8ff;
+  --text-dim: #cbb8e8;
+  --danger: #ff6b8a;
+  --success: #9dff5c;
+  --locked: #3a3358;
+  --border: rgba(122, 240, 255, 0.28);
+  --blush: #ff9ab5;
+
+  /* Type — rounded friendly */
+  --font-display: "Nunito", "Noto Sans KR", "Segoe UI", sans-serif;
+  --font-body: "Nunito", "Noto Sans KR", "Segoe UI", sans-serif;
+
+  /* Layout */
+  --phone-w: 390px;
+  --phone-h: 780px;
+  --radius: 22px;
+  --hud-h: 60px;
+}

@@ -1,0 +1,43 @@
+.snackbar {
+  position: fixed;
+  z-index: 85;
+  left: 50%;
+  bottom: 1.25rem;
+  transform: translateX(-50%) translateY(120%);
+  width: min(calc(100% - 2rem), 520px);
+  padding: 0.9rem 1rem;
+  border-radius: 12px;
+  background: linear-gradient(145deg, #1a1f28 0%, #12161d 100%);
+  border: 1px solid rgba(167, 139, 250, 0.25);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.45);
+  font-size: 0.9rem;
+  line-height: 1.45;
+  color: #e4e4e7;
+  opacity: 0;
+  transition:
+    transform 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.snackbarOpen {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.loginLink {
+  margin-left: 0.35rem;
+  padding: 0;
+  border: none;
+  background: none;
+  color: #c4b5fd;
+  font: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.loginLink:hover {
+  color: #ddd6fe;
+}

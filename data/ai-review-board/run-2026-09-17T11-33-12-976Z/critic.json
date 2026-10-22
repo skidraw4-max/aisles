@@ -1,0 +1,240 @@
+{
+  "factVsSpeculationOk": false,
+  "evidenceSufficient": false,
+  "scoresWithoutEvidence": [
+    "A:visual",
+    "A:web_tech",
+    "A:performance",
+    "A:a11y",
+    "A:content",
+    "A:ai_usage",
+    "A:competitive",
+    "A:seo",
+    "A:geo",
+    "A:security",
+    "A:scalability",
+    "B:ui_ux",
+    "B:visual",
+    "B:mobile",
+    "B:performance",
+    "B:a11y",
+    "B:usability",
+    "B:content",
+    "B:competitive",
+    "B:seo",
+    "B:geo",
+    "B:security",
+    "B:scalability",
+    "C:ui_ux",
+    "C:visual",
+    "C:mobile",
+    "C:web_tech",
+    "C:performance",
+    "C:a11y",
+    "C:usability",
+    "C:ai_usage",
+    "C:retention",
+    "C:seo",
+    "C:geo",
+    "C:security",
+    "C:scalability",
+    "D:ui_ux",
+    "D:visual",
+    "D:mobile",
+    "D:a11y",
+    "D:usability",
+    "D:content",
+    "D:competitive",
+    "D:acquisition",
+    "D:retention",
+    "D:seo",
+    "D:geo",
+    "E:ui_ux",
+    "E:visual",
+    "E:mobile",
+    "E:web_tech",
+    "E:performance",
+    "E:a11y",
+    "E:ai_usage",
+    "E:competitive",
+    "E:seo",
+    "E:geo",
+    "E:security",
+    "E:scalability"
+  ],
+  "herdingDetected": false,
+  "dominantMemberInfluence": "A",
+  "trendEvidenceOk": false,
+  "userBenefitLikely": false,
+  "existingFeatureRisk": false,
+  "overEngineering": false,
+  "notes": [
+    "Member A's claims C003 and C006 use the absence of data (null values, missing metrics) as direct evidence. While this is a valid observation, it's flagged as 'unknownAsEvidenceFlags' to highlight that the absence of data is being treated as affirmative proof of inability to assess.",
+    "Member B's claim C004 infers 'minimal community interaction' from zero comments, which is a causal leap. Claim C005 makes a causal leap linking current data gaps to future trends, which is unsupported.",
+    "Member C's claim C005 infers an 'ineffective user acquisition strategy' from zero new users, which is a causal leap.",
+    "All members correctly identify the critical lack of new users and comments, and the null status of active users and recent views. The primary divergence lies in the strength of inferences drawn from this data, particularly regarding causal links and future impacts.",
+    "v6 consistency: consistent=21 partial=3 inconsistent=3",
+    "v7 semantics: flaggedClaims=5 mismatch=0 unknownNeg=0"
+  ],
+  "confidence": 0.85,
+  "revisionIntegrity": {
+    "ok": true,
+    "flags": []
+  },
+  "evidenceGrounding": {
+    "ok": true,
+    "flags": []
+  },
+  "overclaiming": {
+    "ok": false,
+    "flags": [
+      "B:C005:overclaim_risk"
+    ]
+  },
+  "herding": {
+    "ok": true,
+    "flags": []
+  },
+  "confidenceIntegrity": {
+    "ok": true,
+    "flags": []
+  },
+  "fabrication": {
+    "ok": true,
+    "flags": []
+  },
+  "statusConsistency": {
+    "ok": true,
+    "flags": []
+  },
+  "claimCalibrationIntegrity": {
+    "ok": true,
+    "flags": []
+  },
+  "evidenceMappingIntegrity": {
+    "ok": true,
+    "flags": []
+  },
+  "unsupportedClaimFlags": {
+    "ok": false,
+    "flags": []
+  },
+  "overclaimingFlags": {
+    "ok": false,
+    "flags": [
+      "B:C005:overclaim_risk"
+    ]
+  },
+  "unknownAsEvidenceFlags": {
+    "ok": false,
+    "flags": [
+      "A:C003:unknown_as_evidence",
+      "A:C006:unknown_as_evidence",
+      "A:C003:UNKNOWN_AS_NEGATIVE_EVIDENCE",
+      "A:C006:UNKNOWN_AS_NEGATIVE_EVIDENCE"
+    ]
+  },
+  "causalClaimWithoutEvidenceFlags": {
+    "ok": false,
+    "flags": [
+      "B:C005:CAUSAL_CLAIM_WITHOUT_EVIDENCE",
+      "B:C001:UNSUPPORTED_CAUSAL_CLAIM",
+      "B:C002:UNSUPPORTED_CAUSAL_CLAIM",
+      "B:C003:UNSUPPORTED_CAUSAL_CLAIM",
+      "B:C004:UNSUPPORTED_CAUSAL_CLAIM",
+      "B:C005:UNSUPPORTED_CAUSAL_CLAIM"
+    ]
+  },
+  "confidenceCalibrationFlags": {
+    "ok": false,
+    "flags": []
+  },
+  "herdingFlags": {
+    "ok": false,
+    "flags": []
+  },
+  "calibrationRevisionIntegrity": {
+    "status": "FAIL",
+    "issues": [
+      "A/C003: INCONSISTENT [UNKNOWN_AS_NEGATIVE_EVIDENCE] — UNKNOWN_AS_NEGATIVE_EVIDENCE",
+      "A/C006: INCONSISTENT [UNKNOWN_AS_NEGATIVE_EVIDENCE] — UNKNOWN_AS_NEGATIVE_EVIDENCE",
+      "B/C001: PARTIALLY_CONSISTENT [SUPPORTED_FACT_UNNECESSARILY_DOWNGRADED] — DIRECT_FACT SUPPORTED claim weakened without clear need",
+      "B/C002: PARTIALLY_CONSISTENT [SUPPORTED_FACT_UNNECESSARILY_DOWNGRADED] — DIRECT_FACT SUPPORTED claim weakened without clear need",
+      "B/C003: PARTIALLY_CONSISTENT [SUPPORTED_FACT_UNNECESSARILY_DOWNGRADED] — DIRECT_FACT SUPPORTED claim weakened without clear need",
+      "B/C005: INCONSISTENT [CAUSAL_CLAIM_WITHOUT_EVIDENCE] — CAUSAL_CLAIM_WITHOUT_EVIDENCE"
+    ],
+    "summary": "consistent=21 partial=3 inconsistent=3"
+  },
+  "calibrationRevisionMismatchFlags": {
+    "ok": true,
+    "flags": []
+  },
+  "overclaimRetainedFlags": {
+    "ok": true,
+    "flags": []
+  },
+  "unjustifiedConfidenceFlags": {
+    "ok": true,
+    "flags": []
+  },
+  "majorityDrivenRevisionFlags": {
+    "ok": true,
+    "flags": []
+  },
+  "evidenceSemanticsIntegrity": {
+    "status": "FAIL",
+    "issues": [
+      "B/C001: [UNSUPPORTED_CAUSAL_CLAIM] Causal claim lacks direct causal evidence in pack",
+      "B/C002: [UNSUPPORTED_CAUSAL_CLAIM] No strong pattern match; relation unknown",
+      "B/C003: [UNSUPPORTED_CAUSAL_CLAIM] No strong pattern match; relation unknown",
+      "B/C004: [UNSUPPORTED_CAUSAL_CLAIM] Causal claim lacks direct causal evidence in pack",
+      "B/C005: [UNSUPPORTED_CAUSAL_CLAIM] No strong pattern match; relation unknown"
+    ],
+    "summary": "flaggedClaims=5 mismatch=0 unknownNeg=0"
+  },
+  "evidenceClaimSemanticMismatchFlags": {
+    "ok": true,
+    "flags": []
+  },
+  "absenceOfEvidenceAsAbsenceFlags": {
+    "ok": true,
+    "flags": []
+  },
+  "unsupportedCausalClaimFlags": {
+    "ok": false,
+    "flags": [
+      "B:C001:UNSUPPORTED_CAUSAL_CLAIM",
+      "B:C002:UNSUPPORTED_CAUSAL_CLAIM",
+      "B:C003:UNSUPPORTED_CAUSAL_CLAIM",
+      "B:C004:UNSUPPORTED_CAUSAL_CLAIM",
+      "B:C005:UNSUPPORTED_CAUSAL_CLAIM"
+    ]
+  },
+  "unsupportedRelativeClaimFlags": {
+    "ok": true,
+    "flags": []
+  },
+  "unsupportedTimeTrendFlags": {
+    "ok": true,
+    "flags": []
+  },
+  "unsupportedLeapFlags": {
+    "ok": true,
+    "flags": []
+  },
+  "contextMistakenAsEvidenceFlags": {
+    "ok": true,
+    "flags": []
+  },
+  "peerOpinionAsEvidenceFlags": {
+    "ok": true,
+    "flags": []
+  },
+  "unknownAsNegativeEvidenceFlags": {
+    "ok": false,
+    "flags": [
+      "A:C003:UNKNOWN_AS_NEGATIVE_EVIDENCE",
+      "A:C006:UNKNOWN_AS_NEGATIVE_EVIDENCE"
+    ]
+  }
+}

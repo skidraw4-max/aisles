@@ -1,0 +1,8 @@
+node_modules/
+.gradle/
+local.properties
+
+# Release signing (never commit)
+*.jks
+*.keystore
+key.properties

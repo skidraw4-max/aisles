@@ -1,0 +1,174 @@
+/* 홈 히어로 캐러셀 — 텍스트+QR 2열 레이아웃 (타이포는 page.module.css 공유) */
+.heroSlideLayout {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  height: 100%;
+  min-height: 0;
+}
+
+.heroSlideMain {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+}
+
+@media (min-width: 640px) {
+  .heroSlideLayout {
+    flex-direction: row;
+    align-items: stretch;
+    gap: 1rem;
+  }
+
+  .heroQrCol {
+    display: flex;
+  }
+}
+
+.heroQrCol {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  align-self: center;
+}
+
+.heroQrLink {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  color: inherit;
+  border-radius: 8px;
+  padding: 0.35rem;
+  background: #fff;
+  transition: box-shadow 0.2s ease;
+}
+
+.heroQrLink:hover {
+  box-shadow: 0 0 0 2px rgba(167, 139, 250, 0.55);
+}
+
+.heroQrCaption {
+  margin: 0.3rem 0 0;
+  font-size: var(--type-11);
+  color: #a1a1aa;
+  text-align: center;
+}
+
+/* NoticeBar 등 좁은 영역용 배너 */
+.banner {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: 0;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+}
+
+@media (min-width: 768px) {
+  .banner {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    padding: 1.35rem 1.5rem;
+  }
+}
+
+.textCol {
+  min-width: 0;
+  flex: 1;
+}
+
+.badge {
+  display: inline-block;
+  margin: 0 0 0.5rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-size: var(--type-11);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #e9d5ff;
+  background: rgba(124, 58, 237, 0.25);
+  border: 1px solid rgba(167, 139, 250, 0.4);
+}
+
+.headline {
+  margin: 0 0 0.45rem;
+  font-size: var(--type-18);
+  font-weight: 700;
+  line-height: 1.35;
+  color: #fafafa;
+  letter-spacing: -0.02em;
+}
+
+.body {
+  margin: 0 0 0.35rem;
+  font-size: var(--type-14);
+  line-height: 1.55;
+  color: var(--muted);
+}
+
+.sub {
+  margin: 0 0 0.85rem;
+  font-size: var(--type-13);
+  line-height: 1.45;
+  color: #a1a1aa;
+}
+
+.cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.65rem 1.15rem;
+  border-radius: 999px;
+  font-size: var(--type-14);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  text-decoration: none;
+  color: #0b0d17;
+  background: linear-gradient(135deg, #ddd6fe 0%, #a78bfa 42%, #7c3aed 100%);
+  box-shadow: 0 4px 18px rgba(124, 58, 237, 0.28);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.cta:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 22px rgba(124, 58, 237, 0.38);
+}
+
+.qrCol {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.qrLink {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-decoration: none;
+  color: inherit;
+  border-radius: 10px;
+  padding: 0.5rem;
+  background: #fff;
+  transition: box-shadow 0.2s ease;
+}
+
+.qrLink:hover {
+  box-shadow: 0 0 0 2px rgba(167, 139, 250, 0.55);
+}
+
+.qrCaption {
+  margin: 0.45rem 0 0;
+  font-size: var(--type-12);
+  color: #a1a1aa;
+  text-align: center;
+}

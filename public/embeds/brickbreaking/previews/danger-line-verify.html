@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DANGER Line Verify v4.4</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background: #03050d;
+      font-family: Inter, Arial, sans-serif;
+      color: #fff;
+    }
+    .wrap { display: flex; gap: 24px; align-items: flex-start; padding: 24px; flex-wrap: wrap; justify-content: center; }
+    .panel { text-align: center; }
+    .panel h2 { font-size: 14px; color: #72f6ff; margin: 0 0 8px; }
+    canvas {
+      border-radius: 28px;
+      box-shadow: 0 0 0 1px rgba(255,255,255,0.08);
+    }
+    .legend {
+      margin-top: 12px;
+      font-size: 12px;
+      color: #aebbf0;
+      line-height: 1.6;
+      text-align: left;
+    }
+    .legend strong { color: #ff7f9f; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="panel">
+      <h2>변경 전 (Y=584)</h2>
+      <canvas id="before" width="390" height="844"></canvas>
+    </div>
+    <div class="panel">
+      <h2>변경 후 v4.4 (Y=668)</h2>
+      <canvas id="after" width="390" height="844"></canvas>
+      <div class="legend">
+        <div><strong>DANGER</strong> 라인 아래로 블록이 내려오면 게임 종료</div>
+        <div>패들 Y=752 · 플레이 상단 Y=24</div>
+        <div>아래 여백(168px)의 절반만큼(84px) 아래로 이동</div>
+      </div>
+    </div>
+  </div>
+  <script>
+    const GAME_WIDTH = 390;
+    const GAME_HEIGHT = 844;
+    const PADDLE_Y = 752;
+    const PLAY_TOP = 24;
+    const DIFFICULTY_EASE = 2;
+    const legacyLineY = PADDLE_Y - Math.round(84 * DIFFICULTY_EASE);
+    const spaceAbove = legacyLineY - PLAY_TOP;
+    const spaceBelow = PADDLE_Y - legacyLineY;
+    const newLineY = Math.round(legacyLineY + Math.min(spaceAbove, spaceBelow) / 2);
+
+    function drawScene(canvas, dangerY, label) {
+      const ctx = canvas.getContext("2d");
+      ctx.fillStyle = "#070a14";
+      ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+
+      const grad = ctx.createRadialGradient(GAME_WIDTH / 2, 88, 0, GAME_WIDTH / 2, 88, 260);
+      grad.addColorStop(0, "rgba(44,125,255,0.44)");
+      grad.addColorStop(1, "rgba(7,10,20,0)");
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+
+      ctx.strokeStyle = "rgba(255,255,255,0.08)";
+      ctx.lineWidth = 1;
+      ctx.strokeRect(18, 18, GAME_WIDTH - 36, GAME_HEIGHT - 58, 28);
+
+      ctx.fillStyle = "rgba(255,255,255,0.04)";
+      for (let row = 0; row < 3; row += 1) {
+        for (let col = 0; col < 5; col += 1) {
+          const x = 36 + col * 71;
+          const y = 132 + row * 38;
+          ctx.fillStyle = ["#ff6b4a", "#72f6ff", "#ffcf5a", "#a879ff", "#5cff9d"][col];
+          ctx.globalAlpha = 0.85;
+          roundRect(ctx, x, y, 62, 28, 6);
+          ctx.fill();
+        }
+      }
+      ctx.globalAlpha = 1;
+
+      ctx.strokeStyle = "rgba(255,77,94,0.72)";
+      ctx.lineWidth = 2;
+      for (let x = 30; x < GAME_WIDTH - 30; x += 18) {
+        ctx.beginPath();
+        ctx.moveTo(x, dangerY);
+        ctx.lineTo(x + 9, dangerY);
+        ctx.stroke();
+      }
+
+      ctx.fillStyle = "#ff7f9f";
+      ctx.font = "bold 11px Inter, Arial";
+      ctx.textAlign = "right";
+      ctx.fillText("DANGER", GAME_WIDTH - 32, dangerY - 8);
+
+      ctx.fillStyle = "#ff4d5e";
+      ctx.font = "bold 10px Inter, Arial";
+      ctx.textAlign = "left";
+      ctx.fillText(`Y=${dangerY}`, 30, dangerY - 8);
+
+      ctx.fillStyle = "#72f6ff";
+      ctx.fillRect(131, PADDLE_Y - 12, 128, 24);
+      ctx.fillStyle = "#fff";
+      ctx.font = "10px Inter, Arial";
+      ctx.textAlign = "center";
+      ctx.fillText("PADDLE", GAME_WIDTH / 2, PADDLE_Y + 4);
+
+      ctx.fillStyle = "rgba(255,207,90,0.15)";
+      ctx.fillRect(18, dangerY, GAME_WIDTH - 36, PADDLE_Y - dangerY - 12);
+
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "900 18px Inter, Arial";
+      ctx.textAlign = "center";
+      ctx.fillText("Infinite Mode", GAME_WIDTH / 2, 28);
+      ctx.fillStyle = "#aebbf0";
+      ctx.font = "12px Inter, Arial";
+      ctx.fillText(label, GAME_WIDTH / 2, 52);
+    }
+
+    function roundRect(ctx, x, y, w, h, r) {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.arcTo(x + w, y, x + w, y + h, r);
+      ctx.arcTo(x + w, y + h, x, y + h, r);
+      ctx.arcTo(x, y + h, x, y, r);
+      ctx.arcTo(x, y, x + w, y, r);
+      ctx.closePath();
+    }
+
+    drawScene(document.getElementById("before"), legacyLineY, "기존 위치 (너무 위쪽)");
+    drawScene(document.getElementById("after"), newLineY, "수정 위치 · v4.4");
+  </script>
+</body>
+</html>

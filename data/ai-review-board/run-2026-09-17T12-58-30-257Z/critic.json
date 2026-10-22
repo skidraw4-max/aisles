@@ -1,0 +1,392 @@
+{
+  "factVsSpeculationOk": false,
+  "evidenceSufficient": false,
+  "scoresWithoutEvidence": [
+    "A:web_tech",
+    "A:performance",
+    "A:usability",
+    "A:content",
+    "A:competitive",
+    "A:seo",
+    "A:geo",
+    "A:security",
+    "A:scalability",
+    "B:ui_ux",
+    "B:visual",
+    "B:mobile",
+    "B:a11y",
+    "B:usability",
+    "B:content",
+    "B:competitive",
+    "B:security",
+    "B:scalability",
+    "C:ui_ux",
+    "C:visual",
+    "C:mobile",
+    "C:web_tech",
+    "C:performance",
+    "C:a11y",
+    "C:usability",
+    "C:retention",
+    "C:seo",
+    "C:geo",
+    "C:security",
+    "C:scalability",
+    "D:ui_ux",
+    "D:visual",
+    "D:mobile",
+    "D:a11y",
+    "D:usability",
+    "D:content",
+    "D:ai_usage",
+    "D:competitive",
+    "D:geo",
+    "E:ui_ux",
+    "E:visual",
+    "E:mobile",
+    "E:web_tech",
+    "E:performance",
+    "E:a11y",
+    "E:ai_usage",
+    "E:competitive",
+    "E:seo",
+    "E:geo",
+    "E:security",
+    "E:scalability"
+  ],
+  "herdingDetected": false,
+  "dominantMemberInfluence": "No single member appears to have dominant influence, as all reviewers largely agree on the core problems and their individual claims are subject to calibration and debate.",
+  "trendEvidenceOk": false,
+  "userBenefitLikely": true,
+  "existingFeatureRisk": false,
+  "overEngineering": false,
+  "notes": [
+    "The `unknown_ref` flags in `evidenceGrounding` and `evidenceMappingIntegrity` appear to be a systemic issue with the precomputed flags, as the `evidenceRefs` provided by reviewers generally map to valid paths in the `EvidencePack` (e.g., `aggregates.newUsersLast7d` vs `newUsersLast7d`). This should be investigated in the flag generation process.",
+    "The `FABRICATED_EVIDENCE_REF` flags for Reviewers B and D also seem to stem from this `evidenceRefs` formatting discrepancy, rather than actual fabrication, given the context.",
+    "Reviewer B's `C003` was initially misclassified by the original semantic analysis as `DOES_NOT_SUPPORT` when it actually `DIRECTLY_SUPPORTS` the claim about inability to measure. The judge correctly identified this, leading to a `CALIBRATION_JUDGE_CONFLICT`.",
+    "Reviewer B's `trendGap` mentions '2025-2026 웹 트렌드' without providing any evidence for these trends, which is an unsupported claim about external trends.",
+    "Reviewer E's decision to remain `UNCHANGED` despite a `CALIBRATION_JUDGE_CONFLICT` and a `REWORD` recommendation for `C005` indicates a disagreement with the judge's recommended action, even if the semantic leap was acknowledged. This is flagged as `CALIBRATION_JUDGE_CONFLICT_WITH_UNCHANGED_STATUS` in `statusConsistency`.",
+    "v6 consistency: consistent=29 partial=0 inconsistent=0",
+    "v7 semantics: flaggedClaims=1 mismatch=0 unknownNeg=0",
+    "v8 judge: leaps=7 mismatch=1 unknownNeg=3"
+  ],
+  "confidence": 0.8,
+  "revisionIntegrity": {
+    "ok": true,
+    "flags": []
+  },
+  "evidenceGrounding": {
+    "ok": false,
+    "flags": [
+      "A:C001:unknown_ref:aggregates.newUsersLast7d",
+      "A:C001:unknown_ref:aggregates.commentsLast7d",
+      "A:C002:unknown_ref:aggregates.activeUsersLast7d",
+      "A:C002:unknown_ref:aggregates.viewsLast7d",
+      "A:C002:unknown_ref:metricDefinitions.activeUsersLast7d",
+      "A:C002:unknown_ref:metricDefinitions.viewsLast7d",
+      "A:C003:unknown_ref:aggregates.postsByCategory.LOUNGE",
+      "A:C003:unknown_ref:aggregates.postCount",
+      "A:C004:unknown_ref:aggregates.commentCount",
+      "A:C005:unknown_ref:aggregates.newUsersLast7d",
+      "A:C005:unknown_ref:aggregates.commentsLast7d",
+      "B:C003:direct_fact_on_null_metric",
+      "B:C006:unknown_ref:stackNotes",
+      "C:C001:unknown_ref:aggregates.newUsersLast7d",
+      "C:C002:unknown_ref:aggregates.activeUsersLast7d",
+      "C:C003:unknown_ref:aggregates.commentsLast7d",
+      "C:C004:unknown_ref:aggregates.viewsLast7d",
+      "C:C005:unknown_ref:site.stackNotes",
+      "C:C006:unknown_ref:aggregates.postsByCategory",
+      "D:C001:unknown_ref:newUsersLast7d: 0",
+      "D:C001:unknown_ref:commentsLast7d: 0",
+      "D:C002:unknown_ref:activeUsersLast7d: null",
+      "D:C002:unknown_ref:viewsLast7d: null",
+      "D:C003:unknown_ref:Next.js 15 App Router + React 19",
+      "D:C003:unknown_ref:Prisma 7 + PostgreSQL (Supabase Auth)",
+      "D:C004:unknown_ref:postsByCategory: {\"LOUNGE\": 3284, ...}",
+      "D:C005:unknown_ref:Capacitor mobile shell",
+      "D:C006:unknown_ref:commentCount: 4",
+      "E:C001:unknown_ref:aggregates.newUsersLast7d",
+      "E:C002:unknown_ref:aggregates.commentsLast7d",
+      "E:C003:unknown_ref:aggregates.commentCount",
+      "E:C004:unknown_ref:aggregates.activeUsersLast7d",
+      "E:C004:unknown_ref:aggregates.viewsLast7d",
+      "E:C005:unknown_ref:aggregates.postsLast7d",
+      "E:C005:unknown_ref:aggregates.newUsersLast7d",
+      "E:C005:unknown_ref:aggregates.commentsLast7d",
+      "E:C006:unknown_ref:aggregates.userCount"
+    ]
+  },
+  "overclaiming": {
+    "ok": false,
+    "flags": [
+      "A:C005:semantic_leap:FACT_TO_CAUSALITY",
+      "B:C004:semantic_leap:UNKNOWN_AS_NEGATIVE_EVIDENCE",
+      "C:C006:semantic_leap:FACT_TO_GLOBAL_CONCLUSION",
+      "D:C001:semantic_leap:UNKNOWN_AS_NEGATIVE_EVIDENCE",
+      "D:C003:semantic_leap:TECH_STACK_TO_QUALITY",
+      "D:C006:semantic_leap:UNKNOWN_AS_NEGATIVE_EVIDENCE",
+      "E:C005:semantic_leap:FACT_TO_CAUSALITY"
+    ]
+  },
+  "herding": {
+    "ok": true,
+    "flags": []
+  },
+  "confidenceIntegrity": {
+    "ok": true,
+    "flags": []
+  },
+  "fabrication": {
+    "ok": false,
+    "flags": [
+      "B:C001:FABRICATED_EVIDENCE_REF",
+      "B:C002:FABRICATED_EVIDENCE_REF",
+      "B:C003:FABRICATED_EVIDENCE_REF",
+      "B:C004:FABRICATED_EVIDENCE_REF",
+      "B:C005:FABRICATED_EVIDENCE_REF",
+      "B:C006:FABRICATED_EVIDENCE_REF",
+      "D:C001:FABRICATED_EVIDENCE_REF",
+      "D:C002:FABRICATED_EVIDENCE_REF",
+      "D:C003:FABRICATED_EVIDENCE_REF",
+      "D:C004:FABRICATED_EVIDENCE_REF",
+      "D:C005:FABRICATED_EVIDENCE_REF",
+      "D:C006:FABRICATED_EVIDENCE_REF"
+    ]
+  },
+  "statusConsistency": {
+    "ok": false,
+    "flags": [
+      "E:C005:CALIBRATION_JUDGE_CONFLICT_WITH_UNCHANGED_STATUS"
+    ]
+  },
+  "claimCalibrationIntegrity": {
+    "ok": false,
+    "flags": [
+      "B:C003:CALIBRATION_JUDGE_CONFLICT",
+      "B:C004:JUDGE_STRICTER",
+      "E:C005:CALIBRATION_JUDGE_CONFLICT"
+    ]
+  },
+  "evidenceMappingIntegrity": {
+    "ok": false,
+    "flags": [
+      "A:C001:unknown_ref:aggregates.newUsersLast7d",
+      "A:C001:unknown_ref:aggregates.commentsLast7d",
+      "A:C002:unknown_ref:aggregates.activeUsersLast7d",
+      "A:C002:unknown_ref:aggregates.viewsLast7d",
+      "A:C002:unknown_ref:metricDefinitions.activeUsersLast7d",
+      "A:C002:unknown_ref:metricDefinitions.viewsLast7d",
+      "A:C003:unknown_ref:aggregates.postsByCategory.LOUNGE",
+      "A:C003:unknown_ref:aggregates.postCount",
+      "A:C004:unknown_ref:aggregates.commentCount",
+      "A:C005:unknown_ref:aggregates.newUsersLast7d",
+      "A:C005:unknown_ref:aggregates.commentsLast7d",
+      "B:C006:unknown_ref:stackNotes",
+      "C:C001:unknown_ref:aggregates.newUsersLast7d",
+      "C:C002:unknown_ref:aggregates.activeUsersLast7d",
+      "C:C003:unknown_ref:aggregates.commentsLast7d",
+      "C:C004:unknown_ref:aggregates.viewsLast7d",
+      "C:C005:unknown_ref:site.stackNotes",
+      "C:C006:unknown_ref:aggregates.postsByCategory",
+      "D:C001:unknown_ref:newUsersLast7d: 0",
+      "D:C001:unknown_ref:commentsLast7d: 0",
+      "D:C002:unknown_ref:activeUsersLast7d: null",
+      "D:C002:unknown_ref:viewsLast7d: null",
+      "D:C003:unknown_ref:Next.js 15 App Router + React 19",
+      "D:C003:unknown_ref:Prisma 7 + PostgreSQL (Supabase Auth)",
+      "D:C004:unknown_ref:postsByCategory: {\"LOUNGE\": 3284, ...}",
+      "D:C005:unknown_ref:Capacitor mobile shell",
+      "D:C006:unknown_ref:commentCount: 4",
+      "E:C001:unknown_ref:aggregates.newUsersLast7d",
+      "E:C002:unknown_ref:aggregates.commentsLast7d",
+      "E:C003:unknown_ref:aggregates.commentCount",
+      "E:C004:unknown_ref:aggregates.activeUsersLast7d",
+      "E:C004:unknown_ref:aggregates.viewsLast7d",
+      "E:C005:unknown_ref:aggregates.postsLast7d",
+      "E:C005:unknown_ref:aggregates.newUsersLast7d",
+      "E:C005:unknown_ref:aggregates.commentsLast7d",
+      "E:C006:unknown_ref:aggregates.userCount"
+    ]
+  },
+  "unsupportedClaimFlags": {
+    "ok": true,
+    "flags": []
+  },
+  "overclaimingFlags": {
+    "ok": false,
+    "flags": [
+      "A:C005:overclaiming",
+      "B:C004:overclaiming",
+      "C:C006:overclaiming",
+      "D:C001:overclaiming",
+      "D:C003:overclaiming",
+      "D:C006:overclaiming",
+      "E:C005:overclaiming"
+    ]
+  },
+  "unknownAsEvidenceFlags": {
+    "ok": false,
+    "flags": [
+      "B:C004:unknown_as_negative_evidence",
+      "D:C001:unknown_as_negative_evidence",
+      "D:C006:unknown_as_negative_evidence",
+      "B:C004",
+      "D:C001",
+      "D:C006"
+    ]
+  },
+  "causalClaimWithoutEvidenceFlags": {
+    "ok": false,
+    "flags": [
+      "A:C005:causal_claim_without_evidence",
+      "E:C005:causal_claim_without_evidence",
+      "B:C003:UNSUPPORTED_CAUSAL_CLAIM",
+      "A:C005",
+      "E:C005"
+    ]
+  },
+  "confidenceCalibrationFlags": {
+    "ok": true,
+    "flags": []
+  },
+  "herdingFlags": {
+    "ok": true,
+    "flags": []
+  },
+  "calibrationRevisionIntegrity": {
+    "status": "PASS",
+    "issues": [],
+    "summary": "consistent=29 partial=0 inconsistent=0"
+  },
+  "calibrationRevisionMismatchFlags": {
+    "ok": true,
+    "flags": []
+  },
+  "overclaimRetainedFlags": {
+    "ok": true,
+    "flags": []
+  },
+  "unjustifiedConfidenceFlags": {
+    "ok": true,
+    "flags": []
+  },
+  "majorityDrivenRevisionFlags": {
+    "ok": true,
+    "flags": []
+  },
+  "evidenceSemanticsIntegrity": {
+    "status": "FAIL",
+    "issues": [
+      "B/C003: [UNSUPPORTED_CAUSAL_CLAIM] Causal claim lacks direct causal evidence in pack"
+    ],
+    "summary": "flaggedClaims=1 mismatch=0 unknownNeg=0"
+  },
+  "evidenceClaimSemanticMismatchFlags": {
+    "ok": true,
+    "flags": []
+  },
+  "absenceOfEvidenceAsAbsenceFlags": {
+    "ok": true,
+    "flags": []
+  },
+  "unsupportedCausalClaimFlags": {
+    "ok": false,
+    "flags": [
+      "B:C003:UNSUPPORTED_CAUSAL_CLAIM"
+    ]
+  },
+  "unsupportedRelativeClaimFlags": {
+    "ok": true,
+    "flags": []
+  },
+  "unsupportedTimeTrendFlags": {
+    "ok": true,
+    "flags": []
+  },
+  "unsupportedLeapFlags": {
+    "ok": true,
+    "flags": []
+  },
+  "contextMistakenAsEvidenceFlags": {
+    "ok": true,
+    "flags": []
+  },
+  "peerOpinionAsEvidenceFlags": {
+    "ok": true,
+    "flags": []
+  },
+  "semanticJudgeIntegrity": {
+    "status": "FAIL",
+    "issues": [
+      "A:C005:FACT_TO_CAUSALITY",
+      "B:C004:UNKNOWN_AS_NEGATIVE_EVIDENCE",
+      "C:C006:FACT_TO_GLOBAL_CONCLUSION",
+      "D:C001:UNKNOWN_AS_NEGATIVE_EVIDENCE",
+      "D:C003:TECH_STACK_TO_QUALITY",
+      "D:C006:UNKNOWN_AS_NEGATIVE_EVIDENCE",
+      "E:C005:FACT_TO_CAUSALITY",
+      "A/C005: CAUSAL_LEAP_RETAINED",
+      "B/C004: UNKNOWN_NEGATIVE_EVIDENCE",
+      "D/C001: UNKNOWN_NEGATIVE_EVIDENCE",
+      "D/C006: UNKNOWN_NEGATIVE_EVIDENCE",
+      "E/C005: JUDGE_REVISION_MISMATCH, CAUSAL_LEAP_RETAINED"
+    ],
+    "summary": "leaps=7 mismatch=1 unknownNeg=3"
+  },
+  "falsePositiveFlags": {
+    "ok": true,
+    "flags": []
+  },
+  "falseNegativeFlags": {
+    "ok": true,
+    "flags": []
+  },
+  "semanticLeapFlags": {
+    "ok": false,
+    "flags": [
+      "A:C005:FACT_TO_CAUSALITY",
+      "B:C004:UNKNOWN_AS_NEGATIVE_EVIDENCE",
+      "C:C006:FACT_TO_GLOBAL_CONCLUSION",
+      "D:C001:UNKNOWN_AS_NEGATIVE_EVIDENCE",
+      "D:C003:TECH_STACK_TO_QUALITY",
+      "D:C006:UNKNOWN_AS_NEGATIVE_EVIDENCE",
+      "E:C005:FACT_TO_CAUSALITY"
+    ]
+  },
+  "causalClaimFlags": {
+    "ok": false,
+    "flags": [
+      "A:C005",
+      "E:C005"
+    ]
+  },
+  "trendClaimFlags": {
+    "ok": true,
+    "flags": []
+  },
+  "techQualityLeapFlags": {
+    "ok": false,
+    "flags": [
+      "D:C003"
+    ]
+  },
+  "majorityDrivenJudgeFlags": {
+    "ok": true,
+    "flags": []
+  },
+  "judgeRevisionMismatchFlags": {
+    "ok": false,
+    "flags": [
+      "E:C005"
+    ]
+  },
+  "unknownAsNegativeEvidenceFlags": {
+    "ok": false,
+    "flags": [
+      "B:C004",
+      "D:C001",
+      "D:C006"
+    ]
+  }
+}

@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no" />
+  <meta name="theme-color" content="#1a1410" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <title>Bricks Match — 무너진 모자이크</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <!-- INTRO -->
+  <section id="screen-intro" class="screen screen-intro is-active" aria-label="인트로">
+    <div class="intro-bg" aria-hidden="true">
+      <img src="assets/backgrounds/intro-bg-ruins.png" alt="" />
+      <div class="intro-bg-shade"></div>
+    </div>
+
+    <header class="intro-brand">
+      <p class="intro-eyebrow">World 01 · 폐허의 입구</p>
+      <h1 class="intro-title">Bricks Match</h1>
+      <p class="intro-subtitle">무너진 모자이크</p>
+    </header>
+
+    <div class="intro-stage">
+      <div class="speech-bubble" id="intro-speech">
+        <span class="speech-name" id="intro-speaker-name">미라</span>
+        <p class="speech-text" id="intro-speech-text">
+          색깔 벽돌로 이루어진 왕국이 무너졌어. 복구사 브릭, 흩어진 문양을 맞춰 폐허의 입구를 되살려 줘!
+        </p>
+      </div>
+      <div class="intro-fullbody-wrap">
+        <img
+          class="intro-fullbody"
+          id="intro-fullbody"
+          src="assets/characters/char-mira-full.png?v=3"
+          alt="안내자 미라"
+        />
+      </div>
+      <div class="intro-cast" id="intro-cast" role="tablist" aria-label="캐릭터 선택"></div>
+    </div>
+
+    <div class="intro-actions">
+      <button type="button" class="btn btn-primary" id="btn-start">모험 시작</button>
+      <button type="button" class="btn btn-ghost" id="btn-worlds">월드 맵 (30)</button>
+      <div class="intro-actions-row">
+        <button type="button" class="btn btn-ghost" id="btn-endless">끝없는 복구</button>
+        <button type="button" class="btn btn-ghost" id="btn-shop">파편 상점</button>
+      </div>
+    </div>
+    <p class="intro-meta" id="intro-meta">스테이지 01 / 10</p>
+  </section>
+
+  <!-- WORLD MAP -->
+  <section id="screen-map" class="screen screen-map" aria-label="월드 맵" hidden>
+    <header class="map-header">
+      <button type="button" class="btn-icon" id="btn-map-back" aria-label="뒤로">←</button>
+      <div class="map-header-text">
+        <h2>모자이크 왕국</h2>
+        <p>초반 30월드 · 확장 가능 · <span id="map-stars">총 별 0</span></p>
+      </div>
+      <button type="button" class="btn btn-story" id="btn-map-shop">상점</button>
+    </header>
+    <div class="map-banner-wrap">
+      <img class="map-banner" src="assets/worlds/map-kingdom-banner.png" alt="모자이크 왕국 전체 지도" />
+      <div class="map-banner-caption">
+        <img src="assets/characters/char-brick.png" alt="" />
+        <p>월드를 선택해 10개 스테이지를 클리어하세요.</p>
+      </div>
+    </div>
+    <div class="map-grid" id="map-grid"></div>
+  </section>
+
+  <!-- STAGE SELECT -->
+  <section id="screen-stages" class="screen screen-stages" aria-label="스테이지 선택" hidden>
+    <header class="map-header">
+      <button type="button" class="btn-icon" id="btn-stages-back" aria-label="월드 맵">←</button>
+      <div class="map-header-text">
+        <h2 id="stages-world-title">W01 · 폐허의 입구</h2>
+        <p>스테이지 10개 · 별 모으기</p>
+      </div>
+      <button type="button" class="btn btn-story" id="btn-stages-story" hidden>
+        스토리 보기
+      </button>
+    </header>
+    <div class="stages-hero">
+      <img id="stages-world-img" src="assets/worlds/world-01-ruins-gate.png" alt="" />
+      <div class="stages-dialogue">
+        <img id="stages-speaker-img" src="assets/characters/char-mira.png" alt="" />
+        <div>
+          <strong id="stages-speaker-name">미라</strong>
+          <p id="stages-speaker-line">폐허의 입구를 되살릴 차례야.</p>
+        </div>
+      </div>
+    </div>
+    <div class="stage-list" id="stage-list"></div>
+  </section>
+
+  <!-- GAME -->
+  <section id="screen-game" class="screen screen-game" aria-label="게임" hidden>
+    <div class="game-shell">
+      <header class="game-top">
+        <button type="button" class="btn-icon" id="btn-game-back" aria-label="스테이지">←</button>
+        <div class="game-stage-info">
+          <p class="game-world">W1 · 폐허의 입구</p>
+          <h2 class="game-stage-title">첫 벽돌 (1/10)</h2>
+        </div>
+        <div class="game-tools">
+          <button type="button" class="btn-icon" id="btn-sound" aria-label="사운드" title="사운드 ON">♪</button>
+          <button type="button" class="btn-icon btn-undo" id="btn-undo" aria-label="되돌리기" title="되돌리기" disabled>
+            ↩<span class="tool-badge" id="undo-count">0</span>
+          </button>
+          <button type="button" class="btn-icon" id="btn-restart" aria-label="다시하기" title="다시하기">↻</button>
+        </div>
+      </header>
+
+      <aside class="story-banner" id="story-banner">
+        <img class="story-avatar" id="story-avatar" src="assets/characters/char-mira.png" alt="미라" />
+        <div class="story-body">
+          <span class="story-speaker" id="story-speaker">미라</span>
+          <p id="story-text">여기는 폐허의 입구야. 한 줄만 맞춰 봐.</p>
+        </div>
+      </aside>
+
+      <div class="scoreboard">
+        <div class="score-main">
+          <span class="score-label">SCORE</span>
+          <span class="score-value" id="score">0</span>
+        </div>
+        <div class="score-side">
+          <span id="objective-label">목표 점수 200</span>
+          <span>라인 <strong id="lines-value">0</strong></span>
+          <span>Best <strong id="best-score">0</strong></span>
+          <span class="sr-only">목표값 <strong id="target-score">200</strong></span>
+        </div>
+      </div>
+
+      <div class="board-wrap">
+        <div class="board" id="board" role="grid" aria-label="8x8 보드"></div>
+      </div>
+
+      <div class="tray-section">
+        <div class="tray-meta">
+          <span>조각 트레이 · 탭=회전 · HOLD=보관</span>
+          <div class="tray-actions">
+            <button type="button" class="btn-reroll btn-chisel" id="btn-chisel" hidden>끌 · 0</button>
+            <button type="button" class="btn-reroll" id="btn-reroll">REROLL · 2</button>
+          </div>
+        </div>
+        <div class="tray-row">
+          <div class="hold-wrap">
+            <span class="hold-label">HOLD</span>
+            <div class="piece-slot hold-slot empty" id="hold-slot"></div>
+          </div>
+          <div class="tray" id="tray"></div>
+        </div>
+      </div>
+      <p class="game-hint" id="game-hint"></p>
+    </div>
+
+    <div class="overlay" id="overlay-clear" hidden>
+      <div class="overlay-card">
+        <img class="overlay-avatar" id="overlay-avatar" src="assets/characters/char-mira.png" alt="" />
+        <p class="overlay-eyebrow" id="overlay-eyebrow">Stage Clear</p>
+        <div class="overlay-stars" id="overlay-stars">★★★</div>
+        <h3 id="overlay-title">클리어!</h3>
+        <p class="overlay-story" id="overlay-story">다음 스테이지로 나아가자.</p>
+        <div class="overlay-actions">
+          <button type="button" class="btn btn-primary" id="btn-next">다음 스테이지</button>
+          <button type="button" class="btn btn-ghost" id="btn-to-stages">스테이지 목록</button>
+          <button type="button" class="btn btn-ghost" id="btn-to-map">월드 맵</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="overlay" id="overlay-fail" hidden>
+      <div class="overlay-card">
+        <img class="overlay-avatar" id="fail-avatar" src="assets/characters/char-mira.png" alt="" />
+        <p class="overlay-eyebrow fail">Game Over</p>
+        <h3 id="fail-title">길이 막혔어…</h3>
+        <p class="overlay-story" id="fail-story">다시 도전하자.</p>
+        <div class="overlay-actions">
+          <button type="button" class="btn btn-primary" id="btn-retry">다시 도전</button>
+          <button type="button" class="btn btn-ghost" id="btn-fail-stages">스테이지 목록</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="overlay overlay-comic" id="overlay-comic" hidden>
+    <div class="comic-shell">
+      <header class="comic-head">
+        <p class="comic-eyebrow">World Clear Story</p>
+        <h3 id="comic-title">W01</h3>
+        <p class="comic-summary" id="comic-summary"></p>
+      </header>
+      <div class="comic-panel" id="comic-panel" title="탭하면 다음 컷"></div>
+      <div class="comic-controls">
+        <button type="button" class="btn btn-ghost" id="btn-comic-prev">이전 컷</button>
+        <p class="comic-pager-meta" id="comic-pager-meta">1 / 3</p>
+        <button type="button" class="btn btn-primary" id="btn-comic-next">다음 컷</button>
+      </div>
+      <button type="button" class="btn btn-ghost comic-skip" id="btn-comic-skip">스토리 건너뛰기</button>
+    </div>
+  </div>
+
+  <div class="overlay overlay-shop" id="overlay-shop" hidden>
+    <div class="overlay-card shop-card">
+      <p class="overlay-eyebrow">Mosaic Shop</p>
+      <h3>파편 상점</h3>
+      <p class="shop-balance" id="shop-balance">보유 파편 0</p>
+      <p class="overlay-story">클리어로 모은 파편으로 도구를 준비하세요. 게임 중에도 바로 쓸 수 있습니다.</p>
+      <div class="shop-list" id="shop-list"></div>
+      <button type="button" class="btn btn-ghost" id="btn-shop-close">닫기</button>
+    </div>
+  </div>
+
+  <script src="js/data.js"></script>
+  <script src="js/comic-data.js"></script>
+  <script src="js/save.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/game.js"></script>
+  <script src="js/comic.js"></script>
+  <script src="js/ads.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

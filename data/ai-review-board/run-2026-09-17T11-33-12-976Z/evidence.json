@@ -1,0 +1,67 @@
+{
+  "generatedAt": "2026-09-17T11:33:12.974Z",
+  "site": {
+    "name": "AIsle",
+    "corridors": [
+      "LAB/RECIPE",
+      "GALLERY",
+      "LOUNGE",
+      "GOSSIP",
+      "BUILD",
+      "LAUNCH",
+      "AI_FORTUNE"
+    ],
+    "stackNotes": [
+      "Next.js 15 App Router + React 19",
+      "Prisma 7 + PostgreSQL (Supabase Auth)",
+      "Gemini (@google/generative-ai) for LAB/news/fortune",
+      "Vercel hosting + GitHub Actions cron",
+      "Capacitor mobile shell"
+    ]
+  },
+  "aggregates": {
+    "userCount": 14,
+    "usersLast7d": 0,
+    "newUsersLast7d": 0,
+    "activeUsersLast7d": null,
+    "postCount": 3369,
+    "postsLast7d": 138,
+    "commentsLast7d": 0,
+    "viewsLast7d": null,
+    "totalViews": 247539,
+    "commentCount": 4,
+    "postsByCategory": {
+      "LOUNGE": 3281,
+      "AI_FORTUNE": 17,
+      "GALLERY": 23,
+      "RECIPE": 16,
+      "LAUNCH": 6,
+      "BUILD": 5,
+      "GOSSIP": 21
+    }
+  },
+  "metricDefinitions": {
+    "userCount": "전체 회원 수 (User 테이블 row count).",
+    "usersLast7d": "DEPRECATED. newUsersLast7d 와 동일한 값(최근 7일 신규 가입). 활성 사용자/DAU/WAU/방문자가 아님. 절대 active users 로 해석하지 말 것.",
+    "newUsersLast7d": "최근 7일 신규 가입자 수 (User.createdAt >= now-7d). NOT active users, NOT DAU/WAU, NOT visitors.",
+    "activeUsersLast7d": "최근 7일 활성 사용자. 현재 신뢰 가능한 활동 정의 없음 → 반드시 null. 신규 가입(newUsersLast7d)으로 대체·추정 금지.",
+    "postCount": "전체 게시글 수 (Post count).",
+    "postsLast7d": "최근 7일 작성 게시글 수 (Post.createdAt >= now-7d).",
+    "commentsLast7d": "최근 7일 작성 댓글 수 (Comment.createdAt >= now-7d).",
+    "viewsLast7d": "최근 7일 조회수. Post.views 는 누적만 존재 → 현재 null. totalViews 로 추정 금지.",
+    "totalViews": "전체 기간 게시글 조회수 합 (Post.views sum). 최근 7일 조회수가 아님.",
+    "commentCount": "전체 댓글 수 (Comment count).",
+    "postsByCategory": "카테고리별 게시글 수."
+  },
+  "docsHints": [
+    "docs/geo-optimization.md — GEO/SEO 가이드",
+    "docs/performance-seo.md",
+    "docs/cron-operations.md",
+    "복도형 커뮤니티 + AI Work/Fortune/Games",
+    "CRITICAL: newUsersLast7d/usersLast7d = signups only, NEVER active users/DAU",
+    "CRITICAL: activeUsersLast7d and viewsLast7d are null (unsupported); do not invent",
+    "commentsLast7d = Comment.createdAt last 7d; totalViews is all-time only"
+  ],
+  "piiExcluded": true,
+  "readOnly": true
+}

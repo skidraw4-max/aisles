@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <radialGradient id="pBall" cx="35%" cy="30%" r="65%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="40%" stop-color="#8ef4ff"/>
+      <stop offset="100%" stop-color="#2eb8d6"/>
+    </radialGradient>
+  </defs>
+  <ellipse cx="24" cy="40" rx="10" ry="3" fill="#2eb8d6" opacity=".2"/>
+  <circle cx="24" cy="22" r="14" fill="url(#pBall)" stroke="#1f9bb8" stroke-width="2"/>
+  <!-- cute face -->
+  <circle cx="19" cy="20" r="2.2" fill="#15485a"/>
+  <circle cx="29" cy="20" r="2.2" fill="#15485a"/>
+  <circle cx="18.3" cy="19.2" r="0.7" fill="#fff"/>
+  <circle cx="28.3" cy="19.2" r="0.7" fill="#fff"/>
+  <path d="M21 26 Q24 28.5 27 26" stroke="#15485a" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+  <!-- sparkle -->
+  <circle cx="16" cy="14" r="2" fill="#fff" opacity=".9"/>
+</svg>

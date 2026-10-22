@@ -1,0 +1,422 @@
+[
+  {
+    "memberId": "A",
+    "claims": [
+      {
+        "claimId": "C001",
+        "claimText": "최근 7일 동안 신규 사용자 가입이 전혀 없었으며 (newUsersLast7d: 0), 댓글 작성도 없었습니다 (commentsLast7d: 0).",
+        "evidenceRefs": [
+          "aggregates.newUsersLast7d",
+          "aggregates.commentsLast7d"
+        ],
+        "evidenceType": "DIRECT_FACT",
+        "supportLevel": "SUPPORTED",
+        "reason": "제공된 집계 데이터에 따르면 최근 7일 동안 신규 가입자 수와 댓글 수가 모두 0입니다.",
+        "missingEvidence": [],
+        "evidenceImpact": "CRITICAL",
+        "riskOfOverclaiming": "LOW"
+      },
+      {
+        "claimId": "C002",
+        "claimText": "활성 사용자 (activeUsersLast7d) 및 최근 7일 조회수 (viewsLast7d)에 대한 측정 지표가 현재 없거나 사용할 수 없습니다.",
+        "evidenceRefs": [
+          "aggregates.activeUsersLast7d",
+          "aggregates.viewsLast7d",
+          "metricDefinitions.activeUsersLast7d",
+          "metricDefinitions.viewsLast7d"
+        ],
+        "evidenceType": "DIRECT_FACT",
+        "supportLevel": "SUPPORTED",
+        "reason": "EvidencePack의 집계 데이터에서 activeUsersLast7d와 viewsLast7d는 null이며, metricDefinitions에서도 신뢰할 수 있는 활동 정의가 없음을 명시하고 있습니다.",
+        "missingEvidence": [],
+        "evidenceImpact": "HIGH",
+        "riskOfOverclaiming": "LOW"
+      },
+      {
+        "claimId": "C003",
+        "claimText": "플랫폼은 상당한 양의 게시글을 보유하고 있으며 (postCount: 3369), 최근에도 활발하게 게시글이 생성되고 있습니다 (postsLast7d: 139).",
+        "evidenceRefs": [
+          "aggregates.postCount",
+          "aggregates.postsLast7d"
+        ],
+        "evidenceType": "DIRECT_FACT",
+        "supportLevel": "SUPPORTED",
+        "reason": "전체 게시글 수와 최근 7일 동안 생성된 게시글 수가 명확하게 제공되었습니다.",
+        "missingEvidence": [],
+        "evidenceImpact": "MEDIUM",
+        "riskOfOverclaiming": "LOW"
+      },
+      {
+        "claimId": "C004",
+        "claimText": "콘텐츠 생성 활동 (postsLast7d: 139)에도 불구하고, 신규 사용자 유입 (newUsersLast7d: 0) 및 사용자 상호작용 (commentsLast7d: 0)이 전혀 없어 콘텐츠 생성과 사용자 참여 사이에 심각한 불일치가 있음을 시사합니다.",
+        "evidenceRefs": [
+          "aggregates.postsLast7d",
+          "aggregates.newUsersLast7d",
+          "aggregates.commentsLast7d"
+        ],
+        "evidenceType": "INFERENCE",
+        "supportLevel": "SUPPORTED",
+        "reason": "최근 게시글 생성은 활발하지만, 신규 가입이나 댓글이 없는 것은 콘텐츠가 사용자의 참여를 유도하지 못하고 있음을 나타냅니다.",
+        "missingEvidence": [
+          "viewsLast7d"
+        ],
+        "evidenceImpact": "HIGH",
+        "riskOfOverclaiming": "MEDIUM"
+      },
+      {
+        "claimId": "C005",
+        "claimText": "커뮤니티 상호작용이 매우 부족하며, 이는 최근 7일간 댓글 수가 0이고 전체 댓글 수가 4개에 불과하다는 점에서 명확히 드러납니다.",
+        "evidenceRefs": [
+          "aggregates.commentsLast7d",
+          "aggregates.commentCount"
+        ],
+        "evidenceType": "DIRECT_FACT",
+        "supportLevel": "SUPPORTED",
+        "reason": "최근 7일 댓글 수와 전체 댓글 수 데이터는 커뮤니티 활동의 부재를 직접적으로 보여줍니다.",
+        "missingEvidence": [],
+        "evidenceImpact": "HIGH",
+        "riskOfOverclaiming": "LOW"
+      }
+    ]
+  },
+  {
+    "memberId": "B",
+    "claims": [
+      {
+        "claimId": "C001",
+        "claimText": "AIsle의 최근 7일 신규 사용자 유입은 0명이며, 이는 사용자 확보 전략의 부재 또는 비효율성을 시사합니다.",
+        "evidenceRefs": [
+          "newUsersLast7d: 0"
+        ],
+        "evidenceType": "DIRECT_FACT",
+        "supportLevel": "SUPPORTED",
+        "reason": "EvidencePack에 명시된 'newUsersLast7d' 메트릭 값이 0으로, 최근 7일간 신규 가입자가 없음을 직접적으로 보여줍니다. 이는 사용자 확보에 대한 현재 활동이 없거나 효과가 없음을 나타냅니다.",
+        "missingEvidence": [],
+        "evidenceImpact": "CRITICAL",
+        "riskOfOverclaiming": "LOW"
+      },
+      {
+        "claimId": "C002",
+        "claimText": "최근 7일간 커뮤니티 참여 활동(댓글 작성)이 전혀 없어 사용자 참여가 극도로 저조합니다.",
+        "evidenceRefs": [
+          "commentsLast7d: 0"
+        ],
+        "evidenceType": "DIRECT_FACT",
+        "supportLevel": "SUPPORTED",
+        "reason": "EvidencePack의 'commentsLast7d' 메트릭이 0으로, 최근 7일 동안 어떠한 댓글도 작성되지 않았음을 나타냅니다. 이는 사용자 참여가 매우 낮음을 직접적으로 보여줍니다.",
+        "missingEvidence": [],
+        "evidenceImpact": "CRITICAL",
+        "riskOfOverclaiming": "LOW"
+      },
+      {
+        "claimId": "C003",
+        "claimText": "활성 사용자 수(activeUsersLast7d) 및 최근 7일 조회수(viewsLast7d)에 대한 측정 데이터가 없어 사용자 활동 수준을 파악할 수 없습니다.",
+        "evidenceRefs": [
+          "activeUsersLast7d: null",
+          "viewsLast7d: null"
+        ],
+        "evidenceType": "DIRECT_FACT",
+        "supportLevel": "SUPPORTED",
+        "reason": "EvidencePack에서 'activeUsersLast7d'와 'viewsLast7d' 메트릭이 모두 null로 표시되어 있으며, 이는 해당 지표들이 측정되지 않거나 정의되지 않았음을 의미합니다. 이는 사용자 활동에 대한 가시성 부족으로 이어집니다.",
+        "missingEvidence": [],
+        "evidenceImpact": "HIGH",
+        "riskOfOverclaiming": "LOW"
+      },
+      {
+        "claimId": "C004",
+        "claimText": "AIsle은 최신 웹 기술 스택(Next.js 15, React 19, Gemini)을 활용하고 있어 기술적 기반은 최신 트렌드를 따르고 있습니다.",
+        "evidenceRefs": [
+          "site.stackNotes"
+        ],
+        "evidenceType": "DIRECT_FACT",
+        "supportLevel": "SUPPORTED",
+        "reason": "EvidencePack의 'site.stackNotes'에 Next.js 15, React 19, Gemini 등 최신 기술 스택이 명시되어 있습니다. 이는 2025-2026년 트렌드에 부합하는 기술적 준비 상태를 보여줍니다.",
+        "missingEvidence": [],
+        "evidenceImpact": "MEDIUM",
+        "riskOfOverclaiming": "LOW"
+      },
+      {
+        "claimId": "C005",
+        "claimText": "전체 사용자 수가 14명으로 매우 적어, 현재 AIsle의 사용자 기반이 매우 작음을 시사합니다.",
+        "evidenceRefs": [
+          "userCount: 14"
+        ],
+        "evidenceType": "DIRECT_FACT",
+        "supportLevel": "SUPPORTED",
+        "reason": "EvidencePack의 'userCount' 메트릭이 14로, 전체 등록된 사용자가 매우 적음을 직접적으로 나타냅니다.",
+        "missingEvidence": [],
+        "evidenceImpact": "HIGH",
+        "riskOfOverclaiming": "LOW"
+      },
+      {
+        "claimId": "C006",
+        "claimText": "SEO/GEO 최적화에 대한 문서 힌트가 존재하나, 낮은 사용자 유입 지표로 미루어 볼 때 관련 전략 실행이 미흡하거나 부재할 가능성이 높습니다.",
+        "evidenceRefs": [
+          "docsHints",
+          "newUsersLast7d: 0",
+          "userCount: 14"
+        ],
+        "evidenceType": "INFERENCE",
+        "supportLevel": "PARTIALLY_SUPPORTED",
+        "reason": "EvidencePack에 'docs/geo-optimization.md'와 같은 SEO/GEO 관련 힌트가 있지만, 'newUsersLast7d'가 0이고 'userCount'가 14인 점은 이러한 최적화 노력이 실질적인 사용자 유입 증가로 이어지지 못했거나, 혹은 전략 자체가 실행되지 않았음을 강하게 시사합니다. 따라서 전략의 실행 여부 및 효과에 대한 직접적인 증거는 부족합니다.",
+        "missingEvidence": [
+          "SEO/GEO 관련 구체적인 실행 내용 및 성과 지표"
+        ],
+        "evidenceImpact": "HIGH",
+        "riskOfOverclaiming": "MEDIUM"
+      }
+    ]
+  },
+  {
+    "memberId": "C",
+    "claims": [
+      {
+        "claimId": "C001",
+        "claimText": "AIsle의 최근 7일간 신규 가입자 수는 0명이며, 댓글 작성 수도 0건으로 사용자 활동이 전무한 상태이다.",
+        "evidenceRefs": [
+          "aggregates.newUsersLast7d",
+          "aggregates.commentsLast7d"
+        ],
+        "evidenceType": "DIRECT_FACT",
+        "supportLevel": "SUPPORTED",
+        "reason": "EvidencePack의 'aggregates' 섹션에 newUsersLast7d와 commentsLast7d가 모두 0으로 명시되어 있어 직접적으로 뒷받침된다.",
+        "missingEvidence": [],
+        "evidenceImpact": "CRITICAL",
+        "riskOfOverclaiming": "LOW"
+      },
+      {
+        "claimId": "C002",
+        "claimText": "최근 7일간의 활성 사용자 수(activeUsersLast7d)와 조회수(viewsLast7d)에 대한 신뢰할 수 있는 측정값이 존재하지 않아, 사용자 참여 현황 파악에 제약이 있다.",
+        "evidenceRefs": [
+          "aggregates.activeUsersLast7d",
+          "aggregates.viewsLast7d",
+          "docsHints"
+        ],
+        "evidenceType": "DIRECT_FACT",
+        "supportLevel": "SUPPORTED",
+        "reason": "EvidencePack에서 activeUsersLast7d와 viewsLast7d 모두 null로 표시되며, 'docsHints'에서도 이 지표들이 측정 불가함을 명시하고 있다.",
+        "missingEvidence": [],
+        "evidenceImpact": "CRITICAL",
+        "riskOfOverclaiming": "LOW"
+      },
+      {
+        "claimId": "C003",
+        "claimText": "전체 게시글 3,369개 중 'LOUNGE' 카테고리에 3,281개로 콘텐츠가 과도하게 집중되어 있어, 다른 카테고리의 활성화가 필요하다.",
+        "evidenceRefs": [
+          "aggregates.postCount",
+          "aggregates.postsByCategory"
+        ],
+        "evidenceType": "INFERENCE",
+        "supportLevel": "SUPPORTED",
+        "reason": "postsByCategory의 'LOUNGE' 카테고리 수치가 다른 카테고리에 비해 압도적으로 높아, 콘텐츠 분포의 불균형을 추론할 수 있다. postCount와 함께 이를 뒷받침한다.",
+        "missingEvidence": [],
+        "evidenceImpact": "HIGH",
+        "riskOfOverclaiming": "LOW"
+      },
+      {
+        "claimId": "C004",
+        "claimText": "AIsle은 Gemini를 활용한 AI 기능 통합을 통해 차별화된 서비스 제공 잠재력을 가지고 있다.",
+        "evidenceRefs": [
+          "site.stackNotes"
+        ],
+        "evidenceType": "DIRECT_FACT",
+        "supportLevel": "SUPPORTED",
+        "reason": "site.stackNotes에 Gemini(@google/generative-ai) 사용이 명시되어 있어 AI 기능 통합 사실을 직접적으로 확인할 수 있다.",
+        "missingEvidence": [],
+        "evidenceImpact": "MEDIUM",
+        "riskOfOverclaiming": "LOW"
+      },
+      {
+        "claimId": "C005",
+        "claimText": "전체 회원 수(14명) 대비 최근 7일간의 게시글 작성 수(139개)는 상대적으로 높으나, 댓글 작성 수가 0건인 점은 사용자 참여가 저조함을 시사한다.",
+        "evidenceRefs": [
+          "aggregates.userCount",
+          "aggregates.postsLast7d",
+          "aggregates.commentsLast7d"
+        ],
+        "evidenceType": "INFERENCE",
+        "supportLevel": "PARTIALLY_SUPPORTED",
+        "reason": "postsLast7d는 0이 아니지만, commentsLast7d가 0이라는 점과 userCount가 매우 적다는 점을 종합할 때, 게시글 작성 대비 댓글 참여가 매우 낮다고 추론할 수 있다. '게시글 작성 수가 상대적으로 높다'는 부분은 다른 지표 대비 상대적일 뿐 절대적인 수치로는 판단하기 어렵다.",
+        "missingEvidence": [
+          "activeUsersLast7d",
+          "viewsLast7d"
+        ],
+        "evidenceImpact": "MEDIUM",
+        "riskOfOverclaiming": "MEDIUM"
+      }
+    ]
+  },
+  {
+    "memberId": "D",
+    "claims": [
+      {
+        "claimId": "C001",
+        "claimText": "최근 7일 동안 신규 사용자 가입이 없었습니다.",
+        "evidenceRefs": [
+          "aggregates.newUsersLast7d"
+        ],
+        "evidenceType": "DIRECT_FACT",
+        "supportLevel": "SUPPORTED",
+        "reason": "aggregates에 newUsersLast7d가 0으로 명시되어 있습니다.",
+        "missingEvidence": [],
+        "evidenceImpact": "CRITICAL",
+        "riskOfOverclaiming": "LOW"
+      },
+      {
+        "claimId": "C002",
+        "claimText": "최근 7일 동안 댓글 활동이 없었습니다.",
+        "evidenceRefs": [
+          "aggregates.commentsLast7d"
+        ],
+        "evidenceType": "DIRECT_FACT",
+        "supportLevel": "SUPPORTED",
+        "reason": "aggregates에 commentsLast7d가 0으로 명시되어 있습니다.",
+        "missingEvidence": [],
+        "evidenceImpact": "HIGH",
+        "riskOfOverclaiming": "LOW"
+      },
+      {
+        "claimId": "C003",
+        "claimText": "최근 7일간 활성 사용자 및 조회수에 대한 신뢰할 수 있는 측정 지표가 없습니다.",
+        "evidenceRefs": [
+          "aggregates.activeUsersLast7d",
+          "aggregates.viewsLast7d",
+          "metricDefinitions.activeUsersLast7d",
+          "metricDefinitions.viewsLast7d"
+        ],
+        "evidenceType": "DIRECT_FACT",
+        "supportLevel": "SUPPORTED",
+        "reason": "aggregates에서 activeUsersLast7d와 viewsLast7d가 null이며, metricDefinitions에서 이 지표들이 신뢰할 수 있는 정의가 없거나 null임을 명시하고 있습니다.",
+        "missingEvidence": [],
+        "evidenceImpact": "CRITICAL",
+        "riskOfOverclaiming": "LOW"
+      },
+      {
+        "claimId": "C004",
+        "claimText": "플랫폼은 최신 웹 기술 스택을 활용하고 있습니다.",
+        "evidenceRefs": [
+          "site.stackNotes"
+        ],
+        "evidenceType": "DIRECT_FACT",
+        "supportLevel": "SUPPORTED",
+        "reason": "site.stackNotes에 Next.js 15, React 19, Prisma 7, PostgreSQL, Supabase Auth, Gemini, Vercel, Capacitor 등 현대적인 기술 스택이 명시되어 있습니다.",
+        "missingEvidence": [],
+        "evidenceImpact": "MEDIUM",
+        "riskOfOverclaiming": "LOW"
+      },
+      {
+        "claimId": "C005",
+        "claimText": "커뮤니티 참여 수준이 매우 낮습니다.",
+        "evidenceRefs": [
+          "aggregates.commentsLast7d",
+          "aggregates.commentCount"
+        ],
+        "evidenceType": "INFERENCE",
+        "supportLevel": "SUPPORTED",
+        "reason": "최근 7일간 댓글이 0개이고 전체 댓글 수가 4개에 불과한 것은 매우 낮은 참여 수준을 나타냅니다.",
+        "missingEvidence": [],
+        "evidenceImpact": "HIGH",
+        "riskOfOverclaiming": "LOW"
+      },
+      {
+        "claimId": "C006",
+        "claimText": "플랫폼은 AI 기능을 통합했지만, 그 영향력은 아직 측정되지 않았습니다.",
+        "evidenceRefs": [
+          "site.stackNotes"
+        ],
+        "evidenceType": "UNKNOWN",
+        "supportLevel": "NOT_SUPPORTED",
+        "reason": "Gemini가 통합되었다는 사실은 알 수 있지만, 이로 인한 사용자 참여나 성능에 대한 측정 지표는 제공되지 않았습니다.",
+        "missingEvidence": [
+          "Gemini 통합으로 인한 사용자 참여 또는 성능 관련 지표"
+        ],
+        "evidenceImpact": "MEDIUM",
+        "riskOfOverclaiming": "MEDIUM"
+      }
+    ]
+  },
+  {
+    "memberId": "E",
+    "claims": [
+      {
+        "claimId": "C001",
+        "claimText": "최근 7일 동안 신규 사용자 유입이 전혀 없었습니다.",
+        "evidenceRefs": [
+          "aggregates.newUsersLast7d"
+        ],
+        "evidenceType": "DIRECT_FACT",
+        "supportLevel": "SUPPORTED",
+        "reason": "EvidencePack에 따르면 'newUsersLast7d' 지표가 0으로 보고되어 최근 7일간 신규 가입자가 없음을 직접적으로 나타냅니다.",
+        "missingEvidence": [],
+        "evidenceImpact": "CRITICAL",
+        "riskOfOverclaiming": "LOW"
+      },
+      {
+        "claimId": "C002",
+        "claimText": "최근 7일 동안 신규 댓글이 전혀 생성되지 않았습니다.",
+        "evidenceRefs": [
+          "aggregates.commentsLast7d"
+        ],
+        "evidenceType": "DIRECT_FACT",
+        "supportLevel": "SUPPORTED",
+        "reason": "'commentsLast7d' 지표가 0으로 보고되어, 최근 7일간 커뮤니티 내에서 어떠한 댓글 상호작용도 없었음을 나타냅니다.",
+        "missingEvidence": [],
+        "evidenceImpact": "CRITICAL",
+        "riskOfOverclaiming": "LOW"
+      },
+      {
+        "claimId": "C003",
+        "claimText": "최근 7일간의 활성 사용자 수 및 조회수 데이터는 현재 측정되지 않고 있습니다.",
+        "evidenceRefs": [
+          "aggregates.activeUsersLast7d",
+          "aggregates.viewsLast7d"
+        ],
+        "evidenceType": "DIRECT_FACT",
+        "supportLevel": "SUPPORTED",
+        "reason": "'activeUsersLast7d'와 'viewsLast7d' 지표가 모두 null로 보고되어, 해당 기간 동안의 사용자 활동 및 콘텐츠 조회수에 대한 신뢰할 수 있는 데이터가 없음을 나타냅니다.",
+        "missingEvidence": [
+          "활성 사용자 정의 및 추적 메커니즘",
+          "조회수 추적 메커니즘"
+        ],
+        "evidenceImpact": "HIGH",
+        "riskOfOverclaiming": "LOW"
+      },
+      {
+        "claimId": "C004",
+        "claimText": "플랫폼은 상당한 양의 게시물(postsLast7d: 139)을 보유하고 있지만, 최근 사용자 참여(commentsLast7d: 0)는 매우 저조합니다.",
+        "evidenceRefs": [
+          "aggregates.postsLast7d",
+          "aggregates.commentsLast7d"
+        ],
+        "evidenceType": "INFERENCE",
+        "supportLevel": "SUPPORTED",
+        "reason": "최근 7일간 많은 게시물이 작성되었음에도 불구하고 댓글이 전혀 없다는 것은, 콘텐츠가 생성되고 있지만 사용자 간의 상호작용이나 참여는 거의 없음을 시사합니다.",
+        "missingEvidence": [
+          "viewsLast7d"
+        ],
+        "evidenceImpact": "HIGH",
+        "riskOfOverclaiming": "MEDIUM"
+      },
+      {
+        "claimId": "C005",
+        "claimText": "플랫폼은 과거에 상당한 사용자 기반(userCount: 14)과 콘텐츠(postCount: 3369)를 구축했지만, 최근 활동 지표는 정체 또는 감소를 나타냅니다.",
+        "evidenceRefs": [
+          "aggregates.userCount",
+          "aggregates.postCount",
+          "aggregates.newUsersLast7d",
+          "aggregates.commentsLast7d"
+        ],
+        "evidenceType": "INFERENCE",
+        "supportLevel": "SUPPORTED",
+        "reason": "전체 사용자 및 게시물 수는 많지만, 최근 신규 사용자 및 댓글 수가 0인 것은 과거의 성장이 현재까지 이어지지 못하고 있음을 나타냅니다.",
+        "missingEvidence": [
+          "activeUsersLast7d",
+          "viewsLast7d",
+          "usersLast7d (deprecated)"
+        ],
+        "evidenceImpact": "HIGH",
+        "riskOfOverclaiming": "MEDIUM"
+      }
+    ]
+  }
+]

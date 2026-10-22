@@ -1,0 +1,11 @@
+.link {
+  font-size: var(--type-14);
+  font-weight: 600;
+  color: var(--accent);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.link:hover {
+  text-decoration: underline;
+}

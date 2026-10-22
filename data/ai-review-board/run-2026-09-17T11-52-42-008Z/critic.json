@@ -1,0 +1,316 @@
+{
+  "factVsSpeculationOk": false,
+  "evidenceSufficient": false,
+  "scoresWithoutEvidence": [
+    "A:visual",
+    "A:mobile",
+    "A:web_tech",
+    "A:performance",
+    "A:a11y",
+    "A:content",
+    "A:community",
+    "A:ai_usage",
+    "A:competitive",
+    "A:acquisition",
+    "A:retention",
+    "A:seo",
+    "A:geo",
+    "A:security",
+    "A:scalability",
+    "B:ui_ux",
+    "B:visual",
+    "B:mobile",
+    "B:performance",
+    "B:a11y",
+    "B:usability",
+    "B:content",
+    "B:competitive",
+    "B:security",
+    "B:scalability",
+    "C:ui_ux",
+    "C:visual",
+    "C:mobile",
+    "C:performance",
+    "C:a11y",
+    "C:retention",
+    "C:seo",
+    "C:geo",
+    "C:security",
+    "C:scalability",
+    "D:ui_ux",
+    "D:visual",
+    "D:mobile",
+    "D:a11y",
+    "D:usability",
+    "D:content",
+    "D:ai_usage",
+    "D:competitive",
+    "D:acquisition",
+    "D:retention",
+    "D:seo",
+    "D:geo",
+    "E:ui_ux",
+    "E:visual",
+    "E:mobile",
+    "E:web_tech",
+    "E:performance",
+    "E:a11y",
+    "E:usability",
+    "E:ai_usage",
+    "E:competitive",
+    "E:seo",
+    "E:geo",
+    "E:security",
+    "E:scalability"
+  ],
+  "herdingDetected": false,
+  "dominantMemberInfluence": "A",
+  "trendEvidenceOk": false,
+  "userBenefitLikely": false,
+  "existingFeatureRisk": false,
+  "overEngineering": false,
+  "notes": [
+    "Member A's claim C003 was flagged for causalClaimWithoutEvidenceFlags due to inferring unavailability of data because it's unmeasured.",
+    "Member A's claim C005 was flagged for causalClaimWithoutEvidenceFlags due to inferring usability/value proposition problems from lack of engagement.",
+    "Member B's claim C005 was flagged for causalClaimWithoutEvidenceFlags due to inferring AI ineffectiveness from lack of engagement.",
+    "Member B's claim C006 was flagged for causalClaimWithoutEvidenceFlags due to inferring a gap against future trends without specific trend data.",
+    "Member D's claim C005 was flagged for unknownAsEvidenceFlags due to inferring low engagement based on incomplete data (missing active users/views).",
+    "v6 consistency: consistent=29 partial=0 inconsistent=0",
+    "v7 semantics: flaggedClaims=11 mismatch=1 unknownNeg=5",
+    "v8 judge: leaps=5 mismatch=1 unknownNeg=1"
+  ],
+  "confidence": 0.9,
+  "revisionIntegrity": {
+    "ok": true,
+    "flags": []
+  },
+  "evidenceGrounding": {
+    "ok": true,
+    "flags": []
+  },
+  "overclaiming": {
+    "ok": false,
+    "flags": []
+  },
+  "herding": {
+    "ok": true,
+    "flags": []
+  },
+  "confidenceIntegrity": {
+    "ok": true,
+    "flags": []
+  },
+  "fabrication": {
+    "ok": true,
+    "flags": []
+  },
+  "statusConsistency": {
+    "ok": true,
+    "flags": []
+  },
+  "claimCalibrationIntegrity": {
+    "ok": true,
+    "flags": []
+  },
+  "evidenceMappingIntegrity": {
+    "ok": true,
+    "flags": []
+  },
+  "unsupportedClaimFlags": {
+    "ok": false,
+    "flags": []
+  },
+  "overclaimingFlags": {
+    "ok": false,
+    "flags": []
+  },
+  "unknownAsEvidenceFlags": {
+    "ok": false,
+    "flags": [
+      "A:C001:UNKNOWN_AS_NEGATIVE_EVIDENCE",
+      "A:C002:UNKNOWN_AS_NEGATIVE_EVIDENCE",
+      "A:C003:UNKNOWN_AS_NEGATIVE_EVIDENCE",
+      "A:C004:UNKNOWN_AS_NEGATIVE_EVIDENCE",
+      "A:C005:UNKNOWN_AS_NEGATIVE_EVIDENCE",
+      "D:C005"
+    ]
+  },
+  "causalClaimWithoutEvidenceFlags": {
+    "ok": false,
+    "flags": [
+      "A:C003:UNSUPPORTED_CAUSAL_CLAIM",
+      "B:C001:UNSUPPORTED_CAUSAL_CLAIM",
+      "B:C002:UNSUPPORTED_CAUSAL_CLAIM",
+      "B:C003:UNSUPPORTED_CAUSAL_CLAIM",
+      "B:C004:UNSUPPORTED_CAUSAL_CLAIM",
+      "B:C005:UNSUPPORTED_CAUSAL_CLAIM",
+      "B:C006:UNSUPPORTED_CAUSAL_CLAIM",
+      "A:C003",
+      "A:C005",
+      "B:C005"
+    ]
+  },
+  "confidenceCalibrationFlags": {
+    "ok": false,
+    "flags": []
+  },
+  "herdingFlags": {
+    "ok": false,
+    "flags": []
+  },
+  "calibrationRevisionIntegrity": {
+    "status": "PASS",
+    "issues": [],
+    "summary": "consistent=29 partial=0 inconsistent=0"
+  },
+  "calibrationRevisionMismatchFlags": {
+    "ok": true,
+    "flags": []
+  },
+  "overclaimRetainedFlags": {
+    "ok": true,
+    "flags": []
+  },
+  "unjustifiedConfidenceFlags": {
+    "ok": true,
+    "flags": []
+  },
+  "majorityDrivenRevisionFlags": {
+    "ok": true,
+    "flags": []
+  },
+  "evidenceSemanticsIntegrity": {
+    "status": "FAIL",
+    "issues": [
+      "A/C001: [UNKNOWN_AS_NEGATIVE_EVIDENCE] No strong pattern match; relation unknown",
+      "A/C002: [UNKNOWN_AS_NEGATIVE_EVIDENCE] No strong pattern match; relation unknown",
+      "A/C003: [UNSUPPORTED_CAUSAL_CLAIM,UNKNOWN_AS_NEGATIVE_EVIDENCE,EVIDENCE_CLAIM_SEMANTIC_MISMATCH] Causal claim lacks direct causal evidence in pack",
+      "A/C004: [UNKNOWN_AS_NEGATIVE_EVIDENCE] No strong pattern match; relation unknown",
+      "A/C005: [UNKNOWN_AS_NEGATIVE_EVIDENCE] No strong pattern match; relation unknown",
+      "B/C001: [UNSUPPORTED_CAUSAL_CLAIM] No strong pattern match; relation unknown",
+      "B/C002: [UNSUPPORTED_CAUSAL_CLAIM] No strong pattern match; relation unknown",
+      "B/C003: [UNSUPPORTED_CAUSAL_CLAIM] No strong pattern match; relation unknown",
+      "B/C004: [UNSUPPORTED_CAUSAL_CLAIM] 전체 사용자 수가 14명으로 매우 적어 커뮤니티 규모가 작습니다.",
+      "B/C005: [UNSUPPORTED_CAUSAL_CLAIM,UNSUPPORTED_LEAP] Integration existence ≠ engagement increase",
+      "B/C006: [UNSUPPORTED_RELATIVE_CLAIM,UNSUPPORTED_CAUSAL_CLAIM] Absolute count known; relative “very small” lacks baseline"
+    ],
+    "summary": "flaggedClaims=11 mismatch=1 unknownNeg=5"
+  },
+  "evidenceClaimSemanticMismatchFlags": {
+    "ok": false,
+    "flags": [
+      "A:C003:EVIDENCE_CLAIM_SEMANTIC_MISMATCH"
+    ]
+  },
+  "absenceOfEvidenceAsAbsenceFlags": {
+    "ok": true,
+    "flags": []
+  },
+  "unsupportedCausalClaimFlags": {
+    "ok": false,
+    "flags": [
+      "A:C003:UNSUPPORTED_CAUSAL_CLAIM",
+      "B:C001:UNSUPPORTED_CAUSAL_CLAIM",
+      "B:C002:UNSUPPORTED_CAUSAL_CLAIM",
+      "B:C003:UNSUPPORTED_CAUSAL_CLAIM",
+      "B:C004:UNSUPPORTED_CAUSAL_CLAIM",
+      "B:C005:UNSUPPORTED_CAUSAL_CLAIM",
+      "B:C006:UNSUPPORTED_CAUSAL_CLAIM"
+    ]
+  },
+  "unsupportedRelativeClaimFlags": {
+    "ok": false,
+    "flags": [
+      "B:C006:UNSUPPORTED_RELATIVE_CLAIM"
+    ]
+  },
+  "unsupportedTimeTrendFlags": {
+    "ok": true,
+    "flags": []
+  },
+  "unsupportedLeapFlags": {
+    "ok": false,
+    "flags": [
+      "B:C005:UNSUPPORTED_LEAP"
+    ]
+  },
+  "contextMistakenAsEvidenceFlags": {
+    "ok": true,
+    "flags": []
+  },
+  "peerOpinionAsEvidenceFlags": {
+    "ok": true,
+    "flags": []
+  },
+  "semanticJudgeIntegrity": {
+    "status": "FAIL",
+    "issues": [
+      "A:C003:FACT_TO_CAUSALITY",
+      "A:C005:FACT_TO_CAUSALITY",
+      "B:C005:FACT_TO_CAUSALITY",
+      "B:C006:FACT_TO_TREND",
+      "D:C005:UNKNOWN_AS_NEGATIVE_EVIDENCE",
+      "A/C003: JUDGE_REVISION_MISMATCH, CAUSAL_LEAP_RETAINED",
+      "A/C005: CAUSAL_LEAP_RETAINED",
+      "D/C005: UNKNOWN_NEGATIVE_EVIDENCE"
+    ],
+    "summary": "leaps=5 mismatch=1 unknownNeg=1"
+  },
+  "falsePositiveFlags": {
+    "ok": true,
+    "flags": []
+  },
+  "falseNegativeFlags": {
+    "ok": true,
+    "flags": []
+  },
+  "semanticLeapFlags": {
+    "ok": false,
+    "flags": [
+      "A:C003:FACT_TO_CAUSALITY",
+      "A:C005:FACT_TO_CAUSALITY",
+      "B:C005:FACT_TO_CAUSALITY",
+      "B:C006:FACT_TO_TREND",
+      "D:C005:UNKNOWN_AS_NEGATIVE_EVIDENCE"
+    ]
+  },
+  "causalClaimFlags": {
+    "ok": false,
+    "flags": [
+      "A:C003",
+      "A:C005",
+      "B:C005"
+    ]
+  },
+  "trendClaimFlags": {
+    "ok": false,
+    "flags": [
+      "B:C006"
+    ]
+  },
+  "techQualityLeapFlags": {
+    "ok": true,
+    "flags": []
+  },
+  "majorityDrivenJudgeFlags": {
+    "ok": true,
+    "flags": []
+  },
+  "judgeRevisionMismatchFlags": {
+    "ok": false,
+    "flags": [
+      "A:C003"
+    ]
+  },
+  "unknownAsNegativeEvidenceFlags": {
+    "ok": false,
+    "flags": [
+      "A:C001:UNKNOWN_AS_NEGATIVE_EVIDENCE",
+      "A:C002:UNKNOWN_AS_NEGATIVE_EVIDENCE",
+      "A:C003:UNKNOWN_AS_NEGATIVE_EVIDENCE",
+      "A:C004:UNKNOWN_AS_NEGATIVE_EVIDENCE",
+      "A:C005:UNKNOWN_AS_NEGATIVE_EVIDENCE",
+      "D:C005"
+    ]
+  }
+}

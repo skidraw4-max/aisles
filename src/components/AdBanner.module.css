@@ -1,0 +1,96 @@
+.wrap {
+  position: relative;
+  height: 100%;
+}
+
+/* AdFit: 광고 영역(ins.kakao_ad_area)은 직사각형 슬롯만 — 라운딩·클리핑·테두리 없음 */
+.card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-height: 250px;
+  box-sizing: border-box;
+}
+
+.slot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 300px;
+  max-width: 100%;
+  min-height: 250px;
+  border-radius: 0;
+  overflow: visible;
+}
+
+/* AdFit 스크립트가 주입하는 ins/iframe — 외곽 라운딩·클리핑 금지 */
+.slot :global(.kakao_ad_area),
+.slot :global(.kakao_ad_area iframe),
+.slot :global(.kakao_ad_area img) {
+  border-radius: 0 !important;
+  overflow: visible !important;
+}
+
+.badge {
+  position: absolute;
+  top: 0.65rem;
+  left: 0.65rem;
+  z-index: 1;
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+  font-size: var(--type-11);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  background: rgba(11, 13, 23, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #e9d5ff;
+  pointer-events: none;
+}
+
+/* 728×90 메인 띠배너 — 좁은 뷰포트에서 scale(ResizeObserver) */
+.leaderboardWrap {
+  width: 100%;
+  max-width: 728px;
+  margin-inline: auto;
+}
+
+.leaderboardWrapCompact {
+  max-width: 320px;
+}
+
+.leaderboardOuter {
+  width: 100%;
+  overflow: hidden;
+}
+
+.leaderboardScaler {
+  position: relative;
+  transform-origin: top center;
+  margin-inline: auto;
+}
+
+.leaderboardCard {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+.leaderboardCard .slot {
+  width: 728px;
+  min-height: 90px;
+}
+
+.leaderboardWrapCompact .leaderboardCard .slot {
+  width: 320px;
+  min-height: 100px;
+}
+
+.leaderboardScaler .badge {
+  top: 0.4rem;
+  left: 0.4rem;
+}

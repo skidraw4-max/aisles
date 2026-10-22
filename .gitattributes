@@ -1,0 +1,2 @@
+certs/** -text
+prisma/migrations/**/*.sql text eol=lf

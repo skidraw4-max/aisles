@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>MiniBrick: Infinite Trajectory</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="app-shell">
+    <section id="screen-main" class="screen active main-screen">
+      <canvas id="mainBgCanvas" width="300" height="600" aria-hidden="true"></canvas>
+      <button id="settingsGearBtn" class="settings-gear" type="button" aria-label="사운드 설정 열기" aria-controls="settingsPopup" aria-expanded="false">⚙</button>
+      <div class="main-content">
+      <header class="hero">
+        <p class="eyebrow">Mobile Puzzle Game</p>
+        <h1>MiniBrick: Infinite Trajectory</h1>
+        <p>손끝으로 회전하고, 스테이지를 돌파하며, 끝없는 블록 궤적 위에서 최고의 기록에 도전하세요.</p>
+      </header>
+      <section class="profile-card">
+        <label for="profileName">프로필 이름</label>
+        <div class="profile-row">
+          <input id="profileName" maxlength="14" placeholder="Player" />
+          <button id="saveProfileBtn" class="secondary">저장</button>
+        </div>
+      </section>
+      <section class="ranking-panel">
+        <div class="tabs">
+          <button class="rank-tab active" data-mode="normal">일반모드 순위</button>
+          <button class="rank-tab" data-mode="endless">무한모드 순위</button>
+        </div>
+        <ol id="rankingList" class="ranking-list"></ol>
+        <div id="myRank" class="my-rank"></div>
+      </section>
+      <section class="mode-grid">
+        <button id="normalBtn" class="mode-card"><strong>일반모드</strong><span>스테이지 목표형 플레이</span></button>
+        <button id="endlessBtn" class="mode-card"><strong>무한모드</strong><span>최고 점수 생존 도전</span></button>
+      </section>
+      </div>
+      <section id="stageSelectPanel" class="stage-select-panel" aria-hidden="true">
+        <div class="stage-select-backdrop" data-stage-select-close="true"></div>
+        <div class="stage-select-dialog" role="dialog" aria-modal="true" aria-labelledby="stageSelectTitle">
+          <div class="stage-select-head">
+            <div>
+              <p class="eyebrow">Stage Select</p>
+              <h2 id="stageSelectTitle">일반모드 스테이지 선택</h2>
+            </div>
+            <button id="stageSelectCloseBtn" class="secondary" aria-label="스테이지 선택 닫기">닫기</button>
+          </div>
+          <p id="stageSelectHint">클리어하거나 도달한 스테이지를 선택해 이어서 플레이할 수 있습니다.</p>
+          <div id="stageSelectGrid" class="stage-select-grid" aria-label="일반모드 스테이지 목록"></div>
+        </div>
+      </section>
+      <div id="settingsPopup" class="settings-popup" aria-hidden="true">
+        <div class="settings-popup-backdrop" data-settings-close="true"></div>
+        <section class="settings-panel settings-dialog" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+          <div class="settings-head">
+            <div>
+              <p class="eyebrow">Settings</p>
+              <h2 id="settingsTitle">사운드 설정</h2>
+            </div>
+            <button id="settingsCloseBtn" class="settings-close" type="button" aria-label="사운드 설정 닫기">×</button>
+          </div>
+          <p class="settings-desc">게임 배경음악과 효과음을 원하는 상태로 켜거나 끌 수 있습니다.</p>
+          <span id="audioStatus" class="audio-status">음악 ON · 효과음 ON</span>
+          <div class="settings-grid">
+            <button id="musicToggleBtn" class="setting-toggle" type="button" aria-pressed="true">
+              <strong>배경음악</strong>
+              <span>ON</span>
+            </button>
+            <button id="sfxToggleBtn" class="setting-toggle" type="button" aria-pressed="true">
+              <strong>효과음</strong>
+              <span>ON</span>
+            </button>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <section id="screen-game" class="screen game-screen">
+      <header class="top-hud">
+        <div><span>점수</span><strong id="hudScore">0</strong></div>
+        <div><span>라인</span><strong id="hudLines">0</strong></div>
+        <div><span>레벨</span><strong id="hudLevel">1</strong></div>
+        <div class="mode-indicator"><span>현재 모드</span><strong id="hudMode">일반</strong></div>
+      </header>
+      <section class="play-layout">
+        <aside class="side-panel"><span>NEXT</span><canvas id="nextCanvas" width="96" height="96"></canvas></aside>
+        <canvas id="board" width="300" height="600" aria-label="테트리스 게임 보드"></canvas>
+        <aside class="side-panel"><span>목표</span><strong id="goalText">10 Lines</strong></aside>
+      </section>
+      <div id="stageClearOverlay" class="stage-clear-overlay" aria-live="polite" aria-hidden="true">
+        <div class="stage-clear-card">
+          <span>STAGE CLEAR</span>
+          <strong id="stageClearNext">STAGE 2</strong>
+          <div class="stage-clear-actions">
+            <button id="stageClearHomeBtn" class="secondary">메인으로</button>
+            <button id="stageClearNextBtn" class="primary">다음 단계로</button>
+          </div>
+        </div>
+      </div>
+      <section class="controls" aria-label="게임 조작 버튼">
+        <button id="leftBtn" class="icon-control" aria-label="왼쪽 이동">
+          <span class="control-icon" aria-hidden="true">←</span>
+        </button>
+        <button id="rotateBtn" class="icon-control" aria-label="블록 회전">
+          <span class="control-icon" aria-hidden="true">↻</span>
+        </button>
+        <button id="rightBtn" class="icon-control" aria-label="오른쪽 이동">
+          <span class="control-icon" aria-hidden="true">→</span>
+        </button>
+        <button id="downBtn" class="icon-control" aria-label="아래로 이동">
+          <span class="control-icon" aria-hidden="true">↓</span>
+        </button>
+        <button id="dropBtn" class="icon-control accent" aria-label="즉시 떨어뜨리기">
+          <span class="control-icon" aria-hidden="true">⇩</span>
+        </button>
+        <button id="pauseBtn" class="icon-control secondary" aria-label="일시정지">
+          <span class="control-icon" aria-hidden="true">⏸</span>
+        </button>
+      </section>
+    </section>
+
+    <section id="screen-result" class="screen">
+      <section class="result-card">
+        <p class="eyebrow">Game Result</p>
+        <h2 id="resultTitle">게임 종료</h2>
+        <div class="result-grid">
+          <div><span>점수</span><strong id="resultScore">0</strong></div>
+          <div><span>라인</span><strong id="resultLines">0</strong></div>
+          <div><span>레벨</span><strong id="resultLevel">1</strong></div>
+          <div><span>내 순위</span><strong id="resultRank">-</strong></div>
+        </div>
+        <p id="resultMessage" class="result-message"></p>
+        <div class="result-actions">
+          <button id="retryBtn" class="primary">다시 도전</button>
+          <button id="homeBtn" class="secondary">메인으로</button>
+        </div>
+      </section>
+    </section>
+  </main>
+  <script src="config.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>
