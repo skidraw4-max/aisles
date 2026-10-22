@@ -35,3 +35,7 @@
 | D-02 | **A** 채택(1차 공개 페이지) | D-16 검증 경로 확보 후 RM-13 착수 — 그전까지 보류 |
 | D-01 | **A** 확장 기능 비노출 유지 | 변경 없음, D-16 검증 후 재평가 |
 | I-PRT | PasswordResetToken 수정 SQL | **미승인 — 실행 금지** |
+
+## 추가 승인 (2026-10-22 19:07 KST)
+- Preview env `JURY_LLM_CALL_TIMEOUT_MS=60000`, `JURY_LLM_TOTAL_BUDGET_MS=240000` 설정 완료(Preview만, 이후 Preview 빌드부터 적용).
+- D-16 호출 상한 증액은 **미승인** → 실모델 검증 미실행(현재 상한 ~50회 = 리뷰 1회분).
