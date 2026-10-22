@@ -1,2 +1,0 @@
--- User MBTI (AI FORTUNE 카드 하이라이트용)
-ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "mbti" VARCHAR(4);
