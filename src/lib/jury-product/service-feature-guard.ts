@@ -6,6 +6,7 @@ import { prisma } from '@/lib/prisma';
 import type { JuryActor } from './access';
 import {
   authorizeJuryServiceFeature,
+  type FeatureAuthorizationDenial,
   type FeatureAuthorizationFailure,
   type ServiceFeature,
 } from './service-feature-authorization';
@@ -64,7 +65,7 @@ export async function guardServiceFeature(input: {
   actorRole?: string | null;
   permission?: string | null;
   capability?: string | null;
-}): Promise<{ ok: true; servicePermissions: JuryServicePermission[] } | { ok: false; reason: FeatureAuthorizationFailure }> {
+}): Promise<{ ok: true; servicePermissions: JuryServicePermission[] } | { ok: false; reason: FeatureAuthorizationFailure; denial?: FeatureAuthorizationDenial }> {
   const [membership, connection, grants] = await Promise.all([
     membershipFor(input.actor),
     connectionFor(input.actor.tenantId, input.connectionId),

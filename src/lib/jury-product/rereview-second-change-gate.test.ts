@@ -337,12 +337,12 @@ test('second change gate reuses the existing evaluator contract', () => {
     ui.indexOf('export function SecondChangeGateBody'),
     ui.indexOf('export function LaterReReviewBody'),
   );
-  assert.equal(body.includes('Run Change Gate'), true);
-  assert.equal(body.includes('Agent Completed'), true);
-  assert.equal(body.includes('Change Gate: APPROVED'), true);
-  assert.equal(body.includes('Change Gate: GATED'), true);
-  assert.equal(body.includes('Change Gate: BLOCKED'), true);
-  for (const label of ['Run Re-review', 'Next Improvement', 'Approve for Agent', 'Send to Agent', 'Run Agent', 'Auto Fix', 'Run Loop']) {
+  assert.equal(body.includes('변경 검사 실행'), true);
+  assert.equal(body.includes('에이전트 완료'), true);
+  assert.equal(body.includes('변경 검사: 승인됨'), true);
+  assert.equal(body.includes('변경 검사: 보류됨'), true);
+  assert.equal(body.includes('변경 검사: 차단됨'), true);
+  for (const label of ['재심사 실행', '다음 개선', '에이전트 작업 승인', '에이전트에 전달', '에이전트 실행', '자동 수정', '루프 실행']) {
     assert.equal(body.includes(label), false, label);
   }
 });

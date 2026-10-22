@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { isJuryStoreUnavailable } from '@/lib/jury-product/jury-db';
-import { improvementTraceQuery, projectImprovementTrace, traceReadHttpStatus } from '@/lib/jury-product/improvement-trace-console';
+import { improvementTraceQuery, projectImprovementTrace, readGuardedImprovementTrace, traceReadHttpStatus } from '@/lib/jury-product/improvement-trace-console';
 import { readImprovementTrace } from '@/lib/jury-product/improvement-trace-store';
+import { guardImprovementFeature } from '@/lib/jury-product/service-feature-guard';
 import { getJuryActor } from '@/lib/jury-product/session';
 
 export async function GET(_req: Request, context: { params: Promise<{ taskId: string }> }) {
@@ -11,8 +12,20 @@ export async function GET(_req: Request, context: { params: Promise<{ taskId: st
   if (!query.ok) {
     return NextResponse.json({ ok: false, reason: query.reason }, { status: traceReadHttpStatus(query.reason) });
   }
+  if (!actor.ok) {
+    return NextResponse.json({ ok: false, reason: actor.reason }, { status: traceReadHttpStatus(actor.reason) });
+  }
   try {
-    const trace = await readImprovementTrace(query.input);
+    const guarded = await readGuardedImprovementTrace({
+      actor,
+      taskId,
+      guard: guardImprovementFeature,
+      read: () => readImprovementTrace(query.input),
+    });
+    if (!guarded.ok) {
+      return NextResponse.json({ ok: false, reason: guarded.reason }, { status: traceReadHttpStatus(guarded.reason) });
+    }
+    const trace = guarded.value;
     if (!trace.ok) {
       return NextResponse.json({ ok: false, reason: trace.reason }, { status: traceReadHttpStatus(trace.reason) });
     }

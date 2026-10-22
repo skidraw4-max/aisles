@@ -337,9 +337,9 @@ test('second improvement reuses the phase 54 task writer', () => {
     ui.indexOf('export function SecondImprovementBody'),
     ui.indexOf('export function SecondImprovementApprovalBody'),
   );
-  assert.equal(body.includes('Next Improvement Task'), true);
-  assert.equal(body.includes('No further improvement required'), true);
-  for (const label of ['Approve for Agent', 'Send to Agent', 'Run Agent', 'Run Change Gate', 'Run Re-review', 'Auto Fix', 'Run Loop']) {
+  assert.equal(body.includes('다음 개선 작업'), true);
+  assert.equal(body.includes('추가 개선이 필요하지 않습니다'), true);
+  for (const label of ['에이전트 작업 승인', '에이전트에 전달', '에이전트 실행', '변경 검사 실행', '재심사 실행', '자동 수정', '루프 실행']) {
     assert.equal(body.includes(label), false, label);
   }
 });

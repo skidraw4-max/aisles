@@ -21,7 +21,7 @@ export function ProductNav() {
         aria-controls="jury-nav"
         onClick={() => setOpen((value) => !value)}
       >
-        Menu
+        메뉴
       </button>
       <ul id="jury-nav" className={open ? `${styles.nav} ${styles.navOpen}` : styles.nav}>
         {PRODUCT_NAV.map((item) => {
@@ -77,7 +77,7 @@ export function LogoutButton() {
         router.refresh();
       }}
     >
-      Logout
+      로그아웃
     </button>
   );
 }

@@ -210,3 +210,22 @@ test('(7) child process: config block still prints per-URL lines without leaking
   for (const l of lines.slice(1)) assert.match(l, LINE);
   assertNoSecrets(lines.join('\n'));
 });
+
+test('A-2 txn pooler flag: DATABASE_URL 6543 is OK only with the flag; DIRECT_URL 6543 stays PORT_6543', () => {
+  const flag = { ...REFS, JURY_PREVIEW_DB_TXN_POOLER: '1' };
+  assert.equal(reasonOf('DATABASE_URL', { ...REFS, DATABASE_URL: urls.poolerTxn }), 'PORT_6543');
+  assert.equal(reasonOf('DATABASE_URL', { ...flag, DATABASE_URL: urls.poolerTxn }), 'OK');
+  assert.equal(reasonOf('DIRECT_URL', { ...flag, DATABASE_URL: urls.pooler, DIRECT_URL: urls.poolerTxn }), 'PORT_6543');
+  assert.equal(reasonOf('DATABASE_URL', { ...flag, DATABASE_URL: urls.poolerTxnNoRef }), 'USER_REF_MISSING');
+  assert.equal(reasonOf('DATABASE_URL', { ...flag, DATABASE_URL: urls.poolerTxnOtherRef }), 'USER_REF_MISSING');
+  assert.equal(reasonOf('DATABASE_URL', { ...flag, DATABASE_URL: `${urls.poolerTxn}?sslmode=require` }), 'SSL_PARAM');
+  for (const v of ['true', '0', '', ' 1', 'TRUE']) {
+    assert.equal(reasonOf('DATABASE_URL', { ...REFS, JURY_PREVIEW_DB_TXN_POOLER: v, DATABASE_URL: urls.poolerTxn }), 'PORT_6543');
+  }
+  assert.equal(decideDbTarget(preview({ ...flag, DATABASE_URL: urls.poolerTxn })).code, 'DB_TARGET_OK');
+  const lines = describeDbTargetBlock(preview({ ...flag, DATABASE_URL: urls.pooler, DIRECT_URL: urls.poolerTxn }));
+  assert.equal(lines.length, 2);
+  for (const l of lines) assert.match(l, LINE);
+  assert.match(lines[1], /var=DIRECT_URL .*portClass=6543 .*reason=PORT_6543$/);
+  assertNoSecrets(lines.join('\n'));
+});

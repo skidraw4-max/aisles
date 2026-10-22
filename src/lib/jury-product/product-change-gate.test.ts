@@ -70,14 +70,14 @@ test('product change gate reuses the existing evaluator and stops at the gate', 
   }
   const ui = readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/ui.tsx'), 'utf8');
   const body = ui.slice(ui.indexOf('export function ImprovementsBody'), ui.indexOf('export function ImprovementTraceBody'));
-  assert.equal(body.includes('Run Change Gate'), true);
-  assert.equal(body.includes('Change Gate'), true);
-  assert.equal(body.includes('Pending'), true);
+  assert.equal(body.includes('변경 검사 실행'), true);
+  assert.equal(body.includes('변경 검사'), true);
+  assert.equal(body.includes('대기 중'), true);
   assert.equal(body.includes('APPROVED'), true);
   assert.equal(body.includes('BLOCKED'), true);
   assert.equal(body.includes('GATED'), true);
-  assert.equal(body.includes('Run Re-review'), true);
-  assert.equal(body.includes('New review'), true);
+  assert.equal(body.includes('재심사 실행'), true);
+  assert.equal(body.includes('새 심사 결과'), true);
 });
 
 test('a completed product execution is gated by the existing evaluator', { timeout: 540_000 }, async () => {

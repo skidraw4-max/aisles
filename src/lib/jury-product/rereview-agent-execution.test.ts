@@ -446,14 +446,14 @@ test('second iteration execution reuses the locked lifecycle', () => {
   }
   const ui = readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/ui.tsx'), 'utf8');
   const body = ui.slice(ui.indexOf('export function ReReviewAgentRunBody'), ui.indexOf('export function ReReviewChangeGateBody'));
-  assert.equal(body.includes('Run Agent'), true);
-  assert.equal(body.includes('Agent Running'), true);
-  assert.equal(body.includes('Agent Completed'), true);
-  for (const label of ['Run Change Gate', 'Re-review', 'Auto Fix', 'Run Loop', 'Run Again', 'Execute Agent']) {
+  assert.equal(body.includes('에이전트 실행'), true);
+  assert.equal(body.includes('에이전트 진행 중'), true);
+  assert.equal(body.includes('에이전트 완료'), true);
+  for (const label of ['변경 검사 실행', '재심사', '자동 수정', '루프 실행', '다시 실행', '에이전트 실행 요청']) {
     assert.equal(body.includes(label), false, label);
   }
   const handoff = ui.slice(ui.indexOf('export function ReReviewAgentHandoffBody'), ui.indexOf('export function HumanReReviewBody'));
-  assert.equal(handoff.includes('Run Agent'), false);
+  assert.equal(handoff.includes('에이전트 실행'), false);
 });
 
 function pendingExecution(improvementTaskId: string, actor: JuryMembership = owner) {

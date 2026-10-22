@@ -8,7 +8,9 @@ import test from 'node:test';
 import path from 'node:path';
 import type { JuryActor } from './access';
 import { planImprovementTraceRead } from './improvement-trace';
-import { improvementTraceQuery, projectImprovementTrace, traceReadHttpStatus, type ImprovementTraceScreen } from './improvement-trace-console';
+import { improvementTraceQuery, projectImprovementTrace, readGuardedImprovementTrace, traceReadHttpStatus, type ImprovementTraceScreen } from './improvement-trace-console';
+import { authorizeJuryServiceFeature } from './service-feature-authorization';
+import type { ServiceGrantRow } from './service-member-management';
 import { assembleImprovementTrace, type TraceBundle } from './improvement-trace';
 import { REWORD_CONSTRAINTS, REWORD_FIXTURE_OBJECTIVE } from './improvement-bridge';
 import type { JuryMembership } from './records';
@@ -328,3 +330,66 @@ function loadEnv(): void {
     }
   }
 }
+
+test('Track A: the trace API reads a trace only after improvement.read passes for that service', async () => {
+  const roles = ['OWNER', 'ADMIN', 'DEVELOPER', 'REVIEWER', 'VIEWER'] as const;
+  const expected: Record<(typeof roles)[number], boolean> = { OWNER: true, ADMIN: true, DEVELOPER: true, REVIEWER: false, VIEWER: false };
+  for (const role of roles) {
+    for (const permission of ['AGENT', 'IMPROVE', 'REVIEW', 'VIEW', null] as const) {
+      const actor = { ok: true as const, userId: 'user-1', tenantId: 'tenant-a', role, membershipId: 'mem-1' };
+      const grants: ServiceGrantRow[] = permission
+        ? [{ id: 'grant-1', tenantId: 'tenant-a', connectionId: 'conn-a', userId: 'user-1', permission }]
+        : [];
+      let reads = 0;
+      const outcome = await readGuardedImprovementTrace({
+        actor,
+        taskId: 'task-1',
+        guard: async (guardActor, _taskId, feature) => authorizeJuryServiceFeature({
+          actor: guardActor,
+          membership: { tenantId: 'tenant-a', userId: 'user-1' },
+          connection: { id: 'conn-a', tenantId: 'tenant-a' },
+          grants,
+          feature,
+        }),
+        read: async () => {
+          reads += 1;
+          return 'trace';
+        },
+      });
+      const allowed = expected[role] && (permission === 'AGENT' || permission === 'IMPROVE');
+      assert.equal(outcome.ok, allowed, `${role} ${permission}`);
+      assert.equal(reads, allowed ? 1 : 0, `${role} ${permission} read count`);
+      if (!outcome.ok) {
+        // Grant first: a missing or below-IMPROVE grant is NOT_FOUND (404); with the grant, a role shortfall is FORBIDDEN (403).
+        const granted = permission === 'AGENT' || permission === 'IMPROVE';
+        assert.equal(outcome.reason, granted ? 'FORBIDDEN' : 'NOT_FOUND', `${role} ${permission}`);
+        assert.equal(traceReadHttpStatus(outcome.reason), granted ? 403 : 404, `${role} ${permission}`);
+      }
+    }
+  }
+});
+
+test('Track A: an unknown or foreign task is 404 and the trace is not read', async () => {
+  for (const reason of ['NOT_FOUND', 'TENANT_MISMATCH']) {
+    let reads = 0;
+    const outcome = await readGuardedImprovementTrace({
+      actor: { ok: true, userId: 'user-1', tenantId: 'tenant-a', role: 'OWNER', membershipId: 'mem-1' },
+      taskId: 'task-x',
+      guard: async () => ({ ok: false, reason }),
+      read: async () => {
+        reads += 1;
+        return 'trace';
+      },
+    });
+    assert.equal(outcome.ok, false);
+    assert.equal(reads, 0);
+    if (!outcome.ok) assert.equal(traceReadHttpStatus(outcome.reason), 404);
+  }
+});
+
+test('Track A: the trace route guards improvement.read before reading the trace', () => {
+  const source = readFileSync(path.resolve(process.cwd(), 'src/app/api/jury/improvements/[taskId]/route.ts'), 'utf8');
+  assert.equal(source.includes('guard: guardImprovementFeature'), true);
+  assert.equal(source.includes('readGuardedImprovementTrace'), true);
+  assert.equal(source.indexOf('readGuardedImprovementTrace({') < source.indexOf('readImprovementTrace(query.input)'), true);
+});

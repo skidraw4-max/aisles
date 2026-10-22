@@ -50,14 +50,14 @@ export type ServiceOperationModel = {
   tenantId: string;
   name: string;
   connectionStatus: string;
-  phase: OperationalPhase;
-  health: ServiceHealth;
+  phase: OperationalPhase | null;
+  health: ServiceHealth | null;
   parts: {
     connection: string;
     evidence: 'READY' | 'MISSING';
-    review: 'LAST_RESULT_AVAILABLE' | 'NONE';
-    improvement: 'OPEN' | 'NONE';
-    agent: string;
+    review: 'LAST_RESULT_AVAILABLE' | 'NONE' | null;
+    improvement: 'OPEN' | 'NONE' | null;
+    agent: string | null;
   };
   onboarding: { discovery: 'COMPLETE' | 'NOT_STARTED'; scope: 'APPROVED' | 'PENDING' | 'NONE'; connection: string };
   evidence: {
@@ -92,8 +92,8 @@ export type ServiceOperationModel = {
     testsPassed: boolean | null;
     errorCode: string | null;
   };
-  flow: { agent: string; changeGate: string; reReview: string; jury: string };
-  next: ServiceNextAction;
+  flow: { agent: string; changeGate: string; reReview: string; jury: string } | null;
+  next: ServiceNextAction | null;
   activity: Array<{ id: string; label: string; timestamp: string; age: string }>;
   access: { organizationRole: string; servicePermission: string | null; capabilities: Record<'VIEW' | 'REVIEW' | 'IMPROVE' | 'AGENT', boolean> };
   lastEvidence: string;
@@ -468,4 +468,49 @@ export function visibleActivity(events: readonly JuryAuditEvent[], now: string):
     if (!label) return [];
     return [{ id: row.id, label, timestamp: row.timestamp, age: age(row.timestamp, now) }];
   });
+}
+
+/**
+ * Status-only view for a member without review.read on this service:
+ * pipeline state derived from review, improvement and agent records is not exposed (null).
+ * Connection, onboarding, evidence and metrics are kept.
+ */
+export function withoutOperationalState(model: ServiceOperationModel): ServiceOperationModel {
+  return {
+    ...model,
+    phase: null,
+    health: null,
+    next: null,
+    parts: { ...model.parts, review: null, improvement: null, agent: null },
+    flow: null,
+  };
+}
+
+/** Keeps the full model only when the caller holds review.read on this service; otherwise strips derived state. */
+export function exposeOperationalState(
+  model: ServiceOperationModel,
+  input: Parameters<typeof operationCapabilities>[0],
+): ServiceOperationModel {
+  const reviewRead = authorizeJuryServiceFeature({
+    actor: input.actor,
+    membership: { tenantId: input.actor.tenantId, userId: input.actor.userId },
+    connection: input.connection,
+    grants: input.grants,
+    feature: 'review.read',
+    clientTenantId: input.clientTenantId,
+    actingUserId: input.actingUserId,
+    actorRole: input.actorRole,
+    permission: input.permission,
+  });
+  return reviewRead.ok ? model : withoutOperationalState(model);
+}
+
+/** True when the model was not reduced by withoutOperationalState (the caller holds review.read on the service). */
+export function hasReviewAccess(model: ServiceOperationModel): boolean {
+  return model.parts.review !== null;
+}
+
+/** List cell value for open improvement tasks: the count with review.read on the service, otherwise —. */
+export function improvementOpenCountCell(model: ServiceOperationModel): number | '—' {
+  return hasReviewAccess(model) ? model.improvement.openCount : '—';
 }

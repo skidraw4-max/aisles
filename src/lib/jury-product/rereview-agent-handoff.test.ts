@@ -286,14 +286,14 @@ test('re-review handoff stays on the pending contract', () => {
   }
   const ui = readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/ui.tsx'), 'utf8');
   const body = ui.slice(ui.indexOf('export function ReReviewAgentHandoffBody'), ui.indexOf('export function HumanReReviewBody'));
-  assert.equal(body.includes('Approve for Agent'), true);
-  assert.equal(body.includes('Send to Agent'), true);
-  assert.equal(body.includes('Agent Pending'), true);
-  for (const label of ['Run Agent', 'Execute Agent', 'Run Change Gate', 'Run Re-review', 'Auto Fix', 'Run Loop']) {
+  assert.equal(body.includes('에이전트 작업 승인'), true);
+  assert.equal(body.includes('에이전트에 전달'), true);
+  assert.equal(body.includes('에이전트 대기 중'), true);
+  for (const label of ['에이전트 실행', '에이전트 실행 요청', '변경 검사 실행', '재심사 실행', '자동 수정', '루프 실행']) {
     assert.equal(body.includes(label), false, label);
   }
   const reviewBody = ui.slice(ui.indexOf('export function HumanReReviewBody'), ui.indexOf('export function HumanChangeGateBody'));
-  assert.equal(reviewBody.includes('Send to Agent'), false);
+  assert.equal(reviewBody.includes('에이전트에 전달'), false);
 });
 
 function handoff(improvementTaskId: string, actor: JuryMembership = owner) {

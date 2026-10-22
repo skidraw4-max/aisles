@@ -1,6 +1,7 @@
 import { isJuryStoreUnavailable } from '@/lib/jury-product/jury-db';
 import { improvementTraceQuery } from '@/lib/jury-product/improvement-trace-console';
 import { readImprovementTrace } from '@/lib/jury-product/improvement-trace-store';
+import { externalFeatureDenial } from '@/lib/jury-product/service-feature-authorization';
 import { guardImprovementFeature } from '@/lib/jury-product/service-feature-guard';
 import { getJuryActor } from '@/lib/jury-product/session';
 import { ImprovementTraceBody, JuryChrome } from '../../ui';
@@ -19,7 +20,7 @@ export default async function JuryImprovementTracePage({
   if (!access.ok) {
     return (
       <JuryChrome actor={actor}>
-        <p>{access.reason === 'FORBIDDEN' ? 'Not authorized' : '이 tenant에서 해당 Improvement를 찾을 수 없습니다.'}</p>
+        <p>{externalFeatureDenial(access) === 'FORBIDDEN' ? 'Not authorized' : '이 tenant에서 해당 Improvement를 찾을 수 없습니다.'}</p>
       </JuryChrome>
     );
   }

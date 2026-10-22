@@ -170,3 +170,12 @@ test('cli tls code never disables certificate verification', () => {
     assert.equal(/accept_invalid_certs/.test(source.replace(/\/\/.*$|\/\*[\s\S]*?\*\//gm, '')), false, file);
   }
 });
+
+test('A-2: the runtime txn pooler flag never opens the shared 6543 pooler to the prisma cli', { skip }, () => {
+  const refs = { JURY_PREVIEW_DB_PROJECT_REF: PREVIEW_REF, JURY_PRODUCTION_DB_PROJECT_REFS: PRODUCTION_REF };
+  const txnHost = `postgres://postgres.${PREVIEW_REF}:secret@aws-0-ap-south-1.pooler.supabase.com:6543/postgres`;
+  const txnUrl = `${txnHost}?sslmode=require&sslcert=${encodeURIComponent(certs!.ca)}`;
+  const env = { JURY_PREVIEW_DB: '1', JURY_PREVIEW_DB_TXN_POOLER: '1', JURY_DB_CA_PATH: certs!.ca, PRISMA_CLI_DATABASE_URL: txnUrl, ...refs };
+  blocked(env as CliTlsEnv, 'PREVIEW_GUARD', undefined, confirmed);
+  blocked(env as CliTlsEnv, 'PREVIEW_GUARD', ['node', 'prisma', 'migrate', 'status'], confirmed);
+});

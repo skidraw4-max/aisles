@@ -123,14 +123,14 @@ test('following re-review reuses the existing change-gate review lifecycle', () 
   }
   const ui = readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/ui.tsx'), 'utf8');
   const body = ui.slice(ui.indexOf('export function FollowingReReviewBody'));
-  assert.equal(body.includes('Run Re-review'), true);
+  assert.equal(body.includes('재심사 실행'), true);
   assert.equal(body.includes('statusSummary'), true);
   assert.equal(body.includes('topProblems'), true);
   assert.equal(body.includes('expectedUserEffect'), true);
   assert.equal(body.includes('supportedClaims'), true);
   assert.equal(body.includes('partiallySupportedClaims'), true);
   assert.equal(body.includes('hypotheses'), true);
-  for (const label of ['Create Improvement Task', 'Approve Improvement', 'Send to Agent', 'Run Agent', 'Run Change Gate', 'Auto Fix', 'Run Loop', 'Auto Loop']) {
+  for (const label of ['개선 작업 만들기', '개선 승인', '에이전트에 전달', '에이전트 실행', '변경 검사 실행', '자동 수정', '루프 실행', '자동 루프']) {
     assert.equal(body.includes(label), false, label);
   }
 });

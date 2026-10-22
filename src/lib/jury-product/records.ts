@@ -253,6 +253,19 @@ export type JuryReviewRequest =
   | (JuryReviewRequestBase & { reviewType: 'CLAIM_VALIDATION'; claim: string })
   | (JuryReviewRequestBase & { reviewType: 'FULL_REVIEW' | 'UI_UX_REVIEW'; claim?: string });
 
+export const JURY_MEMBER_OPINION_IDS = ['A', 'B', 'C', 'D', 'E'] as const;
+export type JuryMemberOpinionId = (typeof JURY_MEMBER_OPINION_IDS)[number];
+
+/** Display-only copy of one analyst's stored opinion. Never feeds a decision. */
+export type JuryMemberOpinion = {
+  memberId: JuryMemberOpinionId;
+  opinion: string;
+  basis: string;
+  problems: string[];
+  confidence: number | null;
+  revised: boolean | null;
+};
+
 export type JuryFinalSurface = {
   statusSummary: string;
   topProblems: string[];
@@ -262,6 +275,12 @@ export type JuryFinalSurface = {
   supportedClaims: string[];
   partiallySupportedClaims: string[];
   hypotheses: string[];
+  /** Optional display-only fields (phase 3). Older stored results do not have them. */
+  boardConfidence?: number | null;
+  opinionDifferences?: string[];
+  disputedPoints?: string[];
+  memberOpinions?: JuryMemberOpinion[];
+  memberOpinionsOmitted?: 'SECRET' | null;
 };
 
 export type JuryReviewResult = {

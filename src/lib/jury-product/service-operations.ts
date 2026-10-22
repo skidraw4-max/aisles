@@ -5,13 +5,14 @@
 import type { JuryActor } from './access';
 import { readJuryConsole } from './console-view';
 import { isJuryStoreUnavailable, loadJuryCatalog } from './jury-db';
-import { authorizeJuryServiceFeature } from './service-feature-authorization';
+import { authorizeJuryServiceFeature, restrictJuryConsole } from './service-feature-authorization';
 import { listUserServiceGrants } from './service-feature-guard';
 import type { ServiceGrantRow } from './service-member-management';
 import {
   accessSummary,
   operationCapabilities,
   projectServiceOperation,
+  exposeOperationalState,
   type ServiceOperationModel,
 } from './service-operations-status';
 
@@ -44,9 +45,10 @@ export async function loadServiceOperations(actor: JuryActor, client: ClientIden
   if (!actor.ok) return { ok: false, reason: actor.reason === 'UNAUTHENTICATED' ? 'UNAUTHENTICATED' : actor.reason === 'STORE_UNAVAILABLE' ? 'STORE_UNAVAILABLE' : 'NO_MEMBERSHIP' };
   try {
     const catalog = await loadJuryCatalog(actor.tenantId);
-    const view = readJuryConsole(actor, catalog);
-    if (!view) return { ok: false, reason: 'NO_MEMBERSHIP' };
+    const tenantView = readJuryConsole(actor, catalog);
+    if (!tenantView) return { ok: false, reason: 'NO_MEMBERSHIP' };
     const grants = await listUserServiceGrants(actor.tenantId, actor.userId);
+    const view = restrictJuryConsole(tenantView, actor, grants);
     const now = new Date().toISOString();
     const rows = view.connections.flatMap((connection) => {
       const allowed = authorizeJuryServiceFeature({
@@ -76,7 +78,16 @@ export async function loadServiceOperations(actor: JuryActor, client: ClientIden
         accessSummary(actor.role, grantsFor(grants, connection.id, actor.userId)),
         now,
       );
-      return model ? [model] : [];
+      if (!model) return [];
+      return [exposeOperationalState(model, {
+        actor,
+        connection,
+        grants,
+        clientTenantId: client.tenantId,
+        actingUserId: client.actingUserId,
+        actorRole: client.actorRole,
+        permission: client.permission,
+      })];
     });
     return { ok: true, rows };
   } catch (error) {

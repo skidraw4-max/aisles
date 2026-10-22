@@ -118,10 +118,10 @@ test('later agent execution reuses the locked lifecycle', () => {
     ui.indexOf('export function LaterAgentRunBody'),
     ui.indexOf('export function LaterChangeGateBody'),
   );
-  assert.equal(body.includes('Run Agent'), true);
-  assert.equal(body.includes('Agent Running'), true);
-  assert.equal(body.includes('Agent Completed'), true);
-  for (const label of ['Run Change Gate', 'Re-review', 'Auto Fix', 'Run Loop', 'Auto Loop', 'Send to Agent']) {
+  assert.equal(body.includes('에이전트 실행'), true);
+  assert.equal(body.includes('에이전트 진행 중'), true);
+  assert.equal(body.includes('에이전트 완료'), true);
+  for (const label of ['변경 검사 실행', '재심사', '자동 수정', '루프 실행', '자동 루프', '에이전트에 전달']) {
     assert.equal(body.includes(label), false, label);
   }
 });

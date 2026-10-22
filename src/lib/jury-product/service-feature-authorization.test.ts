@@ -6,11 +6,14 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
 import type { JuryActor } from './access';
-import type { JuryConsoleView } from './console-view';
+import type { JuryConsoleCatalog } from './console-fixture';
+import { readJuryConsole, type JuryConsoleView } from './console-view';
+import { projectAudit, projectDashboard } from './product-shell';
 import type { JuryMemberRole } from './records';
 import {
   agentPermissionBypassesPipeline,
   authorizeJuryServiceFeature,
+  readConsoleReviewIds,
   restrictJuryConsole,
   type ServiceFeature,
 } from './service-feature-authorization';
@@ -236,5 +239,142 @@ test('product actions authorize before review, improvement, and agent work', () 
   }
   const gate = actions.slice(actions.indexOf('export async function runProductChangeGate'), actions.indexOf('export async function runProductChangeGateReReview'));
   assert.equal(gate.includes('evaluateProductChangeGate'), true);
-  assert.equal(gate.includes('guardAgentExecutionFeature'), false);
+  assert.equal(gate.includes('guardAgentExecutionFeature'), true);
+});
+
+const TRACK_A_ROLES = ['OWNER', 'ADMIN', 'DEVELOPER', 'REVIEWER', 'VIEWER'] as const;
+const TRACK_A_TOP: Record<JuryMemberRole, JuryServicePermission> = {
+  OWNER: 'AGENT',
+  ADMIN: 'AGENT',
+  DEVELOPER: 'AGENT',
+  REVIEWER: 'REVIEW',
+  VIEWER: 'VIEW',
+};
+
+function trackACatalog(): JuryConsoleCatalog {
+  const rows = (connectionId: string) => ({
+    request: { id: `req-${connectionId}`, tenantId: 'org-a', connectionId, evidenceId: `ev-${connectionId}`, status: 'COMPLETED' },
+    result: { id: `res-${connectionId}`, tenantId: 'org-a', reviewRequestId: `req-${connectionId}`, expectedDecision: 'REWORD' },
+    task: { id: `task-${connectionId}`, tenantId: 'org-a', reviewResultId: `res-${connectionId}`, status: 'OPEN' },
+    execution: { id: `exe-${connectionId}`, tenantId: 'org-a', taskId: `task-${connectionId}`, status: 'COMPLETED' },
+    gate: { id: `gate-${connectionId}`, tenantId: 'org-a', executionId: `exe-${connectionId}`, gate: 'PASS' },
+    reReview: { id: `rr-${connectionId}`, tenantId: 'org-a', taskId: `task-${connectionId}` },
+  });
+  const a = rows('svc-a');
+  const b = rows('svc-b');
+  return {
+    connections: [
+      { id: 'svc-a', tenantId: 'org-a', serviceKey: 'svc-a-key', status: 'CONNECTED' },
+      { id: 'svc-b', tenantId: 'org-a', serviceKey: 'svc-b-key', status: 'CONNECTED' },
+    ],
+    scopes: [],
+    discoveries: [],
+    metrics: [{ id: 'm-a', tenantId: 'org-a', connectionId: 'svc-a', evidenceId: 'ev-svc-a' }],
+    evidence: [
+      { id: 'ev-svc-a', tenantId: 'org-a', connectionId: 'svc-a' },
+      { id: 'ev-svc-b', tenantId: 'org-a', connectionId: 'svc-b' },
+    ],
+    requests: [a.request, b.request],
+    results: [a.result, b.result],
+    tasks: [a.task, b.task],
+    executions: [a.execution, b.execution],
+    gates: [a.gate, b.gate],
+    reReviews: [a.reReview, b.reReview],
+    audit: [
+      { id: 'au-svc', tenantId: 'org-a', action: 'SERVICE_CONNECTION_ACTIVATED', serviceKey: 'svc-a-key' },
+      { id: 'au-ev', tenantId: 'org-a', action: 'EVIDENCE_RECORDED', evidenceId: 'ev-svc-a' },
+      { id: 'au-start-a', tenantId: 'org-a', action: 'REVIEW_STARTED', reviewId: 'req-svc-a', evidenceId: 'ev-svc-a' },
+      { id: 'au-done-a', tenantId: 'org-a', action: 'REVIEW_COMPLETED', reviewId: 'res-svc-a', decision: 'REWORD' },
+      { id: 'au-done-b', tenantId: 'org-a', action: 'REVIEW_COMPLETED', reviewId: 'res-svc-b', decision: 'VERIFY' },
+      { id: 'au-task-a', tenantId: 'org-a', action: 'IMPROVEMENT_TASK_CREATED', improvementTaskId: 'task-svc-a' },
+      { id: 'au-orphan', tenantId: 'org-a', action: 'REVIEW_COMPLETED', reviewId: 'res-unknown', decision: 'ACCEPT' },
+      { id: 'au-decision-only', tenantId: 'org-a', action: 'HUMAN_DECISION', decision: 'ACCEPT' },
+    ],
+    policies: [],
+  } as unknown as JuryConsoleCatalog;
+}
+
+test('Track A: console review ids skip the catalog for roles without review.start', async () => {
+  for (const role of TRACK_A_ROLES) {
+    for (const permission of [TRACK_A_TOP[role], 'VIEW', null] as const) {
+      let loads = 0;
+      let grantLoads = 0;
+      const read = await readConsoleReviewIds({
+        actor: actor(role),
+        loadCatalog: async () => {
+          loads += 1;
+          return trackACatalog();
+        },
+        listGrants: async () => {
+          grantLoads += 1;
+          return permission ? [grant('svc-a', permission)] : [];
+        },
+      });
+      if (role === 'VIEWER') {
+        assert.deepEqual(read, { ok: false, reason: 'FORBIDDEN' }, `${role} ${permission}`);
+        assert.equal(loads, 0, `${role} must not load the catalog`);
+        assert.equal(grantLoads, 0, `${role} must not load grants`);
+        continue;
+      }
+      assert.equal(read.ok, true, `${role} ${permission}`);
+      const ids = read.ok ? read.reviewIds : [];
+      const reviewable = permission === 'REVIEW' || permission === 'IMPROVE' || permission === 'AGENT';
+      assert.deepEqual(ids, reviewable ? ['res-svc-a'] : [], `${role} ${permission}`);
+      assert.equal(ids.includes('res-svc-b'), false, `${role} must not see a service without a grant`);
+    }
+  }
+});
+
+test('Track A: the console route builds review ids through readConsoleReviewIds', () => {
+  const source = readFileSync(path.resolve(process.cwd(), 'src/app/api/jury/console/route.ts'), 'utf8');
+  const get = source.slice(source.indexOf('export async function GET'), source.indexOf('export async function POST'));
+  assert.equal(get.includes('readConsoleReviewIds('), true);
+  assert.equal(get.includes('readJuryConsole('), false);
+  assert.equal(get.includes('view?.results'), false);
+  const denied = get.indexOf('if (!read.ok)');
+  assert.ok(denied > 0);
+  assert.ok(denied < get.indexOf('reviewIds: read.reviewIds'));
+  assert.equal(get.includes('statusFor(read.reason)'), true);
+});
+
+function trackAView(role: JuryMemberRole, grants: ServiceGrantRow[]): JuryConsoleView {
+  const current = actor(role);
+  const view = readJuryConsole(current, trackACatalog());
+  assert.ok(view);
+  return restrictJuryConsole(view, current, grants);
+}
+
+test('Track A: audit keeps review and improvement events only where the service grants them', () => {
+  const serviceOnly = ['au-svc', 'au-ev'];
+  for (const role of TRACK_A_ROLES) {
+    const top = trackAView(role, [grant('svc-a', TRACK_A_TOP[role])]).audit.map((row) => row.id).sort();
+    const expected = role === 'VIEWER'
+      ? serviceOnly
+      : role === 'REVIEWER'
+        ? [...serviceOnly, 'au-start-a', 'au-done-a']
+        : [...serviceOnly, 'au-start-a', 'au-done-a', 'au-task-a'];
+    assert.deepEqual(top, [...expected].sort(), role);
+    for (const grants of [[grant('svc-a', 'VIEW')], []]) {
+      const limited = trackAView(role, grants).audit.map((row) => row.id).sort();
+      assert.deepEqual(limited, [...serviceOnly].sort(), `${role} ${grants.length ? 'VIEW' : 'no grant'}`);
+    }
+    const all = trackAView(role, [grant('svc-a', TRACK_A_TOP[role])]).audit.map((row) => row.id);
+    for (const hidden of ['au-done-b', 'au-orphan', 'au-decision-only']) {
+      assert.equal(all.includes(hidden), false, `${role} ${hidden}`);
+    }
+  }
+});
+
+test('Track A: a VIEWER dashboard and audit carry no review decision', () => {
+  const view = trackAView('VIEWER', [grant('svc-a', 'VIEW')]);
+  const board = projectDashboard(view);
+  assert.equal(board.available, true);
+  if (!board.available) return;
+  assert.equal(board.reviews, '0');
+  const text = JSON.stringify([board.activity, projectAudit(view)]);
+  for (const decision of ['ACCEPT', 'VERIFY', 'REWORD', 'res-svc-a', 'req-svc-a', 'task-svc-a']) {
+    assert.equal(text.includes(decision), false, decision);
+  }
+  assert.equal(view.evidence.length, 1);
+  assert.equal(view.metrics.length, 1);
 });

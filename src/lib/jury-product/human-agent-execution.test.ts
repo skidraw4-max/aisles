@@ -367,11 +367,11 @@ test('human agent execution stays on the fake adapter', () => {
   }
   const ui = readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/ui.tsx'), 'utf8');
   const body = ui.slice(ui.indexOf('export function ReviewDetailBody'), ui.indexOf('const INTAKE_AVAILABILITY'));
-  assert.equal(body.includes('Start Agent Execution'), true);
-  assert.equal(body.includes('Running'), true);
-  assert.equal(body.includes('Completed'), true);
-  assert.equal(body.includes('Blocked'), true);
-  for (const label of ['Approve Change', 'Apply Change', 'Change Gate', 'Re-review', 'Auto Fix', 'Run Loop', 'Retry Loop']) {
+  assert.equal(body.includes('에이전트 작업 시작'), true);
+  assert.equal(body.includes('진행 중'), true);
+  assert.equal(body.includes('완료'), true);
+  assert.equal(body.includes('중단됨'), true);
+  for (const label of ['변경 승인', '변경 적용', '변경 검사', '재심사', '자동 수정', '루프 실행', '루프 재시도']) {
     assert.equal(body.includes(label), false, label);
   }
 });

@@ -326,10 +326,10 @@ test('later re-review reuses the existing change-gate review lifecycle', () => {
     ui.indexOf('export function LaterReReviewBody'),
     ui.indexOf('export function LaterImprovementBody'),
   );
-  assert.equal(body.includes('Run Re-review'), true);
-  assert.equal(body.includes('Second Re-review Result'), true);
-  assert.equal(body.includes('Decision:'), true);
-  for (const label of ['Next Improvement', 'Approve for Agent', 'Send to Agent', 'Run Agent', 'Run Change Gate', 'Auto Fix', 'Run Loop']) {
+  assert.equal(body.includes('재심사 실행'), true);
+  assert.equal(body.includes('두 번째 재심사 결과'), true);
+  assert.equal(body.includes('결론:'), true);
+  for (const label of ['다음 개선', '에이전트 작업 승인', '에이전트에 전달', '에이전트 실행', '변경 검사 실행', '자동 수정', '루프 실행']) {
     assert.equal(body.includes(label), false, label);
   }
 });

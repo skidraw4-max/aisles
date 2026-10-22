@@ -122,11 +122,11 @@ test('later change gate reuses the existing evaluator', () => {
     ui.indexOf('export function LaterChangeGateBody'),
     ui.indexOf('export function FollowingReReviewBody'),
   );
-  assert.equal(body.includes('Run Change Gate'), true);
-  assert.equal(body.includes('Change Gate: APPROVED'), true);
-  assert.equal(body.includes('Change Gate: GATED'), true);
-  assert.equal(body.includes('Change Gate: BLOCKED'), true);
-  for (const label of ['Run Re-review', 'Re-review', 'Auto Fix', 'Run Agent', 'Run Loop', 'Auto Loop', 'Create Improvement Task', 'Next Improvement']) {
+  assert.equal(body.includes('변경 검사 실행'), true);
+  assert.equal(body.includes('변경 검사: 승인됨'), true);
+  assert.equal(body.includes('변경 검사: 보류됨'), true);
+  assert.equal(body.includes('변경 검사: 차단됨'), true);
+  for (const label of ['재심사 실행', '재심사', '자동 수정', '에이전트 실행', '루프 실행', '자동 루프', '개선 작업 만들기', '다음 개선']) {
     assert.equal(body.includes(label), false, label);
   }
 });

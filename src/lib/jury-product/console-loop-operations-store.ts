@@ -6,9 +6,11 @@ import { createHash } from 'node:crypto';
 import { Prisma } from '@prisma/client';
 import { canonicalAutoLoopMode } from './auto-loop-activation';
 import {
+  canReadConsoleLoopCycles,
   planConsoleLoopRead,
   planConsoleLoopStop,
   projectConsoleLoop,
+  restrictConsoleLoopCycles,
   type ConsoleLoopPolicy,
   type ConsoleLoopScreen,
 } from './console-loop-operations';
@@ -21,7 +23,9 @@ export async function readConsoleLoopOperations(
   const plan = planConsoleLoopRead(actor);
   if (!plan.ok) return plan;
   const { prisma } = await import('@/lib/prisma');
-  const [activation, policy, cycles] = await Promise.all([
+  const userId = actor.ok ? actor.userId : null;
+  const readCycles = Boolean(userId) && canReadConsoleLoopCycles(actor);
+  const [activation, policy, cycles, grants] = await Promise.all([
     prisma.juryAutoLoopActivation.findUnique({
       where: { tenantId: plan.tenantId },
       select: { enabled: true, mode: true },
@@ -37,26 +41,38 @@ export async function readConsoleLoopOperations(
         maxCostUsd: true,
       },
     }),
-    prisma.juryDecisionCycle.findMany({
-      where: { tenantId: plan.tenantId },
-      orderBy: { updatedAt: 'desc' },
-      select: {
-        id: true,
-        status: true,
-        iteration: true,
-        verificationAttempts: true,
-        sameDecisionCount: true,
-        sameConflictCount: true,
-        blockedReason: true,
-      },
-    }),
+    readCycles
+      ? prisma.juryDecisionCycle.findMany({
+          where: { tenantId: plan.tenantId },
+          orderBy: { updatedAt: 'desc' },
+          select: {
+            id: true,
+            tenantId: true,
+            status: true,
+            iteration: true,
+            verificationAttempts: true,
+            sameDecisionCount: true,
+            sameConflictCount: true,
+            blockedReason: true,
+            rootReviewResult: {
+              select: { tenantId: true, request: { select: { tenantId: true, connection: { select: { id: true, tenantId: true } } } } },
+            },
+            currentReviewResult: {
+              select: { tenantId: true, request: { select: { tenantId: true, connection: { select: { id: true, tenantId: true } } } } },
+            },
+          },
+        })
+      : Promise.resolve([]),
+    readCycles && userId
+      ? import('./service-feature-guard').then((guard) => guard.listUserServiceGrants(plan.tenantId, userId))
+      : Promise.resolve([]),
   ]);
   return {
     ok: true,
     screen: projectConsoleLoop({
       activation,
       policy: policy ? toPolicy(policy) : null,
-      cycles,
+      cycles: restrictConsoleLoopCycles({ actor, cycles, grants }),
     }),
   };
 }

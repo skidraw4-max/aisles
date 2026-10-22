@@ -24,7 +24,12 @@ import { acknowledgeHumanReview, changeJuryMembership, createHumanImprovementTas
 import type { ProductReReviewState } from '@/lib/jury-product/product-change-gate-rereview';
 import { loadShellIdentity } from './load';
 import { LogoutButton, ProductNav } from './shell-client';
+import { TranslationHint } from './ui-primitives';
+import { CopyIdButton, ReviewSummaryDialog } from './ReviewSummaryDialog';
+import { formatKstFull, formatKstShort, shortId } from './review-summary-format';
+import { ConfidenceLine, reviewTabHref } from './review-tabs-ui';
 import type { JuryMembership } from '@/lib/jury-product/records';
+import { auditActionLabel, DECISION_GUIDANCE, displayText, traceLabel, userLabel } from '@/lib/jury-product/ui-labels';
 import styles from './jury.module.css';
 
 const GATE_COPY: Record<Exclude<JuryActor, { ok: true }>['reason'], string> = {
@@ -63,29 +68,29 @@ export async function JuryChrome({
         <div>
           <h1 className={styles.title}>AIsles Jury</h1>
           <p className={styles.lead}>
-            제품 Console. 기존 운영위원회 화면과는 별도이며, 품질 판정은 v9.x Final Comparator 필드만 표시합니다.
+            리뷰 요청부터 결과 확인, 조직 관리까지 한 곳에서 진행합니다.
           </p>
         </div>
         {actor.ok ? (
           <div className={styles.identity}>
             <OrganizationSwitcher organizations={organizations} activeTenantId={actor.tenantId} />
             <p className={styles.muted}>
-              <Link className={styles.inline} href={juryHref('/organization/members')}>Members</Link>
+              <Link className={styles.inline} href={juryHref('/organization/members')}>멤버</Link>
               {' · '}
-              <Link className={styles.inline} href={juryHref('/organization/services')}>Service access</Link>
+              <Link className={styles.inline} href={juryHref('/organization/services')}>서비스 권한</Link>
               {' · '}
-              <Link className={styles.inline} href={juryHref('/organization/security')}>Security</Link>
+              <Link className={styles.inline} href={juryHref('/organization/security')}>보안</Link>
               {decideJuryMutation({ actor, action: 'membership.write', resourceTenantId: actor.tenantId }).ok ? (
                 <>
                   {' · '}
-                  <Link className={styles.inline} href={juryHref('/organization/invitations')}>Invitations</Link>
+                  <Link className={styles.inline} href={juryHref('/organization/invitations')}>초대</Link>
                 </>
               ) : null}
             </p>
             <p className={styles.muted}>
-              user <strong>{identity?.userLabel ?? SHELL_UNAVAILABLE}</strong>
+              사용자 <strong>{identity?.userLabel ?? displayText(SHELL_UNAVAILABLE)}</strong>
               {' · '}
-              role <span className={styles.badge}>{actor.role}</span>
+              역할 <span className={styles.badge} title={actor.role}>{userLabel(actor.role)}</span>
             </p>
             <LogoutButton />
           </div>
@@ -98,7 +103,7 @@ export async function JuryChrome({
         children
       ) : (
         <section className={styles.panel} role="alert">
-          <h2>Unauthorized</h2>
+          <h2>접근할 수 없습니다</h2>
           <p>{GATE_COPY[actor.reason]}</p>
           {actor.reason === 'UNAUTHENTICATED' ? (
             <p>
@@ -233,7 +238,7 @@ function metricLine(metric: string, value: number | null, availability: string):
     (JURY_PROJECTABLE_DB_METRICS as readonly string[]).includes(metric) ||
     (JURY_PROJECTABLE_GA4_METRICS as readonly string[]).includes(metric) ||
     metric.startsWith(JURY_GA4_EVENT_PREFIX);
-  return `${metric}: ${shown} (${availability})${scored ? '' : ' · v9.x 품질 판정 밖'}`;
+  return `${metric}: ${displayText(shown)} (${availability})${scored ? '' : ' · v9.x 품질 판정 밖'}`;
 }
 
 export function DashboardBody({ view }: { view: JuryConsoleView }) {
@@ -241,45 +246,62 @@ export function DashboardBody({ view }: { view: JuryConsoleView }) {
   if (!board.available) {
     return (
       <section className={styles.panel} role="alert">
-        <h2>Dashboard</h2>
-        <p>{SHELL_UNAVAILABLE}</p>
+        <h2>홈</h2>
+        <p>{displayText(SHELL_UNAVAILABLE)}</p>
       </section>
     );
   }
   return (
     <>
-      <h2 className={styles.pageTitle}>Dashboard</h2>
+      <div className={styles.pageIntro}>
+        <div>
+          <p className={styles.eyebrow}>현재 메뉴 · 홈</p>
+          <h2 className={styles.pageTitle}>홈</h2>
+          <p className={styles.pageDescription}>지금 해야 할 일과 최근 결과를 한눈에 확인하세요.</p>
+        </div>
+        <Link className={styles.primaryButton} href={juryHref('/evidence')}>리뷰 요청 시작</Link>
+      </div>
+      <section className={`${styles.panel} ${styles.nextAction}`}>
+        <div>
+          <p className={styles.eyebrow}>지금 할 일</p>
+          <h2>최근 리뷰 결과를 확인하세요</h2>
+          <p className={styles.muted}>새로운 결과가 도착하면 주요 문제와 권장 조치를 바로 확인할 수 있습니다.</p>
+        </div>
+        <Link className={styles.primaryButton} href={juryHref('/reviews')}>결과 보기</Link>
+      </section>
       <div className={styles.cards}>
         <section className={styles.panel}>
-          <h2>Connected Services</h2>
+          <h2>연결된 서비스</h2>
           <p className={styles.metric}>{board.services}</p>
+          <p className={styles.muted}>정상 연결된 서비스</p>
         </section>
         <section className={styles.panel}>
-          <h2>Evidence</h2>
+          <h2>리뷰 자료</h2>
           <p className={styles.metric}>{board.evidence}</p>
+          <p className={styles.muted}>최근 분석에 사용된 자료</p>
         </section>
         <section className={styles.panel}>
-          <h2>Reviews</h2>
+          <h2>진행 중 리뷰</h2>
           <p className={styles.metric}>{board.reviews}</p>
           <p className={styles.muted}>{board.reviewDetail}</p>
         </section>
         <section className={styles.panel}>
-          <h2>Improvements</h2>
+          <h2>개선 작업</h2>
           <p className={styles.metric}>{board.openImprovements}</p>
-          <p className={styles.muted}>OPEN · {board.activeImprovements} in progress</p>
+          <p className={styles.muted}>진행 중 {board.activeImprovements}건</p>
         </section>
       </div>
       <section className={styles.panel}>
-        <h2>Recent Activity</h2>
-        {board.activity.length === 0 ? <p>{SHELL_EMPTY.audit}</p> : (
+        <h2>최근 결과와 활동</h2>
+        {board.activity.length === 0 ? <p>{displayText(SHELL_EMPTY.audit)}</p> : (
           <table className={`${styles.table} ${styles.activityTable}`}>
             <thead>
               <tr>
-                <th>timestamp</th>
-                <th>actor</th>
-                <th>action</th>
-                <th>resource</th>
-                <th>status</th>
+                <th>시간</th>
+                <th>사용자</th>
+                <th>활동</th>
+                <th>대상</th>
+                <th>상태</th>
               </tr>
             </thead>
             <tbody>
@@ -287,9 +309,9 @@ export function DashboardBody({ view }: { view: JuryConsoleView }) {
                 <tr key={event.id}>
                   <td>{event.timestamp}</td>
                   <td className={styles.identifier} title={event.actor}>{compactIdentifier(event.actor)}</td>
-                  <td>{event.action}</td>
+                  <td title={event.action}>{auditActionLabel(event.action)}</td>
                   <td className={styles.identifier} title={event.resource}>{compactIdentifier(event.resource)}</td>
-                  <td>{event.status}</td>
+                  <td><span className={styles.statusBadge} title={event.status}>{auditActionLabel(event.status)}</span></td>
                 </tr>
               ))}
             </tbody>
@@ -304,35 +326,35 @@ export function ServicesBody({ actor, view }: { actor: JuryActor; view: JuryCons
   const rows = projectServiceRows(view);
   return (
     <section className={styles.panel}>
-      <h2 className={styles.pageTitle}>Services</h2>
+      <h2 className={styles.pageTitle}>서비스 연결 목록</h2>
       {canShowWrite(actor, 'connection.write') ? (
-        <p><Link className={styles.button} href={juryHref('/services/new')}>Add Service</Link></p>
+        <p><Link className={styles.button} href={juryHref('/services/new')}>서비스 추가</Link></p>
       ) : (
-        <p className={styles.muted}>Add Service: 현재 역할에는 이 변경 권한이 없습니다.</p>
+        <p className={styles.muted}>서비스 추가: 현재 역할에는 이 변경 권한이 없습니다.</p>
       )}
-      {rows.length === 0 ? <p>{SHELL_EMPTY.services}</p> : (
+      {rows.length === 0 ? <p>{displayText(SHELL_EMPTY.services)}</p> : (
         <table className={styles.table}>
           <thead>
             <tr>
-              <th>Service Name</th>
-              <th>Connection Type</th>
-              <th>Status</th>
-              <th>Created At</th>
-              <th>Updated At</th>
-              <th>Discovery Status</th>
-              <th>Scope Status</th>
+              <th>서비스 이름</th>
+              <th>연결 방식</th>
+              <th>상태</th>
+              <th>생성일</th>
+              <th>수정일</th>
+              <th>서비스 확인 상태</th>
+              <th>범위 상태</th>
             </tr>
           </thead>
           <tbody>
             {rows.map((row) => (
               <tr key={row.id}>
                 <td><Link className={styles.inline} href={juryHref(`/services/${row.id}`)}>{row.displayName}</Link></td>
-                <td>{row.accessMethod}</td>
-                <td><span className={styles.badge}>{row.status}</span></td>
+                <td title={row.accessMethod}>{displayText(row.accessMethod)}</td>
+                <td><span className={styles.badge} title={row.status}>{userLabel(row.status)}</span></td>
                 <td>{row.createdAt}</td>
                 <td>{row.updatedAt}</td>
-                <td>{row.discoveryStatus}</td>
-                <td>{row.scopeStatus}</td>
+                <td title={row.discoveryStatus}>{displayText(row.discoveryStatus)}</td>
+                <td title={row.scopeStatus}>{displayText(row.scopeStatus)}</td>
               </tr>
             ))}
           </tbody>
@@ -346,7 +368,7 @@ export function DiscoveryBody({ actor, view }: { actor: JuryActor; view: JuryCon
   const discovered = new Set(view.discoveries.map((row) => row.connectionId));
   return (
     <section className={styles.panel}>
-      <h2>Discovery</h2>
+      <h2>서비스 확인</h2>
       <p className={styles.muted}>제안만 표시합니다. 측정값은 없고, scope가 승인되기 전에는 수집하지 않습니다.</p>
       {view.connections.filter((row) => !discovered.has(row.id)).map((row) => (
         <form action={runJuryDiscovery} key={row.id}>
@@ -435,106 +457,136 @@ function CatalogScopeForm({ actor, view }: { actor: JuryActor; view: JuryConsole
 export function ReviewsBody({ view }: { view: JuryConsoleView }) {
   return (
     <section className={styles.panel}>
-      <h2>Reviews</h2>
-      {view.results.length === 0 ? <p>{SHELL_EMPTY.reviews}</p> : (
-        <table className={styles.table}>
+      <div className={styles.pageIntro}>
+        <div>
+          <p className={styles.eyebrow}>현재 메뉴 · 결과</p>
+          <h2 className={styles.pageTitle}>결과</h2>
+          <p className={styles.pageDescription}>결론과 주요 문제, 권장 조치를 먼저 확인하세요.</p>
+        </div>
+        <Link className={styles.secondaryButton} href={juryHref('/evidence')}>새 리뷰 요청</Link>
+      </div>
+      {view.results.length > 0 ? <TranslationHint /> : null}
+      {view.results.length === 0 ? <p>{displayText(SHELL_EMPTY.reviews)}</p> : (
+        <div className={styles.reviewsTableWrap}>
+        <table className={`${styles.table} ${styles.reviewsTable}`}>
+          <colgroup>
+            <col style={{ width: 80 }} />
+            <col style={{ width: 112 }} />
+            <col style={{ width: 120 }} />
+            <col style={{ width: 104 }} />
+            <col style={{ width: 136 }} />
+            <col />
+          </colgroup>
           <thead>
             <tr>
-              <th>status</th>
-              <th>decision</th>
-              <th>completedAt</th>
-              <th>review type</th>
-              <th>evidence</th>
-              <th>summary</th>
+              <th>상태</th>
+              <th>결론</th>
+              <th>완료일</th>
+              <th>리뷰 유형</th>
+              <th>리뷰 자료</th>
+              <th>요약</th>
             </tr>
           </thead>
           <tbody>
             {view.results.map((row) => {
               const request = view.requests.find((item) => item.id === row.reviewRequestId) ?? null;
+              const statusLabel = request?.status ? userLabel(request.status) : displayText(SHELL_UNAVAILABLE);
+              const decisionLabel = userLabel(row.expectedDecision);
+              const detailHref = juryHref(`/reviews/${row.id}`);
+              const evidenceId = request?.evidenceId ?? null;
+              const summary = row.finalSurface.statusSummary;
               return (
                 <tr key={row.id}>
-                  <td>{request?.status ?? SHELL_UNAVAILABLE}</td>
-                  <td><Link className={styles.inline} href={juryHref(`/reviews/${row.id}`)}>{row.expectedDecision}</Link></td>
-                  <td>{row.completedAt}</td>
-                  <td>{request?.reviewType ?? SHELL_UNAVAILABLE}</td>
-                  <td>{request?.evidenceId ?? SHELL_UNAVAILABLE}</td>
-                  <td>{row.finalSurface.statusSummary}</td>
+                  <td title={request?.status}><span className={styles.badge}>{statusLabel}</span></td>
+                  <td title={row.expectedDecision}><Link className={styles.inline} href={detailHref}><span className={styles.badge}>{decisionLabel}</span></Link></td>
+                  <td title={formatKstFull(row.completedAt)}>{formatKstShort(row.completedAt)}</td>
+                  <td title={request?.reviewType}>{request?.reviewType ? userLabel(request.reviewType) : displayText(SHELL_UNAVAILABLE)}</td>
+                  <td>
+                    {evidenceId ? (
+                      <span className={styles.evidenceCell}>
+                        <span className={styles.evidenceId} title={evidenceId}>{shortId(evidenceId)}</span>
+                        <CopyIdButton value={evidenceId} />
+                      </span>
+                    ) : displayText(SHELL_UNAVAILABLE)}
+                  </td>
+                  <td>
+                    <span className={styles.summaryCell}>
+                      <span className={styles.summaryPreview} lang="en" title={summary}>{summary}</span>
+                      <ReviewSummaryDialog
+                        summary={summary}
+                        decisionLabel={decisionLabel}
+                        statusLabel={statusLabel}
+                        completedAtFull={formatKstFull(row.completedAt)}
+                        evidenceId={evidenceId}
+                        detailHref={detailHref}
+                      />
+                    </span>
+                  </td>
                 </tr>
               );
             })}
           </tbody>
         </table>
+        </div>
       )}
     </section>
   );
 }
 
 export function ReviewDetailBody({ screen, noted }: { screen: ReviewConsoleScreen; noted: boolean }) {
+  const missing = screen.partiallySupportedClaims.length + screen.hypotheses.length;
   return (
     <>
       <section className={styles.panel}>
-        <h2>Jury Review</h2>
-        <div className={styles.row}><span className={styles.label}>Review ID</span><span>{screen.reviewId}</span></div>
-        <div className={styles.row}><span className={styles.label}>Status</span><span>{screen.status ?? '없음'}</span></div>
-        <div className={styles.row}><span className={styles.label}>completedAt</span><span>{screen.completedAt}</span></div>
+        <p className={styles.eyebrow}>현재 메뉴 · 결과 · 요약</p>
+        <h2 className={styles.pageTitle}>리뷰 결과</h2>
+        <div className={styles.resultHighlight}>
+          <span className={styles.label}>결론</span>
+          <strong><span className={styles.badge}>{userLabel(screen.decision)}</span></strong>
+          <p>왜: {screen.decisionMeaning}</p>
+          <p className={styles.muted}>{DECISION_GUIDANCE[screen.decision] ?? ''}</p>
+        </div>
+        <ConfidenceLine screen={screen} />
+        <p className={styles.resultSummary} lang={screen.summary ? 'en' : undefined}>{screen.summary || '요약이 없습니다.'}</p>
+        <TranslationHint />
+        {screen.humanDecision ? <p className={styles.muted}>사용자 확인: {userLabel(screen.humanDecision)}</p> : null}
+        <details className={styles.technicalDetails}>
+          <summary>기술 정보 보기</summary>
+          <div className={styles.row}><span className={styles.label}>Review ID</span><span>{screen.reviewId}</span></div>
+          <div className={styles.row}><span className={styles.label}>상태</span><span>{userLabel(screen.status)}</span></div>
+          <div className={styles.row}><span className={styles.label}>완료일</span><span>{screen.completedAt}</span></div>
+        </details>
       </section>
       <section className={styles.panel}>
-        <h2>Decision</h2>
-        <p>Jury Decision: {screen.decision}</p>
-        <p className={styles.muted}>{screen.decisionMeaning}</p>
-        {screen.humanDecision ? <p>Human Decision: {screen.humanDecision}</p> : null}
-      </section>
-      <section className={styles.panel}>
-        <h2>Summary</h2>
-        <p>{screen.summary || '없음'}</p>
-      </section>
-      <section className={styles.panel}>
-        <h2>Top Problems</h2>
+        <h2>주요 문제</h2>
         {screen.topProblems.length === 0 ? <p className={styles.muted}>없음</p> : (
-          <ul>{screen.topProblems.map((item) => <li key={item}>{item}</li>)}</ul>
+          <ul lang="en">{screen.topProblems.map((item) => <li key={item}>{item}</li>)}</ul>
         )}
       </section>
       <section className={styles.panel}>
-        <h2>Expected User Effect</h2>
-        <p>{screen.expectedUserEffect || '없음'}</p>
-      </section>
-      <section className={styles.panel}>
-        <h2>Risk</h2>
-        <p>{screen.risk || '없음'}</p>
-      </section>
-      <section className={styles.panel}>
-        <h2>측정된 사실</h2>
-        <p className={styles.muted}>Evidence</p>
-        <div className={styles.row}><span className={styles.label}>Evidence ID</span><span>{screen.evidenceId ?? '없음'}</span></div>
-        <Link className={styles.inline} href={juryHref('/evidence')}>Evidence 목록</Link>
-        {screen.measured.map((metric) => (
-          <div className={styles.row} key={metric.id}>
-            <span>{metric.metric}</span>
-            <span>{metric.text} ({metric.availability})</span>
+        <div className={styles.actionPanel}>
+          <div>
+            <h2>권장 조치</h2>
+            <p lang={screen.expectedUserEffect || screen.risk ? 'en' : undefined}>{screen.expectedUserEffect || screen.risk || '추가 조치가 필요하지 않습니다.'}</p>
           </div>
-        ))}
+          {screen.humanChoices.length > 0 ? <span className={styles.badge}>확인 필요</span> : null}
+        </div>
+        <p className={styles.muted}>위험도: <span lang={screen.risk ? 'en' : undefined}>{screen.risk || '특이 사항 없음'}</span></p>
       </section>
       <section className={styles.panel}>
-        <h2>Jury 판단</h2>
-        <p className={styles.muted}>dimensionEvidence</p>
-        {screen.dimensionEvidence.length === 0 ? <p className={styles.muted}>없음</p> : (
-          <ul>{screen.dimensionEvidence.map((item) => <li key={item}>{item}</li>)}</ul>
-        )}
-        <p className={styles.muted}>supportedClaims</p>
-        {screen.supportedClaims.length === 0 ? <p className={styles.muted}>없음</p> : (
-          <ul>{screen.supportedClaims.map((item) => <li key={item}>{item}</li>)}</ul>
-        )}
-      </section>
-      <section className={styles.panel}>
-        <h2>아직 확인되지 않은 내용</h2>
-        <p className={styles.muted}>hypotheses</p>
-        {screen.hypotheses.length === 0 ? <p className={styles.muted}>없음</p> : (
-          <ul>{screen.hypotheses.map((item) => <li key={item}>{item}</li>)}</ul>
-        )}
-        <p className={styles.muted}>partiallySupportedClaims</p>
-        {screen.partiallySupportedClaims.length === 0 ? <p className={styles.muted}>없음</p> : (
-          <ul>{screen.partiallySupportedClaims.map((item) => <li key={item}>{item}</li>)}</ul>
-        )}
+        <h2>근거 요약</h2>
+        <div className={styles.row}>
+          <span className={styles.label}>핵심 근거</span>
+          <span>확인된 주장 {screen.supportedClaims.length}개 · <Link className={styles.inline} href={reviewTabHref(screen.reviewId, 'evidence')}>검증 근거 탭에서 보기</Link></span>
+        </div>
+        <div className={styles.row}>
+          <span className={styles.label}>검증 상태</span>
+          <span>부족한 근거 {missing}개 · <Link className={styles.inline} href={reviewTabHref(screen.reviewId, 'evidence')}>부족한 근거 보기</Link></span>
+        </div>
+        <div className={styles.row}>
+          <span className={styles.label}>위원 의견</span>
+          <span><Link className={styles.inline} href={reviewTabHref(screen.reviewId, 'members')}>위원 의견 탭에서 보기</Link></span>
+        </div>
       </section>
       <section className={styles.panel}>
         <h2>다음 행동</h2>
@@ -551,39 +603,39 @@ export function ReviewDetailBody({ screen, noted }: { screen: ReviewConsoleScree
         {!screen.humanDecision && screen.humanChoices.length === 0 ? (
           <p className={styles.muted}>다음 행동 선택: 현재 역할에는 이 변경 권한이 없습니다.</p>
         ) : null}
-        {screen.improvementTask ? <p>Improvement Task Created</p> : null}
+        {screen.improvementTask ? <p>개선 작업을 만들었습니다</p> : null}
         {screen.canCreateImprovement ? (
           <form action={createHumanImprovementTask}>
             <input type="hidden" name="reviewId" value={screen.reviewId} />
-            <button className={styles.button} type="submit">Create Improvement Task</button>
+            <button className={styles.button} type="submit">개선 작업 만들기</button>
           </form>
         ) : null}
         {screen.agentExecution ? (
           <>
-            <p>AgentExecution</p>
-            <p>Status: {screen.agentExecution.status}</p>
-            <p>Provider: {screen.agentExecution.agent}</p>
-            {screen.agentExecution.status === 'RUNNING' ? <p>Running</p> : null}
-            {screen.agentExecution.status === 'COMPLETED' ? <p>Completed</p> : null}
-            {screen.agentExecution.status === 'BLOCKED' ? <p>Blocked</p> : null}
-            {screen.agentExecution.startedAt ? <p>Started: {screen.agentExecution.startedAt}</p> : null}
-            {screen.agentExecution.finishedAt ? <p>Finished: {screen.agentExecution.finishedAt}</p> : null}
-            {screen.agentExecution.summary ? <p>Result summary: {screen.agentExecution.summary}</p> : null}
-            {screen.agentExecution.changedFiles.map((file) => <p key={file}>Changed file: {file}</p>)}
-            {screen.agentExecution.testsRun.map((testName) => <p key={testName}>Test: {testName}</p>)}
-            {screen.agentExecution.testsPassed == null ? null : <p>Tests passed: {screen.agentExecution.testsPassed ? 'yes' : 'no'}</p>}
+            <p>에이전트 작업</p>
+            <p>상태: {screen.agentExecution.status}</p>
+            <p>제공자: {screen.agentExecution.agent}</p>
+            {screen.agentExecution.status === 'RUNNING' ? <p>진행 중</p> : null}
+            {screen.agentExecution.status === 'COMPLETED' ? <p>완료</p> : null}
+            {screen.agentExecution.status === 'BLOCKED' ? <p>중단됨</p> : null}
+            {screen.agentExecution.startedAt ? <p>시작: {screen.agentExecution.startedAt}</p> : null}
+            {screen.agentExecution.finishedAt ? <p>종료: {screen.agentExecution.finishedAt}</p> : null}
+            {screen.agentExecution.summary ? <p>결과 요약: {screen.agentExecution.summary}</p> : null}
+            {screen.agentExecution.changedFiles.map((file) => <p key={file}>변경 파일: {file}</p>)}
+            {screen.agentExecution.testsRun.map((testName) => <p key={testName}>테스트: {testName}</p>)}
+            {screen.agentExecution.testsPassed == null ? null : <p>테스트 통과: {screen.agentExecution.testsPassed ? '예' : '아니오'}</p>}
           </>
         ) : null}
         {screen.canRun && screen.agentExecution ? (
           <form action={runHumanAgentExecution}>
             <input type="hidden" name="agentExecutionId" value={screen.agentExecution.id} />
-            <button className={styles.button} type="submit">Start Agent Execution</button>
+            <button className={styles.button} type="submit">에이전트 작업 시작</button>
           </form>
         ) : null}
         {screen.canHandoff && screen.improvementTask ? (
           <form action={handoffHumanImprovement}>
             <input type="hidden" name="improvementTaskId" value={screen.improvementTask.id} />
-            <button className={styles.button} type="submit">Send to Agent</button>
+            <button className={styles.button} type="submit">에이전트에 전달</button>
           </form>
         ) : null}
       </section>
@@ -597,22 +649,22 @@ export function ReReviewAgentHandoffBody({ screen }: { screen: ReviewConsoleScre
   const execution = screen.nextAgentExecution;
   return (
     <section className={styles.panel}>
-      <h2>Agent Handoff</h2>
-      {screen.nextApproval ? <p>Human Approval: {screen.nextApproval}</p> : null}
+      <h2>에이전트 전달</h2>
+      {screen.nextApproval ? <p>담당자 승인: {screen.nextApproval}</p> : null}
       {screen.canApproveReReviewAgent && screen.nextImprovement ? (
         <form action={approveReReviewAgentAction}>
           <input type="hidden" name="improvementTaskId" value={screen.nextImprovement.id} />
-          <button className={styles.button} type="submit">Approve for Agent</button>
+          <button className={styles.button} type="submit">에이전트 작업 승인</button>
         </form>
       ) : null}
       {screen.canHandoffReReviewAgent && screen.nextImprovement ? (
         <form action={handoffReReviewImprovement}>
           <input type="hidden" name="improvementTaskId" value={screen.nextImprovement.id} />
-          <button className={styles.button} type="submit">Send to Agent</button>
+          <button className={styles.button} type="submit">에이전트에 전달</button>
         </form>
       ) : null}
-      {execution?.status === 'PENDING' ? <p>Agent Pending</p> : null}
-      {execution && execution.status !== 'PENDING' ? <p>Status: {execution.status}</p> : null}
+      {execution?.status === 'PENDING' ? <p>에이전트 대기 중</p> : null}
+      {execution && execution.status !== 'PENDING' ? <p>상태: {execution.status}</p> : null}
     </section>
   );
 }
@@ -620,37 +672,51 @@ export function ReReviewAgentHandoffBody({ screen }: { screen: ReviewConsoleScre
 export function HumanReReviewBody({ screen }: { screen: ReviewConsoleScreen }) {
   return (
     <section className={styles.panel}>
-      <h2>Re-review</h2>
-      <p>Original Review: {screen.reviewId}</p>
+      <h2>재심사</h2>
+      <p>원래 심사: {screen.reviewId}</p>
       {screen.reReview ? (
         <>
-          <p>Re-review: {screen.reReview.status}</p>
-          {screen.reReview.reviewResultId ? <p>ReviewResult: {screen.reReview.reviewResultId}</p> : null}
-          {screen.reReview.decision ? <p>Decision: {screen.reReview.decision}</p> : null}
-          {screen.reReview.completedAt ? <p>completedAt: {screen.reReview.completedAt}</p> : null}
+          <p>재심사: {screen.reReview.status}</p>
+          {screen.reReview.reviewResultId ? <p>심사 결과: {screen.reReview.reviewResultId}</p> : null}
+          {screen.reReview.decision ? <p>결론: {screen.reReview.decision}</p> : null}
+          {screen.reReview.completedAt ? <p>완료 시각: {screen.reReview.completedAt}</p> : null}
         </>
       ) : null}
       {screen.canRunReReview && screen.agentExecution ? (
         <form action={runHumanReReview}>
           <input type="hidden" name="agentExecutionId" value={screen.agentExecution.id} />
-          <button className={styles.button} type="submit">Run Re-review</button>
+          <button className={styles.button} type="submit">재심사 실행</button>
         </form>
       ) : null}
-      {screen.reReview?.decision === 'ACCEPT' ? <p>No improvement required</p> : null}
+      {screen.reReview?.decision === 'ACCEPT' ? <p>개선이 필요하지 않습니다</p> : null}
       {screen.nextImprovement ? (
         <>
-          <p>Next Improvement Task</p>
-          <p>Task: {screen.nextImprovement.id}</p>
-          <p>Type: {screen.nextImprovement.taskType}</p>
-          <p>Status: {screen.nextImprovement.status}</p>
+          <p>다음 개선 작업</p>
+          <p>작업: {screen.nextImprovement.id}</p>
+          <p>유형: {screen.nextImprovement.taskType}</p>
+          <p>상태: {screen.nextImprovement.status}</p>
         </>
       ) : null}
       {screen.canCreateReReviewImprovement && screen.reReview?.reviewResultId ? (
         <form action={createReReviewImprovementTask}>
           <input type="hidden" name="reReviewResultId" value={screen.reReview.reviewResultId} />
-          <button className={styles.button} type="submit">Create Improvement Task</button>
+          <button className={styles.button} type="submit">개선 작업 만들기</button>
         </form>
       ) : null}
+    </section>
+  );
+}
+
+/** Track B: the next improvement task for improvement.read without agent.execute. Task id, type, and status only. */
+export function ReReviewNextImprovementBody({ screen }: { screen: ReviewConsoleScreen }) {
+  const task = screen.nextImprovement;
+  if (!task) return null;
+  return (
+    <section className={styles.panel}>
+      <h2>다음 개선 작업</h2>
+      <p>작업: {task.id}</p>
+      <p>유형: {task.taskType}</p>
+      <p>상태: {task.status}</p>
     </section>
   );
 }
@@ -658,19 +724,19 @@ export function HumanReReviewBody({ screen }: { screen: ReviewConsoleScreen }) {
 export function HumanChangeGateBody({ screen }: { screen: ReviewConsoleScreen }) {
   return (
     <section className={styles.panel}>
-      <h2>Change Gate</h2>
+      <h2>변경 검사</h2>
       {screen.changeGate ? (
         <>
-          <p>Change Gate: {screen.changeGate.status}</p>
-          {screen.changeGate.errorCode ? <p>Reason: {screen.changeGate.errorCode}</p> : null}
-          {screen.changeGate.discrepancy ? <p>Discrepancy</p> : null}
+          <p>변경 검사: {screen.changeGate.status}</p>
+          {screen.changeGate.errorCode ? <p>사유: {screen.changeGate.errorCode}</p> : null}
+          {screen.changeGate.discrepancy ? <p>불일치</p> : null}
           {screen.changeGate.reasons.map((reason) => <p key={reason}>{reason}</p>)}
         </>
       ) : null}
       {screen.canRunChangeGate && screen.agentExecution ? (
         <form action={runHumanChangeGate}>
           <input type="hidden" name="agentExecutionId" value={screen.agentExecution.id} />
-          <button className={styles.button} type="submit">Run Change Gate</button>
+          <button className={styles.button} type="submit">변경 검사 실행</button>
         </form>
       ) : null}
     </section>
@@ -682,57 +748,75 @@ export function EvidenceBody({ actor, view }: { actor: JuryActor; view: JuryCons
   const evidence = projectConsoleEvidence(view);
   return (
     <section className={styles.panel}>
-      <h2>Evidence</h2>
+      <div className={styles.pageIntro}>
+        <div>
+          <p className={styles.eyebrow}>현재 메뉴 · 리뷰 요청</p>
+          <h2 className={styles.pageTitle}>리뷰 요청</h2>
+          <p className={styles.pageDescription}>한 화면에서 리뷰 자료를 입력하고, 아래 목록에서 리뷰를 요청하세요.</p>
+        </div>
+      </div>
+      <p className={styles.helperText}>
+        <span className={styles.requiredMark}>필수</span> 항목은 반드시 입력해야 하고, <span className={styles.optionalMark}>선택</span> 항목은 비워 둘 수 있습니다. 승인된 서비스와 리뷰 자료만 표시됩니다.
+      </p>
       {form.visible ? (
         form.scopes.length === 0 ? (
           <p className={styles.muted}>현재 승인된 Scope에는 입력 가능한 Catalog Metric이 없습니다.</p>
         ) : (
           form.scopes.map((scope) => (
             <form action={submitTenantEvidenceIntake} key={scope.scopeId}>
-              <p>Scope: {scope.label}</p>
+              <h3>리뷰 자료 입력</h3>
+              <p className={styles.muted}>선택한 서비스: {scope.label}</p>
               <input type="hidden" name="connectionId" value={scope.connectionId} />
               <input type="hidden" name="scopeId" value={scope.scopeId} />
               <label>
-                Metric
-                <select className={styles.field} name="metric" defaultValue={scope.metrics[0]}>
+                분석 항목<span className={styles.requiredMark}>필수</span>
+                <select className={styles.field} name="metric" defaultValue={scope.metrics[0]} required>
                   {scope.metrics.map((metric) => (
                     <option key={metric} value={metric}>{metric}</option>
                   ))}
                 </select>
               </label>
               <label>
-                Availability
-                <select className={styles.field} name="availability" defaultValue="AVAILABLE">
+                자료 상태<span className={styles.requiredMark}>필수</span>
+                <select className={styles.field} name="availability" defaultValue="AVAILABLE" required>
                   {INTAKE_AVAILABILITY.map((availability) => (
-                    <option key={availability} value={availability}>{availability}</option>
+                    <option key={availability} value={availability}>{userLabel(availability)}</option>
                   ))}
                 </select>
               </label>
               <label>
-                Value
-                <input className={styles.field} name="value" inputMode="decimal" />
+                측정값<span className={styles.optionalMark}>선택</span>
+                <input
+                  className={styles.field}
+                  name="value"
+                  inputMode="decimal"
+                  pattern="-?[0-9]+(\.[0-9]+)?"
+                  title="숫자만 입력하세요. 예: 120 또는 12.5"
+                  placeholder="예: 120"
+                />
               </label>
-              <button className={styles.button} type="submit">Create Evidence</button>
+              <button className={styles.primaryButton} type="submit">리뷰 자료 만들기</button>
             </form>
           ))
         )
       ) : (
         <p className={styles.muted}>Evidence 입력: 현재 역할에는 이 변경 권한이 없습니다.</p>
       )}
-      {evidence.length === 0 ? <p>{SHELL_EMPTY.evidence}</p> : null}
+      {evidence.length === 0 ? <p>{displayText(SHELL_EMPTY.evidence)}</p> : null}
       {evidence.map((row) => {
         const stored = view.evidence.find((item) => item.id === row.id);
         return (
         <article key={row.id}>
-          <div className={styles.row}><span className={styles.label}>Evidence ID</span><span>{row.id}</span></div>
-          <div className={styles.row}><span className={styles.label}>purpose</span><span>{row.purpose}</span></div>
-          <div className={styles.row}><span className={styles.label}>period</span><span>{row.periodStart} – {row.periodEnd}</span></div>
-          <div className={styles.row}><span className={styles.label}>timezone</span><span>{stored?.timezone ?? SHELL_UNAVAILABLE}</span></div>
-          <div className={styles.row}><span className={styles.label}>adapter</span><span>{stored?.adapterKey ?? SHELL_UNAVAILABLE}</span></div>
-          <div className={styles.row}><span className={styles.label}>content hash</span><span>{stored?.contentHash ?? SHELL_UNAVAILABLE}</span></div>
-          <div className={styles.row}><span className={styles.label}>readOnly</span><span>{stored?.readOnly === true ? 'true' : stored?.readOnly === false ? 'false' : SHELL_UNAVAILABLE}</span></div>
-          <div className={styles.row}><span className={styles.label}>piiExcluded</span><span>{stored?.piiExcluded === true ? 'true' : stored?.piiExcluded === false ? 'false' : SHELL_UNAVAILABLE}</span></div>
-          <div className={styles.row}><span className={styles.label}>metric count</span><span>{row.metricCount}</span></div>
+          <div className={styles.row}><span className={styles.label}>리뷰 자료</span><span>{row.purpose}</span></div>
+          <div className={styles.row}><span className={styles.label}>분석 기간</span><span>{row.periodStart} – {row.periodEnd}</span></div>
+          <details className={styles.technicalDetails}>
+            <summary>기술 정보 자세히 보기</summary>
+            <div className={styles.row}><span className={styles.label}>시간대</span><span>{stored?.timezone ?? displayText(SHELL_UNAVAILABLE)}</span></div>
+            <div className={styles.row}><span className={styles.label}>연결 방식</span><span>{stored?.adapterKey ?? displayText(SHELL_UNAVAILABLE)}</span></div>
+            <div className={styles.row}><span className={styles.label}>내부 식별자</span><span>{row.id}</span></div>
+            <div className={styles.row}><span className={styles.label}>읽기 전용</span><span>{stored?.readOnly === true ? '예' : stored?.readOnly === false ? '아니오' : displayText(SHELL_UNAVAILABLE)}</span></div>
+          </details>
+          <div className={styles.row}><span className={styles.label}>지표 수</span><span>{row.metricCount}</span></div>
           {row.metrics.map((metric) => (
             <div className={styles.row} key={metric.id}>
               <span>{metricLine(metric.metric, metric.value, metric.availability)}</span>
@@ -743,7 +827,7 @@ export function EvidenceBody({ actor, view }: { actor: JuryActor; view: JuryCons
             <form action={submitTenantReview}>
               <input type="hidden" name="evidenceId" value={row.id} />
               <input type="hidden" name="reviewType" value="FULL_REVIEW" />
-              <button className={styles.button} type="submit">Run Jury Review</button>
+              <button className={styles.primaryButton} type="submit">리뷰 요청하기</button>
             </form>
           ) : null}
         </article>
@@ -772,62 +856,69 @@ export function ImprovementsBody({
   const canHandoff = canShowWrite(actor, 'improvement.write');
   const canRun = canShowWrite(actor, 'agent.execute');
   const canReview = canShowWrite(actor, 'review.start');
+  const agentTasks = new Set(view.agentTaskIds ?? []);
   return (
     <section className={styles.panel}>
-      <h2>Improvements</h2>
-      {rows.length === 0 ? <p>{SHELL_EMPTY.improvements}</p> : (
+      <div className={styles.pageIntro}>
+        <div>
+          <p className={styles.eyebrow}>현재 메뉴 · 개선</p>
+          <h2 className={styles.pageTitle}>개선</h2>
+          <p className={styles.pageDescription}>심사 결과에서 나온 개선 작업과 진행 상태를 확인하세요.</p>
+        </div>
+      </div>
+      {rows.length === 0 ? <p>{displayText(SHELL_EMPTY.improvements)}</p> : (
         <table className={styles.table}>
           <thead>
             <tr>
-              <th>status</th>
-              <th>task type</th>
-              <th>diagnosis</th>
-              <th>acceptance criteria</th>
-              <th>source review</th>
-              <th>source service</th>
-              <th>approval</th>
-              <th>agent</th>
-              <th>provenance</th>
+              <th>상태</th>
+              <th>작업 유형</th>
+              <th>진단</th>
+              <th>완료 기준</th>
+              <th>원본 심사</th>
+              <th>원본 서비스</th>
+              <th>승인</th>
+              <th>에이전트</th>
+              <th>추적</th>
             </tr>
           </thead>
           <tbody>
             {rows.map((task) => (
               <tr key={task.id}>
-                <td><span className={styles.badge}>{task.status}</span></td>
-                <td>{task.taskType ?? SHELL_UNAVAILABLE}</td>
+                <td><span className={styles.badge} title={task.status}>{userLabel(task.status)}</span></td>
+                <td>{task.taskType ?? displayText(SHELL_UNAVAILABLE)}</td>
                 <td>{task.diagnosis}</td>
                 <td>{task.acceptanceCriteria.join(', ')}</td>
                 <td><Link className={styles.inline} href={juryHref(`/reviews/${task.sourceReviewId}`)}>{task.sourceReviewId}</Link></td>
-                <td>{task.sourceService ?? SHELL_UNAVAILABLE}</td>
-                <td>{task.approval ?? SHELL_UNAVAILABLE}</td>
+                <td>{task.sourceService ?? displayText(SHELL_UNAVAILABLE)}</td>
+                <td title={task.approval ?? undefined}>{task.approval ? userLabel(task.approval) : displayText(SHELL_UNAVAILABLE)}</td>
                 <td>
-                  {task.agentStatus === 'RUNNING' ? <span>Running</span> : null}
+                  {task.agentStatus === 'RUNNING' ? <span>진행 중</span> : null}
                   {task.agentStatus === 'COMPLETED' ? (
                     <>
-                      <span>Completed</span>
+                      <span>완료</span>
                       <p className={styles.muted}>Mock</p>
                       {summaries[task.id] ? <p>{summaries[task.id]}</p> : null}
                       {task.agentFinishedAt ? <p>{task.agentFinishedAt}</p> : null}
                     </>
                   ) : null}
-                  {task.agentStatus === 'BLOCKED' ? <span>Blocked</span> : null}
+                  {task.agentStatus === 'BLOCKED' ? <span>중단됨</span> : null}
                   {task.agentStatus === 'PENDING' || !task.agentStatus ? (
-                    task.agentStatus === 'PENDING' ? <span>PENDING</span> : <span>{task.approval === 'APPROVED' ? 'READY' : SHELL_UNAVAILABLE}</span>
+                    task.agentStatus === 'PENDING' ? <span>{userLabel('PENDING')}</span> : <span>{task.approval === 'APPROVED' && agentTasks.has(task.id) ? userLabel('READY') : displayText(SHELL_UNAVAILABLE)}</span>
                   ) : null}
                   {canRun && task.approval === 'APPROVED' && task.agentStatus === 'PENDING' && task.agentExecutionId ? (
                     <form action={runHumanAgentExecution}>
                       <input type="hidden" name="agentExecutionId" value={task.agentExecutionId} />
-                      <button className={styles.button} type="submit">Run Agent (Mock)</button>
+                      <button className={styles.button} type="submit">에이전트 실행 (Mock)</button>
                     </form>
                   ) : null}
                   {task.agentStatus === 'COMPLETED' && task.agentExecutionId && gates[task.agentExecutionId] ? (
                     <>
-                      <p>Change Gate</p>
-                      {gates[task.agentExecutionId] === 'PENDING' ? <p>Pending</p> : <p>{gates[task.agentExecutionId]}</p>}
+                      <p>변경 검사</p>
+                      {gates[task.agentExecutionId] === 'PENDING' ? <p>대기 중</p> : <p title={gates[task.agentExecutionId]}>{userLabel(gates[task.agentExecutionId])}</p>}
                       {canRun && gates[task.agentExecutionId] === 'PENDING' ? (
                         <form action={runProductChangeGate}>
                           <input type="hidden" name="agentExecutionId" value={task.agentExecutionId} />
-                          <button className={styles.button} type="submit">Run Change Gate</button>
+                          <button className={styles.button} type="submit">변경 검사 실행</button>
                         </form>
                       ) : null}
                     </>
@@ -835,30 +926,30 @@ export function ImprovementsBody({
                   {task.agentStatus === 'COMPLETED' && task.agentExecutionId && gates[task.agentExecutionId] === 'APPROVED' ? (
                     reReviews[task.agentExecutionId] ? (
                       <>
-                        <p>Re-review</p>
-                        <p>{reReviews[task.agentExecutionId].status}</p>
-                        {reReviews[task.agentExecutionId].decision ? <p>New review {reReviews[task.agentExecutionId].decision}</p> : null}
+                        <p>재심사</p>
+                        <p title={reReviews[task.agentExecutionId].status}>{userLabel(reReviews[task.agentExecutionId].status)}</p>
+                        {reReviews[task.agentExecutionId].decision ? <p>새 심사 결과 {userLabel(reReviews[task.agentExecutionId].decision)}</p> : null}
                         {reReviews[task.agentExecutionId].completedAt ? <p>{reReviews[task.agentExecutionId].completedAt}</p> : null}
-                        {reReviews[task.agentExecutionId].parentReviewResultId ? <p>Original review {reReviews[task.agentExecutionId].parentReviewResultId}</p> : null}
+                        {reReviews[task.agentExecutionId].parentReviewResultId ? <p>원래 심사 결과 {reReviews[task.agentExecutionId].parentReviewResultId}</p> : null}
                         {reReviews[task.agentExecutionId].evidenceId ? <p>{reReviews[task.agentExecutionId].evidenceId}</p> : null}
                         {reReviews[task.agentExecutionId].reviewResultId ? (
-                          <Link className={styles.inline} href={juryHref(`/reviews/${reReviews[task.agentExecutionId].reviewResultId}`)}>Open new review</Link>
+                          <Link className={styles.inline} href={juryHref(`/reviews/${reReviews[task.agentExecutionId].reviewResultId}`)}>새 심사 결과 열기</Link>
                         ) : null}
                       </>
                     ) : canReview ? (
                       <form action={runProductChangeGateReReview}>
                         <input type="hidden" name="agentExecutionId" value={task.agentExecutionId} />
-                        <button className={styles.button} type="submit">Run Re-review</button>
+                        <button className={styles.button} type="submit">재심사 실행</button>
                       </form>
                     ) : null
                   ) : null}
                 </td>
                 <td>
-                  <Link className={styles.inline} href={juryHref(`/improvements/${task.id}`)}>Open trace</Link>
-                  {canHandoff && task.approval === 'APPROVED' && task.status === 'OPEN' && !task.agentStatus ? (
+                  <Link className={styles.inline} href={juryHref(`/improvements/${task.id}`)}>추적 보기</Link>
+                  {canHandoff && agentTasks.has(task.id) && task.approval === 'APPROVED' && task.status === 'OPEN' && !task.agentStatus ? (
                     <form action={handoffHumanImprovement}>
                       <input type="hidden" name="improvementTaskId" value={task.id} />
-                      <button className={styles.button} type="submit">Send to Agent</button>
+                      <button className={styles.button} type="submit">에이전트에 전달</button>
                     </form>
                   ) : null}
                 </td>
@@ -878,41 +969,41 @@ export function ImprovementTraceBody({ trace }: { trace: ImprovementTrace }) {
   return (
     <>
       <section className={styles.panel}>
-        <h2>Lineage</h2>
+        <h2>진행 경로</h2>
         {lineage.map((step) => (
           <div className={styles.row} key={step.label}>
-            <span className={styles.label}>{step.label}</span>
-            <span>{step.value}</span>
+            <span className={styles.label} title={step.label}>{traceLabel(step.label)}</span>
+            <span title={step.value}>{displayText(step.value)}</span>
           </div>
         ))}
       </section>
       <section className={styles.panel}>
-        <h2>Improvement</h2>
+        <h2>개선 작업</h2>
         {screen.summary.map((line) => (
           <div className={styles.row} key={line.label}>
-            <span className={styles.label}>{line.label}</span>
-            <span>{line.value}</span>
+            <span className={styles.label} title={line.label}>{traceLabel(line.label)}</span>
+            <span title={line.value}>{displayText(line.value)}</span>
           </div>
         ))}
       </section>
       <section className={styles.panel}>
-        <h2>Objective</h2>
+        <h2>목표</h2>
         <p>{screen.objective ?? '목표 없음'}</p>
         <ul>
           {screen.constraints.map((item) => <li key={item}>{item}</li>)}
         </ul>
       </section>
       <section className={styles.panel}>
-        <h2>Timeline</h2>
+        <h2>진행 기록</h2>
         <div className={styles.timeline}>
           {screen.timeline.map((item) => (
             <article key={item.key}>
-              <h3>{item.title}</h3>
-              <p><span className={styles.badge}>{item.status}</span></p>
+              <h3 title={item.title}>{traceLabel(item.title)}</h3>
+              <p><span className={styles.badge} title={item.status}>{userLabel(item.status)}</span></p>
               {item.lines.map((line) => (
                 <div className={styles.row} key={`${item.key}-${line.label}`}>
-                  <span className={styles.label}>{line.label}</span>
-                  <span>{line.value}</span>
+                  <span className={styles.label} title={line.label}>{traceLabel(line.label)}</span>
+                  <span title={line.value}>{displayText(line.value)}</span>
                 </div>
               ))}
             </article>
@@ -926,7 +1017,7 @@ export function ImprovementTraceBody({ trace }: { trace: ImprovementTrace }) {
 export function AgentsBody({ actor, view }: { actor: JuryActor; view: JuryConsoleView }) {
   return (
     <section className={styles.panel}>
-      <h2>Agents</h2>
+      <h2>에이전트</h2>
       {view.executions.map((row) => (
         <div className={styles.row} key={row.id}>
           <span>{row.agent}</span>
@@ -966,13 +1057,14 @@ export function AutomationBody({
       };
   return (
     <section className={styles.panel}>
-      <h2>Automation</h2>
+      <h2>자동화</h2>
       <p className={styles.muted}>한도는 저장된 Loop Guard입니다. 이 화면은 자동 Loop를 켜지 않습니다.</p>
       {loop ? (
         <>
-          <div className={styles.row}><span className={styles.label}>enabled</span><span>{loop.enabled ? '켜짐' : '꺼짐'}</span></div>
-          <div className={styles.row}><span className={styles.label}>mode</span><span>{loop.mode}</span></div>
-          <div className={styles.row}><span className={styles.label}>중단 이유</span><span>{loop.stopReason ?? '없음'}</span></div>
+          <div className={styles.row}><span className={styles.label}>사용 여부</span><span>{loop.enabled ? '켜짐' : '꺼짐'}</span></div>
+          <div className={styles.row}><span className={styles.label}>실행 방식</span><span title={loop.mode}>{userLabel(loop.mode)}</span></div>
+          <div className={styles.row}><span className={styles.label}>중단 이유</span><span>{loop.stopReason ?? '표시된 Loop 기준 없음'}</span></div>
+          <p className={styles.muted}>권한이 있는 서비스의 Loop만 표시합니다. 중단 이유도 표시된 Loop 기준입니다.</p>
           {loop.cycles.map((cycle) => (
             <div className={styles.row} key={cycle.id}>
               <span>{cycle.status}</span>
@@ -1006,16 +1098,22 @@ export function AuditBody({ view }: { view: JuryConsoleView }) {
   const events = projectAudit(view);
   return (
     <section className={styles.panel}>
-      <h2>Audit</h2>
-      {events.length === 0 ? <p>{SHELL_EMPTY.audit}</p> : (
+      <div className={styles.pageIntro}>
+        <div>
+          <p className={styles.eyebrow}>현재 메뉴 · 감사 이력</p>
+          <h2 className={styles.pageTitle}>감사 이력</h2>
+          <p className={styles.pageDescription}>누가 언제 무엇을 했는지 시간순으로 확인하세요. 원래 기록 값은 마우스를 올리면 보입니다.</p>
+        </div>
+      </div>
+      {events.length === 0 ? <p>{displayText(SHELL_EMPTY.audit)}</p> : (
         <table className={styles.table}>
           <thead>
             <tr>
-              <th>timestamp</th>
-              <th>actor</th>
-              <th>action</th>
-              <th>resource</th>
-              <th>status</th>
+              <th>시간</th>
+              <th>사용자</th>
+              <th>활동</th>
+              <th>대상</th>
+              <th>상태</th>
             </tr>
           </thead>
           <tbody>
@@ -1023,9 +1121,13 @@ export function AuditBody({ view }: { view: JuryConsoleView }) {
               <tr key={event.id}>
                 <td>{event.timestamp}</td>
                 <td className={styles.identifier} title={event.actor}>{compactIdentifier(event.actor)}</td>
-                <td>{event.action}</td>
+                <td title={event.action}>
+                  {auditActionLabel(event.action)}
+                  <br />
+                  <span className={styles.muted}>{event.action}</span>
+                </td>
                 <td className={styles.identifier} title={event.resource}>{compactIdentifier(event.resource)}</td>
-                <td>{event.status}</td>
+                <td title={event.status}>{auditActionLabel(event.status)}</td>
               </tr>
             ))}
           </tbody>
@@ -1050,23 +1152,41 @@ export function SettingsBody({
 }) {
   return (
     <>
+    <div className={styles.pageIntro}>
+      <div>
+        <p className={styles.eyebrow}>현재 메뉴 · 관리</p>
+        <h2 className={styles.pageTitle}>관리</h2>
+        <p className={styles.pageDescription}>서비스 연결, 멤버, 권한, 초대, 보안과 설정을 한 곳에서 관리합니다.</p>
+      </div>
+    </div>
+    <nav className={styles.adminGrid} aria-label="관리 메뉴">
+      <Link className={styles.adminCard} href={juryHref('/organization/services')}><strong>서비스 연결</strong><span>연결 상태와 서비스 권한</span></Link>
+      <Link className={styles.adminCard} href={juryHref('/organization/members')}><strong>멤버</strong><span>조직 역할과 상태</span></Link>
+      <Link className={styles.adminCard} href={juryHref('/organization/invitations')}><strong>초대</strong><span>이메일 초대와 대기 상태</span></Link>
+      <Link className={styles.adminCard} href={juryHref('/organization/security')}><strong>보안</strong><span>인증과 조직 보호</span></Link>
+      <Link className={styles.adminCard} href={juryHref('/audit')}><strong>감사 기록</strong><span>사람이 읽는 활동 기록</span></Link>
+      <Link className={styles.adminCard} href={juryHref('/automation')}><strong>자동화</strong><span>실행 상태와 중단</span></Link>
+    </nav>
     <section className={styles.panel}>
-      <h2>Tenant</h2>
-      <div className={styles.row}><span className={styles.label}>name</span><span>{tenantName ?? SHELL_UNAVAILABLE}</span></div>
-      <div className={styles.row}><span className={styles.label}>identifier</span><span>{view.tenantId}</span></div>
+      <h2>조직 정보</h2>
+      <div className={styles.row}><span className={styles.label}>조직 이름</span><span>{tenantName ?? displayText(SHELL_UNAVAILABLE)}</span></div>
+      <details className={styles.technicalDetails}>
+        <summary>기술 정보 자세히 보기</summary>
+        <div className={styles.row}><span className={styles.label}>조직 식별자</span><span>{view.tenantId}</span></div>
+      </details>
     </section>
     <section className={styles.panel}>
-      <h2>Members</h2>
-      <p className={styles.muted}>OWNER와 ADMIN만 membership을 추가, 변경, 제거할 수 있습니다. 마지막 OWNER는 남깁니다.</p>
+      <h2>멤버와 역할</h2>
+      <p className={styles.muted}>OWNER와 ADMIN만 멤버를 추가·변경·제거할 수 있습니다. 마지막 OWNER는 보호됩니다.</p>
       {members.map((row) => (
         <div className={styles.row} key={row.id}>
-          <span>{row.role}</span>
-          <span className={styles.muted}>{row.userId}</span>
+          <span>{userLabel(row.role)}</span>
+          <span className={styles.muted}>멤버 {compactIdentifier(row.userId)}</span>
         </div>
       ))}
       {canShowWrite(actor, 'membership.write') ? (
         <form action={changeJuryMembership}>
-          <input className={styles.field} name="targetUserId" placeholder="대상 user id" required />
+          <label>멤버 선택 또는 사용자 이메일<input className={styles.field} name="targetUserId" placeholder="멤버 식별자" required /></label>
           <select className={styles.field} name="role" defaultValue="DEVELOPER">
             <option value="OWNER">OWNER</option>
             <option value="ADMIN">ADMIN</option>
@@ -1080,45 +1200,45 @@ export function SettingsBody({
             <option value="REMOVE_MEMBER">제거</option>
           </select>
           <input type="hidden" name="tenantId" value="client-supplied-tenant" />
-          <button className={styles.button} type="submit">
-            Membership 적용
+          <button className={styles.primaryButton} type="submit">
+            역할 적용
           </button>
         </form>
       ) : (
         <p className={styles.muted}>Membership 변경: 현재 역할에는 이 변경 권한이 없습니다.</p>
       )}
-      <WriteControl actor={actor} action="settings.write" label="설정 변경" returnTo={juryHref('/settings')} />
+      <WriteControl actor={actor} action="settings.write" label="조직 설정 변경" returnTo={juryHref('/settings')} />
     </section>
     <section className={styles.panel}>
-      <h2>Permissions</h2>
+      <h2>권한 요약</h2>
       <table className={styles.table}>
         <thead>
           <tr>
-            <th>permission</th>
-            <th>status</th>
+            <th>기능</th>
+            <th>상태</th>
           </tr>
         </thead>
         <tbody>
           {JURY_ACTIONS.map((action) => (
             <tr key={action}>
-              <td>{action}</td>
-              <td>{canShowWrite(actor, action) ? 'Allowed' : 'Not granted'}</td>
+              <td>{userLabel(action)}</td>
+              <td>{canShowWrite(actor, action) ? '허용' : '권한 없음'}</td>
             </tr>
           ))}
         </tbody>
       </table>
     </section>
     <section className={styles.panel}>
-      <h2>Automation</h2>
-      <p className={styles.muted}>저장된 Loop Guard만 보여 줍니다. 이 화면은 Automation을 바꾸지 않습니다.</p>
-      <div className={styles.row}><span className={styles.label}>enabled</span><span>{loop ? (loop.enabled ? '켜짐' : '꺼짐') : SHELL_UNAVAILABLE}</span></div>
-      <div className={styles.row}><span className={styles.label}>mode</span><span>{loop?.mode ?? SHELL_UNAVAILABLE}</span></div>
-      <div className={styles.row}><span className={styles.label}>maxIterations</span><span>{view.loopPolicy.maxIterations ?? SHELL_UNAVAILABLE}</span></div>
-      <div className={styles.row}><span className={styles.label}>maxRuntimeMs</span><span>{view.loopPolicy.maxRuntimeMs ?? SHELL_UNAVAILABLE}</span></div>
-      <div className={styles.row}><span className={styles.label}>maxCostUsd</span><span>{view.loopPolicy.maxCostUsd ?? SHELL_UNAVAILABLE}</span></div>
-      <p><Link className={styles.inline} href={juryHref('/automation')}>Automation status</Link></p>
-      <p><Link className={styles.inline} href={juryHref('/discovery')}>Discovery</Link></p>
-      <p><Link className={styles.inline} href={juryHref('/agents')}>Agents</Link></p>
+      <h2>자동화</h2>
+      <p className={styles.muted}>저장된 Loop Guard만 보여 줍니다. 이 화면은 자동화 설정을 바꾸지 않습니다.</p>
+      <div className={styles.row}><span className={styles.label}>사용 여부</span><span>{loop ? (loop.enabled ? '켜짐' : '꺼짐') : displayText(SHELL_UNAVAILABLE)}</span></div>
+      <div className={styles.row}><span className={styles.label}>실행 방식</span><span title={loop?.mode}>{loop?.mode ? userLabel(loop.mode) : displayText(SHELL_UNAVAILABLE)}</span></div>
+      <div className={styles.row}><span className={styles.label} title="maxIterations">최대 반복 횟수</span><span>{view.loopPolicy.maxIterations ?? displayText(SHELL_UNAVAILABLE)}</span></div>
+      <div className={styles.row}><span className={styles.label} title="maxRuntimeMs">최대 실행 시간(ms)</span><span>{view.loopPolicy.maxRuntimeMs ?? displayText(SHELL_UNAVAILABLE)}</span></div>
+      <div className={styles.row}><span className={styles.label} title="maxCostUsd">최대 비용(USD)</span><span>{view.loopPolicy.maxCostUsd ?? displayText(SHELL_UNAVAILABLE)}</span></div>
+      <p><Link className={styles.inline} href={juryHref('/automation')}>자동화 상태</Link></p>
+      <p><Link className={styles.inline} href={juryHref('/discovery')}>서비스 확인</Link></p>
+      <p><Link className={styles.inline} href={juryHref('/agents')}>에이전트</Link></p>
     </section>
     </>
   );
@@ -1128,15 +1248,15 @@ export function ReReviewAgentRunBody({ screen }: { screen: ReviewConsoleScreen }
   const execution = screen.nextAgentExecution;
   return (
     <section className={styles.panel}>
-      <h2>Second Iteration</h2>
+      <h2>두 번째 반복</h2>
       {screen.canRunReReviewAgent && execution ? (
         <form action={runReReviewAgentExecution}>
           <input type="hidden" name="agentExecutionId" value={execution.id} />
-          <button className={styles.button} type="submit">Run Agent</button>
+          <button className={styles.button} type="submit">에이전트 실행</button>
         </form>
       ) : null}
-      {execution?.status === 'RUNNING' ? <p>Agent Running</p> : null}
-      {execution?.status === 'COMPLETED' ? <p>Agent Completed</p> : null}
+      {execution?.status === 'RUNNING' ? <p>에이전트 진행 중</p> : null}
+      {execution?.status === 'COMPLETED' ? <p>에이전트 완료</p> : null}
     </section>
   );
 }
@@ -1146,16 +1266,16 @@ export function ReReviewChangeGateBody({ screen }: { screen: ReviewConsoleScreen
   const gate = screen.nextChangeGate;
   return (
     <section className={styles.panel}>
-      <h2>Second Change Gate</h2>
+      <h2>두 번째 변경 검사</h2>
       {screen.canRunReReviewChangeGate && execution ? (
         <form action={runReReviewChangeGate}>
           <input type="hidden" name="agentExecutionId" value={execution.id} />
-          <button className={styles.button} type="submit">Run Change Gate</button>
+          <button className={styles.button} type="submit">변경 검사 실행</button>
         </form>
       ) : null}
-      {gate?.status === 'APPROVED' ? <p>Change Gate: APPROVED</p> : null}
-      {gate?.status === 'GATED' ? <p>Change Gate: GATED</p> : null}
-      {gate?.status === 'BLOCKED' ? <p>Change Gate: BLOCKED</p> : null}
+      {gate?.status === 'APPROVED' ? <p>변경 검사: 승인됨</p> : null}
+      {gate?.status === 'GATED' ? <p>변경 검사: 보류됨</p> : null}
+      {gate?.status === 'BLOCKED' ? <p>변경 검사: 차단됨</p> : null}
     </section>
   );
 }
@@ -1165,15 +1285,15 @@ export function SecondReReviewBody({ screen }: { screen: ReviewConsoleScreen }) 
   const review = screen.nextSecondReReview;
   return (
     <section className={styles.panel}>
-      <h2>Second Re-review</h2>
+      <h2>두 번째 재심사</h2>
       {screen.canRunSecondReReview && execution ? (
         <form action={runSecondReReview}>
           <input type="hidden" name="agentExecutionId" value={execution.id} />
-          <button className={styles.button} type="submit">Run Re-review</button>
+          <button className={styles.button} type="submit">재심사 실행</button>
         </form>
       ) : null}
-      {review?.status === 'RUNNING' ? <p>Re-review Running</p> : null}
-      {review?.status === 'EXECUTED' ? <p>Re-review Completed</p> : null}
+      {review?.status === 'RUNNING' ? <p>재심사 진행 중</p> : null}
+      {review?.status === 'EXECUTED' ? <p>재심사 완료</p> : null}
     </section>
   );
 }
@@ -1182,20 +1302,20 @@ export function SecondImprovementBody({ screen }: { screen: ReviewConsoleScreen 
   const task = screen.nextSecondImprovement;
   return (
     <section className={styles.panel}>
-      <h2>Next Improvement</h2>
-      {screen.secondReReviewDecision === 'ACCEPT' ? <p>No further improvement required</p> : null}
+      <h2>다음 개선</h2>
+      {screen.secondReReviewDecision === 'ACCEPT' ? <p>추가 개선이 필요하지 않습니다</p> : null}
       {task ? (
         <>
-          <p>Next Improvement Task</p>
-          <p>Task: {task.id}</p>
-          <p>Type: {task.taskType}</p>
-          <p>Status: {task.status}</p>
+          <p>다음 개선 작업</p>
+          <p>작업: {task.id}</p>
+          <p>유형: {task.taskType}</p>
+          <p>상태: {task.status}</p>
         </>
       ) : null}
       {screen.canCreateSecondImprovement && screen.secondReReviewResultId ? (
         <form action={createSecondReReviewImprovementTask}>
           <input type="hidden" name="reReviewResultId" value={screen.secondReReviewResultId} />
-          <button className={styles.button} type="submit">Next Improvement Task</button>
+          <button className={styles.button} type="submit">다음 개선 작업</button>
         </form>
       ) : null}
     </section>
@@ -1206,13 +1326,13 @@ export function SecondImprovementApprovalBody({ screen }: { screen: ReviewConsol
   const task = screen.nextSecondImprovement;
   return (
     <section className={styles.panel}>
-      <h2>Second Approval</h2>
-      {screen.nextSecondApproval ? <p>Approved for Agent</p> : null}
-      {screen.nextSecondApproval ? <p>Human Approval: {screen.nextSecondApproval}</p> : null}
+      <h2>두 번째 승인</h2>
+      {screen.nextSecondApproval ? <p>에이전트 승인 완료</p> : null}
+      {screen.nextSecondApproval ? <p>담당자 승인: {screen.nextSecondApproval}</p> : null}
       {screen.canApproveSecondImprovement && task ? (
         <form action={approveSecondImprovementTask}>
           <input type="hidden" name="improvementTaskId" value={task.id} />
-          <button className={styles.button} type="submit">Approve for Agent</button>
+          <button className={styles.button} type="submit">에이전트 작업 승인</button>
         </form>
       ) : null}
     </section>
@@ -1224,12 +1344,12 @@ export function SecondImprovementHandoffBody({ screen }: { screen: ReviewConsole
   const execution = screen.nextSecondAgentExecution;
   return (
     <section className={styles.panel}>
-      <h2>Second Handoff</h2>
-      {execution?.status === 'PENDING' ? <p>Agent Pending</p> : null}
+      <h2>두 번째 전달</h2>
+      {execution?.status === 'PENDING' ? <p>에이전트 대기 중</p> : null}
       {screen.canHandoffSecondImprovement && task ? (
         <form action={handoffSecondImprovementTask}>
           <input type="hidden" name="improvementTaskId" value={task.id} />
-          <button className={styles.button} type="submit">Send to Agent</button>
+          <button className={styles.button} type="submit">에이전트에 전달</button>
         </form>
       ) : null}
     </section>
@@ -1241,17 +1361,17 @@ export function SecondChangeGateBody({ screen }: { screen: ReviewConsoleScreen }
   const gate = screen.nextSecondChangeGate;
   return (
     <section className={styles.panel}>
-      <h2>Completed Change Gate</h2>
-      {execution?.status === 'COMPLETED' ? <p>Agent Completed</p> : null}
+      <h2>완료 후 변경 검사</h2>
+      {execution?.status === 'COMPLETED' ? <p>에이전트 완료</p> : null}
       {screen.canRunSecondChangeGate && execution ? (
         <form action={runSecondChangeGate}>
           <input type="hidden" name="agentExecutionId" value={execution.id} />
-          <button className={styles.button} type="submit">Run Change Gate</button>
+          <button className={styles.button} type="submit">변경 검사 실행</button>
         </form>
       ) : null}
-      {gate?.status === 'APPROVED' ? <p>Change Gate: APPROVED</p> : null}
-      {gate?.status === 'GATED' ? <p>Change Gate: GATED</p> : null}
-      {gate?.status === 'BLOCKED' ? <p>Change Gate: BLOCKED</p> : null}
+      {gate?.status === 'APPROVED' ? <p>변경 검사: 승인됨</p> : null}
+      {gate?.status === 'GATED' ? <p>변경 검사: 보류됨</p> : null}
+      {gate?.status === 'BLOCKED' ? <p>변경 검사: 차단됨</p> : null}
     </section>
   );
 }
@@ -1261,15 +1381,15 @@ export function LaterReReviewBody({ screen }: { screen: ReviewConsoleScreen }) {
   const review = screen.nextLaterReReview;
   return (
     <section className={styles.panel}>
-      <h2>Later Re-review</h2>
+      <h2>이후 재심사</h2>
       {screen.canRunLaterReReview && execution ? (
         <form action={runLaterReReview}>
           <input type="hidden" name="agentExecutionId" value={execution.id} />
-          <button className={styles.button} type="submit">Run Re-review</button>
+          <button className={styles.button} type="submit">재심사 실행</button>
         </form>
       ) : null}
-      {review?.status === 'EXECUTED' ? <p>Second Re-review Result</p> : null}
-      {review?.decision ? <p>Decision: {review.decision}</p> : null}
+      {review?.status === 'EXECUTED' ? <p>두 번째 재심사 결과</p> : null}
+      {review?.decision ? <p>결론: {review.decision}</p> : null}
     </section>
   );
 }
@@ -1279,20 +1399,20 @@ export function LaterImprovementBody({ screen }: { screen: ReviewConsoleScreen }
   const review = screen.nextLaterReReview;
   return (
     <section className={styles.panel}>
-      <h2>Later Improvement</h2>
-      {review?.status === 'EXECUTED' && review.decision === 'ACCEPT' ? <p>No Improvement</p> : null}
+      <h2>이후 개선</h2>
+      {review?.status === 'EXECUTED' && review.decision === 'ACCEPT' ? <p>개선 없음</p> : null}
       {task ? (
         <>
-          <p>Next Improvement Task</p>
-          <p>Task: {task.id}</p>
-          <p>Type: {task.taskType}</p>
-          <p>Status: {task.status}</p>
+          <p>다음 개선 작업</p>
+          <p>작업: {task.id}</p>
+          <p>유형: {task.taskType}</p>
+          <p>상태: {task.status}</p>
         </>
       ) : null}
       {screen.canCreateLaterImprovement && review?.reviewResultId ? (
         <form action={createLaterReReviewImprovementTask}>
           <input type="hidden" name="reReviewResultId" value={review.reviewResultId} />
-          <button className={styles.button} type="submit">Next Improvement Task</button>
+          <button className={styles.button} type="submit">다음 개선 작업</button>
         </form>
       ) : null}
     </section>
@@ -1303,13 +1423,13 @@ export function LaterImprovementApprovalBody({ screen }: { screen: ReviewConsole
   const task = screen.nextLaterImprovement;
   return (
     <section className={styles.panel}>
-      <h2>Later Approval</h2>
-      {screen.nextLaterApproval ? <p>Approved for Agent</p> : null}
-      {screen.nextLaterApproval ? <p>Human Approval: {screen.nextLaterApproval}</p> : null}
+      <h2>이후 승인</h2>
+      {screen.nextLaterApproval ? <p>에이전트 승인 완료</p> : null}
+      {screen.nextLaterApproval ? <p>담당자 승인: {screen.nextLaterApproval}</p> : null}
       {screen.canApproveLaterImprovement && task ? (
         <form action={approveLaterImprovementTask}>
           <input type="hidden" name="improvementTaskId" value={task.id} />
-          <button className={styles.button} type="submit">Approve for Agent</button>
+          <button className={styles.button} type="submit">에이전트 작업 승인</button>
         </form>
       ) : null}
     </section>
@@ -1321,12 +1441,12 @@ export function LaterImprovementHandoffBody({ screen }: { screen: ReviewConsoleS
   const execution = screen.nextLaterAgentExecution;
   return (
     <section className={styles.panel}>
-      <h2>Later Handoff</h2>
-      {execution?.status === 'PENDING' ? <p>Agent Pending</p> : null}
+      <h2>이후 전달</h2>
+      {execution?.status === 'PENDING' ? <p>에이전트 대기 중</p> : null}
       {screen.canHandoffLaterImprovement && task ? (
         <form action={handoffLaterImprovementTask}>
           <input type="hidden" name="improvementTaskId" value={task.id} />
-          <button className={styles.button} type="submit">Send to Agent</button>
+          <button className={styles.button} type="submit">에이전트에 전달</button>
         </form>
       ) : null}
     </section>
@@ -1337,15 +1457,15 @@ export function LaterAgentRunBody({ screen }: { screen: ReviewConsoleScreen }) {
   const execution = screen.nextLaterAgentExecution;
   return (
     <section className={styles.panel}>
-      <h2>Later Agent</h2>
+      <h2>이후 에이전트</h2>
       {screen.canRunLaterAgent && execution ? (
         <form action={runLaterAgentExecution}>
           <input type="hidden" name="agentExecutionId" value={execution.id} />
-          <button className={styles.button} type="submit">Run Agent</button>
+          <button className={styles.button} type="submit">에이전트 실행</button>
         </form>
       ) : null}
-      {execution?.status === 'RUNNING' ? <p>Agent Running</p> : null}
-      {execution?.status === 'COMPLETED' ? <p>Agent Completed</p> : null}
+      {execution?.status === 'RUNNING' ? <p>에이전트 진행 중</p> : null}
+      {execution?.status === 'COMPLETED' ? <p>에이전트 완료</p> : null}
     </section>
   );
 }
@@ -1355,16 +1475,16 @@ export function LaterChangeGateBody({ screen }: { screen: ReviewConsoleScreen })
   const gate = screen.nextLaterChangeGate;
   return (
     <section className={styles.panel}>
-      <h2>Later Change Gate</h2>
+      <h2>이후 변경 검사</h2>
       {screen.canRunLaterChangeGate && execution ? (
         <form action={runLaterChangeGate}>
           <input type="hidden" name="agentExecutionId" value={execution.id} />
-          <button className={styles.button} type="submit">Run Change Gate</button>
+          <button className={styles.button} type="submit">변경 검사 실행</button>
         </form>
       ) : null}
-      {gate?.status === 'APPROVED' ? <p>Change Gate: APPROVED</p> : null}
-      {gate?.status === 'GATED' ? <p>Change Gate: GATED</p> : null}
-      {gate?.status === 'BLOCKED' ? <p>Change Gate: BLOCKED</p> : null}
+      {gate?.status === 'APPROVED' ? <p>변경 검사: 승인됨</p> : null}
+      {gate?.status === 'GATED' ? <p>변경 검사: 보류됨</p> : null}
+      {gate?.status === 'BLOCKED' ? <p>변경 검사: 차단됨</p> : null}
     </section>
   );
 }
@@ -1375,31 +1495,32 @@ export function FollowingReReviewBody({ screen }: { screen: ReviewConsoleScreen 
   const surface = review?.surface;
   return (
     <section className={styles.panel}>
-      <h2>Following Re-review</h2>
+      <h2>다음 재심사</h2>
       {screen.canRunFollowingReReview && execution ? (
         <form action={runFollowingReReview}>
           <input type="hidden" name="agentExecutionId" value={execution.id} />
-          <button className={styles.button} type="submit">Run Re-review</button>
+          <button className={styles.button} type="submit">재심사 실행</button>
         </form>
       ) : null}
-      {review?.decision ? <p>Decision: {review.decision}</p> : null}
-      {surface ? <p>{surface.statusSummary}</p> : null}
+      {review?.decision ? <p>결론: {review.decision}</p> : null}
+      {surface ? <TranslationHint /> : null}
+      {surface ? <p lang="en">{surface.statusSummary}</p> : null}
       {surface ? (
-        <ul>{surface.topProblems.map((item) => <li key={item}>{item}</li>)}</ul>
+        <ul lang="en">{surface.topProblems.map((item) => <li key={item}>{item}</li>)}</ul>
       ) : null}
-      {surface ? <p>{surface.expectedUserEffect}</p> : null}
-      {surface ? <p>{surface.risk}</p> : null}
+      {surface ? <p lang="en">{surface.expectedUserEffect}</p> : null}
+      {surface ? <p lang="en">{surface.risk}</p> : null}
       {surface ? (
-        <ul>{surface.dimensionEvidence.map((item) => <li key={item}>{item}</li>)}</ul>
-      ) : null}
-      {surface ? (
-        <ul>{surface.supportedClaims.map((item) => <li key={item}>{item}</li>)}</ul>
+        <ul lang="en">{surface.dimensionEvidence.map((item) => <li key={item}>{item}</li>)}</ul>
       ) : null}
       {surface ? (
-        <ul>{surface.partiallySupportedClaims.map((item) => <li key={item}>{item}</li>)}</ul>
+        <ul lang="en">{surface.supportedClaims.map((item) => <li key={item}>{item}</li>)}</ul>
       ) : null}
       {surface ? (
-        <ul>{surface.hypotheses.map((item) => <li key={item}>{item}</li>)}</ul>
+        <ul lang="en">{surface.partiallySupportedClaims.map((item) => <li key={item}>{item}</li>)}</ul>
+      ) : null}
+      {surface ? (
+        <ul lang="en">{surface.hypotheses.map((item) => <li key={item}>{item}</li>)}</ul>
       ) : null}
     </section>
   );

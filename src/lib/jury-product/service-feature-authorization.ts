@@ -3,7 +3,8 @@
  * JuryAccessScope, client identity, and URL tenant ids are not inputs.
  */
 import { decideJuryMutation, type JuryAction, type JuryActor } from './access';
-import type { JuryConsoleView } from './console-view';
+import type { JuryConsoleCatalog } from './console-fixture';
+import { readJuryConsole, type JuryConsoleView } from './console-view';
 import { hasJuryServicePermission, highestServicePermission, type ServiceGrantRow } from './service-member-management';
 import type { JuryServicePermission } from './service-permission';
 
@@ -37,6 +38,16 @@ export type FeatureAuthorizationFailure =
   | 'TENANT_MISMATCH'
   | 'NOT_FOUND';
 
+/** Internal only. Callers map SERVICE_NOT_GRANTED to NOT_FOUND and never expose this value. */
+export type FeatureAuthorizationDenial = 'ROLE' | 'SERVICE_NOT_GRANTED';
+
+/** External view of a feature denial: missing grant, missing resource and other tenant are NOT_FOUND; a role shortfall is FORBIDDEN. Other reasons return null. */
+export function externalFeatureDenial(access: { reason: string; denial?: unknown }): 'FORBIDDEN' | 'NOT_FOUND' | null {
+  if (access.reason === 'FORBIDDEN') return access.denial === 'SERVICE_NOT_GRANTED' ? 'NOT_FOUND' : 'FORBIDDEN';
+  if (access.reason === 'NOT_FOUND' || access.reason === 'TENANT_MISMATCH') return 'NOT_FOUND';
+  return null;
+}
+
 export function featurePolicy(feature: ServiceFeature): { action: JuryAction; permission: JuryServicePermission } {
   return FEATURE_POLICY[feature];
 }
@@ -59,7 +70,7 @@ export function authorizeJuryServiceFeature(input: {
   permission?: string | null;
   capability?: string | null;
   accessScope?: unknown;
-}): { ok: true; servicePermissions: JuryServicePermission[] } | { ok: false; reason: FeatureAuthorizationFailure } {
+}): { ok: true; servicePermissions: JuryServicePermission[] } | { ok: false; reason: FeatureAuthorizationFailure; denial?: FeatureAuthorizationDenial } {
   void input.clientTenantId;
   void input.actingUserId;
   void input.actorRole;
@@ -87,6 +98,13 @@ export function authorizeJuryServiceFeature(input: {
     && grant.connectionId === connection.id
     && grant.userId === membership.userId);
   const level = highestServicePermission(mine);
+  const permitted = hasJuryServicePermission({
+    membership,
+    connection,
+    grants: mine,
+    required: policy.permission,
+  });
+  if (!permitted || !level) return { ok: false, reason: 'FORBIDDEN', denial: 'SERVICE_NOT_GRANTED' };
   const roleAllowed = decideJuryMutation({
     actor,
     action: policy.action,
@@ -94,14 +112,7 @@ export function authorizeJuryServiceFeature(input: {
     clientTenantId: null,
     servicePermissions: level ? [level] : [],
   });
-  if (!roleAllowed.ok) return { ok: false, reason: 'FORBIDDEN' };
-  const permitted = hasJuryServicePermission({
-    membership,
-    connection,
-    grants: mine,
-    required: policy.permission,
-  });
-  if (!permitted || !level) return { ok: false, reason: 'FORBIDDEN' };
+  if (!roleAllowed.ok) return { ok: false, reason: 'FORBIDDEN', denial: 'ROLE' };
   return { ok: true, servicePermissions: [level] };
 }
 
@@ -131,7 +142,15 @@ export function restrictJuryConsole(
     connections: view.connections,
     scopes: view.scopes,
     discoveries: view.discoveries,
-    audit: view.audit,
+    audit: view.audit.filter((row) => {
+      if (row.tenantId !== actor.tenantId) return false;
+      const reviewId = row.reviewId ?? null;
+      const taskId = row.improvementTaskId ?? null;
+      if (reviewId && !allowed('review.read', resultConnection.get(reviewId) ?? requestConnection.get(reviewId) ?? '')) return false;
+      if (taskId && !allowed('improvement.read', taskConnection.get(taskId) ?? '')) return false;
+      if (!reviewId && !taskId && row.decision) return false;
+      return true;
+    }),
     metrics: view.metrics.filter((row) => row.tenantId === actor.tenantId && allowed('service.read', row.connectionId)),
     evidence: view.evidence.filter((row) => row.tenantId === actor.tenantId && allowed('evidence.read', row.connectionId)),
     requests: view.requests.filter((row) => row.tenantId === actor.tenantId && allowed('review.read', row.connectionId)),
@@ -140,5 +159,29 @@ export function restrictJuryConsole(
     executions: view.executions.filter((row) => row.tenantId === actor.tenantId && allowed('agent.execute', executionConnection.get(row.id) ?? '')),
     gates: view.gates.filter((row) => row.tenantId === actor.tenantId && allowed('agent.execute', executionConnection.get(row.executionId) ?? '')),
     reReviews: view.reReviews.filter((row) => row.tenantId === actor.tenantId && allowed('review.read', taskConnection.get(row.taskId) ?? '')),
+    agentTaskIds: view.tasks
+      .filter((row) => {
+        const connectionId = taskConnection.get(row.id) ?? '';
+        return row.tenantId === actor.tenantId && allowed('improvement.read', connectionId) && allowed('agent.execute', connectionId);
+      })
+      .map((row) => row.id),
   };
+}
+
+/**
+ * Track A: review result ids for GET /api/jury/console.
+ * Roles without review.start never load the catalog. Other roles see only results whose service grants review.read.
+ */
+export async function readConsoleReviewIds(input: {
+  actor: Extract<JuryActor, { ok: true }>;
+  loadCatalog: () => Promise<JuryConsoleCatalog>;
+  listGrants: () => Promise<readonly ServiceGrantRow[]>;
+}): Promise<{ ok: true; reviewIds: string[] } | { ok: false; reason: 'FORBIDDEN' }> {
+  const actor = input.actor;
+  const reviewRole = decideJuryMutation({ actor, action: 'review.start', resourceTenantId: actor.tenantId, clientTenantId: null });
+  if (!reviewRole.ok) return { ok: false, reason: 'FORBIDDEN' };
+  const [catalog, grants] = await Promise.all([input.loadCatalog(), input.listGrants()]);
+  const view = readJuryConsole(actor, catalog);
+  if (!view) return { ok: true, reviewIds: [] };
+  return { ok: true, reviewIds: restrictJuryConsole(view, actor, grants).results.map((row) => row.id) };
 }

@@ -6,6 +6,8 @@ import { decideJuryMutation, type JuryActor } from './access';
 import { containsSecret } from './agent-execution';
 import { autoLoopExecutionMode, planAutoLoopActivation, type AutoLoopExecutionMode } from './auto-loop-activation';
 import type { JuryMembership } from './records';
+import { authorizeJuryServiceFeature } from './service-feature-authorization';
+import type { ServiceGrantRow } from './service-member-management';
 
 export type ConsoleLoopCycle = {
   id: string;
@@ -66,6 +68,84 @@ export function planConsoleLoopRead(
   });
   if (!decision.ok) return { ok: false, reason: 'FORBIDDEN' };
   return { ok: true, tenantId: actor.tenantId };
+}
+
+/**
+ * Track B: cycle state comes from reviews. Roles without review.start do not read cycles.
+ * Tenant enabled, mode, and policy stay on planConsoleLoopRead.
+ */
+export function canReadConsoleLoopCycles(actor: JuryActor): boolean {
+  if (!actor.ok) return false;
+  return decideJuryMutation({
+    actor,
+    action: 'review.start',
+    resourceTenantId: actor.tenantId,
+    clientTenantId: null,
+  }).ok;
+}
+
+type ConsoleLoopCycleReview = {
+  tenantId: string;
+  request: { tenantId: string; connection: { id: string; tenantId: string } | null } | null;
+} | null;
+
+export type ConsoleLoopCycleSource = ConsoleLoopCycle & {
+  tenantId: string;
+  rootReviewResult: ConsoleLoopCycleReview;
+  currentReviewResult: ConsoleLoopCycleReview;
+};
+
+/** Root and current review must reach one connection of this tenant. Anything else has no service. */
+export function consoleLoopCycleConnection(
+  cycle: ConsoleLoopCycleSource,
+  tenantId: string,
+): { id: string; tenantId: string } | null {
+  if (cycle.tenantId !== tenantId) return null;
+  const [root, current] = [cycle.rootReviewResult, cycle.currentReviewResult].map((review) => {
+    const connection = review?.request?.connection;
+    if (
+      !review
+      || review.tenantId !== tenantId
+      || review.request?.tenantId !== tenantId
+      || !connection
+      || connection.tenantId !== tenantId
+    ) return null;
+    return connection;
+  });
+  if (!root || !current || root.id !== current.id) return null;
+  return { id: root.id, tenantId: root.tenantId };
+}
+
+/** Keeps cycles whose service grants review.read to this actor. Relation fields are dropped. */
+export function restrictConsoleLoopCycles(input: {
+  actor: JuryActor;
+  cycles: readonly ConsoleLoopCycleSource[];
+  grants: readonly ServiceGrantRow[];
+}): ConsoleLoopCycle[] {
+  const actor = input.actor;
+  if (!actor.ok || !canReadConsoleLoopCycles(actor)) return [];
+  const membership = { tenantId: actor.tenantId, userId: actor.userId };
+  return input.cycles.flatMap((cycle) => {
+    const connection = consoleLoopCycleConnection(cycle, actor.tenantId);
+    if (!connection) return [];
+    const allowed = authorizeJuryServiceFeature({
+      actor,
+      membership,
+      connection,
+      grants: input.grants,
+      feature: 'review.read',
+    });
+    if (!allowed.ok) return [];
+    return [{
+      id: cycle.id,
+      status: cycle.status,
+      iteration: cycle.iteration,
+      verificationAttempts: cycle.verificationAttempts,
+      sameDecisionCount: cycle.sameDecisionCount,
+      sameConflictCount: cycle.sameConflictCount,
+      blockedReason: cycle.blockedReason,
+    }];
+  });
 }
 
 export function planConsoleLoopStop(input: {

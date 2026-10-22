@@ -378,14 +378,14 @@ test('second re-review reuses the phase 53 change-gate review', () => {
   }
   const ui = readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/ui.tsx'), 'utf8');
   const body = ui.slice(ui.indexOf('export function SecondReReviewBody'), ui.indexOf('export function SecondImprovementBody'));
-  assert.equal(body.includes('Run Re-review'), true);
-  assert.equal(body.includes('Re-review Running'), true);
-  assert.equal(body.includes('Re-review Completed'), true);
-  for (const label of ['Next Improvement', 'Approve for Agent', 'Send to Agent', 'Run Agent', 'Run Change Gate', 'Auto Fix', 'Run Loop']) {
+  assert.equal(body.includes('재심사 실행'), true);
+  assert.equal(body.includes('재심사 진행 중'), true);
+  assert.equal(body.includes('재심사 완료'), true);
+  for (const label of ['다음 개선', '에이전트 작업 승인', '에이전트에 전달', '에이전트 실행', '변경 검사 실행', '자동 수정', '루프 실행']) {
     assert.equal(body.includes(label), false, label);
   }
   const gate = ui.slice(ui.indexOf('export function ReReviewChangeGateBody'), ui.indexOf('export function SecondReReviewBody'));
-  assert.equal(gate.includes('Re-review'), false);
+  assert.equal(gate.includes('재심사'), false);
 });
 
 function run(

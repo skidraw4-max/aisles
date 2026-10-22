@@ -118,9 +118,9 @@ test('later handoff reuses the pending agent writer', () => {
     ui.indexOf('export function LaterImprovementHandoffBody'),
     ui.indexOf('export function LaterAgentRunBody'),
   );
-  assert.equal(body.includes('Send to Agent'), true);
-  assert.equal(body.includes('Agent Pending'), true);
-  for (const label of ['Run Agent', 'Run Change Gate', 'Run Re-review', 'Next Improvement', 'Auto Fix', 'Run Loop']) {
+  assert.equal(body.includes('에이전트에 전달'), true);
+  assert.equal(body.includes('에이전트 대기 중'), true);
+  for (const label of ['에이전트 실행', '변경 검사 실행', '재심사 실행', '다음 개선', '자동 수정', '루프 실행']) {
     assert.equal(body.includes(label), false, label);
   }
 });

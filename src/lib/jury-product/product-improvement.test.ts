@@ -85,10 +85,10 @@ test('product improvement reuses the human-decision boundary and does not start 
   assert.equal(bridge.includes('REVIEW_NOT_COMPLETED'), true);
   assert.equal(bridge.includes('findUnique'), false);
   const ui = readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/ui.tsx'), 'utf8');
-  assert.equal(ui.includes('source service'), true);
-  assert.equal(ui.includes('Create Improvement Task'), true);
-  const body = ui.slice(ui.indexOf('export function ImprovementsBody'), ui.indexOf('export function ImprovementTraceBody')).replaceAll('Run Agent (Mock)', '').replaceAll('Run Change Gate', '').replaceAll('Run Re-review', '');
-  for (const label of ['Run Agent', 'Run Change Gate', 'Run Re-review', 'Auto Fix', 'Run Loop']) {
+  assert.equal(ui.includes('원본 서비스'), true);
+  assert.equal(ui.includes('개선 작업 만들기'), true);
+  const body = ui.slice(ui.indexOf('export function ImprovementsBody'), ui.indexOf('export function ImprovementTraceBody')).replaceAll('에이전트 실행 (Mock)', '').replaceAll('변경 검사 실행', '').replaceAll('재심사 실행', '');
+  for (const label of ['에이전트 실행', '변경 검사 실행', '재심사 실행', '자동 수정', '루프 실행']) {
     assert.equal(body.includes(label), false, label);
   }
 });

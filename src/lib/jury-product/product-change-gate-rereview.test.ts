@@ -68,9 +68,9 @@ test('product re-review reuses the existing boundary and stops at the new result
   const ui = readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/ui.tsx'), 'utf8');
   const body = ui.slice(ui.indexOf('export function ImprovementsBody'), ui.indexOf('export function ImprovementTraceBody'));
   assert.equal(body.includes("gates[task.agentExecutionId] === 'APPROVED'"), true);
-  assert.equal(body.includes('Run Re-review'), true);
-  assert.equal(body.includes('New review'), true);
-  assert.equal(body.includes('Original review'), true);
+  assert.equal(body.includes('재심사 실행'), true);
+  assert.equal(body.includes('새 심사 결과'), true);
+  assert.equal(body.includes('원래 심사 결과'), true);
   const actions = readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/actions.ts'), 'utf8');
   const fn = actions.slice(
     actions.indexOf('export async function runProductChangeGateReReview'),

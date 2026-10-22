@@ -365,15 +365,15 @@ test('re-review improvement bridge stays off host collectors and later phases', 
   }
   const ui = readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/ui.tsx'), 'utf8');
   const reviewBody = ui.slice(ui.indexOf('export function HumanReReviewBody'), ui.indexOf('export function HumanChangeGateBody'));
-  assert.equal(reviewBody.includes('Create Improvement Task'), true);
-  assert.equal(reviewBody.includes('No improvement required'), true);
-  assert.equal(reviewBody.includes('Next Improvement Task'), true);
-  assert.equal(reviewBody.includes('Run Re-review'), true);
-  for (const label of ['Send to Agent', 'Run Change Gate', 'Auto Fix', 'Run Loop']) {
+  assert.equal(reviewBody.includes('개선 작업 만들기'), true);
+  assert.equal(reviewBody.includes('개선이 필요하지 않습니다'), true);
+  assert.equal(reviewBody.includes('다음 개선 작업'), true);
+  assert.equal(reviewBody.includes('재심사 실행'), true);
+  for (const label of ['에이전트에 전달', '변경 검사 실행', '자동 수정', '루프 실행']) {
     assert.equal(reviewBody.includes(label), false, label);
   }
   const gateBody = ui.slice(ui.indexOf('export function HumanChangeGateBody'), ui.indexOf('export function EvidenceBody'));
-  assert.equal(gateBody.includes('Re-review'), false);
+  assert.equal(gateBody.includes('재심사'), false);
 });
 
 function run(reReviewResultId: string, actor: JuryMembership = member) {
