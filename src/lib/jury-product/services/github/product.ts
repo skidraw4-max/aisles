@@ -408,6 +408,8 @@ export async function loadGithubProductScreen(input: {
           decision,
           evidenceStrength: listed(request.result?.evidenceStrength, JURY_EVIDENCE_STRENGTHS),
           claimStrength: listed(request.result?.claimStrength, JURY_CLAIM_STRENGTHS),
+          resultSource: request.resultSource ?? null,
+          boardRunId: request.result?.boardRunId ?? null,
         }
         : null,
     }

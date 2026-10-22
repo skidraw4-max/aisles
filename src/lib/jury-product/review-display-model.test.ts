@@ -142,3 +142,19 @@ test('RM-02b automation cycle ACTIVE is not shown as running when the loop is of
   assert.equal(cycleStatusLabel('ACTIVE', false), '결정 대기 (자동 실행 아님)');
   assert.equal(cycleStatusLabel('ACTIVE', true), '진행 중 (자동 Loop 켜짐)');
 });
+
+import { improvementSourceBreakdown } from './review-display-model';
+
+test('RM-02c M-018 improvement tasks split by result source; unlinked is not counted as real', () => {
+  const out = improvementSourceBreakdown(
+    [{ reviewResultId: 'r1' }, { reviewResultId: 'r2' }, { reviewResultId: 'r3' }, { reviewResultId: 'r4' }, { reviewResultId: 'missing' }],
+    [
+      { id: 'r1', reviewRequestId: 'q1' },
+      { id: 'r2', reviewRequestId: 'q2', boardRunId: 'fixture-reword-phase16' },
+      { id: 'r3', reviewRequestId: 'q3' },
+      { id: 'r4', reviewRequestId: 'q4' },
+    ],
+    [{ id: 'q1', resultSource: 'REAL_MODEL' }, { id: 'q2' }, { id: 'q3', resultSource: 'MOCK' }, { id: 'q4' }],
+  );
+  assert.deepEqual(out, { verifiedReal: 0, realUnverified: 1, nonReal: 2, unknownSource: 1, unlinked: 1 });
+});

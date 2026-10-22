@@ -356,3 +356,35 @@ export function cycleStatusLabel(status: string, loopEnabled: boolean): string {
   if (status === 'BLOCKED') return '중단됨';
   return status;
 }
+
+export type ImprovementSourceBreakdown = {
+  /** M-018: tasks grouped by the source of the review result they came from (read-only link task -> result -> request). */
+  verifiedReal: number;
+  realUnverified: number;
+  nonReal: number;
+  unknownSource: number;
+  /** Result or request not visible/loaded: link cannot be confirmed (not counted as real). */
+  unlinked: number;
+};
+
+export function improvementSourceBreakdown(
+  tasks: readonly { reviewResultId: string }[],
+  results: readonly { id: string; reviewRequestId: string; boardRunId?: string | null }[],
+  requests: readonly { id: string; resultSource?: string | null }[],
+): ImprovementSourceBreakdown {
+  const out: ImprovementSourceBreakdown = { verifiedReal: 0, realUnverified: 0, nonReal: 0, unknownSource: 0, unlinked: 0 };
+  for (const task of tasks) {
+    const result = results.find((row) => row.id === task.reviewResultId);
+    const request = result ? requests.find((row) => row.id === result.reviewRequestId) : undefined;
+    if (!result || !request) {
+      out.unlinked += 1;
+      continue;
+    }
+    const source = resolveResultSource(request.resultSource ?? null, result.boardRunId ?? null).value;
+    if (source === 'VERIFIED_REAL') out.verifiedReal += 1;
+    else if (source === 'REAL_MODEL') out.realUnverified += 1;
+    else if (source === 'MOCK' || source === 'FIXTURE') out.nonReal += 1;
+    else out.unknownSource += 1;
+  }
+  return out;
+}

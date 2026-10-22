@@ -2,7 +2,7 @@
  * Read-only labels for the Jury product shell.
  * Counts come from the current tenant view. An empty list is 0. A missing read is not 0.
  */
-import { displayModelForCatalogRow, summarizeDisplayModels, type ReviewDisplaySummary } from './review-display-model';
+import { displayModelForCatalogRow, improvementSourceBreakdown, summarizeDisplayModels, type ImprovementSourceBreakdown, type ReviewDisplaySummary } from './review-display-model';
 import { containsSecret } from './agent-execution';
 import type { JuryConsoleView } from './console-view';
 import type { ImprovementTrace } from './improvement-trace';
@@ -61,6 +61,8 @@ export type ShellDashboard = {
   inFlightReviews: string;
   /** RM-02b AGG-01 source breakdown of completed results. */
   resultSummary: ReviewDisplaySummary;
+  /** RM-02c M-018: open+active improvement tasks by source of their review result. */
+  improvementSources: ImprovementSourceBreakdown;
 } | { available: false };
 
 export function projectDashboard(view: JuryConsoleView | null): ShellDashboard {
@@ -85,6 +87,11 @@ export function projectDashboard(view: JuryConsoleView | null): ShellDashboard {
     activity: projectAudit(view).slice(0, 8),
     connectedServices: String(view.connections.filter((row) => row.status === 'CONNECTED').length),
     inFlightReviews: String(view.requests.filter((row) => row.status === 'QUEUED' || row.status === 'RUNNING').length),
+    improvementSources: improvementSourceBreakdown(
+      view.tasks.filter((task) => task.status === 'OPEN' || task.status === 'HANDED_OFF' || task.status === 'GATED' || task.status === 'NEEDS_APPROVAL'),
+      view.results,
+      view.requests,
+    ),
     resultSummary: summarizeDisplayModels(
       view.results.map((row) =>
         displayModelForCatalogRow(row, view.requests.find((item) => item.id === row.reviewRequestId) ?? null, view.evidence),

@@ -163,7 +163,7 @@ export function GithubPanel({
               <p>Risk {screen.reviewView.risk || 'not stored'}</p>
               <p>{screen.reviewView.statusSummary}</p>
               {(() => {
-                // RM-02b AGG-01: same aggregation as the review detail. Source is not loaded here -> 출처 미기록 badge.
+                // RM-02b/02c AGG-01: same aggregation as the review detail; source from the stored request row (RM-02c).
                 const display = buildReviewDisplayModel({
                   result: {
                     id: screen.result?.id ?? 'github-review',
@@ -180,7 +180,9 @@ export function GithubPanel({
                     },
                     evidenceStrength: screen.reviewView.evidenceStrength ?? null,
                     claimStrength: screen.reviewView.claimStrength ?? null,
+                    boardRunId: screen.reviewView.boardRunId ?? null,
                   },
+                  request: { resultSource: screen.reviewView.resultSource ?? null },
                 });
                 const warnings = display.flags.filter((flag) => flag !== 'UNKNOWN_SOURCE' && flag !== 'NON_REAL_SOURCE');
                 return (

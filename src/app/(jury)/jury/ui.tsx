@@ -291,6 +291,7 @@ export function DashboardBody({ view }: { view: JuryConsoleView }) {
           <h2>개선 작업</h2>
           <p className={styles.metric}>{board.openImprovements}</p>
           <p className={styles.muted}>진행 중 {board.activeImprovements}건</p>
+          <p className={styles.muted}>출처: 실모델(미검증) {board.improvementSources.realUnverified} · 검증된 실모델 {board.improvementSources.verifiedReal} · Mock/Fixture {board.improvementSources.nonReal} · 출처 미기록 {board.improvementSources.unknownSource}{board.improvementSources.unlinked > 0 ? ` · 연결 확인 불가 ${board.improvementSources.unlinked}` : ''}</p>
         </section>
       </div>
       <section className={styles.panel}>
