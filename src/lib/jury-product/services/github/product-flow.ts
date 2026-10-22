@@ -48,6 +48,9 @@ export type GithubFlowReview = {
     supportedClaims: string[];
     partiallySupportedClaims: string[];
     hypotheses: string[];
+    /** RM-02c: stored RM-01 request source + legacy boardRunId, display only (AGG-01). */
+    resultSource?: string | null;
+    boardRunId?: string | null;
   } | null;
 };
 
@@ -85,6 +88,9 @@ export type GithubProductScreen = {
 
 export type GithubReviewView = {
   decision: JuryDecision;
+  /** RM-02c: display-only source inputs for AGG-01. Omitted when not stored. */
+  resultSource?: string | null;
+  boardRunId?: string | null;
   evidenceStrength: JuryEvidenceStrength | null;
   claimStrength: JuryClaimStrength | null;
   risk: string;
@@ -309,6 +315,8 @@ function structureNote(state: GithubObservedState): string {
 function reviewView(result: NonNullable<GithubFlowReview['result']>): GithubReviewView {
   return {
     decision: result.decision,
+    ...(result.resultSource ? { resultSource: result.resultSource } : {}),
+    ...(result.boardRunId ? { boardRunId: result.boardRunId } : {}),
     evidenceStrength: result.evidenceStrength ?? null,
     claimStrength: result.claimStrength ?? null,
     risk: result.risk,
