@@ -1,0 +1,732 @@
+TAB|AiMetadata|rls=t|force=f
+TAB|Bookmark|rls=t|force=f
+TAB|Comment|rls=t|force=f
+TAB|CommentNotifyThrottle|rls=f|force=f
+TAB|GameScore|rls=f|force=f
+TAB|JuryAccessScope|rls=t|force=f
+TAB|JuryAgentExecution|rls=t|force=f
+TAB|JuryAuditEvent|rls=t|force=f
+TAB|JuryAutoLoopActivation|rls=t|force=f
+TAB|JuryChangeGateResolution|rls=t|force=f
+TAB|JuryChangeGateResult|rls=t|force=f
+TAB|JuryChangeGateReview|rls=t|force=f
+TAB|JuryDecisionCycle|rls=t|force=f
+TAB|JuryDecisionTask|rls=t|force=f
+TAB|JuryDiscoveryResult|rls=t|force=f
+TAB|JuryEvidence|rls=t|force=f
+TAB|JuryHumanDecision|rls=t|force=f
+TAB|JuryImprovementTask|rls=t|force=f
+TAB|JuryMembership|rls=t|force=f
+TAB|JuryNormalizedMetric|rls=t|force=f
+TAB|JuryProductLoopPolicy|rls=t|force=f
+TAB|JuryReReviewResult|rls=t|force=f
+TAB|JuryReviewRequest|rls=t|force=f
+TAB|JuryReviewResult|rls=t|force=f
+TAB|JuryServiceConnection|rls=t|force=f
+TAB|JuryServiceMember|rls=t|force=f
+TAB|JuryTenant|rls=t|force=f
+TAB|JuryVerificationResult|rls=t|force=f
+TAB|JuryVerificationReview|rls=t|force=f
+TAB|LaunchInfo|rls=t|force=f
+TAB|Notice|rls=t|force=f
+TAB|OrganizationInvitation|rls=t|force=f
+TAB|Post|rls=t|force=f
+TAB|PostLike|rls=t|force=f
+TAB|PostStance|rls=f|force=f
+TAB|PostViewDaily|rls=f|force=f
+TAB|UiConfig|rls=t|force=f
+TAB|User|rls=t|force=f
+TAB|_prisma_migrations|rls=t|force=f
+TAB|announcements|rls=t|force=f
+ENUM|Category|RECIPE,GALLERY,BUILD,LAUNCH,LOUNGE,GOSSIP,TREND,AI_FORTUNE
+ENUM|DigestFrequency|DAILY,WEEKLY
+ENUM|JuryAccessMethod|OAUTH,API_KEY,READ_ONLY_ACCOUNT,BROWSER_SESSION,FILE_UPLOAD
+ENUM|JuryAgentKind|CURSOR,CLAUDE_CODE,MANUAL,OTHER
+ENUM|JuryApproval|PENDING,APPROVED,REJECTED
+ENUM|JuryAvailability|AVAILABLE,NOT_MEASURED,NOT_AVAILABLE,PERMISSION_DENIED,COLLECTION_FAILED,UNSUPPORTED
+ENUM|JuryChangeGateResolutionAction|RECHECK_REQUIRED,MANUAL_APPROVE,MANUAL_BLOCK
+ENUM|JuryChangeGateReviewSource|CHANGE_GATE
+ENUM|JuryChangeGateReviewStatus|READY,RUNNING,EXECUTED,FAILED
+ENUM|JuryChangeGateStatus|GATED,APPROVED,BLOCKED
+ENUM|JuryChangeRiskLevel|LOW,MEDIUM,HIGH,CRITICAL
+ENUM|JuryClaimStrength|weak,strong,extreme
+ENUM|JuryConnectionStatus|DRAFT,CONNECTED,DISCOVERY_PENDING,LIMITED,DISCONNECTED,ERROR
+ENUM|JuryDecision|ACCEPT,VERIFY,REWORD
+ENUM|JuryDecisionCycleStatus|ACTIVE,COMPLETED,BLOCKED,FAILED,CANCELLED
+ENUM|JuryDecisionTaskStatus|OPEN,IN_PROGRESS,BLOCKED,COMPLETED,CANCELLED
+ENUM|JuryDecisionTaskType|VERIFICATION,REWORD
+ENUM|JuryDiscoveryFeasibility|AVAILABLE,PARTIAL,NOT_AVAILABLE
+ENUM|JuryEvidenceStrength|strong,moderate,unknown
+ENUM|JuryExecutionStatus|PENDING,RUNNING,COMPLETED,BLOCKED
+ENUM|JuryGateResult|PASS,NEEDS_APPROVAL,BLOCK
+ENUM|JuryMemberRole|OWNER,ADMIN,REVIEWER,DEVELOPER,VIEWER
+ENUM|JuryMetricUnit|COUNT,KRW,PERCENT,DURATION_SEC,RATIO,OTHER
+ENUM|JuryReviewMode|AISLE_SELF,EXTERNAL_SERVICE
+ENUM|JuryReviewStatus|QUEUED,RUNNING,COMPLETED,FAILED
+ENUM|JuryReviewType|CLAIM_VALIDATION,FULL_REVIEW,UI_UX_REVIEW
+ENUM|JuryScopeStatus|PROPOSED,APPROVED,REVOKED
+ENUM|JuryServicePermission|VIEW,REVIEW,IMPROVE,AGENT
+ENUM|JurySourceSystem|DATABASE,GA4,API,SCREEN,FILE,OTHER
+ENUM|JuryTaskStatus|OPEN,HANDED_OFF,GATED,NEEDS_APPROVAL,DONE,STOPPED
+ENUM|JuryVerificationReviewStatus|PENDING,READY,EXECUTED,BLOCKED,RUNNING,FAILED
+ENUM|JuryVerificationReviewType|VERIFICATION_REREVIEW
+ENUM|JuryVerificationStatus|RESOLVED,UNRESOLVED,INCONCLUSIVE
+ENUM|PostAuthorKind|HUMAN,SYSTEM,AI
+ENUM|PromptAnalysisJobStatus|PENDING,READY,FAILED
+ENUM|Role|USER,BUILDER,ADMIN
+ENUM|StanceChoice|AGREE,DISAGREE
+COL|AiMetadata|postId|text|t||1
+COL|AiMetadata|modelName|text|f||2
+COL|AiMetadata|params|jsonb|f||3
+COL|AiMetadata|prompt|text|f||4
+COL|AiMetadata|promptAnalysis|jsonb|f||5
+COL|AiMetadata|promptAnalysisPromptHash|character varying(64)|f||6
+COL|AiMetadata|promptAnalysisStatus|"PromptAnalysisJobStatus"|f||7
+COL|Bookmark|userId|text|t||1
+COL|Bookmark|postId|text|t||2
+COL|Bookmark|createdAt|timestamp(3) without time zone|t|CURRENT_TIMESTAMP|3
+COL|Comment|id|text|t||1
+COL|Comment|content|text|t||2
+COL|Comment|postId|text|t||3
+COL|Comment|authorId|text|t||4
+COL|Comment|createdAt|timestamp(3) without time zone|t|CURRENT_TIMESTAMP|5
+COL|CommentNotifyThrottle|postId|text|t||1
+COL|CommentNotifyThrottle|authorId|text|t||2
+COL|CommentNotifyThrottle|lastSentAt|timestamp(3) without time zone|t||3
+COL|GameScore|id|text|t||1
+COL|GameScore|userId|text|t||2
+COL|GameScore|gameSlug|character varying(64)|t||3
+COL|GameScore|mode|character varying(32)|t||4
+COL|GameScore|score|integer|t||5
+COL|GameScore|weekKey|character varying(16)|t||6
+COL|GameScore|createdAt|timestamp(3) without time zone|t|CURRENT_TIMESTAMP|7
+COL|GameScore|updatedAt|timestamp(3) without time zone|t||8
+COL|JuryAccessScope|id|text|t||1
+COL|JuryAccessScope|tenantId|text|t||2
+COL|JuryAccessScope|connectionId|text|t||3
+COL|JuryAccessScope|status|"JuryScopeStatus"|t||4
+COL|JuryAccessScope|grants|jsonb|t||5
+COL|JuryAccessScope|approvedByUserId|text|f||6
+COL|JuryAccessScope|approvedAt|timestamp(3) without time zone|f||7
+COL|JuryAccessScope|expiresAt|timestamp(3) without time zone|f||8
+COL|JuryAgentExecution|id|text|t||1
+COL|JuryAgentExecution|tenantId|text|t||2
+COL|JuryAgentExecution|taskId|text|t||3
+COL|JuryAgentExecution|agent|"JuryAgentKind"|t||4
+COL|JuryAgentExecution|allowedPaths|jsonb|t||5
+COL|JuryAgentExecution|deniedPaths|jsonb|t||6
+COL|JuryAgentExecution|status|"JuryExecutionStatus"|t||7
+COL|JuryAgentExecution|startedAt|timestamp(3) without time zone|f||8
+COL|JuryAgentExecution|finishedAt|timestamp(3) without time zone|f||9
+COL|JuryAgentExecution|estimatedCostUsd|double precision|f||10
+COL|JuryAgentExecution|inputSnapshot|jsonb|f||11
+COL|JuryAgentExecution|workspaceRef|jsonb|f||12
+COL|JuryAgentExecution|requestedAt|timestamp(3) without time zone|f||13
+COL|JuryAgentExecution|resultRef|text|f||14
+COL|JuryAgentExecution|errorCode|text|f||15
+COL|JuryAgentExecution|provenance|jsonb|f||16
+COL|JuryAgentExecution|createdAt|timestamp(3) without time zone|f||17
+COL|JuryAgentExecution|updatedAt|timestamp(3) without time zone|f||18
+COL|JuryAuditEvent|id|text|t||1
+COL|JuryAuditEvent|tenantId|text|t||2
+COL|JuryAuditEvent|timestamp|timestamp(3) without time zone|t||3
+COL|JuryAuditEvent|actor|text|t||4
+COL|JuryAuditEvent|action|text|t||5
+COL|JuryAuditEvent|serviceKey|text|f||6
+COL|JuryAuditEvent|accessMethod|text|f||7
+COL|JuryAuditEvent|scopeId|text|f||8
+COL|JuryAuditEvent|source|text|f||9
+COL|JuryAuditEvent|evidenceId|text|f||10
+COL|JuryAuditEvent|reviewId|text|f||11
+COL|JuryAuditEvent|decision|text|f||12
+COL|JuryAuditEvent|improvementTaskId|text|f||13
+COL|JuryAuditEvent|agent|text|f||14
+COL|JuryAuditEvent|changedFiles|jsonb|f||15
+COL|JuryAuditEvent|testResult|text|f||16
+COL|JuryAuditEvent|reReviewResultId|text|f||17
+COL|JuryAuditEvent|decisionTaskId|text|f||18
+COL|JuryAuditEvent|agentExecutionId|text|f||19
+COL|JuryAuditEvent|provenance|jsonb|f||20
+COL|JuryAutoLoopActivation|id|text|t||1
+COL|JuryAutoLoopActivation|tenantId|text|t||2
+COL|JuryAutoLoopActivation|enabled|boolean|t||3
+COL|JuryAutoLoopActivation|updatedAt|timestamp(3) without time zone|t||4
+COL|JuryAutoLoopActivation|updatedBy|text|t||5
+COL|JuryAutoLoopActivation|mode|text|t|'OFF'::text|6
+COL|JuryChangeGateResolution|id|text|t||1
+COL|JuryChangeGateResolution|tenantId|text|t||2
+COL|JuryChangeGateResolution|changeGateResultId|text|t||3
+COL|JuryChangeGateResolution|agentExecutionId|text|t||4
+COL|JuryChangeGateResolution|improvementTaskId|text|t||5
+COL|JuryChangeGateResolution|action|"JuryChangeGateResolutionAction"|t||6
+COL|JuryChangeGateResolution|previousStatus|"JuryChangeGateStatus"|t||7
+COL|JuryChangeGateResolution|resultingStatus|"JuryChangeGateStatus"|t||8
+COL|JuryChangeGateResolution|reason|jsonb|t||9
+COL|JuryChangeGateResolution|reasonFingerprint|text|t||10
+COL|JuryChangeGateResolution|resolvedBy|text|t||11
+COL|JuryChangeGateResolution|resolvedAt|timestamp(3) without time zone|t||12
+COL|JuryChangeGateResolution|provenance|jsonb|t||13
+COL|JuryChangeGateResolution|createdAt|timestamp(3) without time zone|t||14
+COL|JuryChangeGateResult|id|text|t||1
+COL|JuryChangeGateResult|tenantId|text|t||2
+COL|JuryChangeGateResult|executionId|text|t||3
+COL|JuryChangeGateResult|changedFiles|jsonb|t||4
+COL|JuryChangeGateResult|riskFlags|jsonb|t||5
+COL|JuryChangeGateResult|testsPassed|boolean|f||6
+COL|JuryChangeGateResult|gate|"JuryGateResult"|t||7
+COL|JuryChangeGateResult|improvementTaskId|text|f||8
+COL|JuryChangeGateResult|status|"JuryChangeGateStatus"|f||9
+COL|JuryChangeGateResult|addedFiles|jsonb|f||10
+COL|JuryChangeGateResult|modifiedFiles|jsonb|f||11
+COL|JuryChangeGateResult|deletedFiles|jsonb|f||12
+COL|JuryChangeGateResult|blockedFiles|jsonb|f||13
+COL|JuryChangeGateResult|riskLevel|"JuryChangeRiskLevel"|f||14
+COL|JuryChangeGateResult|riskReasons|jsonb|f||15
+COL|JuryChangeGateResult|testResults|jsonb|f||16
+COL|JuryChangeGateResult|agentReportedFiles|jsonb|f||17
+COL|JuryChangeGateResult|discrepancy|boolean|f||18
+COL|JuryChangeGateResult|discrepancyReasons|jsonb|f||19
+COL|JuryChangeGateResult|diffStat|jsonb|f||20
+COL|JuryChangeGateResult|provenance|jsonb|f||21
+COL|JuryChangeGateResult|errorCode|text|f||22
+COL|JuryChangeGateResult|credentialDetected|boolean|f||23
+COL|JuryChangeGateResult|credentialType|text|f||24
+COL|JuryChangeGateResult|createdAt|timestamp(3) without time zone|f||25
+COL|JuryChangeGateResult|updatedAt|timestamp(3) without time zone|f||26
+COL|JuryChangeGateReview|id|text|t||1
+COL|JuryChangeGateReview|tenantId|text|t||2
+COL|JuryChangeGateReview|parentReviewResultId|text|t||3
+COL|JuryChangeGateReview|changeGateResultId|text|t||4
+COL|JuryChangeGateReview|agentExecutionId|text|t||5
+COL|JuryChangeGateReview|improvementTaskId|text|t||6
+COL|JuryChangeGateReview|evidenceId|text|t||7
+COL|JuryChangeGateReview|sourceEvidenceId|text|t||8
+COL|JuryChangeGateReview|reason|jsonb|t||9
+COL|JuryChangeGateReview|status|"JuryChangeGateReviewStatus"|t||10
+COL|JuryChangeGateReview|source|"JuryChangeGateReviewSource"|t||11
+COL|JuryChangeGateReview|errorCode|text|f||12
+COL|JuryChangeGateReview|reviewRequestId|text|f||13
+COL|JuryChangeGateReview|reviewResultId|text|f||14
+COL|JuryChangeGateReview|provenance|jsonb|t||15
+COL|JuryChangeGateReview|createdAt|timestamp(3) without time zone|t||16
+COL|JuryChangeGateReview|updatedAt|timestamp(3) without time zone|t||17
+COL|JuryDecisionCycle|id|text|t||1
+COL|JuryDecisionCycle|tenantId|text|t||2
+COL|JuryDecisionCycle|rootReviewResultId|text|t||3
+COL|JuryDecisionCycle|currentReviewResultId|text|t||4
+COL|JuryDecisionCycle|policyId|text|f||5
+COL|JuryDecisionCycle|iteration|integer|t||6
+COL|JuryDecisionCycle|verificationAttempts|integer|t||7
+COL|JuryDecisionCycle|sameDecisionCount|integer|t||8
+COL|JuryDecisionCycle|sameConflictCount|integer|t||9
+COL|JuryDecisionCycle|decisionFingerprint|text|t||10
+COL|JuryDecisionCycle|conflictFingerprint|text|t||11
+COL|JuryDecisionCycle|status|"JuryDecisionCycleStatus"|t||12
+COL|JuryDecisionCycle|blockedReason|text|f||13
+COL|JuryDecisionCycle|startedAt|timestamp(3) without time zone|t||14
+COL|JuryDecisionCycle|updatedAt|timestamp(3) without time zone|t||15
+COL|JuryDecisionTask|id|text|t||1
+COL|JuryDecisionTask|tenantId|text|t||2
+COL|JuryDecisionTask|reviewResultId|text|t||3
+COL|JuryDecisionTask|evidenceId|text|t||4
+COL|JuryDecisionTask|taskType|"JuryDecisionTaskType"|t||5
+COL|JuryDecisionTask|decision|"JuryDecision"|t||6
+COL|JuryDecisionTask|title|text|t||7
+COL|JuryDecisionTask|description|text|t||8
+COL|JuryDecisionTask|reason|text|t||9
+COL|JuryDecisionTask|status|"JuryDecisionTaskStatus"|t||10
+COL|JuryDecisionTask|createdAt|timestamp(3) without time zone|t||11
+COL|JuryDecisionTask|updatedAt|timestamp(3) without time zone|t||12
+COL|JuryDiscoveryResult|id|text|t||1
+COL|JuryDiscoveryResult|tenantId|text|t||2
+COL|JuryDiscoveryResult|connectionId|text|t||3
+COL|JuryDiscoveryResult|exploredAt|timestamp(3) without time zone|t||4
+COL|JuryDiscoveryResult|surfaces|jsonb|t||5
+COL|JuryDiscoveryResult|menus|jsonb|t||6
+COL|JuryDiscoveryResult|dataSources|jsonb|t||7
+COL|JuryDiscoveryResult|feasibility|"JuryDiscoveryFeasibility"|t||8
+COL|JuryDiscoveryResult|proposedMetrics|jsonb|t||9
+COL|JuryDiscoveryResult|approval|"JuryApproval"|t||10
+COL|JuryDiscoveryResult|uiNotes|text|f||11
+COL|JuryEvidence|id|text|t||1
+COL|JuryEvidence|tenantId|text|t||2
+COL|JuryEvidence|connectionId|text|t||3
+COL|JuryEvidence|purpose|text|t||4
+COL|JuryEvidence|periodStart|text|t||5
+COL|JuryEvidence|periodEnd|text|t||6
+COL|JuryEvidence|timezone|text|t||7
+COL|JuryEvidence|metricIds|jsonb|t||8
+COL|JuryEvidence|apiEvidence|jsonb|f||9
+COL|JuryEvidence|uiEvidence|jsonb|f||10
+COL|JuryEvidence|documentEvidence|jsonb|f||11
+COL|JuryEvidence|adapterKey|text|t||12
+COL|JuryEvidence|collectedAt|timestamp(3) without time zone|t||13
+COL|JuryEvidence|contentHash|text|f||14
+COL|JuryEvidence|piiExcluded|boolean|t||15
+COL|JuryEvidence|readOnly|boolean|t||16
+COL|JuryHumanDecision|id|text|t||1
+COL|JuryHumanDecision|tenantId|text|t||2
+COL|JuryHumanDecision|reviewResultId|text|t||3
+COL|JuryHumanDecision|reviewRequestId|text|t||4
+COL|JuryHumanDecision|decision|"JuryDecision"|t||5
+COL|JuryHumanDecision|actorUserId|text|t||6
+COL|JuryHumanDecision|createdAt|timestamp(3) without time zone|t||7
+COL|JuryImprovementTask|id|text|t||1
+COL|JuryImprovementTask|tenantId|text|t||2
+COL|JuryImprovementTask|reviewResultId|text|t||3
+COL|JuryImprovementTask|diagnosis|text|t||4
+COL|JuryImprovementTask|acceptanceCriteria|jsonb|t||5
+COL|JuryImprovementTask|status|"JuryTaskStatus"|t||6
+COL|JuryImprovementTask|loopIndex|integer|t||7
+COL|JuryImprovementTask|loopPolicy|jsonb|t||8
+COL|JuryImprovementTask|parentTaskId|text|f||9
+COL|JuryImprovementTask|stopReason|text|f||10
+COL|JuryImprovementTask|decisionTaskId|text|f||11
+COL|JuryImprovementTask|evidenceId|text|f||12
+COL|JuryImprovementTask|taskType|"JuryDecisionTaskType"|f||13
+COL|JuryImprovementTask|title|text|f||14
+COL|JuryImprovementTask|description|text|f||15
+COL|JuryImprovementTask|reason|text|f||16
+COL|JuryImprovementTask|objective|text|f||17
+COL|JuryImprovementTask|constraints|jsonb|f||18
+COL|JuryImprovementTask|provenance|jsonb|f||19
+COL|JuryImprovementTask|createdAt|timestamp(3) without time zone|f||20
+COL|JuryImprovementTask|updatedAt|timestamp(3) without time zone|f||21
+COL|JuryMembership|id|text|t||1
+COL|JuryMembership|tenantId|text|t||2
+COL|JuryMembership|userId|text|t||3
+COL|JuryMembership|role|"JuryMemberRole"|t||4
+COL|JuryMembership|createdAt|timestamp(3) without time zone|t|CURRENT_TIMESTAMP|5
+COL|JuryNormalizedMetric|id|text|t||1
+COL|JuryNormalizedMetric|tenantId|text|t||2
+COL|JuryNormalizedMetric|connectionId|text|t||3
+COL|JuryNormalizedMetric|evidenceId|text|f||4
+COL|JuryNormalizedMetric|metric|text|t||5
+COL|JuryNormalizedMetric|value|double precision|f||6
+COL|JuryNormalizedMetric|unit|"JuryMetricUnit"|t||7
+COL|JuryNormalizedMetric|periodStart|text|t||8
+COL|JuryNormalizedMetric|periodEnd|text|t||9
+COL|JuryNormalizedMetric|timezone|text|t||10
+COL|JuryNormalizedMetric|sourceSystem|"JurySourceSystem"|t||11
+COL|JuryNormalizedMetric|sourceRef|text|t||12
+COL|JuryNormalizedMetric|collectedAt|timestamp(3) without time zone|t||13
+COL|JuryNormalizedMetric|availability|"JuryAvailability"|t||14
+COL|JuryNormalizedMetric|rawValueText|text|f||15
+COL|JuryNormalizedMetric|rawPayloadRef|text|t||16
+COL|JuryNormalizedMetric|adapterKey|text|t||17
+COL|JuryNormalizedMetric|adapterVersion|text|t||18
+COL|JuryNormalizedMetric|ruleId|text|t||19
+COL|JuryProductLoopPolicy|id|text|t||1
+COL|JuryProductLoopPolicy|tenantId|text|t||2
+COL|JuryProductLoopPolicy|maxIterations|integer|f||3
+COL|JuryProductLoopPolicy|maxVerificationAttempts|integer|f||4
+COL|JuryProductLoopPolicy|maxSameDecision|integer|f||5
+COL|JuryProductLoopPolicy|maxSameConflict|integer|f||6
+COL|JuryProductLoopPolicy|maxRuntimeMs|integer|f||7
+COL|JuryProductLoopPolicy|maxCostUsd|double precision|f||8
+COL|JuryProductLoopPolicy|createdAt|timestamp(3) without time zone|t||9
+COL|JuryProductLoopPolicy|updatedAt|timestamp(3) without time zone|t||10
+COL|JuryReReviewResult|id|text|t||1
+COL|JuryReReviewResult|tenantId|text|t||2
+COL|JuryReReviewResult|taskId|text|t||3
+COL|JuryReReviewResult|previousReviewResultId|text|t||4
+COL|JuryReReviewResult|nextReviewResultId|text|t||5
+COL|JuryReReviewResult|resolved|boolean|t||6
+COL|JuryReReviewResult|sameProblem|boolean|t||7
+COL|JuryReReviewResult|completedAt|timestamp(3) without time zone|t||8
+COL|JuryReviewRequest|id|text|t||1
+COL|JuryReviewRequest|tenantId|text|t||2
+COL|JuryReviewRequest|connectionId|text|t||3
+COL|JuryReviewRequest|evidenceId|text|t||4
+COL|JuryReviewRequest|reviewType|"JuryReviewType"|t||5
+COL|JuryReviewRequest|claim|text|f||6
+COL|JuryReviewRequest|mode|"JuryReviewMode"|t||7
+COL|JuryReviewRequest|status|"JuryReviewStatus"|t||8
+COL|JuryReviewRequest|coreRootDir|text|t||9
+COL|JuryReviewRequest|requestedByUserId|text|f||10
+COL|JuryReviewResult|id|text|t||1
+COL|JuryReviewResult|tenantId|text|t||2
+COL|JuryReviewResult|reviewRequestId|text|t||3
+COL|JuryReviewResult|boardRunId|text|t||4
+COL|JuryReviewResult|evidenceStrength|"JuryEvidenceStrength"|t||5
+COL|JuryReviewResult|claimStrength|"JuryClaimStrength"|t||6
+COL|JuryReviewResult|conflictDetected|boolean|t||7
+COL|JuryReviewResult|overclaimDetected|boolean|t||8
+COL|JuryReviewResult|revisionRequired|boolean|t||9
+COL|JuryReviewResult|expectedDecision|"JuryDecision"|t||10
+COL|JuryReviewResult|finalSurface|jsonb|t||11
+COL|JuryReviewResult|contractVersion|text|t||12
+COL|JuryReviewResult|completedAt|timestamp(3) without time zone|t||13
+COL|JuryReviewResult|parentReviewResultId|text|f||14
+COL|JuryReviewResult|verificationResultId|text|f||15
+COL|JuryReviewResult|decisionTaskId|text|f||16
+COL|JuryReviewResult|reReviewRequestId|text|f||17
+COL|JuryServiceConnection|id|text|t||1
+COL|JuryServiceConnection|tenantId|text|t||2
+COL|JuryServiceConnection|serviceKey|text|t||3
+COL|JuryServiceConnection|displayName|text|t||4
+COL|JuryServiceConnection|accessMethod|"JuryAccessMethod"|t||5
+COL|JuryServiceConnection|status|"JuryConnectionStatus"|t||6
+COL|JuryServiceConnection|credentialRef|text|f||7
+COL|JuryServiceConnection|createdByUserId|text|f||8
+COL|JuryServiceConnection|createdAt|timestamp(3) without time zone|t|CURRENT_TIMESTAMP|9
+COL|JuryServiceConnection|updatedAt|timestamp(3) without time zone|t||10
+COL|JuryServiceMember|id|text|t||1
+COL|JuryServiceMember|tenantId|text|t||2
+COL|JuryServiceMember|connectionId|text|t||3
+COL|JuryServiceMember|userId|text|t||4
+COL|JuryServiceMember|permission|"JuryServicePermission"|t||5
+COL|JuryServiceMember|createdAt|timestamp(3) without time zone|t|CURRENT_TIMESTAMP|6
+COL|JuryTenant|id|text|t||1
+COL|JuryTenant|name|text|t||2
+COL|JuryTenant|createdAt|timestamp(3) without time zone|t|CURRENT_TIMESTAMP|3
+COL|JuryVerificationResult|id|text|t||1
+COL|JuryVerificationResult|tenantId|text|t||2
+COL|JuryVerificationResult|decisionTaskId|text|t||3
+COL|JuryVerificationResult|reviewResultId|text|t||4
+COL|JuryVerificationResult|evidenceId|text|t||5
+COL|JuryVerificationResult|status|"JuryVerificationStatus"|t||6
+COL|JuryVerificationResult|finding|text|t||7
+COL|JuryVerificationResult|verificationGoal|text|t||8
+COL|JuryVerificationResult|provenance|jsonb|t||9
+COL|JuryVerificationResult|fingerprint|text|t||10
+COL|JuryVerificationResult|createdAt|timestamp(3) without time zone|t||11
+COL|JuryVerificationResult|updatedAt|timestamp(3) without time zone|t||12
+COL|JuryVerificationReview|id|text|t||1
+COL|JuryVerificationReview|tenantId|text|t||2
+COL|JuryVerificationReview|evidenceId|text|t||3
+COL|JuryVerificationReview|parentReviewResultId|text|t||4
+COL|JuryVerificationReview|verificationResultId|text|t||5
+COL|JuryVerificationReview|decisionTaskId|text|t||6
+COL|JuryVerificationReview|type|"JuryVerificationReviewType"|t||7
+COL|JuryVerificationReview|status|"JuryVerificationReviewStatus"|t||8
+COL|JuryVerificationReview|createdAt|timestamp(3) without time zone|t||9
+COL|JuryVerificationReview|updatedAt|timestamp(3) without time zone|t||10
+COL|LaunchInfo|postId|text|t||1
+COL|LaunchInfo|serviceUrl|text|f||2
+COL|LaunchInfo|status|text|f||3
+COL|Notice|id|text|t||1
+COL|Notice|title|text|t||2
+COL|Notice|link|text|f||3
+COL|Notice|isRolling|boolean|t|false|4
+COL|Notice|priority|integer|t|0|5
+COL|Notice|createdAt|timestamp(3) without time zone|t|CURRENT_TIMESTAMP|6
+COL|Notice|updatedAt|timestamp(3) without time zone|t|CURRENT_TIMESTAMP|7
+COL|Notice|content|text|t|''::text|8
+COL|OrganizationInvitation|id|text|t||1
+COL|OrganizationInvitation|tenantId|text|t||2
+COL|OrganizationInvitation|email|text|t||3
+COL|OrganizationInvitation|role|"JuryMemberRole"|t||4
+COL|OrganizationInvitation|tokenHash|text|t||5
+COL|OrganizationInvitation|expiresAt|timestamp(3) without time zone|t||6
+COL|OrganizationInvitation|usedAt|timestamp(3) without time zone|f||7
+COL|OrganizationInvitation|invitedBy|text|t||8
+COL|OrganizationInvitation|createdAt|timestamp(3) without time zone|t|CURRENT_TIMESTAMP|9
+COL|OrganizationInvitation|updatedAt|timestamp(3) without time zone|t||10
+COL|Post|id|text|t||1
+COL|Post|category|"Category"|t||2
+COL|Post|title|text|t||3
+COL|Post|content|text|f||4
+COL|Post|thumbnail|text|f||5
+COL|Post|authorId|text|t||6
+COL|Post|createdAt|timestamp(3) without time zone|t|now()|7
+COL|Post|likeCount|integer|t|0|8
+COL|Post|views|integer|t|0|9
+COL|Post|externalLink|text|f||10
+COL|Post|isFeatured|boolean|t|false|11
+COL|Post|attachmentUrls|text[]|f|ARRAY[]::text[]|12
+COL|Post|tags|text[]|t|ARRAY[]::text[]|13
+COL|Post|aiReversePrompt|text|f||14
+COL|Post|aiImageAnalysis|jsonb|f||15
+COL|Post|geeknewsOriginalUrl|character varying(2048)|f||16
+COL|Post|hackerNewsOriginalUrl|character varying(2048)|f||17
+COL|Post|vergeOriginalUrl|character varying(2048)|f||18
+COL|Post|aiBreakfastOriginalUrl|character varying(2048)|f||19
+COL|Post|mitNewsOriginalUrl|character varying(2048)|f||20
+COL|Post|youtubeVideoId|character varying(16)|f||21
+COL|Post|youtubeSyndicationSource|character varying(16)|f||22
+COL|Post|lobstersOriginalUrl|character varying(2048)|f||23
+COL|Post|techmemeOriginalUrl|character varying(2048)|f||24
+COL|Post|aiFortuneWeekKey|character varying(32)|f||25
+COL|Post|aiFortunePayload|jsonb|f||26
+COL|Post|featuredOnHome|boolean|t|false|27
+COL|Post|launchBannerUntil|timestamp(3) without time zone|f||28
+COL|Post|authorKind|"PostAuthorKind"|t|'HUMAN'::"PostAuthorKind"|29
+COL|PostLike|postId|text|t||1
+COL|PostLike|userId|text|t||2
+COL|PostLike|createdAt|timestamp(3) without time zone|t|CURRENT_TIMESTAMP|3
+COL|PostStance|postId|text|t||1
+COL|PostStance|userId|text|t||2
+COL|PostStance|choice|"StanceChoice"|t||3
+COL|PostStance|createdAt|timestamp(3) without time zone|t|CURRENT_TIMESTAMP|4
+COL|PostStance|updatedAt|timestamp(3) without time zone|t|CURRENT_TIMESTAMP|5
+COL|PostViewDaily|postId|text|t||1
+COL|PostViewDaily|day|date|t||2
+COL|PostViewDaily|count|integer|t|0|3
+COL|UiConfig|key|text|t||1
+COL|UiConfig|value|text|t||2
+COL|UiConfig|description|text|f||3
+COL|UiConfig|createdAt|timestamp(3) without time zone|t|CURRENT_TIMESTAMP|4
+COL|UiConfig|updatedAt|timestamp(3) without time zone|t||5
+COL|User|id|text|t||1
+COL|User|username|text|t||2
+COL|User|email|text|t||3
+COL|User|role|"Role"|t|'USER'::"Role"|4
+COL|User|createdAt|timestamp(3) without time zone|t|now()|5
+COL|User|avatarUrl|text|f||6
+COL|User|newsletterSubscribed|boolean|t|false|7
+COL|User|digestFrequency|"DigestFrequency"|t|'DAILY'::"DigestFrequency"|8
+COL|User|mbti|character varying(4)|f||10
+COL|_prisma_migrations|id|character varying(36)|t||1
+COL|_prisma_migrations|checksum|character varying(64)|t||2
+COL|_prisma_migrations|finished_at|timestamp with time zone|f||3
+COL|_prisma_migrations|migration_name|character varying(255)|t||4
+COL|_prisma_migrations|logs|text|f||5
+COL|_prisma_migrations|rolled_back_at|timestamp with time zone|f||6
+COL|_prisma_migrations|started_at|timestamp with time zone|t|now()|7
+COL|_prisma_migrations|applied_steps_count|integer|t|0|8
+COL|announcements|id|uuid|t|gen_random_uuid()|1
+COL|announcements|title|text|t||2
+COL|announcements|content|text|t||3
+COL|announcements|category|text|t|'general'::text|4
+COL|announcements|author_id|uuid|t||5
+COL|announcements|pinned|boolean|t|false|6
+COL|announcements|created_at|timestamp with time zone|t|now()|7
+COL|announcements|updated_at|timestamp with time zone|t|now()|8
+IDX|AiMetadata|CREATE UNIQUE INDEX "AiMetadata_pkey" ON public."AiMetadata" USING btree ("postId")
+IDX|Bookmark|CREATE UNIQUE INDEX "Bookmark_pkey" ON public."Bookmark" USING btree ("userId", "postId")
+IDX|Bookmark|CREATE INDEX "Bookmark_postId_idx" ON public."Bookmark" USING btree ("postId")
+IDX|Bookmark|CREATE INDEX "Bookmark_userId_idx" ON public."Bookmark" USING btree ("userId")
+IDX|Comment|CREATE UNIQUE INDEX "Comment_pkey" ON public."Comment" USING btree (id)
+IDX|Comment|CREATE INDEX "Comment_postId_idx" ON public."Comment" USING btree ("postId")
+IDX|CommentNotifyThrottle|CREATE UNIQUE INDEX "CommentNotifyThrottle_pkey" ON public."CommentNotifyThrottle" USING btree ("postId", "authorId")
+IDX|GameScore|CREATE INDEX "GameScore_gameSlug_mode_weekKey_score_idx" ON public."GameScore" USING btree ("gameSlug", mode, "weekKey", score DESC)
+IDX|GameScore|CREATE UNIQUE INDEX "GameScore_pkey" ON public."GameScore" USING btree (id)
+IDX|GameScore|CREATE UNIQUE INDEX "GameScore_userId_gameSlug_mode_weekKey_key" ON public."GameScore" USING btree ("userId", "gameSlug", mode, "weekKey")
+IDX|JuryAccessScope|CREATE UNIQUE INDEX "JuryAccessScope_pkey" ON public."JuryAccessScope" USING btree (id)
+IDX|JuryAccessScope|CREATE INDEX "JuryAccessScope_tenantId_idx" ON public."JuryAccessScope" USING btree ("tenantId")
+IDX|JuryAgentExecution|CREATE UNIQUE INDEX "JuryAgentExecution_pkey" ON public."JuryAgentExecution" USING btree (id)
+IDX|JuryAgentExecution|CREATE UNIQUE INDEX "JuryAgentExecution_taskId_agent_key" ON public."JuryAgentExecution" USING btree ("taskId", agent)
+IDX|JuryAgentExecution|CREATE INDEX "JuryAgentExecution_tenantId_idx" ON public."JuryAgentExecution" USING btree ("tenantId")
+IDX|JuryAuditEvent|CREATE UNIQUE INDEX "JuryAuditEvent_pkey" ON public."JuryAuditEvent" USING btree (id)
+IDX|JuryAuditEvent|CREATE INDEX "JuryAuditEvent_tenantId_timestamp_idx" ON public."JuryAuditEvent" USING btree ("tenantId", "timestamp")
+IDX|JuryAutoLoopActivation|CREATE UNIQUE INDEX "JuryAutoLoopActivation_pkey" ON public."JuryAutoLoopActivation" USING btree (id)
+IDX|JuryAutoLoopActivation|CREATE INDEX "JuryAutoLoopActivation_tenantId_idx" ON public."JuryAutoLoopActivation" USING btree ("tenantId")
+IDX|JuryAutoLoopActivation|CREATE UNIQUE INDEX "JuryAutoLoopActivation_tenantId_key" ON public."JuryAutoLoopActivation" USING btree ("tenantId")
+IDX|JuryChangeGateResolution|CREATE UNIQUE INDEX "JuryChangeGateResolution_gate_action_reason_key" ON public."JuryChangeGateResolution" USING btree ("changeGateResultId", action, "reasonFingerprint")
+IDX|JuryChangeGateResolution|CREATE UNIQUE INDEX "JuryChangeGateResolution_pkey" ON public."JuryChangeGateResolution" USING btree (id)
+IDX|JuryChangeGateResolution|CREATE INDEX "JuryChangeGateResolution_tenantId_idx" ON public."JuryChangeGateResolution" USING btree ("tenantId")
+IDX|JuryChangeGateResult|CREATE UNIQUE INDEX "JuryChangeGateResult_executionId_key" ON public."JuryChangeGateResult" USING btree ("executionId")
+IDX|JuryChangeGateResult|CREATE UNIQUE INDEX "JuryChangeGateResult_pkey" ON public."JuryChangeGateResult" USING btree (id)
+IDX|JuryChangeGateResult|CREATE INDEX "JuryChangeGateResult_tenantId_idx" ON public."JuryChangeGateResult" USING btree ("tenantId")
+IDX|JuryChangeGateReview|CREATE UNIQUE INDEX "JuryChangeGateReview_changeGateResultId_key" ON public."JuryChangeGateReview" USING btree ("changeGateResultId")
+IDX|JuryChangeGateReview|CREATE UNIQUE INDEX "JuryChangeGateReview_pkey" ON public."JuryChangeGateReview" USING btree (id)
+IDX|JuryChangeGateReview|CREATE UNIQUE INDEX "JuryChangeGateReview_reviewRequestId_key" ON public."JuryChangeGateReview" USING btree ("reviewRequestId")
+IDX|JuryChangeGateReview|CREATE INDEX "JuryChangeGateReview_tenantId_idx" ON public."JuryChangeGateReview" USING btree ("tenantId")
+IDX|JuryDecisionCycle|CREATE UNIQUE INDEX "JuryDecisionCycle_pkey" ON public."JuryDecisionCycle" USING btree (id)
+IDX|JuryDecisionCycle|CREATE UNIQUE INDEX "JuryDecisionCycle_rootReviewResultId_key" ON public."JuryDecisionCycle" USING btree ("rootReviewResultId")
+IDX|JuryDecisionCycle|CREATE INDEX "JuryDecisionCycle_tenantId_idx" ON public."JuryDecisionCycle" USING btree ("tenantId")
+IDX|JuryDecisionTask|CREATE UNIQUE INDEX "JuryDecisionTask_pkey" ON public."JuryDecisionTask" USING btree (id)
+IDX|JuryDecisionTask|CREATE UNIQUE INDEX "JuryDecisionTask_reviewResultId_taskType_key" ON public."JuryDecisionTask" USING btree ("reviewResultId", "taskType")
+IDX|JuryDecisionTask|CREATE INDEX "JuryDecisionTask_tenantId_idx" ON public."JuryDecisionTask" USING btree ("tenantId")
+IDX|JuryDiscoveryResult|CREATE UNIQUE INDEX "JuryDiscoveryResult_pkey" ON public."JuryDiscoveryResult" USING btree (id)
+IDX|JuryDiscoveryResult|CREATE INDEX "JuryDiscoveryResult_tenantId_idx" ON public."JuryDiscoveryResult" USING btree ("tenantId")
+IDX|JuryEvidence|CREATE UNIQUE INDEX "JuryEvidence_identity_key" ON public."JuryEvidence" USING btree ("tenantId", "connectionId", purpose, "periodStart", "periodEnd", timezone, "contentHash")
+IDX|JuryEvidence|CREATE UNIQUE INDEX "JuryEvidence_pkey" ON public."JuryEvidence" USING btree (id)
+IDX|JuryEvidence|CREATE INDEX "JuryEvidence_tenantId_idx" ON public."JuryEvidence" USING btree ("tenantId")
+IDX|JuryHumanDecision|CREATE UNIQUE INDEX "JuryHumanDecision_pkey" ON public."JuryHumanDecision" USING btree (id)
+IDX|JuryHumanDecision|CREATE UNIQUE INDEX "JuryHumanDecision_reviewRequestId_key" ON public."JuryHumanDecision" USING btree ("reviewRequestId")
+IDX|JuryHumanDecision|CREATE UNIQUE INDEX "JuryHumanDecision_reviewResultId_key" ON public."JuryHumanDecision" USING btree ("reviewResultId")
+IDX|JuryHumanDecision|CREATE INDEX "JuryHumanDecision_tenantId_idx" ON public."JuryHumanDecision" USING btree ("tenantId")
+IDX|JuryHumanDecision|CREATE UNIQUE INDEX "JuryHumanDecision_tenant_review_key" ON public."JuryHumanDecision" USING btree ("tenantId", "reviewResultId")
+IDX|JuryImprovementTask|CREATE UNIQUE INDEX "JuryImprovementTask_decisionTaskId_taskType_key" ON public."JuryImprovementTask" USING btree ("decisionTaskId", "taskType")
+IDX|JuryImprovementTask|CREATE UNIQUE INDEX "JuryImprovementTask_pkey" ON public."JuryImprovementTask" USING btree (id)
+IDX|JuryImprovementTask|CREATE INDEX "JuryImprovementTask_tenantId_idx" ON public."JuryImprovementTask" USING btree ("tenantId")
+IDX|JuryMembership|CREATE UNIQUE INDEX "JuryMembership_pkey" ON public."JuryMembership" USING btree (id)
+IDX|JuryMembership|CREATE INDEX "JuryMembership_tenantId_idx" ON public."JuryMembership" USING btree ("tenantId")
+IDX|JuryMembership|CREATE UNIQUE INDEX "JuryMembership_tenantId_userId_key" ON public."JuryMembership" USING btree ("tenantId", "userId")
+IDX|JuryMembership|CREATE INDEX "JuryMembership_userId_idx" ON public."JuryMembership" USING btree ("userId")
+IDX|JuryNormalizedMetric|CREATE UNIQUE INDEX "JuryNormalizedMetric_pkey" ON public."JuryNormalizedMetric" USING btree (id)
+IDX|JuryNormalizedMetric|CREATE INDEX "JuryNormalizedMetric_tenantId_idx" ON public."JuryNormalizedMetric" USING btree ("tenantId")
+IDX|JuryProductLoopPolicy|CREATE UNIQUE INDEX "JuryProductLoopPolicy_pkey" ON public."JuryProductLoopPolicy" USING btree (id)
+IDX|JuryProductLoopPolicy|CREATE UNIQUE INDEX "JuryProductLoopPolicy_tenantId_key" ON public."JuryProductLoopPolicy" USING btree ("tenantId")
+IDX|JuryReReviewResult|CREATE UNIQUE INDEX "JuryReReviewResult_pkey" ON public."JuryReReviewResult" USING btree (id)
+IDX|JuryReReviewResult|CREATE INDEX "JuryReReviewResult_tenantId_idx" ON public."JuryReReviewResult" USING btree ("tenantId")
+IDX|JuryReviewRequest|CREATE UNIQUE INDEX "JuryReviewRequest_pkey" ON public."JuryReviewRequest" USING btree (id)
+IDX|JuryReviewRequest|CREATE INDEX "JuryReviewRequest_tenantId_idx" ON public."JuryReviewRequest" USING btree ("tenantId")
+IDX|JuryReviewResult|CREATE UNIQUE INDEX "JuryReviewResult_pkey" ON public."JuryReviewResult" USING btree (id)
+IDX|JuryReviewResult|CREATE UNIQUE INDEX "JuryReviewResult_reReviewRequestId_key" ON public."JuryReviewResult" USING btree ("reReviewRequestId")
+IDX|JuryReviewResult|CREATE UNIQUE INDEX "JuryReviewResult_reviewRequestId_key" ON public."JuryReviewResult" USING btree ("reviewRequestId")
+IDX|JuryReviewResult|CREATE INDEX "JuryReviewResult_tenantId_idx" ON public."JuryReviewResult" USING btree ("tenantId")
+IDX|JuryServiceConnection|CREATE UNIQUE INDEX "JuryServiceConnection_pkey" ON public."JuryServiceConnection" USING btree (id)
+IDX|JuryServiceConnection|CREATE INDEX "JuryServiceConnection_tenantId_idx" ON public."JuryServiceConnection" USING btree ("tenantId")
+IDX|JuryServiceMember|CREATE UNIQUE INDEX "JuryServiceMember_connectionId_userId_permission_key" ON public."JuryServiceMember" USING btree ("connectionId", "userId", permission)
+IDX|JuryServiceMember|CREATE UNIQUE INDEX "JuryServiceMember_pkey" ON public."JuryServiceMember" USING btree (id)
+IDX|JuryServiceMember|CREATE INDEX "JuryServiceMember_tenantId_idx" ON public."JuryServiceMember" USING btree ("tenantId")
+IDX|JuryServiceMember|CREATE INDEX "JuryServiceMember_userId_idx" ON public."JuryServiceMember" USING btree ("userId")
+IDX|JuryTenant|CREATE UNIQUE INDEX "JuryTenant_pkey" ON public."JuryTenant" USING btree (id)
+IDX|JuryVerificationResult|CREATE UNIQUE INDEX "JuryVerificationResult_decisionTaskId_key" ON public."JuryVerificationResult" USING btree ("decisionTaskId")
+IDX|JuryVerificationResult|CREATE UNIQUE INDEX "JuryVerificationResult_pkey" ON public."JuryVerificationResult" USING btree (id)
+IDX|JuryVerificationResult|CREATE INDEX "JuryVerificationResult_tenantId_idx" ON public."JuryVerificationResult" USING btree ("tenantId")
+IDX|JuryVerificationReview|CREATE UNIQUE INDEX "JuryVerificationReview_pkey" ON public."JuryVerificationReview" USING btree (id)
+IDX|JuryVerificationReview|CREATE INDEX "JuryVerificationReview_tenantId_idx" ON public."JuryVerificationReview" USING btree ("tenantId")
+IDX|JuryVerificationReview|CREATE UNIQUE INDEX "JuryVerificationReview_verificationResultId_key" ON public."JuryVerificationReview" USING btree ("verificationResultId")
+IDX|LaunchInfo|CREATE UNIQUE INDEX "LaunchInfo_pkey" ON public."LaunchInfo" USING btree ("postId")
+IDX|Notice|CREATE INDEX "Notice_isRolling_priority_createdAt_idx" ON public."Notice" USING btree ("isRolling", priority DESC, "createdAt" DESC)
+IDX|Notice|CREATE UNIQUE INDEX "Notice_pkey" ON public."Notice" USING btree (id)
+IDX|OrganizationInvitation|CREATE UNIQUE INDEX "OrganizationInvitation_pkey" ON public."OrganizationInvitation" USING btree (id)
+IDX|OrganizationInvitation|CREATE INDEX "OrganizationInvitation_tenantId_email_idx" ON public."OrganizationInvitation" USING btree ("tenantId", email)
+IDX|OrganizationInvitation|CREATE UNIQUE INDEX "OrganizationInvitation_tokenHash_key" ON public."OrganizationInvitation" USING btree ("tokenHash")
+IDX|Post|CREATE UNIQUE INDEX "Post_aiBreakfastOriginalUrl_key" ON public."Post" USING btree ("aiBreakfastOriginalUrl")
+IDX|Post|CREATE UNIQUE INDEX "Post_aiFortuneWeekKey_key" ON public."Post" USING btree ("aiFortuneWeekKey")
+IDX|Post|CREATE INDEX "Post_authorKind_createdAt_idx" ON public."Post" USING btree ("authorKind", "createdAt" DESC)
+IDX|Post|CREATE INDEX "Post_category_createdAt_idx" ON public."Post" USING btree (category, "createdAt" DESC)
+IDX|Post|CREATE INDEX "Post_featuredOnHome_launchBannerUntil_idx" ON public."Post" USING btree ("featuredOnHome", "launchBannerUntil")
+IDX|Post|CREATE UNIQUE INDEX "Post_geeknewsOriginalUrl_key" ON public."Post" USING btree ("geeknewsOriginalUrl")
+IDX|Post|CREATE UNIQUE INDEX "Post_hackerNewsOriginalUrl_key" ON public."Post" USING btree ("hackerNewsOriginalUrl")
+IDX|Post|CREATE INDEX "Post_launch_banner_idx" ON public."Post" USING btree (category, "featuredOnHome", "launchBannerUntil")
+IDX|Post|CREATE UNIQUE INDEX "Post_lobstersOriginalUrl_key" ON public."Post" USING btree ("lobstersOriginalUrl")
+IDX|Post|CREATE UNIQUE INDEX "Post_mitNewsOriginalUrl_key" ON public."Post" USING btree ("mitNewsOriginalUrl")
+IDX|Post|CREATE UNIQUE INDEX "Post_pkey" ON public."Post" USING btree (id)
+IDX|Post|CREATE UNIQUE INDEX "Post_techmemeOriginalUrl_key" ON public."Post" USING btree ("techmemeOriginalUrl")
+IDX|Post|CREATE UNIQUE INDEX "Post_vergeOriginalUrl_key" ON public."Post" USING btree ("vergeOriginalUrl")
+IDX|Post|CREATE UNIQUE INDEX "Post_youtubeVideoId_key" ON public."Post" USING btree ("youtubeVideoId")
+IDX|PostLike|CREATE UNIQUE INDEX "PostLike_pkey" ON public."PostLike" USING btree ("postId", "userId")
+IDX|PostLike|CREATE INDEX "PostLike_userId_idx" ON public."PostLike" USING btree ("userId")
+IDX|PostStance|CREATE UNIQUE INDEX "PostStance_pkey" ON public."PostStance" USING btree ("postId", "userId")
+IDX|PostStance|CREATE INDEX "PostStance_postId_choice_idx" ON public."PostStance" USING btree ("postId", choice)
+IDX|PostViewDaily|CREATE INDEX "PostViewDaily_day_idx" ON public."PostViewDaily" USING btree (day)
+IDX|PostViewDaily|CREATE UNIQUE INDEX "PostViewDaily_pkey" ON public."PostViewDaily" USING btree ("postId", day)
+IDX|UiConfig|CREATE UNIQUE INDEX "UiConfig_pkey" ON public."UiConfig" USING btree (key)
+IDX|User|CREATE UNIQUE INDEX "User_email_key" ON public."User" USING btree (email)
+IDX|User|CREATE INDEX "User_newsletterSubscribed_digestFrequency_idx" ON public."User" USING btree ("newsletterSubscribed", "digestFrequency")
+IDX|User|CREATE UNIQUE INDEX "User_pkey" ON public."User" USING btree (id)
+IDX|User|CREATE UNIQUE INDEX "User_username_key" ON public."User" USING btree (username)
+IDX|_prisma_migrations|CREATE UNIQUE INDEX _prisma_migrations_pkey ON public._prisma_migrations USING btree (id)
+IDX|announcements|CREATE UNIQUE INDEX announcements_pkey ON public.announcements USING btree (id)
+IDX|announcements|CREATE INDEX idx_announcements_created_at ON public.announcements USING btree (created_at DESC)
+CON|_prisma_migrations|_prisma_migrations_pkey|PRIMARY KEY (id)
+CON|"AiMetadata"|AiMetadata_pkey|PRIMARY KEY ("postId")
+CON|"AiMetadata"|AiMetadata_postId_fkey|FOREIGN KEY ("postId") REFERENCES "Post"(id) ON UPDATE CASCADE ON DELETE CASCADE
+CON|"Bookmark"|Bookmark_pkey|PRIMARY KEY ("userId", "postId")
+CON|"Bookmark"|Bookmark_postId_fkey|FOREIGN KEY ("postId") REFERENCES "Post"(id) ON UPDATE CASCADE ON DELETE CASCADE
+CON|"Bookmark"|Bookmark_userId_fkey|FOREIGN KEY ("userId") REFERENCES "User"(id) ON UPDATE CASCADE ON DELETE CASCADE
+CON|"Comment"|Comment_authorId_fkey|FOREIGN KEY ("authorId") REFERENCES "User"(id) ON UPDATE CASCADE ON DELETE CASCADE
+CON|"Comment"|Comment_pkey|PRIMARY KEY (id)
+CON|"Comment"|Comment_postId_fkey|FOREIGN KEY ("postId") REFERENCES "Post"(id) ON UPDATE CASCADE ON DELETE CASCADE
+CON|"CommentNotifyThrottle"|CommentNotifyThrottle_pkey|PRIMARY KEY ("postId", "authorId")
+CON|"GameScore"|GameScore_pkey|PRIMARY KEY (id)
+CON|"GameScore"|GameScore_userId_fkey|FOREIGN KEY ("userId") REFERENCES "User"(id) ON UPDATE CASCADE ON DELETE CASCADE
+CON|"JuryAccessScope"|JuryAccessScope_connectionId_fkey|FOREIGN KEY ("connectionId") REFERENCES "JuryServiceConnection"(id) ON UPDATE CASCADE ON DELETE CASCADE
+CON|"JuryAccessScope"|JuryAccessScope_pkey|PRIMARY KEY (id)
+CON|"JuryAccessScope"|JuryAccessScope_tenantId_fkey|FOREIGN KEY ("tenantId") REFERENCES "JuryTenant"(id) ON UPDATE CASCADE ON DELETE CASCADE
+CON|"JuryAgentExecution"|JuryAgentExecution_pkey|PRIMARY KEY (id)
+CON|"JuryAgentExecution"|JuryAgentExecution_taskId_fkey|FOREIGN KEY ("taskId") REFERENCES "JuryImprovementTask"(id) ON UPDATE CASCADE ON DELETE CASCADE
+CON|"JuryAgentExecution"|JuryAgentExecution_tenantId_fkey|FOREIGN KEY ("tenantId") REFERENCES "JuryTenant"(id) ON UPDATE CASCADE ON DELETE CASCADE
+CON|"JuryAuditEvent"|JuryAuditEvent_pkey|PRIMARY KEY (id)
+CON|"JuryAuditEvent"|JuryAuditEvent_tenantId_fkey|FOREIGN KEY ("tenantId") REFERENCES "JuryTenant"(id) ON UPDATE CASCADE ON DELETE CASCADE
+CON|"JuryAutoLoopActivation"|JuryAutoLoopActivation_pkey|PRIMARY KEY (id)
+CON|"JuryAutoLoopActivation"|JuryAutoLoopActivation_tenantId_fkey|FOREIGN KEY ("tenantId") REFERENCES "JuryTenant"(id) ON UPDATE CASCADE ON DELETE CASCADE
+CON|"JuryChangeGateResolution"|JuryChangeGateResolution_changeGateResultId_fkey|FOREIGN KEY ("changeGateResultId") REFERENCES "JuryChangeGateResult"(id) ON UPDATE CASCADE ON DELETE RESTRICT
+CON|"JuryChangeGateResolution"|JuryChangeGateResolution_pkey|PRIMARY KEY (id)
+CON|"JuryChangeGateResolution"|JuryChangeGateResolution_tenantId_fkey|FOREIGN KEY ("tenantId") REFERENCES "JuryTenant"(id) ON UPDATE CASCADE ON DELETE CASCADE
+CON|"JuryChangeGateResult"|JuryChangeGateResult_executionId_fkey|FOREIGN KEY ("executionId") REFERENCES "JuryAgentExecution"(id) ON UPDATE CASCADE ON DELETE CASCADE
+CON|"JuryChangeGateResult"|JuryChangeGateResult_improvementTaskId_fkey|FOREIGN KEY ("improvementTaskId") REFERENCES "JuryImprovementTask"(id) ON UPDATE CASCADE ON DELETE RESTRICT
+CON|"JuryChangeGateResult"|JuryChangeGateResult_pkey|PRIMARY KEY (id)
+CON|"JuryChangeGateResult"|JuryChangeGateResult_tenantId_fkey|FOREIGN KEY ("tenantId") REFERENCES "JuryTenant"(id) ON UPDATE CASCADE ON DELETE CASCADE
+CON|"JuryChangeGateReview"|JuryChangeGateReview_changeGateResultId_fkey|FOREIGN KEY ("changeGateResultId") REFERENCES "JuryChangeGateResult"(id) ON UPDATE CASCADE ON DELETE RESTRICT
+CON|"JuryChangeGateReview"|JuryChangeGateReview_evidenceId_fkey|FOREIGN KEY ("evidenceId") REFERENCES "JuryEvidence"(id) ON UPDATE CASCADE ON DELETE RESTRICT
+CON|"JuryChangeGateReview"|JuryChangeGateReview_improvementTaskId_fkey|FOREIGN KEY ("improvementTaskId") REFERENCES "JuryImprovementTask"(id) ON UPDATE CASCADE ON DELETE RESTRICT
+CON|"JuryChangeGateReview"|JuryChangeGateReview_parentReviewResultId_fkey|FOREIGN KEY ("parentReviewResultId") REFERENCES "JuryReviewResult"(id) ON UPDATE CASCADE ON DELETE RESTRICT
+CON|"JuryChangeGateReview"|JuryChangeGateReview_pkey|PRIMARY KEY (id)
+CON|"JuryChangeGateReview"|JuryChangeGateReview_tenantId_fkey|FOREIGN KEY ("tenantId") REFERENCES "JuryTenant"(id) ON UPDATE CASCADE ON DELETE CASCADE
+CON|"JuryDecisionCycle"|JuryDecisionCycle_currentReviewResultId_fkey|FOREIGN KEY ("currentReviewResultId") REFERENCES "JuryReviewResult"(id) ON UPDATE CASCADE ON DELETE RESTRICT
+CON|"JuryDecisionCycle"|JuryDecisionCycle_pkey|PRIMARY KEY (id)
+CON|"JuryDecisionCycle"|JuryDecisionCycle_policyId_fkey|FOREIGN KEY ("policyId") REFERENCES "JuryProductLoopPolicy"(id) ON UPDATE CASCADE ON DELETE RESTRICT
+CON|"JuryDecisionCycle"|JuryDecisionCycle_rootReviewResultId_fkey|FOREIGN KEY ("rootReviewResultId") REFERENCES "JuryReviewResult"(id) ON UPDATE CASCADE ON DELETE RESTRICT
+CON|"JuryDecisionCycle"|JuryDecisionCycle_tenantId_fkey|FOREIGN KEY ("tenantId") REFERENCES "JuryTenant"(id) ON UPDATE CASCADE ON DELETE CASCADE
+CON|"JuryDecisionTask"|JuryDecisionTask_evidenceId_fkey|FOREIGN KEY ("evidenceId") REFERENCES "JuryEvidence"(id) ON UPDATE CASCADE ON DELETE RESTRICT
+CON|"JuryDecisionTask"|JuryDecisionTask_pkey|PRIMARY KEY (id)
+CON|"JuryDecisionTask"|JuryDecisionTask_reviewResultId_fkey|FOREIGN KEY ("reviewResultId") REFERENCES "JuryReviewResult"(id) ON UPDATE CASCADE ON DELETE RESTRICT
+CON|"JuryDecisionTask"|JuryDecisionTask_tenantId_fkey|FOREIGN KEY ("tenantId") REFERENCES "JuryTenant"(id) ON UPDATE CASCADE ON DELETE CASCADE
+CON|"JuryDiscoveryResult"|JuryDiscoveryResult_connectionId_fkey|FOREIGN KEY ("connectionId") REFERENCES "JuryServiceConnection"(id) ON UPDATE CASCADE ON DELETE CASCADE
+CON|"JuryDiscoveryResult"|JuryDiscoveryResult_pkey|PRIMARY KEY (id)
+CON|"JuryDiscoveryResult"|JuryDiscoveryResult_tenantId_fkey|FOREIGN KEY ("tenantId") REFERENCES "JuryTenant"(id) ON UPDATE CASCADE ON DELETE CASCADE
+CON|"JuryEvidence"|JuryEvidence_connectionId_fkey|FOREIGN KEY ("connectionId") REFERENCES "JuryServiceConnection"(id) ON UPDATE CASCADE ON DELETE CASCADE
+CON|"JuryEvidence"|JuryEvidence_pkey|PRIMARY KEY (id)
+CON|"JuryEvidence"|JuryEvidence_tenantId_fkey|FOREIGN KEY ("tenantId") REFERENCES "JuryTenant"(id) ON UPDATE CASCADE ON DELETE CASCADE
+CON|"JuryHumanDecision"|JuryHumanDecision_pkey|PRIMARY KEY (id)
+CON|"JuryHumanDecision"|JuryHumanDecision_reviewRequestId_fkey|FOREIGN KEY ("reviewRequestId") REFERENCES "JuryReviewRequest"(id) ON UPDATE CASCADE ON DELETE RESTRICT
+CON|"JuryHumanDecision"|JuryHumanDecision_reviewResultId_fkey|FOREIGN KEY ("reviewResultId") REFERENCES "JuryReviewResult"(id) ON UPDATE CASCADE ON DELETE RESTRICT
+CON|"JuryHumanDecision"|JuryHumanDecision_tenantId_fkey|FOREIGN KEY ("tenantId") REFERENCES "JuryTenant"(id) ON UPDATE CASCADE ON DELETE CASCADE
+CON|"JuryImprovementTask"|JuryImprovementTask_decisionTaskId_fkey|FOREIGN KEY ("decisionTaskId") REFERENCES "JuryDecisionTask"(id) ON UPDATE CASCADE ON DELETE RESTRICT
+CON|"JuryImprovementTask"|JuryImprovementTask_evidenceId_fkey|FOREIGN KEY ("evidenceId") REFERENCES "JuryEvidence"(id) ON UPDATE CASCADE ON DELETE RESTRICT
+CON|"JuryImprovementTask"|JuryImprovementTask_pkey|PRIMARY KEY (id)
+CON|"JuryImprovementTask"|JuryImprovementTask_reviewResultId_fkey|FOREIGN KEY ("reviewResultId") REFERENCES "JuryReviewResult"(id) ON UPDATE CASCADE ON DELETE CASCADE
+CON|"JuryImprovementTask"|JuryImprovementTask_tenantId_fkey|FOREIGN KEY ("tenantId") REFERENCES "JuryTenant"(id) ON UPDATE CASCADE ON DELETE CASCADE
+CON|"JuryMembership"|JuryMembership_pkey|PRIMARY KEY (id)
+CON|"JuryMembership"|JuryMembership_tenantId_fkey|FOREIGN KEY ("tenantId") REFERENCES "JuryTenant"(id) ON UPDATE CASCADE ON DELETE CASCADE
+CON|"JuryMembership"|JuryMembership_userId_fkey|FOREIGN KEY ("userId") REFERENCES "User"(id) ON UPDATE CASCADE ON DELETE RESTRICT
+CON|"JuryNormalizedMetric"|JuryNormalizedMetric_connectionId_fkey|FOREIGN KEY ("connectionId") REFERENCES "JuryServiceConnection"(id) ON UPDATE CASCADE ON DELETE CASCADE
+CON|"JuryNormalizedMetric"|JuryNormalizedMetric_evidenceId_fkey|FOREIGN KEY ("evidenceId") REFERENCES "JuryEvidence"(id) ON UPDATE CASCADE ON DELETE SET NULL
+CON|"JuryNormalizedMetric"|JuryNormalizedMetric_pkey|PRIMARY KEY (id)
+CON|"JuryNormalizedMetric"|JuryNormalizedMetric_tenantId_fkey|FOREIGN KEY ("tenantId") REFERENCES "JuryTenant"(id) ON UPDATE CASCADE ON DELETE CASCADE
+CON|"JuryProductLoopPolicy"|JuryProductLoopPolicy_pkey|PRIMARY KEY (id)
+CON|"JuryProductLoopPolicy"|JuryProductLoopPolicy_tenantId_fkey|FOREIGN KEY ("tenantId") REFERENCES "JuryTenant"(id) ON UPDATE CASCADE ON DELETE CASCADE
+CON|"JuryReReviewResult"|JuryReReviewResult_pkey|PRIMARY KEY (id)
+CON|"JuryReReviewResult"|JuryReReviewResult_taskId_fkey|FOREIGN KEY ("taskId") REFERENCES "JuryImprovementTask"(id) ON UPDATE CASCADE ON DELETE CASCADE
+CON|"JuryReReviewResult"|JuryReReviewResult_tenantId_fkey|FOREIGN KEY ("tenantId") REFERENCES "JuryTenant"(id) ON UPDATE CASCADE ON DELETE CASCADE
+CON|"JuryReviewRequest"|JuryReviewRequest_connectionId_fkey|FOREIGN KEY ("connectionId") REFERENCES "JuryServiceConnection"(id) ON UPDATE CASCADE ON DELETE CASCADE
+CON|"JuryReviewRequest"|JuryReviewRequest_evidenceId_fkey|FOREIGN KEY ("evidenceId") REFERENCES "JuryEvidence"(id) ON UPDATE CASCADE ON DELETE RESTRICT
+CON|"JuryReviewRequest"|JuryReviewRequest_pkey|PRIMARY KEY (id)
+CON|"JuryReviewRequest"|JuryReviewRequest_tenantId_fkey|FOREIGN KEY ("tenantId") REFERENCES "JuryTenant"(id) ON UPDATE CASCADE ON DELETE CASCADE
+CON|"JuryReviewResult"|JuryReviewResult_decisionTaskId_fkey|FOREIGN KEY ("decisionTaskId") REFERENCES "JuryDecisionTask"(id) ON UPDATE CASCADE ON DELETE RESTRICT
+CON|"JuryReviewResult"|JuryReviewResult_parentReviewResultId_fkey|FOREIGN KEY ("parentReviewResultId") REFERENCES "JuryReviewResult"(id) ON UPDATE CASCADE ON DELETE RESTRICT
+CON|"JuryReviewResult"|JuryReviewResult_pkey|PRIMARY KEY (id)
+CON|"JuryReviewResult"|JuryReviewResult_reReviewRequestId_fkey|FOREIGN KEY ("reReviewRequestId") REFERENCES "JuryVerificationReview"(id) ON UPDATE CASCADE ON DELETE RESTRICT
+CON|"JuryReviewResult"|JuryReviewResult_reviewRequestId_fkey|FOREIGN KEY ("reviewRequestId") REFERENCES "JuryReviewRequest"(id) ON UPDATE CASCADE ON DELETE CASCADE
+CON|"JuryReviewResult"|JuryReviewResult_tenantId_fkey|FOREIGN KEY ("tenantId") REFERENCES "JuryTenant"(id) ON UPDATE CASCADE ON DELETE CASCADE
+CON|"JuryReviewResult"|JuryReviewResult_verificationResultId_fkey|FOREIGN KEY ("verificationResultId") REFERENCES "JuryVerificationResult"(id) ON UPDATE CASCADE ON DELETE RESTRICT
+CON|"JuryServiceConnection"|JuryServiceConnection_pkey|PRIMARY KEY (id)
+CON|"JuryServiceConnection"|JuryServiceConnection_tenantId_fkey|FOREIGN KEY ("tenantId") REFERENCES "JuryTenant"(id) ON UPDATE CASCADE ON DELETE CASCADE
+CON|"JuryServiceMember"|JuryServiceMember_connectionId_fkey|FOREIGN KEY ("connectionId") REFERENCES "JuryServiceConnection"(id) ON UPDATE CASCADE ON DELETE CASCADE
+CON|"JuryServiceMember"|JuryServiceMember_pkey|PRIMARY KEY (id)
+CON|"JuryServiceMember"|JuryServiceMember_tenantId_fkey|FOREIGN KEY ("tenantId") REFERENCES "JuryTenant"(id) ON UPDATE CASCADE ON DELETE CASCADE
+CON|"JuryServiceMember"|JuryServiceMember_userId_fkey|FOREIGN KEY ("userId") REFERENCES "User"(id) ON UPDATE CASCADE ON DELETE RESTRICT
+CON|"JuryTenant"|JuryTenant_pkey|PRIMARY KEY (id)
+CON|"JuryVerificationResult"|JuryVerificationResult_decisionTaskId_fkey|FOREIGN KEY ("decisionTaskId") REFERENCES "JuryDecisionTask"(id) ON UPDATE CASCADE ON DELETE RESTRICT
+CON|"JuryVerificationResult"|JuryVerificationResult_evidenceId_fkey|FOREIGN KEY ("evidenceId") REFERENCES "JuryEvidence"(id) ON UPDATE CASCADE ON DELETE RESTRICT
+CON|"JuryVerificationResult"|JuryVerificationResult_pkey|PRIMARY KEY (id)
+CON|"JuryVerificationResult"|JuryVerificationResult_reviewResultId_fkey|FOREIGN KEY ("reviewResultId") REFERENCES "JuryReviewResult"(id) ON UPDATE CASCADE ON DELETE RESTRICT
+CON|"JuryVerificationResult"|JuryVerificationResult_tenantId_fkey|FOREIGN KEY ("tenantId") REFERENCES "JuryTenant"(id) ON UPDATE CASCADE ON DELETE CASCADE
+CON|"JuryVerificationReview"|JuryVerificationReview_decisionTaskId_fkey|FOREIGN KEY ("decisionTaskId") REFERENCES "JuryDecisionTask"(id) ON UPDATE CASCADE ON DELETE RESTRICT
+CON|"JuryVerificationReview"|JuryVerificationReview_evidenceId_fkey|FOREIGN KEY ("evidenceId") REFERENCES "JuryEvidence"(id) ON UPDATE CASCADE ON DELETE RESTRICT
+CON|"JuryVerificationReview"|JuryVerificationReview_parentReviewResultId_fkey|FOREIGN KEY ("parentReviewResultId") REFERENCES "JuryReviewResult"(id) ON UPDATE CASCADE ON DELETE RESTRICT
+CON|"JuryVerificationReview"|JuryVerificationReview_pkey|PRIMARY KEY (id)
+CON|"JuryVerificationReview"|JuryVerificationReview_tenantId_fkey|FOREIGN KEY ("tenantId") REFERENCES "JuryTenant"(id) ON UPDATE CASCADE ON DELETE CASCADE
+CON|"JuryVerificationReview"|JuryVerificationReview_verificationResultId_fkey|FOREIGN KEY ("verificationResultId") REFERENCES "JuryVerificationResult"(id) ON UPDATE CASCADE ON DELETE RESTRICT
+CON|"LaunchInfo"|LaunchInfo_pkey|PRIMARY KEY ("postId")
+CON|"LaunchInfo"|LaunchInfo_postId_fkey|FOREIGN KEY ("postId") REFERENCES "Post"(id) ON UPDATE CASCADE ON DELETE CASCADE
+CON|"Notice"|Notice_pkey|PRIMARY KEY (id)
+CON|"OrganizationInvitation"|OrganizationInvitation_invitedBy_fkey|FOREIGN KEY ("invitedBy") REFERENCES "User"(id) ON UPDATE CASCADE ON DELETE RESTRICT
+CON|"OrganizationInvitation"|OrganizationInvitation_pkey|PRIMARY KEY (id)
+CON|"OrganizationInvitation"|OrganizationInvitation_tenantId_fkey|FOREIGN KEY ("tenantId") REFERENCES "JuryTenant"(id) ON UPDATE CASCADE ON DELETE CASCADE
+CON|"Post"|Post_authorId_fkey|FOREIGN KEY ("authorId") REFERENCES "User"(id) ON UPDATE CASCADE ON DELETE RESTRICT
+CON|"Post"|Post_pkey|PRIMARY KEY (id)
+CON|"PostLike"|PostLike_pkey|PRIMARY KEY ("postId", "userId")
+CON|"PostLike"|PostLike_postId_fkey|FOREIGN KEY ("postId") REFERENCES "Post"(id) ON UPDATE CASCADE ON DELETE CASCADE
+CON|"PostLike"|PostLike_userId_fkey|FOREIGN KEY ("userId") REFERENCES "User"(id) ON UPDATE CASCADE ON DELETE CASCADE
+CON|"PostStance"|PostStance_pkey|PRIMARY KEY ("postId", "userId")
+CON|"PostStance"|PostStance_postId_fkey|FOREIGN KEY ("postId") REFERENCES "Post"(id) ON UPDATE CASCADE ON DELETE CASCADE
+CON|"PostStance"|PostStance_userId_fkey|FOREIGN KEY ("userId") REFERENCES "User"(id) ON UPDATE CASCADE ON DELETE CASCADE
+CON|"PostViewDaily"|PostViewDaily_pkey|PRIMARY KEY ("postId", day)
+CON|"PostViewDaily"|PostViewDaily_postId_fkey|FOREIGN KEY ("postId") REFERENCES "Post"(id) ON UPDATE CASCADE ON DELETE CASCADE
+CON|"UiConfig"|UiConfig_pkey|PRIMARY KEY (key)
+CON|"User"|User_email_key|UNIQUE (email)
+CON|"User"|User_pkey|PRIMARY KEY (id)
+CON|"User"|User_username_key|UNIQUE (username)
+CON|announcements|announcements_author_id_fkey|FOREIGN KEY (author_id) REFERENCES auth.users(id) ON DELETE CASCADE
+CON|announcements|announcements_pkey|PRIMARY KEY (id)
+POL|Notice|notice_public_read|SELECT|{anon,authenticated}
+POL|UiConfig|uiconfig_public_read|SELECT|{anon,authenticated}
+
