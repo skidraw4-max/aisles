@@ -55,8 +55,21 @@ test('tenant review stores one external result and does not rerun the core', { t
   const liveBefore = await liveSnapshot(prisma);
   let cleanupError: string | null = null;
   const calls: EvidencePack[] = [];
-  const core: ProductReviewCore = async ({ evidence }) => {
+  const core: ProductReviewCore = async ({ evidence, trace }) => {
     calls.push(evidence);
+    if (trace) {
+      trace.resultSource = 'FIXTURE';
+      trace.recorder.push({
+        provider: 'fixture',
+        model: null,
+        operation: 'chairman',
+        memberId: null,
+        status: 'OK',
+        errorCode: null,
+        latencyMs: 1,
+        startedAt: '2026-10-22T00:00:00.000Z',
+      });
+    }
     return reading();
   };
   try {
@@ -130,6 +143,32 @@ test('tenant review stores one external result and does not rerun the core', { t
     assert.deepEqual(calls[0]?.docsHints, []);
     assert.equal(calls[0]?.ga4, undefined);
     assert.equal(JSON.stringify(calls[0]).includes('buildEvidencePackFromDb'), false);
+
+    // RM-01: attempt lifecycle, result source and per-call metadata are persisted.
+    const okAttempts = await prisma.juryReviewAttempt.findMany({ where: { tenantId: TENANT, status: 'COMPLETED' } });
+    assert.equal(okAttempts.length, 1);
+    assert.equal(okAttempts[0]?.reviewRequestKey, memberRun.request.id);
+    assert.equal(okAttempts[0]?.resultSource, 'FIXTURE');
+    assert.ok(okAttempts[0]?.finishedAt);
+    const storedRequest = await prisma.juryReviewRequest.findFirst({ where: { id: memberRun.request.id } });
+    assert.equal(storedRequest?.resultSource, 'FIXTURE');
+    assert.ok(storedRequest?.createdAt instanceof Date);
+    assert.ok(storedRequest?.updatedAt instanceof Date);
+    const callLogs = await prisma.juryLlmCallLog.findMany({ where: { attemptId: okAttempts[0]!.id } });
+    assert.equal(callLogs.length, 1);
+    assert.equal(callLogs[0]?.operation, 'chairman');
+
+    const failing: ProductReviewCore = async ({ trace }) => {
+      if (trace) trace.resultSource = 'MOCK';
+      throw new Error('boom');
+    };
+    const failed = await runTenantReview(command({ evidenceId: stored.evidenceId, reviewType: 'UI_UX_REVIEW' }), failing);
+    assert.deepEqual(failed, { ok: false, reason: 'REVIEW_NOT_EXECUTED' });
+    const failedAttempts = await prisma.juryReviewAttempt.findMany({ where: { tenantId: TENANT, status: 'FAILED' } });
+    assert.equal(failedAttempts.length, 1);
+    assert.equal(failedAttempts[0]?.failureReason, 'REVIEW_NOT_EXECUTED');
+    assert.equal(failedAttempts[0]?.resultSource, 'MOCK');
+    assert.equal(await prisma.juryReviewRequest.count({ where: { tenantId: TENANT } }), 1);
 
     const again = await runTenantReview(command({ evidenceId: stored.evidenceId }), core);
     assert.equal(again.ok, true);

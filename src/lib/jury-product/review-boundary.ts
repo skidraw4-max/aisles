@@ -5,6 +5,7 @@
 import { createHash } from 'node:crypto';
 import type { EvidencePack } from '../ai-review-board/types';
 import { decideJuryMutation, resolveJuryActor } from './access';
+import type { JuryResultSourceValue, LlmCallRecorder } from './llm-call-log';
 import { JuryTenantIsolationError, projectEvidenceToPack, type EvidencePackProjection } from './projection';
 import {
   JURY_CLAIM_STRENGTHS,
@@ -38,10 +39,17 @@ export type FrozenCoreReading = {
   completedAt: string;
 };
 
+/** RM-01: optional tracing handle. A core sets resultSource and records LLM calls through it. */
+export type ProductReviewTrace = {
+  resultSource: JuryResultSourceValue;
+  recorder: LlmCallRecorder;
+};
+
 export type ProductReviewCore = (input: {
   rootDir: typeof JURY_PRODUCT_DATA_ROOT;
   evidence: EvidencePack;
   claim?: string;
+  trace?: ProductReviewTrace;
 }) => Promise<FrozenCoreReading>;
 
 export type ProductReviewCommand = {
