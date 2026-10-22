@@ -1,0 +1,24 @@
+name: test-baseline (RM-00)
+on:
+  pull_request:
+  push:
+    branches: [main, "chore/rm-00-test-baseline"]
+permissions:
+  contents: read
+jobs:
+  baseline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # Intentionally NO secrets and NO env: DB-dependent tests are tracked in
+    # test/baseline/known-failures.json (TF-A..D). See docs/jury-test-baseline.md.
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20.19.2"
+          cache: npm
+      - run: npm ci
+      - name: TypeScript
+        run: npx tsc --noEmit --incremental false
+      - name: Tests vs known-failure baseline
+        run: node scripts/test-baseline.mjs
