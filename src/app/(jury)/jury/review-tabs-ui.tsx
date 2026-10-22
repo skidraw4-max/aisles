@@ -13,6 +13,7 @@ import {
   userLabel,
 } from '@/lib/jury-product/ui-labels';
 import { buildResultDetailView } from '@/lib/jury-product/review-result-detail';
+import type { ReviewComparisonView } from '@/lib/jury-product/review-comparison';
 import { Tabs, TranslationHint, type TabItem } from './ui-primitives';
 import styles from './jury.module.css';
 
@@ -122,6 +123,27 @@ export function UncheckedMetricsPanel({ screen }: { screen: ReviewConsoleScreen 
         <p className={styles.muted}>{view.unchecked.text}</p>
       ) : (
         <ul>{view.unchecked.items.map((name) => <li key={name}><span className={styles.badge}>미검사</span> {name}</li>)}</ul>
+      )}
+    </section>
+  );
+}
+
+/** RM-11 (M-011, UI-06): 이전 대비. 판정 범주 변화 + 문제 수 차이(정수)만; 비율·종합 점수 없음. */
+export function PreviousResultComparison({ comparison }: { comparison: ReviewComparisonView | null }) {
+  return (
+    <section className={styles.panel}>
+      <h2>이전 결과와 비교</h2>
+      {!comparison ? <p className={styles.muted}>비교 불가 — 집계 불가</p> : comparison.state === 'NOT_COMPARABLE' ? (
+        <p className={styles.muted}>{comparison.text}</p>
+      ) : (
+        <>
+          <p>{comparison.text}</p>
+          <p className={styles.muted}>
+            이전 결과 {comparison.previousResultId ? (
+              <Link className={styles.inline} href={juryHref(`/reviews/${comparison.previousResultId}`)}>{comparison.previousResultId.slice(0, 8)}</Link>
+            ) : '—'} · 수정 필요 항목 {comparison.problems.previous ?? '집계 불가'} → {comparison.problems.current ?? '집계 불가'}
+          </p>
+        </>
       )}
     </section>
   );
