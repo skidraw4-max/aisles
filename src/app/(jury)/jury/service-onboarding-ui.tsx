@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { summarizeProblems } from '@/lib/jury-product/review-display-model';
 import { juryHref } from '@/lib/jury-product/jury-url';
 import type { JuryActor } from '@/lib/jury-product/access';
 import { JURY_ACCESS_METHODS } from '@/lib/jury-product/records';
@@ -235,7 +236,7 @@ export function ServiceDetailBody({
           {row.decision ? <p>Decision {row.decision}</p> : null}
           {row.completedAt ? <p>Completed At {row.completedAt}</p> : null}
           {row.summary ? <p>Summary {row.summary}</p> : null}
-          {row.topProblems.length > 0 ? <p>Top Problems {row.topProblems.join(', ')}</p> : null}
+          {row.decision ? <p>Top Problems {summarizeProblems(row.decision, row.topProblems).items.join(', ') || summarizeProblems(row.decision, row.topProblems).emptyText}</p> : null}
           {row.expectedUserEffect ? <p>Expected User Effect {row.expectedUserEffect}</p> : null}
           {row.risk ? <p>Risk {row.risk}</p> : null}
           {row.collectionStatus === 'AVAILABLE' && row.reviewStatus !== 'RUNNING' && canShowWrite(actor, 'review.start') ? (

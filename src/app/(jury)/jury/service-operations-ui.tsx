@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { summarizeProblems } from '@/lib/jury-product/review-display-model';
 import { juryHref } from '@/lib/jury-product/jury-url';
 import { hasReviewAccess, improvementOpenCountCell, type ServiceOperationModel } from '@/lib/jury-product/service-operations-status';
 import type { SafeProviderView } from '@/lib/jury-product/services/provider-boundary';
@@ -179,7 +180,7 @@ export function ServiceOperationDetail({
             <>
               <p>결론 <span title={model.review.decision ?? undefined}>{displayText(model.review.decision)}</span></p>
               <p>요약 <span lang="en">{model.review.statusSummary}</span></p>
-              <p>주요 문제 <span lang={model.review.topProblems.length > 0 ? 'en' : undefined}>{model.review.topProblems.join(', ') || '없음'}</span></p>
+              <ProblemLine decision={model.review.decision} topProblems={model.review.topProblems} />
               <p>예상 사용자 효과 <span lang="en">{model.review.expectedUserEffect}</span></p>
               <p>위험 <span lang="en">{model.review.risk}</span></p>
               <TranslationHint />
@@ -253,4 +254,16 @@ export function ServiceOperationState({
     NO_MEMBERSHIP: '조직 멤버십이 필요합니다.',
   }[reason];
   return <section className={styles.panel}><h2>서비스</h2><p>{copy}</p></section>;
+}
+
+// RM-02b AGG-01: shared problem summary; an empty list is never shown as "없음".
+function ProblemLine({ decision, topProblems }: { decision: string | null | undefined; topProblems: unknown }) {
+  const problems = summarizeProblems(decision, topProblems);
+  return (
+    <p>
+      주요 문제{' '}
+      {problems.items.length > 0 ? <span lang="en">{problems.items.join(', ')}</span> : <span>{problems.emptyText}</span>}
+      {problems.severityNote ? <span> · {problems.severityNote}</span> : null}
+    </p>
+  );
 }

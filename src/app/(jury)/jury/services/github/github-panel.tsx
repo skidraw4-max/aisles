@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { DISPLAY_FLAG_LABELS, buildReviewDisplayModel } from '@/lib/jury-product/review-display-model';
 import { juryHref } from '@/lib/jury-product/jury-url';
 import type { GithubRepository } from '@/lib/jury-product/services/github/discovery';
 import { projectGithubPermissionGuide, projectGithubUiState, type GithubProductScreen } from '@/lib/jury-product/services/github/product-flow';
@@ -161,7 +162,37 @@ export function GithubPanel({
               <p>Claim strength {screen.reviewView.claimStrength ?? 'not stored'}</p>
               <p>Risk {screen.reviewView.risk || 'not stored'}</p>
               <p>{screen.reviewView.statusSummary}</p>
-              {screen.reviewView.topProblems.length > 0 ? <ul>{screen.reviewView.topProblems.map((item) => <li key={item}>{item}</li>)}</ul> : null}
+              {(() => {
+                // RM-02b AGG-01: same aggregation as the review detail. Source is not loaded here -> 출처 미기록 badge.
+                const display = buildReviewDisplayModel({
+                  result: {
+                    id: screen.result?.id ?? 'github-review',
+                    expectedDecision: screen.reviewView.decision,
+                    finalSurface: {
+                      statusSummary: screen.reviewView.statusSummary,
+                      topProblems: screen.reviewView.topProblems,
+                      expectedUserEffect: screen.reviewView.expectedUserEffect,
+                      risk: screen.reviewView.risk,
+                      dimensionEvidence: screen.reviewView.collapsed.dimensionEvidence,
+                      supportedClaims: screen.reviewView.collapsed.supportedClaims,
+                      partiallySupportedClaims: screen.reviewView.collapsed.partiallySupportedClaims,
+                      hypotheses: screen.reviewView.collapsed.hypotheses,
+                    },
+                    evidenceStrength: screen.reviewView.evidenceStrength ?? null,
+                    claimStrength: screen.reviewView.claimStrength ?? null,
+                  },
+                });
+                const warnings = display.flags.filter((flag) => flag !== 'UNKNOWN_SOURCE' && flag !== 'NON_REAL_SOURCE');
+                return (
+                  <>
+                    <p><span className={styles.badge} title={display.source.value}>{display.source.label}</span></p>
+                    {display.problems.items.length > 0 ? <ul>{display.problems.items.map((item) => <li key={item}>{item}</li>)}</ul> : <p>{display.problems.state === 'UNAVAILABLE' ? '집계 불가' : '문제 목록 없음'}</p>}
+                    {display.problems.severityNote ? <p>{display.problems.severityNote}</p> : null}
+                    {warnings.length > 0 ? <ul>{warnings.map((flag) => <li key={flag}>⚠ {DISPLAY_FLAG_LABELS[flag]}</li>)}</ul> : null}
+                    {display.claims.counts ? <p>확인 {display.claims.counts.supported} · 일부 확인 {display.claims.counts.partial} · 미확인 {display.claims.counts.unverified}</p> : <p>주장 기록 없음</p>}
+                  </>
+                );
+              })()}
               <p>Expected user effect {screen.reviewView.expectedUserEffect}</p>
               <details>
                 <summary>Additional claims</summary>

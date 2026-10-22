@@ -2,6 +2,7 @@
  * Read-only labels for the Jury product shell.
  * Counts come from the current tenant view. An empty list is 0. A missing read is not 0.
  */
+import { displayModelForCatalogRow, summarizeDisplayModels, type ReviewDisplaySummary } from './review-display-model';
 import { containsSecret } from './agent-execution';
 import type { JuryConsoleView } from './console-view';
 import type { ImprovementTrace } from './improvement-trace';
@@ -54,6 +55,12 @@ export type ShellDashboard = {
   openImprovements: string;
   activeImprovements: string;
   activity: ShellActivity[];
+  /** RM-02b: CONNECTED connections only (the card says "정상 연결"). */
+  connectedServices: string;
+  /** RM-02b: QUEUED/RUNNING requests only (the card says "진행 중"). */
+  inFlightReviews: string;
+  /** RM-02b AGG-01 source breakdown of completed results. */
+  resultSummary: ReviewDisplaySummary;
 } | { available: false };
 
 export function projectDashboard(view: JuryConsoleView | null): ShellDashboard {
@@ -76,6 +83,13 @@ export function projectDashboard(view: JuryConsoleView | null): ShellDashboard {
     openImprovements: String(open),
     activeImprovements: String(active),
     activity: projectAudit(view).slice(0, 8),
+    connectedServices: String(view.connections.filter((row) => row.status === 'CONNECTED').length),
+    inFlightReviews: String(view.requests.filter((row) => row.status === 'QUEUED' || row.status === 'RUNNING').length),
+    resultSummary: summarizeDisplayModels(
+      view.results.map((row) =>
+        displayModelForCatalogRow(row, view.requests.find((item) => item.id === row.reviewRequestId) ?? null, view.evidence),
+      ),
+    ),
   };
 }
 

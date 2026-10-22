@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { DISPLAY_FLAG_LABELS } from '@/lib/jury-product/review-display-model';
+import { DISPLAY_FLAG_LABELS, cycleStatusLabel, displayModelForCatalogRow } from '@/lib/jury-product/review-display-model';
 import { redirect } from 'next/navigation';
 import { juryEntrySurface } from '@/components/jury/entry';
 import { OrganizationSwitcher } from '@/components/jury/OrganizationSwitcher';
@@ -273,8 +273,8 @@ export function DashboardBody({ view }: { view: JuryConsoleView }) {
       <div className={styles.cards}>
         <section className={styles.panel}>
           <h2>연결된 서비스</h2>
-          <p className={styles.metric}>{board.services}</p>
-          <p className={styles.muted}>정상 연결된 서비스</p>
+          <p className={styles.metric}>{board.connectedServices}</p>
+          <p className={styles.muted}>정상 연결 {board.connectedServices}개 · 전체 {board.services}개</p>
         </section>
         <section className={styles.panel}>
           <h2>리뷰 자료</h2>
@@ -283,8 +283,9 @@ export function DashboardBody({ view }: { view: JuryConsoleView }) {
         </section>
         <section className={styles.panel}>
           <h2>진행 중 리뷰</h2>
-          <p className={styles.metric}>{board.reviews}</p>
-          <p className={styles.muted}>{board.reviewDetail}</p>
+          <p className={styles.metric}>{board.inFlightReviews}</p>
+          <p className={styles.muted}>완료된 결과 {board.reviews}건 · 출처 미기록 {board.resultSummary.unknownSource} · Mock/Fixture {board.resultSummary.nonReal} · 실모델(미검증) {board.resultSummary.realUnverified} · 검증된 실모델 {board.resultSummary.aggregatable}</p>
+          {board.resultSummary.withWarnings > 0 ? <p className={styles.muted}>⚠ 확인이 필요한 결과 {board.resultSummary.withWarnings}건</p> : null}
         </section>
         <section className={styles.panel}>
           <h2>개선 작업</h2>
@@ -492,14 +493,20 @@ export function ReviewsBody({ view }: { view: JuryConsoleView }) {
             {view.results.map((row) => {
               const request = view.requests.find((item) => item.id === row.reviewRequestId) ?? null;
               const statusLabel = request?.status ? userLabel(request.status) : displayText(SHELL_UNAVAILABLE);
-              const decisionLabel = userLabel(row.expectedDecision);
+              const display = displayModelForCatalogRow(row, request, view.evidence);
+              const decisionLabel = display.decision.withheld ? display.decision.label : userLabel(row.expectedDecision);
+              const warnings = display.flags.filter((flag) => flag !== 'UNKNOWN_SOURCE' && flag !== 'NON_REAL_SOURCE');
               const detailHref = juryHref(`/reviews/${row.id}`);
               const evidenceId = request?.evidenceId ?? null;
               const summary = row.finalSurface.statusSummary;
               return (
                 <tr key={row.id}>
                   <td title={request?.status}><span className={styles.badge}>{statusLabel}</span></td>
-                  <td title={row.expectedDecision}><Link className={styles.inline} href={detailHref}><span className={styles.badge}>{decisionLabel}</span></Link></td>
+                  <td title={row.expectedDecision}>
+                    <Link className={styles.inline} href={detailHref}><span className={styles.badge}>{decisionLabel}</span></Link>
+                    <span className={styles.badge} title={display.source.value}>{display.source.label}</span>
+                    {warnings.length > 0 ? <span className={styles.muted} title={warnings.map((flag) => DISPLAY_FLAG_LABELS[flag]).join('\n')}> ⚠ {warnings.length}</span> : null}
+                  </td>
                   <td title={formatKstFull(row.completedAt)}>{formatKstShort(row.completedAt)}</td>
                   <td title={request?.reviewType}>{request?.reviewType ? userLabel(request.reviewType) : displayText(SHELL_UNAVAILABLE)}</td>
                   <td>
@@ -1087,7 +1094,7 @@ export function AutomationBody({
           <p className={styles.muted}>권한이 있는 서비스의 Loop만 표시합니다. 중단 이유도 표시된 Loop 기준입니다.</p>
           {loop.cycles.map((cycle) => (
             <div className={styles.row} key={cycle.id}>
-              <span>{cycle.status}</span>
+              <span title={cycle.status}>{cycleStatusLabel(cycle.status, loop.enabled)}</span>
               <span className={styles.muted}>iteration {cycle.iteration} · {cycle.blockedReason ?? '중단 이유 없음'}</span>
             </div>
           ))}

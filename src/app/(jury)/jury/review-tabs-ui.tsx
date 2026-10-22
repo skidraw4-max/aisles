@@ -125,8 +125,8 @@ export function ReviewEvidenceTab({ screen }: { screen: ReviewConsoleScreen }) {
       </section>
       <section className={styles.panel}>
         <h2>확인된 주장</h2>
-        {screen.supportedClaims.length === 0 ? <p className={styles.muted}>없음</p> : (
-          <ul lang="en">{screen.supportedClaims.map((item) => <li key={item}><span className={styles.badge}>확인됨</span> {item}</li>)}</ul>
+        {claimList(screen, 'supported').length === 0 ? <p className={styles.muted}>{claimEmptyText(screen)}</p> : (
+          <ul lang="en">{claimList(screen, 'supported').map((item) => <li key={item}><span className={styles.badge}>확인됨</span> {item}</li>)}</ul>
         )}
         <h3>판단 근거</h3>
         {screen.dimensionEvidence.length === 0 ? <p className={styles.muted}>없음</p> : (
@@ -137,12 +137,12 @@ export function ReviewEvidenceTab({ screen }: { screen: ReviewConsoleScreen }) {
         <h2>부족한 근거</h2>
         <p className={styles.muted}>일부만 확인된 주장과 아직 확인되지 않은 가설입니다. 자료를 보완하면 다시 요청할 수 있습니다.</p>
         <h3>일부만 확인된 주장</h3>
-        {screen.partiallySupportedClaims.length === 0 ? <p className={styles.muted}>없음</p> : (
-          <ul lang="en">{screen.partiallySupportedClaims.map((item) => <li key={item}><span className={styles.badge}>일부 확인</span> {item}</li>)}</ul>
+        {claimList(screen, 'partial').length === 0 ? <p className={styles.muted}>{claimEmptyText(screen)}</p> : (
+          <ul lang="en">{claimList(screen, 'partial').map((item) => <li key={item}><span className={styles.badge}>일부 확인</span> {item}</li>)}</ul>
         )}
         <h3>확인되지 않은 가설</h3>
-        {screen.hypotheses.length === 0 ? <p className={styles.muted}>없음</p> : (
-          <ul lang="en">{screen.hypotheses.map((item) => <li key={item}><span className={styles.badge}>미확인</span> {item}</li>)}</ul>
+        {claimList(screen, 'unverified').length === 0 ? <p className={styles.muted}>{claimEmptyText(screen)}</p> : (
+          <ul lang="en">{claimList(screen, 'unverified').map((item) => <li key={item}><span className={styles.badge}>미확인</span> {item}</li>)}</ul>
         )}
         <TranslationHint />
       </section>
@@ -170,4 +170,18 @@ export function ReviewHistoryHint({ reviewId, hasHistory }: { reviewId: string; 
       </p>
     </section>
   );
+}
+
+// RM-02b AGG-01: claim lists come from screen.display (deduped, highest stage); missing data is not "없음".
+function claimList(screen: ReviewConsoleScreen, stage: 'supported' | 'partial' | 'unverified'): string[] {
+  const display = screen.display;
+  if (display) return display.claims[stage];
+  return stage === 'supported' ? screen.supportedClaims : stage === 'partial' ? screen.partiallySupportedClaims : screen.hypotheses;
+}
+
+function claimEmptyText(screen: ReviewConsoleScreen): string {
+  const state = screen.display?.claims.state;
+  if (state === 'NONE_RECORDED') return '주장 기록 없음';
+  if (state === 'UNAVAILABLE') return '집계 불가';
+  return '없음';
 }

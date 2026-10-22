@@ -115,3 +115,30 @@ test('M-012 composite score is never produced; AI inference stays labeled', () =
   assert.equal(m.compositeScore, null);
   assert.deepEqual(m.aiInference, { label: 'AI 추정', expectedUserEffect: null, risk: 'r' });
 });
+
+import { cycleStatusLabel, displayModelForCatalogRow, summarizeDisplayModels, summarizeProblems } from './review-display-model';
+
+test('RM-02b summarizeProblems never says "없음" and flags verdict mismatch', () => {
+  assert.equal(summarizeProblems('REWORD', []).emptyText, '문제 목록 없음 — 판정과 불일치');
+  assert.equal(summarizeProblems('ACCEPT', []).emptyText, '문제 목록 없음');
+  assert.equal(summarizeProblems('VERIFY', 'x').state, 'UNAVAILABLE');
+  assert.equal(summarizeProblems('VERIFY', ['a', 'a']).count, 1);
+});
+
+test('RM-02b catalog rows: hidden evidence is NOT_LOADED, missing link is UNLINKED; summary excludes non-real', () => {
+  const result = { id: 'r', expectedDecision: 'VERIFY', finalSurface: surface({ topProblems: ['p'] }), boardRunId: 'fixture-x' };
+  const hidden = displayModelForCatalogRow(result, { evidenceId: 'e9' }, []);
+  assert.equal(hidden.scope.state, 'NOT_LOADED');
+  assert.equal(hidden.decision.withheld, false);
+  const unlinked = displayModelForCatalogRow(result, { evidenceId: null }, []);
+  assert.equal(unlinked.scope.state, 'UNLINKED');
+  const linked = displayModelForCatalogRow(result, { evidenceId: 'e1', resultSource: 'MOCK' }, [{ id: 'e1', metricIds: ['m'] }]);
+  assert.equal(linked.scope.metricCount, 1);
+  const sum = summarizeDisplayModels([hidden, linked, buildReviewDisplayModel(input('VERIFY', surface({ topProblems: ['p'] })))]);
+  assert.deepEqual(sum, { total: 3, aggregatable: 0, realUnverified: 1, nonReal: 2, unknownSource: 0, withWarnings: 3 }); // NO_CLAIMS on all three
+});
+
+test('RM-02b automation cycle ACTIVE is not shown as running when the loop is off', () => {
+  assert.equal(cycleStatusLabel('ACTIVE', false), '결정 대기 (자동 실행 아님)');
+  assert.equal(cycleStatusLabel('ACTIVE', true), '진행 중 (자동 Loop 켜짐)');
+});
