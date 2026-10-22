@@ -1213,6 +1213,7 @@ export function SettingsBody({
     </div>
     <nav className={styles.adminGrid} aria-label="관리 메뉴">
       <Link className={styles.adminCard} href={juryHref('/organization/services')}><strong>서비스 연결</strong><span>연결 상태와 서비스 권한</span></Link>
+      {actor.ok && (actor.role === 'OWNER' || actor.role === 'ADMIN') ? <Link className={styles.adminCard} href={juryHref('/operations')}><strong>운영 지표</strong><span>요청 수·완료율·실패 사유·소요 시간</span></Link> : null}
       <Link className={styles.adminCard} href={juryHref('/organization/members')}><strong>멤버</strong><span>조직 역할과 상태</span></Link>
       <Link className={styles.adminCard} href={juryHref('/organization/invitations')}><strong>초대</strong><span>이메일 초대와 대기 상태</span></Link>
       <Link className={styles.adminCard} href={juryHref('/organization/security')}><strong>보안</strong><span>인증과 조직 보호</span></Link>
