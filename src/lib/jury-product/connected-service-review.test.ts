@@ -583,6 +583,11 @@ test('failed review without a result retries once and preserves finished results
     const audits = await prisma.juryAuditEvent.findMany({ where: { tenantId: retryTenant } });
     assert.equal(audits.some((row) => row.action === 'REVIEW_COMPLETED'), true);
     assert.equal(JSON.stringify(audits).includes('disk failed'), false);
+    // RM-08 (I-005): every executed review (calls) has one STARTED and one terminal audit event, failures included.
+    const byAction = (action: string) => audits.filter((row) => row.action === action).length;
+    assert.equal(byAction('REVIEW_STARTED'), calls);
+    assert.equal(byAction('REVIEW_COMPLETED') + byAction('REVIEW_FAILED'), calls);
+    assert.equal(byAction('REVIEW_FAILED'), 1);
     assert.equal(JSON.stringify(audits).toLowerCase().includes('password'), false);
   } finally {
     await removeRetryFixture(prisma, retryTenant, retryForeign);

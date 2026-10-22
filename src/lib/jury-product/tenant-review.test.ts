@@ -194,6 +194,18 @@ test('tenant review stores one external result and does not rerun the core', { t
     const statusRows = buildRequestStatusRows({ requests: [], results: [], attempts: attemptRows }, Date.now());
     assert.ok(statusRows.some((row) => row.state === 'FAILED' && /시간 초과/.test(row.reason ?? '')));
 
+    // RM-08 (I-005): /evidence path writes one REVIEW_STARTED and one terminal audit event per review attempt.
+    const attemptsTotal = await prisma.juryReviewAttempt.count({ where: { tenantId: TENANT } });
+    const auditCount = (action: string) => prisma.juryAuditEvent.count({ where: { tenantId: TENANT, action } });
+    assert.equal(attemptsTotal, 3);
+    assert.equal(await auditCount('REVIEW_STARTED'), attemptsTotal);
+    assert.equal((await auditCount('REVIEW_COMPLETED')) + (await auditCount('REVIEW_FAILED')), attemptsTotal);
+    assert.equal(await auditCount('REVIEW_COMPLETED'), 1);
+    assert.equal(await auditCount('REVIEW_FAILED'), 2);
+    const completedAudit = await prisma.juryAuditEvent.findFirst({ where: { tenantId: TENANT, action: 'REVIEW_COMPLETED' } });
+    assert.equal(completedAudit?.reviewId, memberRun.result.id);
+    assert.equal(completedAudit?.decision, memberRun.result.expectedDecision);
+
     const again = await runTenantReview(command({ evidenceId: stored.evidenceId }), core);
     assert.equal(again.ok, true);
     if (again.ok) {
