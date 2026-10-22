@@ -29,6 +29,8 @@ const REVIEW_KEYS = [
   'partiallySupportedClaims', 'hypotheses', 'humanDecision', 'humanChoices',
   // phase 3: display-only committee view belongs to the review block
   'memberOpinions', 'memberOpinionsOmitted', 'opinionDifferences', 'disputedPoints', 'confidence',
+  // RM-02 AGG-01: display aggregation belongs to the review block
+  'display',
 ] as const;
 const IMPROVEMENT_KEYS = [
   'improvementTask', 'canCreateImprovement', 'canHandoff', 'nextImprovement', 'canCreateReReviewImprovement',
