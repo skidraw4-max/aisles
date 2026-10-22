@@ -170,6 +170,30 @@ test('tenant review stores one external result and does not rerun the core', { t
     assert.equal(failedAttempts[0]?.resultSource, 'MOCK');
     assert.equal(await prisma.juryReviewRequest.count({ where: { tenantId: TENANT } }), 1);
 
+    // RM-03 forced delay: a slow LLM call under a budget is stored as FAILED with the timeout recorded, not lost.
+    const { instrumentReviewBoardLlm, withLlmBudget } = await import('./llm-call-log');
+    const slowCore: ProductReviewCore = async ({ trace }) => {
+      const slow = { critic: () => new Promise((resolve) => setTimeout(resolve, 500)) } as unknown as import('../ai-review-board/llm').ReviewBoardLlm;
+      const limited = withLlmBudget(slow, { perCallMs: 30, totalMs: null });
+      const llm = trace ? instrumentReviewBoardLlm(limited, { provider: 'fake' }, trace.recorder) : limited;
+      if (trace) trace.resultSource = 'FIXTURE';
+      await (llm as unknown as { critic(): Promise<unknown> }).critic();
+      return reading();
+    };
+    const timedOut = await runTenantReview(command({ evidenceId: stored.evidenceId, reviewType: 'UI_UX_REVIEW' }), slowCore);
+    assert.deepEqual(timedOut, { ok: false, reason: 'REVIEW_NOT_EXECUTED' });
+    const timeoutAttempt = (await prisma.juryReviewAttempt.findMany({
+      where: { tenantId: TENANT, status: 'FAILED' },
+      orderBy: { startedAt: 'desc' },
+      include: { llmCalls: true },
+    }))[0];
+    assert.equal(timeoutAttempt?.failureReason, 'REVIEW_NOT_EXECUTED');
+    assert.equal(timeoutAttempt?.llmCalls[0]?.errorCode, 'LLM_TIMEOUT');
+    const { loadReviewAttempts, buildRequestStatusRows } = await import('./review-request-status');
+    const attemptRows = await loadReviewAttempts(TENANT);
+    const statusRows = buildRequestStatusRows({ requests: [], results: [], attempts: attemptRows }, Date.now());
+    assert.ok(statusRows.some((row) => row.state === 'FAILED' && /시간 초과/.test(row.reason ?? '')));
+
     const again = await runTenantReview(command({ evidenceId: stored.evidenceId }), core);
     assert.equal(again.ok, true);
     if (again.ok) {

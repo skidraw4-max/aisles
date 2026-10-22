@@ -576,10 +576,11 @@ async function tenantReviewCore(input: {
   const { callFrozenReviewPipeline } = await import('@/lib/jury-product/review-core');
   const { createGeminiReviewBoardLlm } = await import('@/lib/ai-review-board');
   const { readGeminiApiKeyFromEnv } = await import('@/lib/gemini-prompt-analysis-engine');
-  const { instrumentReviewBoardLlm } = await import('@/lib/jury-product/llm-call-log');
+  const { instrumentReviewBoardLlm, readLlmBudget, withLlmBudget } = await import('@/lib/jury-product/llm-call-log');
   const key = readGeminiApiKeyFromEnv();
   if (!key.ok) throw new Error('REVIEW_NOT_EXECUTED');
-  const base = createGeminiReviewBoardLlm(key.key);
+  // RM-03: optional timeout/budget (inactive until D-06 sets JURY_LLM_* limits). Prompts/judging unchanged.
+  const base = withLlmBudget(createGeminiReviewBoardLlm(key.key), readLlmBudget(process.env));
   // RM-01: this path calls the real Gemini model. VERIFIED_REAL is never set here (D-16).
   if (input.trace) input.trace.resultSource = 'REAL_MODEL';
   const llm = input.trace ? instrumentReviewBoardLlm(base, { provider: 'gemini' }, input.trace.recorder) : base;

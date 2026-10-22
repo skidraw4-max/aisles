@@ -378,3 +378,21 @@ test('Track A: a VIEWER dashboard and audit carry no review decision', () => {
   assert.equal(view.evidence.length, 1);
   assert.equal(view.metrics.length, 1);
 });
+
+test('RM-03: review attempts follow review.read per service and stay absent when not loaded', () => {
+  const current = actor('VIEWER');
+  const base = readJuryConsole(current, trackACatalog());
+  assert.ok(base);
+  if (!base) return;
+  const row = {
+    id: 'att-1', tenantId: 'org-a', reviewRequestKey: 'k', evidenceId: 'e', connectionId: 'svc-a', reviewType: 'FULL_REVIEW',
+    status: 'FAILED', failureReason: 'REVIEW_NOT_EXECUTED', resultSource: 'REAL_MODEL', startedAt: '', finishedAt: null, lastLlmErrorCode: null,
+  };
+  const foreign = { ...row, id: 'att-2', tenantId: 'org-b' };
+  const unlinked = { ...row, id: 'att-3', connectionId: null };
+  const viewer = restrictJuryConsole({ ...base, attempts: [row, foreign, unlinked] }, current, [grant('svc-a', 'VIEW')]);
+  assert.deepEqual(viewer.attempts, []);
+  const owner = restrictJuryConsole({ ...base, attempts: [row, foreign, unlinked] }, actor('OWNER'), [grant('svc-a', TRACK_A_TOP.OWNER)]);
+  assert.deepEqual(owner.attempts?.map((item) => item.id), ['att-1']);
+  assert.equal(restrictJuryConsole(base, current, []).attempts, undefined);
+});
