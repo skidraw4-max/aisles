@@ -1,10 +1,11 @@
 import { isJuryStoreUnavailable } from '@/lib/jury-product/jury-db';
 import { loadReviewConsole, restrictReviewConsoleScreen, reviewConsoleSections } from '@/lib/jury-product/review-console';
+import { loadReviewComparison } from '@/lib/jury-product/review-comparison-db';
 import { externalFeatureDenial } from '@/lib/jury-product/service-feature-authorization';
 import { guardReviewFeature } from '@/lib/jury-product/service-feature-guard';
 import { getJuryActor } from '@/lib/jury-product/session';
 import { FollowingReReviewBody, HumanChangeGateBody, HumanReReviewBody, JuryChrome, ReReviewAgentHandoffBody, ReReviewNextImprovementBody, ReReviewAgentRunBody, ReReviewChangeGateBody, ReviewDetailBody, LaterAgentRunBody, LaterChangeGateBody, LaterImprovementApprovalBody, LaterImprovementBody, LaterImprovementHandoffBody, LaterReReviewBody, SecondChangeGateBody, SecondImprovementApprovalBody, SecondImprovementBody, SecondImprovementHandoffBody, SecondReReviewBody } from '../../ui';
-import { ResultFixedSummary, ReviewEvidenceTab, ReviewHistoryHint, ReviewHistoryIntro, ReviewMembersTab, ReviewTabs, reviewTabFrom } from '../../review-tabs-ui';
+import { PreviousResultComparison, ResultFixedSummary, ReviewEvidenceTab, ReviewHistoryHint, ReviewHistoryIntro, ReviewMembersTab, ReviewTabs, reviewTabFrom } from '../../review-tabs-ui';
 
 export default async function JuryReviewDetailPage({
   params,
@@ -37,6 +38,7 @@ export default async function JuryReviewDetailPage({
     const blocks = { improvement: improvementAccess?.ok === true, agent: agentAccess?.ok === true };
     const screen = loaded.ok ? restrictReviewConsoleScreen(loaded.screen, blocks) : null;
     const show = screen ? reviewConsoleSections(screen, blocks) : null;
+    const comparison = screen && tab === 'history' ? await loadReviewComparison(actor, screen.reviewId) : null;
     return (
       <JuryChrome actor={actor}>
         {screen && show ? (
@@ -47,6 +49,7 @@ export default async function JuryReviewDetailPage({
             {tab === 'summary' ? <ReviewHistoryHint reviewId={screen.reviewId} hasHistory={Object.values(show).some(Boolean)} /> : null}
             {tab === 'members' ? <ReviewMembersTab screen={screen} /> : null}
             {tab === 'evidence' ? <ReviewEvidenceTab screen={screen} /> : null}
+            {tab === 'history' ? <PreviousResultComparison comparison={comparison} /> : null}
             {tab === 'history' ? <ReviewHistoryIntro hasHistory={Object.values(show).some(Boolean)} /> : null}
             {tab === 'history' ? (
           <>
