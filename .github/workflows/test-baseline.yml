@@ -1,4 +1,4 @@
-name: test-baseline (RM-00)
+name: test-baseline (RM-00/RM-00b)
 on:
   pull_request:
   push:
@@ -9,8 +9,23 @@ jobs:
   baseline:
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    # Intentionally NO secrets and NO env: DB-dependent tests are tracked in
-    # test/baseline/known-failures.json (TF-A..D). See docs/jury-test-baseline.md.
+    # NO repository secrets. RM-00b: DB tests run against an ephemeral Postgres
+    # service container (loopback only, throwaway credentials, destroyed after the job).
+    # Never Production/Preview Supabase. See docs/jury-test-baseline.md.
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: jury
+          POSTGRES_PASSWORD: jury_local
+          POSTGRES_DB: jury_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U jury" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://jury:jury_local@127.0.0.1:5432/jury_test
+      DIRECT_URL: postgresql://jury:jury_local@127.0.0.1:5432/jury_test
+      JURY_LOCAL_TEST_DB: "1"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -20,5 +35,7 @@ jobs:
       - run: npm ci
       - name: TypeScript
         run: npx tsc --noEmit --incremental false
+      - name: Isolated DB schema (db push, ephemeral container only)
+        run: npx prisma db push
       - name: Tests vs known-failure baseline
         run: node scripts/test-baseline.mjs

@@ -1,13 +1,14 @@
 {
-  "description": "RM-00 known failures at origin/main 6b7d3b3 (env -i, no DB/.env). Key = file :: name. Classes: TF-A DATABASE_URL unset, TF-B preview DB guard, TF-C server-only unresolved in node:test, TF-D test reads repo .env (ENOENT).",
+  "description": "RM-00 known failures at origin/main 6b7d3b3 (env -i, no DB/.env). Key = file :: name. Classes: TF-A DATABASE_URL unset, TF-B preview DB guard, TF-C server-only unresolved in node:test, TF-D test reads repo .env (ENOENT). RM-00b (2026-10-22): with isolated loopback Postgres (JURY_LOCAL_TEST_DB=1, prisma db push) 36 TF-A tests now pass and were removed. TF-E = needs live-like seed data/fixtures or per-test isolation (follow-up RM-00d).",
   "baseCommit": "6b7d3b3beee1932ea27175f2f2040e12e9b53643",
   "generated": "2026-10-22",
   "failures": [
     {
       "file": "src/lib/jury-product/auto-loop-activation-store.test.ts",
       "name": "phase 35 activation gate stays off until an owner turns it on",
-      "class": "TF-A",
-      "followUp": "RM-00b"
+      "class": "TF-E",
+      "followUp": "RM-00d",
+      "note": "needs live tenant snapshot data absent from an empty isolated DB"
     },
     {
       "file": "src/lib/jury-product/auto-loop-execution-mode.test.ts",
@@ -16,100 +17,39 @@
       "followUp": "RM-00c"
     },
     {
-      "file": "src/lib/jury-product/connected-service-review.test.ts",
-      "name": "failed review without a result retries once and preserves finished results",
-      "class": "TF-A",
-      "followUp": "RM-00b"
-    },
-    {
-      "file": "src/lib/jury-product/connected-service-review.test.ts",
-      "name": "owner collects mock evidence and runs the existing Jury Core once",
-      "class": "TF-A",
-      "followUp": "RM-00b"
-    },
-    {
-      "file": "src/lib/jury-product/console-catalog-scope.test.ts",
-      "name": "catalog scope proposal stays on catalog grants",
-      "class": "TF-A",
-      "followUp": "RM-00b"
-    },
-    {
-      "file": "src/lib/jury-product/console-evidence-intake.test.ts",
-      "name": "console intake stores one declared metric and ignores a second submit",
-      "class": "TF-A",
-      "followUp": "RM-00b"
-    },
-    {
-      "file": "src/lib/jury-product/console-evidence-review-e2e.test.ts",
-      "name": "console catalog evidence reaches one external review",
-      "class": "TF-A",
-      "followUp": "RM-00b"
-    },
-    {
-      "file": "src/lib/jury-product/console-loop-operations.test.ts",
-      "name": "the console stops an existing switch and leaves an absent switch absent",
-      "class": "TF-A",
-      "followUp": "RM-00b"
-    },
-    {
-      "file": "src/lib/jury-product/human-agent-execution.test.ts",
-      "name": "pending human executions run once through the fake adapter",
-      "class": "TF-A",
-      "followUp": "RM-00b"
-    },
-    {
-      "file": "src/lib/jury-product/human-agent-handoff.test.ts",
-      "name": "human-approved tasks hand off to one pending execution",
-      "class": "TF-A",
-      "followUp": "RM-00b"
-    },
-    {
-      "file": "src/lib/jury-product/human-change-gate.test.ts",
-      "name": "completed human execution reaches one change gate",
-      "class": "TF-A",
-      "followUp": "RM-00b"
-    },
-    {
-      "file": "src/lib/jury-product/human-improvement-bridge.test.ts",
-      "name": "stored human decisions choose whether an improvement task exists",
-      "class": "TF-A",
-      "followUp": "RM-00b"
-    },
-    {
-      "file": "src/lib/jury-product/human-re-review.test.ts",
-      "name": "approved human execution reaches one re-review",
-      "class": "TF-A",
-      "followUp": "RM-00b"
-    },
-    {
       "file": "src/lib/jury-product/improvement-auto-loop-integration.test.ts",
       "name": "phase 34 persisted auto loop stays inside one test tenant",
-      "class": "TF-A",
-      "followUp": "RM-00b"
+      "class": "TF-E",
+      "followUp": "RM-00d",
+      "note": "missing fixture file data/jury-product/workspaces/re-review-fixture"
     },
     {
       "file": "src/lib/jury-product/improvement-effect-validation.test.ts",
       "name": "the live review and cycle are only read",
-      "class": "TF-A",
-      "followUp": "RM-00b"
+      "class": "TF-E",
+      "followUp": "RM-00d",
+      "note": "reads a live review/cycle snapshot (expects VERIFY) absent from an empty DB"
     },
     {
       "file": "src/lib/jury-product/improvement-trace-console.test.ts",
       "name": "the live review and cycle are only read",
-      "class": "TF-A",
-      "followUp": "RM-00b"
+      "class": "TF-E",
+      "followUp": "RM-00d",
+      "note": "reads a live review/cycle snapshot absent from an empty DB"
     },
     {
       "file": "src/lib/jury-product/improvement-trace.test.ts",
       "name": "the live review and cycle are only read",
-      "class": "TF-A",
-      "followUp": "RM-00b"
+      "class": "TF-E",
+      "followUp": "RM-00d",
+      "note": "reads a live review/cycle snapshot absent from an empty DB"
     },
     {
       "file": "src/lib/jury-product/loop-spend.test.ts",
       "name": "the live review and cycle are only read",
-      "class": "TF-A",
-      "followUp": "RM-00b"
+      "class": "TF-E",
+      "followUp": "RM-00d",
+      "note": "reads a live review/cycle snapshot absent from an empty DB"
     },
     {
       "file": "src/lib/jury-product/preview-diagnostics-auth.test.ts",
@@ -124,178 +64,35 @@
       "followUp": "RM-00c"
     },
     {
-      "file": "src/lib/jury-product/product-change-gate-rereview.test.ts",
-      "name": "a real git diff approval runs one product re-review",
-      "class": "TF-A",
-      "followUp": "RM-00b"
-    },
-    {
-      "file": "src/lib/jury-product/product-change-gate-rereview.test.ts",
-      "name": "an approved product change gate runs one re-review and stops",
-      "class": "TF-A",
-      "followUp": "RM-00b"
-    },
-    {
-      "file": "src/lib/jury-product/product-change-gate.test.ts",
-      "name": "a completed product execution is gated by the existing evaluator",
-      "class": "TF-A",
-      "followUp": "RM-00b"
-    },
-    {
-      "file": "src/lib/jury-product/product-change-gate.test.ts",
-      "name": "a real mock-aisle git diff approves the product change gate",
-      "class": "TF-A",
-      "followUp": "RM-00b"
-    },
-    {
       "file": "src/lib/jury-product/product-execution.test.ts",
       "name": "a product pending execution completes once through the fake adapter",
-      "class": "TF-A",
-      "followUp": "RM-00b"
-    },
-    {
-      "file": "src/lib/jury-product/product-handoff.test.ts",
-      "name": "approved product improvement tasks open one pending agent execution",
-      "class": "TF-A",
-      "followUp": "RM-00b"
-    },
-    {
-      "file": "src/lib/jury-product/product-improvement.test.ts",
-      "name": "completed product review results open one improvement task",
-      "class": "TF-A",
-      "followUp": "RM-00b"
-    },
-    {
-      "file": "src/lib/jury-product/rereview-agent-execution.test.ts",
-      "name": "second iteration execution runs the pending handoff once",
-      "class": "TF-A",
-      "followUp": "RM-00b"
-    },
-    {
-      "file": "src/lib/jury-product/rereview-agent-handoff.test.ts",
-      "name": "approved re-review task hands off one pending execution",
-      "class": "TF-A",
-      "followUp": "RM-00b"
-    },
-    {
-      "file": "src/lib/jury-product/rereview-change-gate.test.ts",
-      "name": "second change gate reuses the phase 52 evaluator",
-      "class": "TF-A",
-      "followUp": "RM-00b"
-    },
-    {
-      "file": "src/lib/jury-product/rereview-following-review.test.ts",
-      "name": "approved following change gate reaches one re-review",
-      "class": "TF-A",
-      "followUp": "RM-00b"
-    },
-    {
-      "file": "src/lib/jury-product/rereview-improvement-bridge.test.ts",
-      "name": "re-review decision creates one next improvement task",
-      "class": "TF-A",
-      "followUp": "RM-00b"
-    },
-    {
-      "file": "src/lib/jury-product/rereview-later-agent-execution.test.ts",
-      "name": "pending later execution completes through the existing lifecycle",
-      "class": "TF-A",
-      "followUp": "RM-00b"
-    },
-    {
-      "file": "src/lib/jury-product/rereview-later-approval.test.ts",
-      "name": "later improvement approval records one human decision and stops",
-      "class": "TF-A",
-      "followUp": "RM-00b"
-    },
-    {
-      "file": "src/lib/jury-product/rereview-later-change-gate.test.ts",
-      "name": "completed later execution reaches one change gate",
-      "class": "TF-A",
-      "followUp": "RM-00b"
-    },
-    {
-      "file": "src/lib/jury-product/rereview-later-handoff.test.ts",
-      "name": "approved later improvement hands off one pending execution",
-      "class": "TF-A",
-      "followUp": "RM-00b"
-    },
-    {
-      "file": "src/lib/jury-product/rereview-later-improvement.test.ts",
-      "name": "later re-review decision creates one next improvement task",
-      "class": "TF-A",
-      "followUp": "RM-00b"
-    },
-    {
-      "file": "src/lib/jury-product/rereview-later-review.test.ts",
-      "name": "approved later change gate reaches one re-review",
-      "class": "TF-A",
-      "followUp": "RM-00b"
-    },
-    {
-      "file": "src/lib/jury-product/rereview-second-approval.test.ts",
-      "name": "second improvement task records one separate human approval",
-      "class": "TF-A",
-      "followUp": "RM-00b"
-    },
-    {
-      "file": "src/lib/jury-product/rereview-second-change-gate.test.ts",
-      "name": "completed second execution is gated by the existing change gate evaluator",
-      "class": "TF-A",
-      "followUp": "RM-00b"
-    },
-    {
-      "file": "src/lib/jury-product/rereview-second-handoff.test.ts",
-      "name": "approved second improvement task hands off one pending execution",
-      "class": "TF-A",
-      "followUp": "RM-00b"
-    },
-    {
-      "file": "src/lib/jury-product/rereview-second-improvement.test.ts",
-      "name": "second re-review decision creates one next improvement task",
-      "class": "TF-A",
-      "followUp": "RM-00b"
-    },
-    {
-      "file": "src/lib/jury-product/rereview-second-review.test.ts",
-      "name": "approved second change gate reaches one re-review",
-      "class": "TF-A",
-      "followUp": "RM-00b"
-    },
-    {
-      "file": "src/lib/jury-product/review-console.test.ts",
-      "name": "human decisions stay beside the jury result",
-      "class": "TF-A",
-      "followUp": "RM-00b"
+      "class": "TF-E",
+      "followUp": "RM-00d",
+      "note": "assertion 2!==1 against shared isolated DB state; needs per-test isolation"
     },
     {
       "file": "src/lib/jury-product/service-onboarding.test.ts",
       "name": "owner onboarding connects only after scope approval",
       "class": "TF-B",
-      "followUp": "RM-00b"
+      "followUp": "RM-00d",
+      "note": "uses Preview-only guard path; not covered by JURY_LOCAL_TEST_DB"
     },
     {
       "file": "src/lib/jury-product/services/github/refresh-claim.db.test.ts",
       "name": "refresh claim insert admits one concurrent primary key",
       "class": "TF-B",
-      "followUp": "RM-00b"
+      "followUp": "RM-00d",
+      "note": "uses Preview-only runner (run-preview-db-test.mjs)"
     },
     {
       "file": "src/lib/jury-product/supabase-target-guard.test.ts",
       "name": "createAdminClient throws fixed code before createClient on a blocked preview target",
       "class": "TF-C",
       "followUp": "RM-00c"
-    },
-    {
-      "file": "src/lib/jury-product/tenant-evidence-intake.test.ts",
-      "name": "intake stores declared catalog metrics for the actor tenant only",
-      "class": "TF-A",
-      "followUp": "RM-00b"
-    },
-    {
-      "file": "src/lib/jury-product/tenant-review.test.ts",
-      "name": "tenant review stores one external result and does not rerun the core",
-      "class": "TF-A",
-      "followUp": "RM-00b"
     }
-  ]
+  ],
+  "rm00b": {
+    "removed": 36,
+    "remaining": 13
+  }
 }
