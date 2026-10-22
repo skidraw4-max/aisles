@@ -193,9 +193,12 @@ test('console intake does not call the host adapter or put tenant in the form', 
   const body = ui.slice(ui.indexOf('export function EvidenceBody'), ui.indexOf('export function ImprovementsBody'));
   assert.equal(body.includes('tenantId'), false);
   assert.equal(body.includes('리뷰 자료 만들기'), true);
-  assert.equal(body.includes('name="metric"'), true);
-  assert.equal(body.includes('name="availability"'), true);
-  assert.equal(body.includes('name="value"'), true);
+  // RM-09: multi-metric rows (metricName + availability:<metric> / value:<metric>) and a period.
+  assert.equal(body.includes('name="metricName"'), true);
+  assert.equal(body.includes('name={`availability:${metric}`}'), true);
+  assert.equal(body.includes('name={`value:${metric}`}'), true);
+  assert.equal(body.includes('name="periodStart"'), true);
+  assert.equal(body.includes('name="periodEnd"'), true);
   assert.equal(body.includes('현재 승인된 Scope에는 입력 가능한 Catalog Metric이 없습니다.'), true);
   assert.equal(ui.includes('다른 tenant의 데이터는 변경할 수 없습니다.'), true);
   assert.equal(ui.includes('Evidence를 저장하지 못했습니다.'), true);

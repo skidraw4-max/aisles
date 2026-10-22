@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { CollectPeriodFields } from './collect-period-fields';
 import { summarizeProblems } from '@/lib/jury-product/review-display-model';
 import { juryHref } from '@/lib/jury-product/jury-url';
 import { hasReviewAccess, improvementOpenCountCell, type ServiceOperationModel } from '@/lib/jury-product/service-operations-status';
@@ -36,8 +37,7 @@ function NextAction({ model }: { model: ServiceOperationModel }) {
           <input type="hidden" name="connectionId" value={model.connectionId} />
           <input type="hidden" name="tenantId" value="client-supplied-tenant" />
           <input type="hidden" name="purpose" value="aisle-self-observation" />
-          <input type="hidden" name="periodStart" value="2026-09-01" />
-          <input type="hidden" name="periodEnd" value="2026-09-07" />
+          <CollectPeriodFields />
           <input type="hidden" name="timezone" value="Asia/Seoul" />
           <button className={styles.button} type="submit">검증 근거 수집</button>
         </form>

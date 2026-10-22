@@ -19,6 +19,7 @@ import type { ImprovementTrace } from '@/lib/jury-product/improvement-trace';
 import type { ConsoleLoopScreen } from '@/lib/jury-product/console-loop-operations';
 import { projectCatalogScopeForm, scopeForDiscovery } from '@/lib/jury-product/console-catalog-scope';
 import { projectConsoleEvidence, projectConsoleIntakeForm } from '@/lib/jury-product/console-evidence-intake';
+import { intakePeriodDefaults } from '@/lib/jury-product/evidence-period';
 import type { ReviewConsoleScreen } from '@/lib/jury-product/review-console';
 import { projectImprovementRows } from '@/lib/jury-product/product-improvement';
 import { formatMeasuredValue, projectAudit, projectDashboard, projectTraceLineage, SHELL_EMPTY, SHELL_UNAVAILABLE } from '@/lib/jury-product/product-shell';
@@ -152,6 +153,7 @@ function noticeText(code: string): string {
   if (code === 'METRIC_NOT_IN_SCOPE') return '승인된 scope가 허용하지 않은 metric입니다.';
   if (code === 'INVALID_TIMEZONE') return '시간대는 Asia/Seoul만 사용할 수 있습니다.';
   if (code === 'INVALID_VALUE') return '입력값이 올바르지 않습니다.';
+  if (code === 'INVALID_PERIOD') return '기간이 올바르지 않습니다. 시작일 ≤ 종료일 ≤ 오늘(KST), 최대 92일입니다.';
   if (code === 'PERSISTENCE_FAILED') return 'Evidence를 저장하지 못했습니다. Review는 실행하지 않습니다.';
   if (code === 'EVIDENCE_CREATED') return 'Evidence를 만들었습니다.';
   if (code === 'EVIDENCE_REUSED') return '같은 Evidence가 이미 있습니다.';
@@ -782,6 +784,7 @@ export function HumanChangeGateBody({ screen }: { screen: ReviewConsoleScreen })
 
 export function EvidenceBody({ actor, view }: { actor: JuryActor; view: JuryConsoleView }) {
   const form = projectConsoleIntakeForm(actor, view);
+  const intakePeriod = intakePeriodDefaults();
   const evidence = projectConsoleEvidence(view);
   return (
     <section className={styles.panel}>
@@ -805,33 +808,44 @@ export function EvidenceBody({ actor, view }: { actor: JuryActor; view: JuryCons
               <p className={styles.muted}>선택한 서비스: {scope.label}</p>
               <input type="hidden" name="connectionId" value={scope.connectionId} />
               <input type="hidden" name="scopeId" value={scope.scopeId} />
-              <label>
-                분석 항목<span className={styles.requiredMark}>필수</span>
-                <select className={styles.field} name="metric" defaultValue={scope.metrics[0]} required>
-                  {scope.metrics.map((metric) => (
-                    <option key={metric} value={metric}>{metric}</option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                자료 상태<span className={styles.requiredMark}>필수</span>
-                <select className={styles.field} name="availability" defaultValue="AVAILABLE" required>
-                  {INTAKE_AVAILABILITY.map((availability) => (
-                    <option key={availability} value={availability}>{userLabel(availability)}</option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                측정값<span className={styles.optionalMark}>선택</span>
-                <input
-                  className={styles.field}
-                  name="value"
-                  inputMode="decimal"
-                  pattern="-?[0-9]+(\.[0-9]+)?"
-                  title="숫자만 입력하세요. 예: 120 또는 12.5"
-                  placeholder="예: 120"
-                />
-              </label>
+              {/* RM-09 (I-004): one evidence can carry several metrics and an explicit period. */}
+              <fieldset>
+                <legend>분석 기간<span className={styles.requiredMark}>필수</span></legend>
+                <label>
+                  시작일
+                  <input className={styles.field} type="date" name="periodStart" defaultValue={intakePeriod.start} max={intakePeriod.today} required />
+                </label>
+                <label>
+                  종료일
+                  <input className={styles.field} type="date" name="periodEnd" defaultValue={intakePeriod.end} max={intakePeriod.today} required />
+                </label>
+                <p className={styles.muted}>Asia/Seoul 기준 · 최대 92일 · 기본값은 어제까지 7일</p>
+              </fieldset>
+              <fieldset>
+                <legend>분석 항목<span className={styles.requiredMark}>1개 이상</span></legend>
+                <p className={styles.muted}>입력하지 않을 항목은 「포함 안 함」으로 두세요. 포함하지 않은 항목은 미검사로 표시되며 문제 없음으로 보지 않습니다.</p>
+                {scope.metrics.map((metric, index) => (
+                  <div className={styles.row} key={metric}>
+                    <input type="hidden" name="metricName" value={metric} />
+                    <span className={styles.label}>{metric}</span>
+                    <select className={styles.field} name={`availability:${metric}`} defaultValue={index === 0 ? 'AVAILABLE' : ''} aria-label={`${metric} 자료 상태`}>
+                      <option value="">포함 안 함</option>
+                      {INTAKE_AVAILABILITY.map((availability) => (
+                        <option key={availability} value={availability}>{userLabel(availability)}</option>
+                      ))}
+                    </select>
+                    <input
+                      className={styles.field}
+                      name={`value:${metric}`}
+                      inputMode="decimal"
+                      pattern="-?[0-9]+(\.[0-9]+)?"
+                      title="숫자만 입력하세요. 예: 120 또는 12.5"
+                      placeholder="측정값 (선택)"
+                      aria-label={`${metric} 측정값`}
+                    />
+                  </div>
+                ))}
+              </fieldset>
               <button className={styles.primaryButton} type="submit">리뷰 자료 만들기</button>
             </form>
           ))
