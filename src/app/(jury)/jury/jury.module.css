@@ -1373,3 +1373,63 @@ a.inline {
 .table.reviewsTable .badge {
   white-space: nowrap;
 }
+
+/* RM-15 (I-020): 400px — header must not take the first screen, tables stack instead of scrolling sideways. */
+@media (max-width: 480px) {
+  .header {
+    padding: 0.6rem 0.75rem;
+    gap: 0.4rem;
+  }
+  .header .lead {
+    display: none;
+  }
+  .title {
+    font-size: 1.1rem;
+  }
+  .table,
+  .table thead,
+  .table tbody,
+  .table tr,
+  .table th,
+  .table td {
+    display: block;
+    width: 100%;
+  }
+  .table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+  .table tr {
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--jury-c-148-163-184-0_16, rgba(148, 163, 184, 0.16));
+  }
+  .table td {
+    border: 0;
+    padding: 0.15rem 0;
+    word-break: break-word;
+  }
+  .copyButton {
+    font-size: 0.75rem;
+    padding: 0.1rem 0.35rem;
+    border: 1px solid currentColor;
+    border-radius: 6px;
+  }
+}
+
+.listControls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: end;
+  margin: 0.5rem 0;
+}
+
+.pager {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  margin-top: 0.75rem;
+}

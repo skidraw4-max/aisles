@@ -19,7 +19,7 @@ export function CopyIdButton({ value }: { value: string }) {
         }).catch(() => undefined);
       }}
     >
-      {copied ? '✓' : '⧉'}
+      {copied ? '복사됨' : '복사'}
     </button>
   );
 }

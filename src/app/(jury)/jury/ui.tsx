@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { listHref, pageList, type ListQuery } from '@/lib/jury-product/list-paging';
 import type { ReactNode } from 'react';
 import { DISPLAY_FLAG_LABELS, cycleStatusLabel, displayModelForCatalogRow } from '@/lib/jury-product/review-display-model';
 import { buildRequestStatusRows } from '@/lib/jury-product/review-request-status';
@@ -330,7 +331,7 @@ export function DashboardBody({ view }: { view: JuryConsoleView }) {
             <tbody>
               {board.activity.map((event) => (
                 <tr key={event.id}>
-                  <td>{event.timestamp}</td>
+                  <td>{formatKstFull(event.timestamp)}</td>
                   <td className={styles.identifier} title={event.actor}>{compactIdentifier(event.actor)}</td>
                   <td title={event.action}>{auditActionLabel(event.action)}</td>
                   <td className={styles.identifier} title={event.resource}>{compactIdentifier(event.resource)}</td>
@@ -782,10 +783,14 @@ export function HumanChangeGateBody({ screen }: { screen: ReviewConsoleScreen })
   );
 }
 
-export function EvidenceBody({ actor, view }: { actor: JuryActor; view: JuryConsoleView }) {
+export function EvidenceBody({ actor, view, query = { q: '', filter: '', page: 1 } }: { actor: JuryActor; view: JuryConsoleView; query?: ListQuery }) {
   const form = projectConsoleIntakeForm(actor, view);
   const intakePeriod = intakePeriodDefaults();
-  const evidence = projectConsoleEvidence(view);
+  const allEvidence = projectConsoleEvidence(view);
+  const evidencePage = pageList(allEvidence, query, {
+    text: (row) => `${row.purpose} ${row.periodStart} ${row.periodEnd} ${row.metrics.map((m) => m.metric).join(' ')}`,
+  });
+  const evidence = evidencePage.items;
   return (
     <section className={styles.panel}>
       <div className={styles.pageIntro}>
@@ -853,7 +858,8 @@ export function EvidenceBody({ actor, view }: { actor: JuryActor; view: JuryCons
       ) : (
         <p className={styles.muted}>Evidence 입력: 현재 역할에는 이 변경 권한이 없습니다.</p>
       )}
-      {evidence.length === 0 ? <p>{displayText(SHELL_EMPTY.evidence)}</p> : null}
+      {allEvidence.length > 0 ? <ListControls path="/evidence" query={query} total={evidencePage.total} page={evidencePage.page} pages={evidencePage.pages} /> : null}
+      {allEvidence.length === 0 ? <p>{displayText(SHELL_EMPTY.evidence)}</p> : evidence.length === 0 ? <p className={styles.muted}>조건에 맞는 자료 없음</p> : null}
       {evidence.map((row) => {
         const stored = view.evidence.find((item) => item.id === row.id);
         return (
@@ -1146,8 +1152,48 @@ export function AutomationBody({
   );
 }
 
-export function AuditBody({ view }: { view: JuryConsoleView }) {
-  const events = projectAudit(view);
+/** RM-15 (I-021): GET form for search / filter + pager. */
+function ListControls({ path, query, filterLabel, filterOptions, labelOf, total, page, pages }: {
+  path: string; query: ListQuery; filterLabel?: string; filterOptions?: string[]; labelOf?: (v: string) => string;
+  total: number; page: number; pages: number;
+}) {
+  return (
+    <>
+      <form className={styles.listControls} method="get" action={juryHref(path)}>
+        <label>검색 <input className={styles.field} type="search" name="q" defaultValue={query.q} /></label>
+        {filterOptions && filterOptions.length > 0 ? (
+          <label>{filterLabel ?? '구분'}
+            <select className={styles.field} name="filter" defaultValue={query.filter}>
+              <option value="">전체</option>
+              {filterOptions.map((v) => <option key={v} value={v}>{labelOf ? labelOf(v) : v}</option>)}
+            </select>
+          </label>
+        ) : null}
+        <button className={styles.button} type="submit">적용</button>
+      </form>
+      <p className={styles.muted}>{total}건 · {page}/{pages}쪽</p>
+    </>
+  );
+}
+
+function Pager({ path, query, page, pages }: { path: string; query: ListQuery; page: number; pages: number }) {
+  if (pages <= 1) return null;
+  return (
+    <nav className={styles.pager} aria-label="쪽 이동">
+      {page > 1 ? <Link className={styles.inline} href={listHref(juryHref(path), query, page - 1)}>이전</Link> : <span className={styles.muted}>이전</span>}
+      <span>{page}/{pages}</span>
+      {page < pages ? <Link className={styles.inline} href={listHref(juryHref(path), query, page + 1)}>다음</Link> : <span className={styles.muted}>다음</span>}
+    </nav>
+  );
+}
+
+export function AuditBody({ view, query = { q: '', filter: '', page: 1 } }: { view: JuryConsoleView; query?: ListQuery }) {
+  const all = projectAudit(view);
+  const paged = pageList(all, query, {
+    key: (e) => e.action,
+    text: (e) => `${auditActionLabel(e.action)} ${e.actor} ${e.resource} ${e.status}`,
+  });
+  const events = paged.items;
   return (
     <section className={styles.panel}>
       <div className={styles.pageIntro}>
@@ -1157,7 +1203,8 @@ export function AuditBody({ view }: { view: JuryConsoleView }) {
           <p className={styles.pageDescription}>누가 언제 무엇을 했는지 시간순으로 확인하세요. 원래 기록 값은 마우스를 올리면 보입니다.</p>
         </div>
       </div>
-      {events.length === 0 ? <p>{displayText(SHELL_EMPTY.audit)}</p> : (
+      {all.length > 0 ? <ListControls path="/audit" query={query} filterLabel="활동" filterOptions={paged.filterOptions} labelOf={auditActionLabel} total={paged.total} page={paged.page} pages={paged.pages} /> : null}
+      {all.length === 0 ? <p>{displayText(SHELL_EMPTY.audit)}</p> : events.length === 0 ? <p className={styles.muted}>조건에 맞는 기록 없음</p> : (
         <table className={styles.table}>
           <thead>
             <tr>
@@ -1175,8 +1222,6 @@ export function AuditBody({ view }: { view: JuryConsoleView }) {
                 <td className={styles.identifier} title={event.actor}>{compactIdentifier(event.actor)}</td>
                 <td title={event.action}>
                   {auditActionLabel(event.action)}
-                  <br />
-                  <span className={styles.muted}>{auditActionLabel(event.action)}</span>
                 </td>
                 <td className={styles.identifier} title={event.resource}>{compactIdentifier(event.resource)}</td>
                 <td title={event.status}>{auditActionLabel(event.status)}</td>
@@ -1185,6 +1230,7 @@ export function AuditBody({ view }: { view: JuryConsoleView }) {
           </tbody>
         </table>
       )}
+      <Pager path="/audit" query={query} page={paged.page} pages={paged.pages} />
     </section>
   );
 }
