@@ -82,7 +82,7 @@ export type ReviewDisplayInput = {
   } | null;
   request?: { status?: string | null; failureReason?: string | null; resultSource?: string | null } | null;
   /** undefined = caller did not load evidence (scope unknown); null = no evidence linked. */
-  evidence?: { id: string; metricIds?: readonly string[]; metrics?: readonly { availability: string }[] } | null;
+  evidence?: { id: string; metricIds?: readonly string[]; metrics?: readonly { availability: string; metric?: string }[] } | null;
 };
 
 export type CountState = 'LISTED' | 'NONE_LISTED' | 'UNAVAILABLE';
@@ -104,7 +104,7 @@ export type ReviewDisplayModel = {
   /** Same function feeds the banner and the count (CT-05). null = cannot be counted. */
   missingEvidenceCount: number | null;
   aiInference: { label: 'AI 추정'; expectedUserEffect: string | null; risk: string | null };
-  scope: { state: 'LINKED' | 'UNLINKED' | 'NOT_LOADED'; metricCount: number | null; uncheckedCount: number | null };
+  scope: { state: 'LINKED' | 'UNLINKED' | 'NOT_LOADED'; metricCount: number | null; uncheckedCount: number | null; /** RM-07 미검사 목록: same source as uncheckedCount. */ unchecked: string[] };
   strength: { evidence: string | null; claim: string | null };
   committee: { conflictDetected: boolean | null; overclaimDetected: boolean | null };
   /** M-012: never computed until D-07. */
@@ -170,7 +170,7 @@ export function buildReviewDisplayModel(input: ReviewDisplayInput): ReviewDispla
     claims: { state: 'UNAVAILABLE', supported: [], partial: [], unverified: [], counts: null },
     missingEvidenceCount: null,
     aiInference: { label: 'AI 추정', expectedUserEffect: null, risk: null },
-    scope: { state: 'NOT_LOADED', metricCount: null, uncheckedCount: null },
+    scope: { state: 'NOT_LOADED', metricCount: null, uncheckedCount: null, unchecked: [] },
     strength: { evidence: null, claim: null },
     committee: { conflictDetected: null, overclaimDetected: null },
     compositeScore: null,
@@ -208,19 +208,28 @@ export function buildReviewDisplayModel(input: ReviewDisplayInput): ReviewDispla
   if (result.revisionRequired === true && result.expectedDecision === 'ACCEPT') flags.add('DECISION_REVISION_MISMATCH');
 
   // M-008/M-004 (CT-09): unlinked evidence withholds the verdict.
-  let scope: ReviewDisplayModel['scope'] = { state: 'NOT_LOADED', metricCount: null, uncheckedCount: null };
+  let scope: ReviewDisplayModel['scope'] = { state: 'NOT_LOADED', metricCount: null, uncheckedCount: null, unchecked: [] };
   if (input.evidence === null) {
-    scope = { state: 'UNLINKED', metricCount: 0, uncheckedCount: null };
+    scope = { state: 'UNLINKED', metricCount: 0, uncheckedCount: null, unchecked: [] };
   } else if (input.evidence) {
     const ids = input.evidence.metricIds ?? [];
     const metrics = input.evidence.metrics ?? [];
     scope = ids.length === 0 && metrics.length === 0
-      ? { state: 'UNLINKED', metricCount: 0, uncheckedCount: null }
-      : {
-          state: 'LINKED',
-          metricCount: Math.max(ids.length, metrics.length),
-          uncheckedCount: metrics.filter((m) => m.availability !== 'AVAILABLE').length,
-        };
+      ? { state: 'UNLINKED', metricCount: 0, uncheckedCount: null, unchecked: [] }
+      : (() => {
+          // M-008: 미검사 = availability≠AVAILABLE, plus listed metricIds with no measurement row.
+          const measured = new Set(metrics.map((m) => m.metric).filter((m): m is string => typeof m === 'string'));
+          const unchecked = [
+            ...metrics.filter((m) => m.availability !== 'AVAILABLE').map((m) => m.metric ?? '(이름 없는 지표)'),
+            ...(measured.size > 0 || metrics.length === 0 ? ids.filter((id) => !measured.has(id)) : []),
+          ];
+          return {
+            state: 'LINKED' as const,
+            metricCount: Math.max(ids.length, metrics.length),
+            uncheckedCount: unchecked.length,
+            unchecked,
+          };
+        })();
   }
   if (scope.state === 'UNLINKED') flags.add('NO_EVIDENCE');
   const withheld = scope.state === 'UNLINKED';

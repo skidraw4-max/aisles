@@ -30,7 +30,7 @@ import { LogoutButton, ProductNav } from './shell-client';
 import { TranslationHint } from './ui-primitives';
 import { CopyIdButton, ReviewSummaryDialog } from './ReviewSummaryDialog';
 import { formatKstFull, formatKstShort, shortId } from './review-summary-format';
-import { ConfidenceLine, reviewTabHref } from './review-tabs-ui';
+import { ConfidenceLine, ResultComparison, reviewTabHref } from './review-tabs-ui';
 import type { JuryMembership } from '@/lib/jury-product/records';
 import { auditActionLabel, DECISION_GUIDANCE, displayText, traceLabel, userLabel } from '@/lib/jury-product/ui-labels';
 import styles from './jury.module.css';
@@ -567,8 +567,6 @@ export function ReviewDetailBody({ screen, noted }: { screen: ReviewConsoleScree
   // RM-04: no UI-side fallback recount. Without the display model every count is "집계 불가".
   const missing = display ? display.missingEvidenceCount : null;
   const supportedCount = display ? display.claims.counts?.supported ?? null : null;
-  const problems = display ? display.problems.items : [];
-  const problemsUnavailable = !display || display.problems.state === 'UNAVAILABLE';
   const noActionAllowed = !display || (display.decision.raw === 'ACCEPT' && display.flags.length === 0);
   const fallbackAction = noActionAllowed ? '추가 조치가 필요하지 않습니다.' : '권장 조치 기록 없음';
   return (
@@ -599,17 +597,7 @@ export function ReviewDetailBody({ screen, noted }: { screen: ReviewConsoleScree
           <div className={styles.row}><span className={styles.label}>완료일</span><span>{screen.completedAt}</span></div>
         </details>
       </section>
-      <section className={styles.panel}>
-        <h2>주요 문제</h2>
-        {problemsUnavailable ? <p className={styles.muted}>집계 불가</p> : problems.length === 0 ? (
-          <p className={styles.muted}>{display?.flags.includes('DECISION_PROBLEM_MISMATCH') ? '문제 목록 없음 — 판정과 불일치' : '문제 목록 없음'}</p>
-        ) : (
-          <>
-            <ul lang="en">{problems.map((item) => <li key={item}>{item}</li>)}</ul>
-            {display?.problems.severityNote ? <p className={styles.muted}>{display.problems.severityNote}</p> : null}
-          </>
-        )}
-      </section>
+      <ResultComparison screen={screen} />
       <section className={styles.panel}>
         <div className={styles.actionPanel}>
           <div>
@@ -619,7 +607,7 @@ export function ReviewDetailBody({ screen, noted }: { screen: ReviewConsoleScree
           </div>
           {screen.humanChoices.length > 0 ? <span className={styles.badge}>확인 필요</span> : null}
         </div>
-        <p className={styles.muted}>위험도: <span lang={screen.risk ? 'en' : undefined}>{screen.risk || '특이 사항 없음'}</span></p>
+        <p className={styles.muted}>위험도: <span lang={screen.risk ? 'en' : undefined}>{screen.risk || '기록 없음'}</span></p>
       </section>
       <section className={styles.panel}>
         <h2>근거 요약</h2>
