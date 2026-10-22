@@ -6,7 +6,7 @@ import type { JuryActor } from './access';
 import { buildReviewDisplayModel } from './review-display-model';
 import { compareReviewResults, type ComparisonSide, type ReviewComparisonView } from './review-comparison';
 
-const SELECT = {
+export const REVIEW_SIDE_SELECT = {
   id: true,
   tenantId: true,
   boardRunId: true,
@@ -38,7 +38,7 @@ const SELECT = {
   },
 } as const;
 
-type Row = {
+export type ReviewSideRow = {
   id: string;
   tenantId: string;
   boardRunId: string;
@@ -66,7 +66,7 @@ type Row = {
   } | null;
 };
 
-export function sideFromRow(row: Row, tenantId: string): ComparisonSide {
+export function sideFromRow(row: ReviewSideRow, tenantId: string): ComparisonSide {
   const request = row.request?.tenantId === tenantId ? row.request : null;
   const evidence = request?.evidence?.tenantId === tenantId ? request.evidence : null;
   const metricIds = Array.isArray(evidence?.metricIds)
@@ -101,16 +101,16 @@ export async function loadReviewComparison(actor: JuryActor, reviewId: string): 
   const { prisma } = await import('@/lib/prisma');
   const current = (await prisma.juryReviewResult.findFirst({
     where: { id: reviewId, tenantId: actor.tenantId },
-    select: SELECT,
-  })) as Row | null;
+    select: REVIEW_SIDE_SELECT,
+  })) as ReviewSideRow | null;
   if (!current || current.tenantId !== actor.tenantId) return null;
   const cur = sideFromRow(current, actor.tenantId);
-  let previous: Row | null = null;
+  let previous: ReviewSideRow | null = null;
   if (current.parentReviewResultId) {
     previous = (await prisma.juryReviewResult.findFirst({
       where: { id: current.parentReviewResultId, tenantId: actor.tenantId },
-      select: SELECT,
-    })) as Row | null;
+      select: REVIEW_SIDE_SELECT,
+    })) as ReviewSideRow | null;
   }
   if (!previous && cur.connectionId) {
     const rows = (await prisma.juryReviewResult.findMany({
@@ -122,8 +122,8 @@ export async function loadReviewComparison(actor: JuryActor, reviewId: string): 
       },
       orderBy: { completedAt: 'desc' },
       take: 20,
-      select: SELECT,
-    })) as Row[];
+      select: REVIEW_SIDE_SELECT,
+    })) as ReviewSideRow[];
     previous = pickPrevious(cur, rows.filter((r) => r.tenantId === actor.tenantId).map((r) => ({ row: r, side: sideFromRow(r, actor.tenantId) })))?.row ?? null;
   }
   if (previous && previous.tenantId !== actor.tenantId) previous = null;

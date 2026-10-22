@@ -4,9 +4,10 @@ import { juryHref, juryLoginHref } from '@/lib/jury-product/jury-url';
 import { loadServiceOperation } from '@/lib/jury-product/service-operations';
 import { providerViewsFor } from '@/lib/jury-product/services/provider-boundary';
 import { getJuryEntry } from '@/lib/jury-product/session';
+import { loadQualityTrend } from '@/lib/jury-product/quality-trend';
 import { GithubRefreshStatus } from '../../github-refresh-status';
 import { ServiceDetailBody } from '../../service-onboarding-ui';
-import { ServiceOperationDetail, ServiceOperationState } from '../../service-operations-ui';
+import { QualityTrendPanel, ServiceOperationDetail, ServiceOperationState } from '../../service-operations-ui';
 import { JuryChrome } from '../../ui';
 import { loadJuryShell, readJurySessionEmail } from '../../load';
 
@@ -39,9 +40,11 @@ export default async function ServiceDetailPage({
     actorRole: null,
     permission: null,
   });
+  const trend = operation.ok ? await loadQualityTrend(actor, connectionId) : null;
   return (
     <JuryChrome actor={actor} notice={notice}>
       {operation.ok ? <ServiceOperationDetail model={operation.model} provider={providers[connectionId] ?? null} /> : <ServiceOperationState reason={operation.reason} />}
+      {trend?.visible ? <QualityTrendPanel trend={trend} /> : null}
       {operation.ok && actor.ok && view ? <ServiceDetailBody actor={actor} view={view} connectionId={connectionId} /> : null}
       <GithubRefreshStatus connectionId={connectionId} />
     </JuryChrome>
