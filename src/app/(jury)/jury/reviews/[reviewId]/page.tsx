@@ -4,7 +4,7 @@ import { externalFeatureDenial } from '@/lib/jury-product/service-feature-author
 import { guardReviewFeature } from '@/lib/jury-product/service-feature-guard';
 import { getJuryActor } from '@/lib/jury-product/session';
 import { FollowingReReviewBody, HumanChangeGateBody, HumanReReviewBody, JuryChrome, ReReviewAgentHandoffBody, ReReviewNextImprovementBody, ReReviewAgentRunBody, ReReviewChangeGateBody, ReviewDetailBody, LaterAgentRunBody, LaterChangeGateBody, LaterImprovementApprovalBody, LaterImprovementBody, LaterImprovementHandoffBody, LaterReReviewBody, SecondChangeGateBody, SecondImprovementApprovalBody, SecondImprovementBody, SecondImprovementHandoffBody, SecondReReviewBody } from '../../ui';
-import { ReviewEvidenceTab, ReviewHistoryHint, ReviewHistoryIntro, ReviewMembersTab, ReviewTabs, reviewTabFrom } from '../../review-tabs-ui';
+import { ResultFixedSummary, ReviewEvidenceTab, ReviewHistoryHint, ReviewHistoryIntro, ReviewMembersTab, ReviewTabs, reviewTabFrom } from '../../review-tabs-ui';
 
 export default async function JuryReviewDetailPage({
   params,
@@ -41,6 +41,7 @@ export default async function JuryReviewDetailPage({
       <JuryChrome actor={actor}>
         {screen && show ? (
           <>
+            <ResultFixedSummary screen={screen} />
             <ReviewTabs reviewId={screen.reviewId} active={tab} />
             {tab === 'summary' ? <ReviewDetailBody screen={screen} noted={noted} /> : null}
             {tab === 'summary' ? <ReviewHistoryHint reviewId={screen.reviewId} hasHistory={Object.values(show).some(Boolean)} /> : null}

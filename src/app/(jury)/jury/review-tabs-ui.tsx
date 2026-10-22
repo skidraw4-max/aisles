@@ -12,6 +12,7 @@ import {
   MEMBER_OPINION_NOTICE,
   userLabel,
 } from '@/lib/jury-product/ui-labels';
+import { buildResultDetailView } from '@/lib/jury-product/review-result-detail';
 import { Tabs, TranslationHint, type TabItem } from './ui-primitives';
 import styles from './jury.module.css';
 
@@ -38,6 +39,92 @@ export function reviewTabHref(reviewId: string, tab: ReviewTabId): string {
 export function ReviewTabs({ reviewId, active }: { reviewId: string; active: ReviewTabId }) {
   const items: TabItem[] = REVIEW_TAB_IDS.map((id) => ({ id, label: REVIEW_TAB_LABELS[id], href: reviewTabHref(reviewId, id) }));
   return <Tabs items={items} activeId={active} label="리뷰 결과 탭" />;
+}
+
+/**
+ * RM-07: fixed summary shown above every result tab. Everything comes from AGG-01 (screen.display);
+ * without it nothing is counted ("집계 불가"). No composite score, no severity (D-13).
+ */
+export function ResultFixedSummary({ screen }: { screen: ReviewConsoleScreen }) {
+  if (!screen.display) {
+    return (
+      <section className={styles.panel} aria-label="결과 고정 요약">
+        <p className={styles.eyebrow}>결과 고정 요약</p>
+        <p className={styles.muted}>표시 모델이 없어 집계 불가</p>
+      </section>
+    );
+  }
+  const view = buildResultDetailView(screen.display);
+  return (
+    <section className={styles.panel} aria-label="결과 고정 요약">
+      <p className={styles.eyebrow}>결과 고정 요약</p>
+      <div className={styles.row}>
+        <span className={styles.label}>판정</span>
+        <span>
+          <strong><span className={styles.badge}>{view.summary.decision}</span></strong>{' '}
+          <span className={styles.badge} data-source-tone={view.summary.source.tone}>{view.summary.source.label}</span>
+        </span>
+      </div>
+      {view.summary.decisionNote ? <p className={styles.muted}>{view.summary.decisionNote}</p> : null}
+      {view.summary.source.note ? <p className={styles.muted}>{view.summary.source.note}</p> : null}
+      {view.summary.facts.map((fact) => (
+        <div className={styles.row} key={fact.label}><span className={styles.label}>{fact.label}</span><span>{fact.value}</span></div>
+      ))}
+      {view.summary.warnings.length > 0 ? (
+        <ul className={styles.muted}>{view.summary.warnings.map((text) => <li key={text}>⚠ {text}</li>)}</ul>
+      ) : null}
+    </section>
+  );
+}
+
+/** RM-07: 주장 → 근거 → 판정 → 기대 comparison and 문제 → 원인 링크 (summary tab). */
+export function ResultComparison({ screen }: { screen: ReviewConsoleScreen }) {
+  if (!screen.display) return null;
+  const view = buildResultDetailView(screen.display);
+  return (
+    <>
+      <section className={styles.panel}>
+        <h2>주장 → 근거 → 판정 → 기대</h2>
+        {view.comparison.map((row) => (
+          <div className={styles.row} key={row.step}>
+            <span className={styles.label}>{row.step}</span>
+            <span lang={row.step === '기대' && row.note ? 'en' : undefined}>
+              {row.value}{row.note ? <> <span className={styles.badge}>{row.note}</span></> : null}
+            </span>
+          </div>
+        ))}
+      </section>
+      <section className={styles.panel}>
+        <h2>수정이 필요한 문제와 원인</h2>
+        {view.problems.state !== 'LISTED' ? <p className={styles.muted}>{view.problems.emptyText}</p> : (
+          <ul>
+            {view.problems.items.map((item) => (
+              <li key={item.text}>
+                <span lang="en">{item.text}</span>{' '}
+                <Link className={styles.inline} href={reviewTabHref(screen.reviewId, item.cause.tab)}>{item.cause.text}</Link>
+              </li>
+            ))}
+          </ul>
+        )}
+        {screen.display.problems.severityNote ? <p className={styles.muted}>{screen.display.problems.severityNote}</p> : null}
+      </section>
+    </>
+  );
+}
+
+/** RM-07: 미검사 목록 (evidence tab). */
+export function UncheckedMetricsPanel({ screen }: { screen: ReviewConsoleScreen }) {
+  const view = screen.display ? buildResultDetailView(screen.display) : null;
+  return (
+    <section className={styles.panel}>
+      <h2>미검사 목록</h2>
+      {!view ? <p className={styles.muted}>집계 불가</p> : view.unchecked.state !== 'LISTED' ? (
+        <p className={styles.muted}>{view.unchecked.text}</p>
+      ) : (
+        <ul>{view.unchecked.items.map((name) => <li key={name}><span className={styles.badge}>미검사</span> {name}</li>)}</ul>
+      )}
+    </section>
+  );
 }
 
 /** Confidence line: board confidence, else evidence strength (older results), else 확인 불가. */
@@ -150,6 +237,7 @@ export function ReviewEvidenceTab({ screen }: { screen: ReviewConsoleScreen }) {
         )}
         <TranslationHint />
       </section>
+      <UncheckedMetricsPanel screen={screen} />
     </>
   );
 }
