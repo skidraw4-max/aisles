@@ -2,6 +2,7 @@
  * Jury Prisma access. Queries are scoped by the server-resolved tenant.
  * credentialRef is a pointer, never printed as a secret.
  */
+import { grantOwnersOnNewConnection } from './service-owner-grants';
 import { randomUUID } from 'node:crypto';
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
@@ -1182,7 +1183,8 @@ export async function persistServiceTarget(
 ): Promise<ReturnType<typeof planServiceTarget>> {
   const decision = planServiceTarget(command);
   if (!decision.ok) return decision;
-  await prisma.juryServiceConnection.create({
+  await prisma.$transaction(async (tx) => {
+  await tx.juryServiceConnection.create({
     data: {
       id: decision.connection.id,
       tenantId: decision.connection.tenantId,
@@ -1195,6 +1197,12 @@ export async function persistServiceTarget(
       createdAt: new Date(decision.connection.createdAt),
       updatedAt: new Date(decision.connection.updatedAt),
     },
+  });
+  await grantOwnersOnNewConnection(tx, {
+    tenantId: decision.connection.tenantId,
+    connectionId: decision.connection.id,
+    creatorUserId: decision.connection.createdByUserId ?? null,
+  });
   });
   return decision;
 }

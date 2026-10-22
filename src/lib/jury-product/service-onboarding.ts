@@ -5,6 +5,7 @@
  */
 import { randomUUID } from 'node:crypto';
 import { Prisma } from '@prisma/client';
+import { grantOwnersOnNewConnection } from './service-owner-grants';
 import { decideJuryMutation, type JuryActor } from './access';
 import { createAccessContext, type AccessFailure } from './access-layer';
 import { containsSecret } from './agent-execution';
@@ -196,6 +197,7 @@ export async function persistServiceOnboarding(
         updatedAt: new Date(now),
       },
     });
+    await grantOwnersOnNewConnection(tx, { tenantId: actor.tenantId, connectionId: id, creatorUserId: actor.userId });
     await tx.juryAuditEvent.create({
       data: {
         id: randomUUID(),

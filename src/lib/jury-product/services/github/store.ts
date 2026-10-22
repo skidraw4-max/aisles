@@ -4,6 +4,7 @@
  */
 import { randomUUID } from 'node:crypto';
 import { Prisma } from '@prisma/client';
+import { grantOwnersOnNewConnection } from '../../service-owner-grants';
 import { decideJuryMutation, type JuryActor } from '../../access';
 import { containsSecret } from '../../agent-execution';
 import { containsRawCredential, providerError, type ProviderError } from '../provider-types';
@@ -236,6 +237,7 @@ export async function finishGithubCallback(input: {
             updatedAt: now,
           },
         });
+        await grantOwnersOnNewConnection(tx, { tenantId: actor.tenantId, connectionId: id, creatorUserId: actor.userId });
       } else if (existing.tenantId === actor.tenantId) {
         await tx.juryServiceConnection.update({
           where: { id: existing.id },
