@@ -265,6 +265,9 @@ export async function persistCatalogScopeDecision(
           },
         });
       }
+      if (status === 'APPROVED') {
+        await activatePendingConnection(tx, { tenantId: auth.actor.tenantId, connectionId: row.connectionId, actorUserId: auth.actor.userId, now: command.now });
+      }
       return { ok: true as const, scopeId: row.id, status };
     });
   } catch {
@@ -323,4 +326,50 @@ function asGrants(value: unknown): JuryAccessGrant[] | null {
 
 function sha(parts: string[]): string {
   return createHash('sha256').update(parts.join('\n')).digest('hex');
+}
+
+/**
+ * RM-10 / I-009: approving a catalog scope moves a DISCOVERY_PENDING connection to CONNECTED once a
+ * scope on it is APPROVED (mock-discovery placeholder scopes stay PROPOSED and must not block it). Other statuses (DISCONNECTED/ERROR/
+ * LIMITED/DRAFT) are never changed here. Tenant-scoped; audit id is deterministic (idempotent).
+ */
+export async function activatePendingConnection(
+  tx: Prisma.TransactionClient,
+  input: { tenantId: string; connectionId: string; actorUserId: string; now: string },
+): Promise<boolean> {
+  const connection = await tx.juryServiceConnection.findFirst({
+    where: { id: input.connectionId, tenantId: input.tenantId },
+    select: { id: true, tenantId: true, status: true, serviceKey: true, accessMethod: true },
+  });
+  if (!connection || connection.tenantId !== input.tenantId || connection.status !== 'DISCOVERY_PENDING') return false;
+  const scopes = await tx.juryAccessScope.findMany({
+    where: { tenantId: input.tenantId, connectionId: connection.id },
+    select: { status: true },
+  });
+  if (!canActivateFromScopes(scopes.map((row) => row.status))) return false;
+  const updated = await tx.juryServiceConnection.updateMany({
+    where: { id: connection.id, tenantId: input.tenantId, status: 'DISCOVERY_PENDING' },
+    data: { status: 'CONNECTED' },
+  });
+  if (updated.count !== 1) return false;
+  const auditId = sha([input.tenantId, 'SERVICE_CONNECTION_ACTIVATED', connection.id]);
+  const existing = await tx.juryAuditEvent.findUnique({ where: { id: auditId }, select: { id: true } });
+  if (!existing) {
+    await tx.juryAuditEvent.create({
+      data: {
+        id: auditId,
+        tenantId: input.tenantId,
+        timestamp: new Date(input.now),
+        actor: input.actorUserId,
+        action: 'SERVICE_CONNECTION_ACTIVATED',
+        serviceKey: connection.serviceKey,
+        accessMethod: connection.accessMethod,
+      },
+    });
+  }
+  return true;
+}
+
+export function canActivateFromScopes(statuses: readonly string[]): boolean {
+  return statuses.includes('APPROVED');
 }
