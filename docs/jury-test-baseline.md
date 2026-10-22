@@ -49,3 +49,10 @@ CI: `.github/workflows/test-baseline.yml` (secrets·env 없음, PR과 main push�
 
 - `src/lib/auth/classify-admin-auth-core.test.ts`는 `git grep`을 사용하므로 git 체크아웃 안에서 실행해야 한다 (CI checkout은 충족).
 - flaky 판정은 반복 실행 데이터가 필요하다(현재 3회 실행, 수치 동일).
+
+## RM-00b — isolated test DB (2026-10-22)
+
+- DB tests run only against an isolated loopback Postgres: locally a throwaway Postgres 17, in CI a `postgres:17` service container. Never Production or Preview Supabase.
+- Opt-in: `JURY_LOCAL_TEST_DB=1`. `guardTestDatabase` accepts it only when every DB URL is a loopback host, not Supabase, and Preview mode/`VERCEL_ENV` is off. Otherwise the Preview guard applies (fail closed).
+- Schema: `npx prisma db push` (the migration history has no baseline for early tables, so `migrate deploy` on an empty DB fails at `20260409120000_password_reset_token`; see RM-00e).
+- Result: 36 of 45 TF-A/TF-B tests now pass. Remaining 9 are TF-E (live-like data/fixtures, per-test isolation) or Preview-only paths → RM-00d.

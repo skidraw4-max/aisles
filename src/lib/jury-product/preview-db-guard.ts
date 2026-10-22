@@ -96,8 +96,29 @@ export function selectExactTest(
   return { ok: true, pattern: `^${requestedName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$` };
 }
 
+const LOOPBACK_HOSTS = new Set(['127.0.0.1', 'localhost', '::1', '[::1]']);
+
+/**
+ * RM-00b: isolated local test DB. Allowed only when JURY_LOCAL_TEST_DB=1, Preview mode is off,
+ * and BOTH DATABASE_URL and DIRECT_URL (when set) point at a loopback host that is not Supabase.
+ * Anything else falls through to the Preview guard (fail closed).
+ */
+export function isIsolatedLocalTestDb(env: NodeJS.ProcessEnv): boolean {
+  if (env.JURY_LOCAL_TEST_DB !== '1') return false;
+  if (env.JURY_PREVIEW_DB === '1' || env.VERCEL_ENV) return false;
+  const urls = [env.DATABASE_URL, env.DIRECT_URL].filter((v): v is string => typeof v === 'string' && v !== '');
+  if (urls.length === 0) return false;
+  return urls.every((value) => {
+    const url = parsePostgresUrl(value);
+    if (!url) return false;
+    const host = url.hostname.toLowerCase();
+    return LOOPBACK_HOSTS.has(host) && !isSupabaseHostedEndpoint(value);
+  });
+}
+
 export function guardTestDatabase(env: NodeJS.ProcessEnv): void {
   if (!env.NODE_TEST_CONTEXT) return;
+  if (isIsolatedLocalTestDb(env)) return;
   const gate = planPreviewDbAccess({
     JURY_PREVIEW_DB: env.JURY_PREVIEW_DB,
     DATABASE_URL: env.DATABASE_URL,
