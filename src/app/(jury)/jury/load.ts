@@ -36,7 +36,10 @@ export async function readJurySessionEmail(): Promise<string | null> {
   }
 }
 
-export async function loadJuryShell(searchParams: Promise<{ result?: string | string[] }>): Promise<{
+export async function loadJuryShell(
+  searchParams: Promise<{ result?: string | string[] }>,
+  options: { attempts?: boolean } = {},
+): Promise<{
   actor: JuryActor;
   view: JuryConsoleView | null;
   notice?: string;
@@ -54,7 +57,17 @@ export async function loadJuryShell(searchParams: Promise<{ result?: string | st
   }
   try {
     const catalog = await loadJuryCatalog(actor.tenantId);
-    const view = readJuryConsole(actor, catalog);
+    const read = readJuryConsole(actor, catalog);
+    let view = read;
+    if (read && options.attempts) {
+      // RM-03: attempt rows are optional; a load failure leaves them "not loaded", never empty.
+      try {
+        const { loadReviewAttempts } = await import('@/lib/jury-product/review-request-status');
+        view = { ...read, attempts: await loadReviewAttempts(actor.tenantId) };
+      } catch {
+        view = read;
+      }
+    }
     const grants = view ? await listUserServiceGrants(actor.tenantId, actor.userId) : [];
     return { actor, view: view ? restrictJuryConsole(view, actor, grants) : null, notice };
   } catch (error) {

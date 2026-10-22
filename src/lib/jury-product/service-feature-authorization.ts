@@ -159,6 +159,9 @@ export function restrictJuryConsole(
     executions: view.executions.filter((row) => row.tenantId === actor.tenantId && allowed('agent.execute', executionConnection.get(row.id) ?? '')),
     gates: view.gates.filter((row) => row.tenantId === actor.tenantId && allowed('agent.execute', executionConnection.get(row.executionId) ?? '')),
     reReviews: view.reReviews.filter((row) => row.tenantId === actor.tenantId && allowed('review.read', taskConnection.get(row.taskId) ?? '')),
+    ...(view.attempts
+      ? { attempts: view.attempts.filter((row) => row.tenantId === actor.tenantId && allowed('review.read', row.connectionId ?? '')) }
+      : {}),
     agentTaskIds: view.tasks
       .filter((row) => {
         const connectionId = taskConnection.get(row.id) ?? '';

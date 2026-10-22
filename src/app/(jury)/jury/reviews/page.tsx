@@ -6,7 +6,7 @@ export default async function JuryReviewsPage({
 }: {
   searchParams: Promise<{ result?: string | string[] }>;
 }) {
-  const { actor, view, notice } = await loadJuryShell(searchParams);
+  const { actor, view, notice } = await loadJuryShell(searchParams, { attempts: true });
   return (
     <JuryChrome actor={actor} notice={notice}>
       {view ? <ReviewsBody view={view} /> : null}

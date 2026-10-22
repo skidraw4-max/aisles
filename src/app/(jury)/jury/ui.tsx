@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { DISPLAY_FLAG_LABELS, cycleStatusLabel, displayModelForCatalogRow } from '@/lib/jury-product/review-display-model';
+import { buildRequestStatusRows } from '@/lib/jury-product/review-request-status';
 import { redirect } from 'next/navigation';
 import { juryEntrySurface } from '@/components/jury/entry';
 import { OrganizationSwitcher } from '@/components/jury/OrganizationSwitcher';
@@ -468,6 +469,7 @@ export function ReviewsBody({ view }: { view: JuryConsoleView }) {
         </div>
         <Link className={styles.secondaryButton} href={juryHref('/evidence')}>새 리뷰 요청</Link>
       </div>
+      <RequestStatusSection view={view} />
       {view.results.length > 0 ? <TranslationHint /> : null}
       {view.results.length === 0 ? <p>{displayText(SHELL_EMPTY.reviews)}</p> : (
         <div className={styles.reviewsTableWrap}>
@@ -1550,6 +1552,47 @@ export function FollowingReReviewBody({ screen }: { screen: ReviewConsoleScreen 
       {surface ? (
         <ul lang="en">{surface.hypotheses.map((item) => <li key={item}>{item}</li>)}</ul>
       ) : null}
+    </section>
+  );
+}
+
+// RM-03 (CT-11): requests that have no result yet. Status, times and failure reason; verdict column stays empty.
+function RequestStatusSection({ view }: { view: JuryConsoleView }) {
+  if (!view.attempts) {
+    return <p className={styles.muted}>실행 기록을 불러오지 못했습니다. 결과가 없는 요청 목록은 확인할 수 없습니다.</p>;
+  }
+  const rows = buildRequestStatusRows(view, Date.now());
+  if (rows.length === 0) return null;
+  return (
+    <section className={styles.panel}>
+      <h3>결과가 없는 요청</h3>
+      <p className={styles.muted}>실행 중이거나 실패한 요청입니다. 판정은 표시하지 않습니다.</p>
+      <table className={styles.table}>
+        <thead>
+          <tr>
+            <th>상태</th>
+            <th>시작</th>
+            <th>종료</th>
+            <th>리뷰 유형</th>
+            <th>리뷰 자료</th>
+            <th>사유</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row) => (
+            <tr key={row.key}>
+              <td title={row.state}><span className={styles.badge}>{row.stateLabel}</span></td>
+              <td title={row.startedAt ? formatKstFull(row.startedAt) : undefined}>{row.startedAt ? formatKstShort(row.startedAt) : '기록 없음'}</td>
+              <td title={row.finishedAt ? formatKstFull(row.finishedAt) : undefined}>{row.finishedAt ? formatKstShort(row.finishedAt) : '-'}</td>
+              <td title={row.reviewType}>{userLabel(row.reviewType)}</td>
+              <td className={styles.identifier} title={row.evidenceId}>{shortId(row.evidenceId)}</td>
+              <td title={[row.reasonCode, row.llmErrorCode].filter(Boolean).join(' / ') || undefined}>
+                {row.reason ?? '-'}{row.attempts > 1 ? ` · 시도 ${row.attempts}회` : ''}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </section>
   );
 }

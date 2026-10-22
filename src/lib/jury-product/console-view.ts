@@ -38,6 +38,25 @@ export type JuryConsoleView = {
   loopPolicy: JuryLoopGuardPolicy;
   /** Track B: ids of visible tasks whose service grants agent.execute. Set only by restrictJuryConsole; absent means none. */
   agentTaskIds?: readonly string[];
+  /** RM-03: review attempts (RM-01 JuryReviewAttempt), attached by the loader. Absent = not loaded. */
+  attempts?: readonly JuryReviewAttemptRow[];
+};
+
+export type JuryReviewAttemptRow = {
+  id: string;
+  tenantId: string;
+  reviewRequestKey: string;
+  evidenceId: string;
+  /** Resolved from the evidence row at load time; used for service-level authorization. */
+  connectionId: string | null;
+  reviewType: string;
+  status: string;
+  failureReason: string | null;
+  resultSource: string;
+  startedAt: string;
+  finishedAt: string | null;
+  /** Error class of the last failed LLM call (metadata only), if any. */
+  lastLlmErrorCode: string | null;
 };
 
 export function readJuryConsole(actor: JuryActor, catalog: JuryConsoleCatalog): JuryConsoleView | null {
