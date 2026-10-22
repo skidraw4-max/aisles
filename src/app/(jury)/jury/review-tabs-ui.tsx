@@ -47,9 +47,13 @@ export function ConfidenceLine({ screen }: { screen: ReviewConsoleScreen }) {
     return <p className={styles.muted}>위원회 확신도: {confidenceLabel(confidence.value)}</p>;
   }
   if (confidence?.source === 'EVIDENCE_STRENGTH' && confidence.evidenceStrength) {
+    // RM-04 (I-016, CT-05): banner label and missing-evidence count both come from AGG-01.
+    const display = screen.display;
+    const label = display?.strength.evidence ?? EVIDENCE_STRENGTH_LABELS[confidence.evidenceStrength] ?? confidence.evidenceStrength;
+    const missing = display ? (display.missingEvidenceCount === null ? '부족한 근거 집계 불가' : `부족한 근거 ${display.missingEvidenceCount}개`) : null;
     return (
       <p className={styles.muted}>
-        근거 강도: {EVIDENCE_STRENGTH_LABELS[confidence.evidenceStrength] ?? confidence.evidenceStrength} (근거 강도 기준, 위원회 확신도 없음)
+        근거 강도: {label} (근거 강도 기준, 위원회 확신도 없음){missing ? ` · ${missing}` : ''}
       </p>
     );
   }
@@ -113,7 +117,7 @@ export function ReviewEvidenceTab({ screen }: { screen: ReviewConsoleScreen }) {
         <p className={styles.eyebrow}>현재 메뉴 · 결과 · 검증 근거</p>
         <h2>측정된 사실</h2>
         <p className={styles.muted}>리뷰 자료</p>
-        <div className={styles.row}><span className={styles.label}>Evidence ID</span><span>{screen.evidenceId ?? '없음'}</span></div>
+        <div className={styles.row}><span className={styles.label}>Evidence ID</span><span>{screen.evidenceId ?? '근거 미연결'}</span></div>
         <Link className={styles.inline} href={juryHref('/evidence')}>리뷰 자료 목록</Link>
         {screen.measured.length === 0 ? <p className={styles.muted}>측정된 값이 없습니다.</p> : null}
         {screen.measured.map((metric) => (
@@ -129,7 +133,7 @@ export function ReviewEvidenceTab({ screen }: { screen: ReviewConsoleScreen }) {
           <ul lang="en">{claimList(screen, 'supported').map((item) => <li key={item}><span className={styles.badge}>확인됨</span> {item}</li>)}</ul>
         )}
         <h3>판단 근거</h3>
-        {screen.dimensionEvidence.length === 0 ? <p className={styles.muted}>없음</p> : (
+        {screen.dimensionEvidence.length === 0 ? <p className={styles.muted}>판단 근거 기록 없음</p> : (
           <ul lang="en">{screen.dimensionEvidence.map((item) => <li key={item}>{item}</li>)}</ul>
         )}
       </section>
@@ -175,13 +179,12 @@ export function ReviewHistoryHint({ reviewId, hasHistory }: { reviewId: string; 
 // RM-02b AGG-01: claim lists come from screen.display (deduped, highest stage); missing data is not "없음".
 function claimList(screen: ReviewConsoleScreen, stage: 'supported' | 'partial' | 'unverified'): string[] {
   const display = screen.display;
-  if (display) return display.claims[stage];
-  return stage === 'supported' ? screen.supportedClaims : stage === 'partial' ? screen.partiallySupportedClaims : screen.hypotheses;
+  // RM-04: no UI-side fallback recount; without the display model the list is treated as unavailable.
+  return display ? display.claims[stage] : [];
 }
 
 function claimEmptyText(screen: ReviewConsoleScreen): string {
   const state = screen.display?.claims.state;
   if (state === 'NONE_RECORDED') return '주장 기록 없음';
-  if (state === 'UNAVAILABLE') return '집계 불가';
-  return '없음';
+  return '집계 불가';
 }

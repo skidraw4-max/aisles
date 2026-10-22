@@ -547,10 +547,11 @@ export function ReviewsBody({ view }: { view: JuryConsoleView }) {
 export function ReviewDetailBody({ screen, noted }: { screen: ReviewConsoleScreen; noted: boolean }) {
   // AGG-01: counts, flags and source come only from screen.display (buildReviewDisplayModel).
   const display = screen.display;
-  const missing = display ? display.missingEvidenceCount : screen.partiallySupportedClaims.length + screen.hypotheses.length;
-  const supportedCount = display ? display.claims.counts?.supported ?? null : screen.supportedClaims.length;
-  const problems = display ? display.problems.items : screen.topProblems;
-  const problemsUnavailable = display?.problems.state === 'UNAVAILABLE';
+  // RM-04: no UI-side fallback recount. Without the display model every count is "집계 불가".
+  const missing = display ? display.missingEvidenceCount : null;
+  const supportedCount = display ? display.claims.counts?.supported ?? null : null;
+  const problems = display ? display.problems.items : [];
+  const problemsUnavailable = !display || display.problems.state === 'UNAVAILABLE';
   const noActionAllowed = !display || (display.decision.raw === 'ACCEPT' && display.flags.length === 0);
   const fallbackAction = noActionAllowed ? '추가 조치가 필요하지 않습니다.' : '권장 조치 기록 없음';
   return (
@@ -584,7 +585,7 @@ export function ReviewDetailBody({ screen, noted }: { screen: ReviewConsoleScree
       <section className={styles.panel}>
         <h2>주요 문제</h2>
         {problemsUnavailable ? <p className={styles.muted}>집계 불가</p> : problems.length === 0 ? (
-          <p className={styles.muted}>{display ? '문제 목록 없음' : '없음'}</p>
+          <p className={styles.muted}>{display?.flags.includes('DECISION_PROBLEM_MISMATCH') ? '문제 목록 없음 — 판정과 불일치' : '문제 목록 없음'}</p>
         ) : (
           <>
             <ul lang="en">{problems.map((item) => <li key={item}>{item}</li>)}</ul>
@@ -607,7 +608,7 @@ export function ReviewDetailBody({ screen, noted }: { screen: ReviewConsoleScree
         <h2>근거 요약</h2>
         <div className={styles.row}>
           <span className={styles.label}>핵심 근거</span>
-          <span>{supportedCount === null ? '주장 기록 없음' : `확인된 주장 ${supportedCount}개`} · <Link className={styles.inline} href={reviewTabHref(screen.reviewId, 'evidence')}>검증 근거 탭에서 보기</Link></span>
+          <span>{supportedCount === null ? (display?.claims.state === 'NONE_RECORDED' ? '주장 기록 없음' : '확인된 주장 집계 불가') : `확인된 주장 ${supportedCount}개`} · <Link className={styles.inline} href={reviewTabHref(screen.reviewId, 'evidence')}>검증 근거 탭에서 보기</Link></span>
         </div>
         <div className={styles.row}>
           <span className={styles.label}>검증 상태</span>
