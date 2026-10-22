@@ -37,7 +37,8 @@ export type DisplayFlag =
   | 'DUPLICATE_CLAIM'
   | 'DUPLICATE_PROBLEM'
   | 'NO_RESULT'
-  | 'PARTIAL_CONFIRMATION';
+  | 'PARTIAL_CONFIRMATION'
+  | 'STRENGTH_COUNT_MISMATCH';
 
 export const DISPLAY_FLAG_LABELS: Record<DisplayFlag, string> = {
   DECISION_PROBLEM_MISMATCH: '판정과 문제 목록이 일치하지 않습니다',
@@ -51,6 +52,7 @@ export const DISPLAY_FLAG_LABELS: Record<DisplayFlag, string> = {
   DUPLICATE_PROBLEM: '중복 문제를 1회로 집계했습니다',
   NO_RESULT: '결과 없음',
   PARTIAL_CONFIRMATION: '일부 주장만 확인되었습니다',
+  STRENGTH_COUNT_MISMATCH: '근거 강도는 판단 불가인데 부족한 근거가 기록되지 않았습니다',
 };
 
 export const RESULT_SOURCE_LABELS: Record<JuryResultSourceValue, string> = {
@@ -223,6 +225,9 @@ export function buildReviewDisplayModel(input: ReviewDisplayInput): ReviewDispla
   if (scope.state === 'UNLINKED') flags.add('NO_EVIDENCE');
   const withheld = scope.state === 'UNLINKED';
 
+  // I-016 / CT-05: the strength banner and the missing-evidence count come from this one function.
+  const missingCount = claimTotal === 0 ? null : p.kept.length + h.kept.length;
+  if (result.evidenceStrength === 'unknown' && (missingCount === null || missingCount === 0)) flags.add('STRENGTH_COUNT_MISMATCH');
   const text = (value: unknown): string | null => (typeof value === 'string' && value.trim() ? value : null);
   return {
     resultId: result.id,
@@ -249,7 +254,7 @@ export function buildReviewDisplayModel(input: ReviewDisplayInput): ReviewDispla
       unverified: h.kept,
       counts: claimTotal === 0 ? null : { supported: s.kept.length, partial: p.kept.length, unverified: h.kept.length },
     },
-    missingEvidenceCount: claimTotal === 0 ? null : p.kept.length + h.kept.length,
+    missingEvidenceCount: missingCount,
     aiInference: { label: 'AI 추정', expectedUserEffect: text(surface.expectedUserEffect), risk: text(surface.risk) },
     scope,
     strength: {
