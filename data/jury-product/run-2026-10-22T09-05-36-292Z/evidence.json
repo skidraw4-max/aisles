@@ -1,0 +1,162 @@
+{
+  "generatedAt": "2026-10-22T09:05:36.234Z",
+  "site": {
+    "name": "AIsle",
+    "corridors": [],
+    "stackNotes": []
+  },
+  "aggregates": {
+    "userCount": 0,
+    "usersLast7d": null,
+    "newUsersLast7d": 1,
+    "activeUsersLast7d": 0,
+    "postCount": 0,
+    "postsLast7d": 0,
+    "commentsLast7d": 0,
+    "viewsLast7d": 0,
+    "totalViews": 0,
+    "commentCount": 0,
+    "postsByCategory": {}
+  },
+  "metricDefinitions": {
+    "userCount": "전체 회원 수 (User 테이블 row count).",
+    "usersLast7d": "DEPRECATED. newUsersLast7d 와 동일한 값(최근 7일 신규 가입). 활성 사용자/DAU/WAU/방문자가 아님. 절대 active users 로 해석하지 말 것.",
+    "newUsersLast7d": "analysisPeriod 내 신규 가입자 수 (User.createdAt in Asia/Seoul window). NOT active users, NOT DAU/WAU, NOT GA4 newUsers.",
+    "activeUsersLast7d": "analysisPeriod 내 활성 사용자 수. 정의: 해당 기간에 Post 작성·Comment 작성·PostLike·Bookmark·GameScore(updatedAt) 중 하나 이상. 신규 가입(newUsersLast7d)·GA4 activeUsers와 동일시 금지. null이면 집계 실패.",
+    "postCount": "전체 게시글 수 (Post count).",
+    "postsLast7d": "analysisPeriod 내 작성 게시글 수 (Post.createdAt in Asia/Seoul window).",
+    "commentsLast7d": "analysisPeriod 내 작성 댓글 수 (Comment.createdAt in Asia/Seoul window).",
+    "viewsLast7d": "analysisPeriod 내 조회수 합 (PostViewDaily.count for day keys matching analysisPeriod start..end). Post.views(누적 totalViews)로 추정 금지. 버킷이 비면 0일 수 있음(배포 이후부터 적재).",
+    "totalViews": "전체 기간 게시글 조회수 합 (Post.views sum). 최근 7일 조회수가 아님.",
+    "commentCount": "전체 댓글 수 (Comment count).",
+    "postsByCategory": "카테고리별 게시글 수."
+  },
+  "docsHints": [
+    "Jury product projection v9.x-ev020. Metrics outside EvidencePack are withheld."
+  ],
+  "piiExcluded": true,
+  "readOnly": true,
+  "analysisPeriod": {
+    "start": "2026-09-01",
+    "end": "2026-09-07",
+    "timezone": "Asia/Seoul"
+  },
+  "ga4": {
+    "available": true,
+    "propertyId": null,
+    "range": {
+      "startDate": "2026-09-01",
+      "endDate": "2026-09-07"
+    },
+    "period": {
+      "start": "2026-09-01",
+      "end": "2026-09-07",
+      "timezone": "Asia/Seoul"
+    },
+    "fetchedAt": "2026-10-22T09:05:34.511Z",
+    "error": null,
+    "errorCode": null,
+    "metrics": {
+      "activeUsers": null,
+      "sessions": null,
+      "screenPageViews": null,
+      "engagedSessions": null,
+      "averageSessionDurationSec": null,
+      "eventCountByName": {}
+    },
+    "metricDefinitions": {
+      "activeUsers": "GA4 activeUsers (reporting API, selected date range). NOT the same as DB aggregates.activeUsersLast7d (Post|Comment|Like|Bookmark|GameScore). Do not equate or substitute. Cite source as GA4.",
+      "newUsers": "GA4 newUsers in the selected date range. NOT the same as DB newUsersLast7d (signups). Cite source as GA4.",
+      "sessions": "GA4 sessions in the selected date range. Not DB signups or posts.",
+      "screenPageViews": "GA4 screenPageViews (web page views). NOT the same as DB viewsLast7d (PostViewDaily) or totalViews (Post.views sum). Cite source as GA4.",
+      "engagedSessions": "GA4 engagedSessions in the selected date range.",
+      "engagementRate": "GA4 engagementRate in the selected date range (0–1). DIRECT_FACT only; \"low engagement\" is INFERENCE.",
+      "averageSessionDurationSec": "GA4 averageSessionDuration in seconds (API metric averageSessionDuration).",
+      "eventCountByName": "GA4 eventCount keyed by eventName for tracked custom events only. Missing key = not observed in range (do not invent). Actual 0 means zero events."
+    },
+    "users": {
+      "totalUsers": null,
+      "activeUsers": null,
+      "newUsers": 5,
+      "returningUsers": null
+    },
+    "views": {
+      "screenPageViews": null,
+      "topPages": []
+    }
+  },
+  "evidenceItems": [
+    {
+      "id": "DB_USER_COUNT",
+      "source": "DATABASE",
+      "metric": "userCount",
+      "value": 0
+    },
+    {
+      "id": "DB_NEW_USERS_7D",
+      "source": "DATABASE",
+      "metric": "newUsersLast7d",
+      "value": 1
+    },
+    {
+      "id": "DB_ACTIVE_USERS_7D",
+      "source": "DATABASE",
+      "metric": "activeUsersLast7d",
+      "value": 0
+    },
+    {
+      "id": "DB_POSTS_7D",
+      "source": "DATABASE",
+      "metric": "postsLast7d",
+      "value": 0
+    },
+    {
+      "id": "DB_COMMENTS_7D",
+      "source": "DATABASE",
+      "metric": "commentsLast7d",
+      "value": 0
+    },
+    {
+      "id": "DB_VIEWS_7D",
+      "source": "DATABASE",
+      "metric": "viewsLast7d",
+      "value": 0
+    },
+    {
+      "id": "GA_ACTIVE_USERS_7D",
+      "source": "GA4",
+      "metric": "activeUsers",
+      "value": null
+    },
+    {
+      "id": "GA_NEW_USERS_7D",
+      "source": "GA4",
+      "metric": "newUsers",
+      "value": 5
+    },
+    {
+      "id": "GA_SESSIONS_7D",
+      "source": "GA4",
+      "metric": "sessions",
+      "value": null
+    },
+    {
+      "id": "GA_ENGAGED_SESSIONS_7D",
+      "source": "GA4",
+      "metric": "engagedSessions",
+      "value": null
+    },
+    {
+      "id": "GA_ENGAGEMENT_RATE_7D",
+      "source": "GA4",
+      "metric": "engagementRate",
+      "value": null
+    },
+    {
+      "id": "GA_SCREEN_PAGE_VIEWS_7D",
+      "source": "GA4",
+      "metric": "screenPageViews",
+      "value": null
+    }
+  ]
+}

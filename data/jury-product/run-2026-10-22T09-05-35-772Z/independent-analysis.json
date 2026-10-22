@@ -1,0 +1,1077 @@
+[
+  {
+    "memberId": "A",
+    "currentState": "AIsle operates corridors: ",
+    "strengths": [
+      "Strength noted by A"
+    ],
+    "problems": [
+      "Problem noted by A"
+    ],
+    "trendGap": "Trend gap from A",
+    "improvementNeed": "medium",
+    "improvements": [
+      {
+        "id": "A-1",
+        "title": "Improvement from A",
+        "priority": 1,
+        "expectedEffect": "better UX",
+        "difficulty": "medium",
+        "risk": "low",
+        "rationale": "based on evidence pack aggregates"
+      }
+    ],
+    "scores": [
+      {
+        "dimension": "ui_ux",
+        "score": 65,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "Stub observation for ui_ux",
+            "source": "evidence-pack"
+          }
+        ]
+      },
+      {
+        "dimension": "visual",
+        "score": 68,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "Stub observation for visual",
+            "source": "evidence-pack"
+          }
+        ]
+      },
+      {
+        "dimension": "mobile",
+        "score": 71,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "Stub observation for mobile",
+            "source": "evidence-pack"
+          }
+        ]
+      },
+      {
+        "dimension": "web_tech",
+        "score": 74,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "Stub observation for web_tech",
+            "source": "evidence-pack"
+          }
+        ]
+      },
+      {
+        "dimension": "performance",
+        "score": 77,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "Stub observation for performance",
+            "source": "evidence-pack"
+          }
+        ]
+      },
+      {
+        "dimension": "a11y",
+        "score": 40,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "Stub observation for a11y",
+            "source": "evidence-pack"
+          }
+        ]
+      },
+      {
+        "dimension": "usability",
+        "score": 43,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "Stub observation for usability",
+            "source": "evidence-pack"
+          }
+        ]
+      },
+      {
+        "dimension": "content",
+        "score": 46,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "Stub observation for content",
+            "source": "evidence-pack"
+          }
+        ]
+      },
+      {
+        "dimension": "community",
+        "score": 49,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "Stub observation for community",
+            "source": "evidence-pack"
+          }
+        ]
+      },
+      {
+        "dimension": "ai_usage",
+        "score": 52,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "Stub observation for ai_usage",
+            "source": "evidence-pack"
+          }
+        ]
+      },
+      {
+        "dimension": "competitive",
+        "score": 55,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "Stub observation for competitive",
+            "source": "evidence-pack"
+          }
+        ]
+      },
+      {
+        "dimension": "acquisition",
+        "score": 58,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "Stub observation for acquisition",
+            "source": "evidence-pack"
+          }
+        ]
+      },
+      {
+        "dimension": "retention",
+        "score": 61,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "Stub observation for retention",
+            "source": "evidence-pack"
+          }
+        ]
+      },
+      {
+        "dimension": "seo",
+        "score": 64,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "Stub observation for seo",
+            "source": "evidence-pack"
+          }
+        ]
+      },
+      {
+        "dimension": "geo",
+        "score": 67,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "Stub observation for geo",
+            "source": "evidence-pack"
+          }
+        ]
+      },
+      {
+        "dimension": "security",
+        "score": 70,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "Stub observation for security",
+            "source": "evidence-pack"
+          }
+        ]
+      },
+      {
+        "dimension": "scalability",
+        "score": 73,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "Stub observation for scalability",
+            "source": "evidence-pack"
+          }
+        ]
+      }
+    ],
+    "judgmentBasis": "stub llm using evidence aggregates only",
+    "confidence": 0.8,
+    "originalOpinion": "A independent view on phase76-failed"
+  },
+  {
+    "memberId": "B",
+    "currentState": "AIsle operates corridors: ",
+    "strengths": [
+      "Strength noted by B"
+    ],
+    "problems": [
+      "Problem noted by B"
+    ],
+    "trendGap": "Trend gap from B",
+    "improvementNeed": "medium",
+    "improvements": [
+      {
+        "id": "B-1",
+        "title": "Improvement from B",
+        "priority": 1,
+        "expectedEffect": "better UX",
+        "difficulty": "medium",
+        "risk": "low",
+        "rationale": "based on evidence pack aggregates"
+      }
+    ],
+    "scores": [
+      {
+        "dimension": "ui_ux",
+        "score": 66,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "Stub observation for ui_ux",
+            "source": "evidence-pack"
+          }
+        ]
+      },
+      {
+        "dimension": "visual",
+        "score": 69,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "Stub observation for visual",
+            "source": "evidence-pack"
+          }
+        ]
+      },
+      {
+        "dimension": "mobile",
+        "score": 72,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "Stub observation for mobile",
+            "source": "evidence-pack"
+          }
+        ]
+      },
+      {
+        "dimension": "web_tech",
+        "score": 75,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "Stub observation for web_tech",
+            "source": "evidence-pack"
+          }
+        ]
+      },
+      {
+        "dimension": "performance",
+        "score": 78,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "Stub observation for performance",
+            "source": "evidence-pack"
+          }
+        ]
+      },
+      {
+        "dimension": "a11y",
+        "score": 41,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "Stub observation for a11y",
+            "source": "evidence-pack"
+          }
+        ]
+      },
+      {
+        "dimension": "usability",
+        "score": 44,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "Stub observation for usability",
+            "source": "evidence-pack"
+          }
+        ]
+      },
+      {
+        "dimension": "content",
+        "score": 47,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "Stub observation for content",
+            "source": "evidence-pack"
+          }
+        ]
+      },
+      {
+        "dimension": "community",
+        "score": 50,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "Stub observation for community",
+            "source": "evidence-pack"
+          }
+        ]
+      },
+      {
+        "dimension": "ai_usage",
+        "score": 53,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "Stub observation for ai_usage",
+            "source": "evidence-pack"
+          }
+        ]
+      },
+      {
+        "dimension": "competitive",
+        "score": 56,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "Stub observation for competitive",
+            "source": "evidence-pack"
+          }
+        ]
+      },
+      {
+        "dimension": "acquisition",
+        "score": 59,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "Stub observation for acquisition",
+            "source": "evidence-pack"
+          }
+        ]
+      },
+      {
+        "dimension": "retention",
+        "score": 62,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "Stub observation for retention",
+            "source": "evidence-pack"
+          }
+        ]
+      },
+      {
+        "dimension": "seo",
+        "score": 65,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "Stub observation for seo",
+            "source": "evidence-pack"
+          }
+        ]
+      },
+      {
+        "dimension": "geo",
+        "score": 68,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "Stub observation for geo",
+            "source": "evidence-pack"
+          }
+        ]
+      },
+      {
+        "dimension": "security",
+        "score": 71,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "Stub observation for security",
+            "source": "evidence-pack"
+          }
+        ]
+      },
+      {
+        "dimension": "scalability",
+        "score": 74,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "Stub observation for scalability",
+            "source": "evidence-pack"
+          }
+        ]
+      }
+    ],
+    "judgmentBasis": "stub llm using evidence aggregates only",
+    "confidence": 0.6,
+    "originalOpinion": "B independent view on phase76-failed"
+  },
+  {
+    "memberId": "C",
+    "currentState": "AIsle operates corridors: ",
+    "strengths": [
+      "Strength noted by C"
+    ],
+    "problems": [
+      "Problem noted by C"
+    ],
+    "trendGap": "Trend gap from C",
+    "improvementNeed": "medium",
+    "improvements": [
+      {
+        "id": "C-1",
+        "title": "Improvement from C",
+        "priority": 1,
+        "expectedEffect": "better UX",
+        "difficulty": "medium",
+        "risk": "low",
+        "rationale": "based on evidence pack aggregates"
+      }
+    ],
+    "scores": [
+      {
+        "dimension": "ui_ux",
+        "score": 67,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "Stub observation for ui_ux",
+            "source": "evidence-pack"
+          }
+        ]
+      },
+      {
+        "dimension": "visual",
+        "score": 70,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "Stub observation for visual",
+            "source": "evidence-pack"
+          }
+        ]
+      },
+      {
+        "dimension": "mobile",
+        "score": 73,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "Stub observation for mobile",
+            "source": "evidence-pack"
+          }
+        ]
+      },
+      {
+        "dimension": "web_tech",
+        "score": 76,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "Stub observation for web_tech",
+            "source": "evidence-pack"
+          }
+        ]
+      },
+      {
+        "dimension": "performance",
+        "score": 79,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "Stub observation for performance",
+            "source": "evidence-pack"
+          }
+        ]
+      },
+      {
+        "dimension": "a11y",
+        "score": 42,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "Stub observation for a11y",
+            "source": "evidence-pack"
+          }
+        ]
+      },
+      {
+        "dimension": "usability",
+        "score": 45,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "Stub observation for usability",
+            "source": "evidence-pack"
+          }
+        ]
+      },
+      {
+        "dimension": "content",
+        "score": 48,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "Stub observation for content",
+            "source": "evidence-pack"
+          }
+        ]
+      },
+      {
+        "dimension": "community",
+        "score": 51,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "Stub observation for community",
+            "source": "evidence-pack"
+          }
+        ]
+      },
+      {
+        "dimension": "ai_usage",
+        "score": 54,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "Stub observation for ai_usage",
+            "source": "evidence-pack"
+          }
+        ]
+      },
+      {
+        "dimension": "competitive",
+        "score": 57,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "Stub observation for competitive",
+            "source": "evidence-pack"
+          }
+        ]
+      },
+      {
+        "dimension": "acquisition",
+        "score": 60,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "Stub observation for acquisition",
+            "source": "evidence-pack"
+          }
+        ]
+      },
+      {
+        "dimension": "retention",
+        "score": 63,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "Stub observation for retention",
+            "source": "evidence-pack"
+          }
+        ]
+      },
+      {
+        "dimension": "seo",
+        "score": 66,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "Stub observation for seo",
+            "source": "evidence-pack"
+          }
+        ]
+      },
+      {
+        "dimension": "geo",
+        "score": 69,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "Stub observation for geo",
+            "source": "evidence-pack"
+          }
+        ]
+      },
+      {
+        "dimension": "security",
+        "score": 72,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "Stub observation for security",
+            "source": "evidence-pack"
+          }
+        ]
+      },
+      {
+        "dimension": "scalability",
+        "score": 75,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "Stub observation for scalability",
+            "source": "evidence-pack"
+          }
+        ]
+      }
+    ],
+    "judgmentBasis": "stub llm using evidence aggregates only",
+    "confidence": 0.7,
+    "originalOpinion": "C independent view on phase76-failed"
+  },
+  {
+    "memberId": "D",
+    "currentState": "AIsle operates corridors: ",
+    "strengths": [
+      "Strength noted by D"
+    ],
+    "problems": [
+      "Problem noted by D"
+    ],
+    "trendGap": "Trend gap from D",
+    "improvementNeed": "medium",
+    "improvements": [
+      {
+        "id": "D-1",
+        "title": "Improvement from D",
+        "priority": 1,
+        "expectedEffect": "better UX",
+        "difficulty": "medium",
+        "risk": "low",
+        "rationale": "based on evidence pack aggregates"
+      }
+    ],
+    "scores": [
+      {
+        "dimension": "ui_ux",
+        "score": 68,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "Stub observation for ui_ux",
+            "source": "evidence-pack"
+          }
+        ]
+      },
+      {
+        "dimension": "visual",
+        "score": 71,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "Stub observation for visual",
+            "source": "evidence-pack"
+          }
+        ]
+      },
+      {
+        "dimension": "mobile",
+        "score": 74,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "Stub observation for mobile",
+            "source": "evidence-pack"
+          }
+        ]
+      },
+      {
+        "dimension": "web_tech",
+        "score": 77,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "Stub observation for web_tech",
+            "source": "evidence-pack"
+          }
+        ]
+      },
+      {
+        "dimension": "performance",
+        "score": 40,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "Stub observation for performance",
+            "source": "evidence-pack"
+          }
+        ]
+      },
+      {
+        "dimension": "a11y",
+        "score": 43,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "Stub observation for a11y",
+            "source": "evidence-pack"
+          }
+        ]
+      },
+      {
+        "dimension": "usability",
+        "score": 46,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "Stub observation for usability",
+            "source": "evidence-pack"
+          }
+        ]
+      },
+      {
+        "dimension": "content",
+        "score": 49,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "Stub observation for content",
+            "source": "evidence-pack"
+          }
+        ]
+      },
+      {
+        "dimension": "community",
+        "score": 52,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "Stub observation for community",
+            "source": "evidence-pack"
+          }
+        ]
+      },
+      {
+        "dimension": "ai_usage",
+        "score": 55,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "Stub observation for ai_usage",
+            "source": "evidence-pack"
+          }
+        ]
+      },
+      {
+        "dimension": "competitive",
+        "score": 58,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "Stub observation for competitive",
+            "source": "evidence-pack"
+          }
+        ]
+      },
+      {
+        "dimension": "acquisition",
+        "score": 61,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "Stub observation for acquisition",
+            "source": "evidence-pack"
+          }
+        ]
+      },
+      {
+        "dimension": "retention",
+        "score": 64,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "Stub observation for retention",
+            "source": "evidence-pack"
+          }
+        ]
+      },
+      {
+        "dimension": "seo",
+        "score": 67,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "Stub observation for seo",
+            "source": "evidence-pack"
+          }
+        ]
+      },
+      {
+        "dimension": "geo",
+        "score": 70,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "Stub observation for geo",
+            "source": "evidence-pack"
+          }
+        ]
+      },
+      {
+        "dimension": "security",
+        "score": 73,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "Stub observation for security",
+            "source": "evidence-pack"
+          }
+        ]
+      },
+      {
+        "dimension": "scalability",
+        "score": 76,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "Stub observation for scalability",
+            "source": "evidence-pack"
+          }
+        ]
+      }
+    ],
+    "judgmentBasis": "stub llm using evidence aggregates only",
+    "confidence": 0.8,
+    "originalOpinion": "D independent view on phase76-failed"
+  },
+  {
+    "memberId": "E",
+    "currentState": "AIsle operates corridors: ",
+    "strengths": [
+      "Strength noted by E"
+    ],
+    "problems": [
+      "Problem noted by E"
+    ],
+    "trendGap": "Trend gap from E",
+    "improvementNeed": "medium",
+    "improvements": [
+      {
+        "id": "E-1",
+        "title": "Improvement from E",
+        "priority": 1,
+        "expectedEffect": "better UX",
+        "difficulty": "medium",
+        "risk": "low",
+        "rationale": "based on evidence pack aggregates"
+      }
+    ],
+    "scores": [
+      {
+        "dimension": "ui_ux",
+        "score": 69,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "Stub observation for ui_ux",
+            "source": "evidence-pack"
+          }
+        ]
+      },
+      {
+        "dimension": "visual",
+        "score": 72,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "Stub observation for visual",
+            "source": "evidence-pack"
+          }
+        ]
+      },
+      {
+        "dimension": "mobile",
+        "score": 75,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "Stub observation for mobile",
+            "source": "evidence-pack"
+          }
+        ]
+      },
+      {
+        "dimension": "web_tech",
+        "score": 78,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "Stub observation for web_tech",
+            "source": "evidence-pack"
+          }
+        ]
+      },
+      {
+        "dimension": "performance",
+        "score": 41,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "Stub observation for performance",
+            "source": "evidence-pack"
+          }
+        ]
+      },
+      {
+        "dimension": "a11y",
+        "score": 44,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "Stub observation for a11y",
+            "source": "evidence-pack"
+          }
+        ]
+      },
+      {
+        "dimension": "usability",
+        "score": 47,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "Stub observation for usability",
+            "source": "evidence-pack"
+          }
+        ]
+      },
+      {
+        "dimension": "content",
+        "score": 50,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "Stub observation for content",
+            "source": "evidence-pack"
+          }
+        ]
+      },
+      {
+        "dimension": "community",
+        "score": 53,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "Stub observation for community",
+            "source": "evidence-pack"
+          }
+        ]
+      },
+      {
+        "dimension": "ai_usage",
+        "score": 56,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "Stub observation for ai_usage",
+            "source": "evidence-pack"
+          }
+        ]
+      },
+      {
+        "dimension": "competitive",
+        "score": 59,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "Stub observation for competitive",
+            "source": "evidence-pack"
+          }
+        ]
+      },
+      {
+        "dimension": "acquisition",
+        "score": 62,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "Stub observation for acquisition",
+            "source": "evidence-pack"
+          }
+        ]
+      },
+      {
+        "dimension": "retention",
+        "score": 65,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "Stub observation for retention",
+            "source": "evidence-pack"
+          }
+        ]
+      },
+      {
+        "dimension": "seo",
+        "score": 68,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "Stub observation for seo",
+            "source": "evidence-pack"
+          }
+        ]
+      },
+      {
+        "dimension": "geo",
+        "score": 71,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "Stub observation for geo",
+            "source": "evidence-pack"
+          }
+        ]
+      },
+      {
+        "dimension": "security",
+        "score": 74,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "Stub observation for security",
+            "source": "evidence-pack"
+          }
+        ]
+      },
+      {
+        "dimension": "scalability",
+        "score": 77,
+        "evidence": [
+          {
+            "kind": "observation",
+            "text": "Stub observation for scalability",
+            "source": "evidence-pack"
+          }
+        ]
+      }
+    ],
+    "judgmentBasis": "stub llm using evidence aggregates only",
+    "confidence": 0.6,
+    "originalOpinion": "E independent view on phase76-failed"
+  }
+]

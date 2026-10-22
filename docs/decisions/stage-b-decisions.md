@@ -25,3 +25,13 @@
 - 로그: Vercel 운영 런타임 로그 0~10일 "forgot-password"/"reset" 0건(10~14일 구간은 조회 시간 초과), Supabase 로그 24시간 관련 0건 → 최근 사용 없음.
 - 심각도: **중간(기능 저하, 현재 사용자 영향 미관측)**. 메일 발송은 폴백으로 동작할 것으로 보이나 E2E 미검증.
 - 수정안(승인 필요): `fix-password-reset-token.sql`(IF NOT EXISTS, 멱등, RLS on, `_prisma_migrations` 미변경) — 사본에서 2회 실행·삽입 확인. 적용 후 테스트 계정으로 비밀번호 찾기 E2E 1회.
+
+## JD 승인 기록 (2026-10-22 18:54 KST, t422)
+| ID | 결정 | 실행 상태 |
+|---|---|---|
+| RM-01b | **A** 기존 요청 createdAt/updatedAt을 결과 completedAt으로 보정 | 운영 UPDATE는 롤아웃 시점에 **별도 실행 승인** 후에만 (`backfill-rm01b-createdat.sql`) |
+| D-16 | **A** Preview 실모델 검증 환경 | RM-01을 Preview DB에만 적용 완료. 실행 대기 — `docs/roadmap/d16-real-model-verification.md` |
+| D-06 | **A** 함수 내 실행 + 한도 | Production env `JURY_LLM_CALL_TIMEOUT_MS=60000`, `JURY_LLM_TOTAL_BUDGET_MS=240000` 설정(다음 배포부터 적용, 재배포 안 함). `maxDuration=300`은 jury layout 코드 변경(Draft PR) |
+| D-02 | **A** 채택(1차 공개 페이지) | D-16 검증 경로 확보 후 RM-13 착수 — 그전까지 보류 |
+| D-01 | **A** 확장 기능 비노출 유지 | 변경 없음, D-16 검증 후 재평가 |
+| I-PRT | PasswordResetToken 수정 SQL | **미승인 — 실행 금지** |

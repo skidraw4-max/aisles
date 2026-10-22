@@ -1,0 +1,422 @@
+[
+  {
+    "memberId": "A",
+    "claims": [
+      {
+        "claimId": "C001",
+        "claimText": "최근 7일 신규 사용자 유입이 없다",
+        "evidenceRelation": "UNKNOWN",
+        "entailmentLevel": "UNKNOWN",
+        "directEvidenceRefs": [],
+        "supportingEvidenceRefs": [],
+        "missingEvidence": [],
+        "inferenceSteps": [],
+        "unsupportedLeap": false,
+        "semanticRisk": "MEDIUM",
+        "explanation": "No strong pattern match; relation unknown"
+      },
+      {
+        "claimId": "C002",
+        "claimText": "최근 7일 댓글 활동이 없다",
+        "evidenceRelation": "DIRECTLY_SUPPORTS",
+        "entailmentLevel": "DIRECT",
+        "directEvidenceRefs": [
+          "commentsLast7d"
+        ],
+        "supportingEvidenceRefs": [],
+        "missingEvidence": [],
+        "inferenceSteps": [],
+        "unsupportedLeap": false,
+        "semanticRisk": "LOW",
+        "explanation": "최근 7일 댓글 활동이 없다"
+      },
+      {
+        "claimId": "C003",
+        "claimText": "AIsle의 전체 사용자 참여도가 심각하게 낮다",
+        "evidenceRelation": "PARTIALLY_SUPPORTS",
+        "entailmentLevel": "WEAK_INFERENCE",
+        "directEvidenceRefs": [],
+        "supportingEvidenceRefs": [
+          "userCount"
+        ],
+        "missingEvidence": [
+          "comparison_baseline"
+        ],
+        "inferenceSteps": [],
+        "unsupportedLeap": false,
+        "semanticRisk": "MEDIUM",
+        "explanation": "Absolute count known; relative “very small” lacks baseline"
+      },
+      {
+        "claimId": "C004",
+        "claimText": "UX/UI 문제가 신규 사용자 및 참여 부족의 원인이다",
+        "evidenceRelation": "DOES_NOT_SUPPORT",
+        "entailmentLevel": "UNSUPPORTED",
+        "directEvidenceRefs": [],
+        "supportingEvidenceRefs": [
+          "commentsLast7d"
+        ],
+        "missingEvidence": [
+          "ux_events",
+          "user_feedback"
+        ],
+        "inferenceSteps": [],
+        "unsupportedLeap": true,
+        "semanticRisk": "HIGH",
+        "explanation": "Zero comments ≠ UX is the cause"
+      },
+      {
+        "claimId": "C005",
+        "claimText": "플랫폼이 stagnant 상태다",
+        "evidenceRelation": "UNKNOWN",
+        "entailmentLevel": "UNKNOWN",
+        "directEvidenceRefs": [],
+        "supportingEvidenceRefs": [],
+        "missingEvidence": [
+          "activeUsersLast7d",
+          "viewsLast7d"
+        ],
+        "inferenceSteps": [],
+        "unsupportedLeap": false,
+        "semanticRisk": "MEDIUM",
+        "explanation": "No strong pattern match; relation unknown"
+      }
+    ]
+  },
+  {
+    "memberId": "B",
+    "claims": [
+      {
+        "claimId": "C001",
+        "claimText": "최근 7일 신규 사용자 유입이 없다",
+        "evidenceRelation": "UNKNOWN",
+        "entailmentLevel": "UNKNOWN",
+        "directEvidenceRefs": [],
+        "supportingEvidenceRefs": [],
+        "missingEvidence": [],
+        "inferenceSteps": [],
+        "unsupportedLeap": false,
+        "semanticRisk": "MEDIUM",
+        "explanation": "No strong pattern match; relation unknown"
+      },
+      {
+        "claimId": "C002",
+        "claimText": "최근 7일 댓글 활동이 없다",
+        "evidenceRelation": "DIRECTLY_SUPPORTS",
+        "entailmentLevel": "DIRECT",
+        "directEvidenceRefs": [
+          "commentsLast7d"
+        ],
+        "supportingEvidenceRefs": [],
+        "missingEvidence": [],
+        "inferenceSteps": [],
+        "unsupportedLeap": false,
+        "semanticRisk": "LOW",
+        "explanation": "최근 7일 댓글 활동이 없다"
+      },
+      {
+        "claimId": "C003",
+        "claimText": "AIsle의 전체 사용자 참여도가 심각하게 낮다",
+        "evidenceRelation": "PARTIALLY_SUPPORTS",
+        "entailmentLevel": "WEAK_INFERENCE",
+        "directEvidenceRefs": [],
+        "supportingEvidenceRefs": [
+          "userCount"
+        ],
+        "missingEvidence": [
+          "comparison_baseline"
+        ],
+        "inferenceSteps": [],
+        "unsupportedLeap": false,
+        "semanticRisk": "MEDIUM",
+        "explanation": "Absolute count known; relative “very small” lacks baseline"
+      },
+      {
+        "claimId": "C004",
+        "claimText": "UX/UI 문제가 신규 사용자 및 참여 부족의 원인이다",
+        "evidenceRelation": "DOES_NOT_SUPPORT",
+        "entailmentLevel": "UNSUPPORTED",
+        "directEvidenceRefs": [],
+        "supportingEvidenceRefs": [
+          "commentsLast7d"
+        ],
+        "missingEvidence": [
+          "ux_events",
+          "user_feedback"
+        ],
+        "inferenceSteps": [],
+        "unsupportedLeap": true,
+        "semanticRisk": "HIGH",
+        "explanation": "Zero comments ≠ UX is the cause"
+      },
+      {
+        "claimId": "C005",
+        "claimText": "플랫폼이 stagnant 상태다",
+        "evidenceRelation": "UNKNOWN",
+        "entailmentLevel": "UNKNOWN",
+        "directEvidenceRefs": [],
+        "supportingEvidenceRefs": [],
+        "missingEvidence": [
+          "activeUsersLast7d",
+          "viewsLast7d"
+        ],
+        "inferenceSteps": [],
+        "unsupportedLeap": false,
+        "semanticRisk": "MEDIUM",
+        "explanation": "No strong pattern match; relation unknown"
+      }
+    ]
+  },
+  {
+    "memberId": "C",
+    "claims": [
+      {
+        "claimId": "C001",
+        "claimText": "최근 7일 신규 사용자 유입이 없다",
+        "evidenceRelation": "UNKNOWN",
+        "entailmentLevel": "UNKNOWN",
+        "directEvidenceRefs": [],
+        "supportingEvidenceRefs": [],
+        "missingEvidence": [],
+        "inferenceSteps": [],
+        "unsupportedLeap": false,
+        "semanticRisk": "MEDIUM",
+        "explanation": "No strong pattern match; relation unknown"
+      },
+      {
+        "claimId": "C002",
+        "claimText": "최근 7일 댓글 활동이 없다",
+        "evidenceRelation": "DIRECTLY_SUPPORTS",
+        "entailmentLevel": "DIRECT",
+        "directEvidenceRefs": [
+          "commentsLast7d"
+        ],
+        "supportingEvidenceRefs": [],
+        "missingEvidence": [],
+        "inferenceSteps": [],
+        "unsupportedLeap": false,
+        "semanticRisk": "LOW",
+        "explanation": "최근 7일 댓글 활동이 없다"
+      },
+      {
+        "claimId": "C003",
+        "claimText": "AIsle의 전체 사용자 참여도가 심각하게 낮다",
+        "evidenceRelation": "PARTIALLY_SUPPORTS",
+        "entailmentLevel": "WEAK_INFERENCE",
+        "directEvidenceRefs": [],
+        "supportingEvidenceRefs": [
+          "userCount"
+        ],
+        "missingEvidence": [
+          "comparison_baseline"
+        ],
+        "inferenceSteps": [],
+        "unsupportedLeap": false,
+        "semanticRisk": "MEDIUM",
+        "explanation": "Absolute count known; relative “very small” lacks baseline"
+      },
+      {
+        "claimId": "C004",
+        "claimText": "UX/UI 문제가 신규 사용자 및 참여 부족의 원인이다",
+        "evidenceRelation": "DOES_NOT_SUPPORT",
+        "entailmentLevel": "UNSUPPORTED",
+        "directEvidenceRefs": [],
+        "supportingEvidenceRefs": [
+          "commentsLast7d"
+        ],
+        "missingEvidence": [
+          "ux_events",
+          "user_feedback"
+        ],
+        "inferenceSteps": [],
+        "unsupportedLeap": true,
+        "semanticRisk": "HIGH",
+        "explanation": "Zero comments ≠ UX is the cause"
+      },
+      {
+        "claimId": "C005",
+        "claimText": "플랫폼이 stagnant 상태다",
+        "evidenceRelation": "UNKNOWN",
+        "entailmentLevel": "UNKNOWN",
+        "directEvidenceRefs": [],
+        "supportingEvidenceRefs": [],
+        "missingEvidence": [
+          "activeUsersLast7d",
+          "viewsLast7d"
+        ],
+        "inferenceSteps": [],
+        "unsupportedLeap": false,
+        "semanticRisk": "MEDIUM",
+        "explanation": "No strong pattern match; relation unknown"
+      }
+    ]
+  },
+  {
+    "memberId": "D",
+    "claims": [
+      {
+        "claimId": "C001",
+        "claimText": "최근 7일 신규 사용자 유입이 없다",
+        "evidenceRelation": "UNKNOWN",
+        "entailmentLevel": "UNKNOWN",
+        "directEvidenceRefs": [],
+        "supportingEvidenceRefs": [],
+        "missingEvidence": [],
+        "inferenceSteps": [],
+        "unsupportedLeap": false,
+        "semanticRisk": "MEDIUM",
+        "explanation": "No strong pattern match; relation unknown"
+      },
+      {
+        "claimId": "C002",
+        "claimText": "최근 7일 댓글 활동이 없다",
+        "evidenceRelation": "DIRECTLY_SUPPORTS",
+        "entailmentLevel": "DIRECT",
+        "directEvidenceRefs": [
+          "commentsLast7d"
+        ],
+        "supportingEvidenceRefs": [],
+        "missingEvidence": [],
+        "inferenceSteps": [],
+        "unsupportedLeap": false,
+        "semanticRisk": "LOW",
+        "explanation": "최근 7일 댓글 활동이 없다"
+      },
+      {
+        "claimId": "C003",
+        "claimText": "AIsle의 전체 사용자 참여도가 심각하게 낮다",
+        "evidenceRelation": "PARTIALLY_SUPPORTS",
+        "entailmentLevel": "WEAK_INFERENCE",
+        "directEvidenceRefs": [],
+        "supportingEvidenceRefs": [
+          "userCount"
+        ],
+        "missingEvidence": [
+          "comparison_baseline"
+        ],
+        "inferenceSteps": [],
+        "unsupportedLeap": false,
+        "semanticRisk": "MEDIUM",
+        "explanation": "Absolute count known; relative “very small” lacks baseline"
+      },
+      {
+        "claimId": "C004",
+        "claimText": "UX/UI 문제가 신규 사용자 및 참여 부족의 원인이다",
+        "evidenceRelation": "DOES_NOT_SUPPORT",
+        "entailmentLevel": "UNSUPPORTED",
+        "directEvidenceRefs": [],
+        "supportingEvidenceRefs": [
+          "commentsLast7d"
+        ],
+        "missingEvidence": [
+          "ux_events",
+          "user_feedback"
+        ],
+        "inferenceSteps": [],
+        "unsupportedLeap": true,
+        "semanticRisk": "HIGH",
+        "explanation": "Zero comments ≠ UX is the cause"
+      },
+      {
+        "claimId": "C005",
+        "claimText": "플랫폼이 stagnant 상태다",
+        "evidenceRelation": "UNKNOWN",
+        "entailmentLevel": "UNKNOWN",
+        "directEvidenceRefs": [],
+        "supportingEvidenceRefs": [],
+        "missingEvidence": [
+          "activeUsersLast7d",
+          "viewsLast7d"
+        ],
+        "inferenceSteps": [],
+        "unsupportedLeap": false,
+        "semanticRisk": "MEDIUM",
+        "explanation": "No strong pattern match; relation unknown"
+      }
+    ]
+  },
+  {
+    "memberId": "E",
+    "claims": [
+      {
+        "claimId": "C001",
+        "claimText": "최근 7일 신규 사용자 유입이 없다",
+        "evidenceRelation": "UNKNOWN",
+        "entailmentLevel": "UNKNOWN",
+        "directEvidenceRefs": [],
+        "supportingEvidenceRefs": [],
+        "missingEvidence": [],
+        "inferenceSteps": [],
+        "unsupportedLeap": false,
+        "semanticRisk": "MEDIUM",
+        "explanation": "No strong pattern match; relation unknown"
+      },
+      {
+        "claimId": "C002",
+        "claimText": "최근 7일 댓글 활동이 없다",
+        "evidenceRelation": "DIRECTLY_SUPPORTS",
+        "entailmentLevel": "DIRECT",
+        "directEvidenceRefs": [
+          "commentsLast7d"
+        ],
+        "supportingEvidenceRefs": [],
+        "missingEvidence": [],
+        "inferenceSteps": [],
+        "unsupportedLeap": false,
+        "semanticRisk": "LOW",
+        "explanation": "최근 7일 댓글 활동이 없다"
+      },
+      {
+        "claimId": "C003",
+        "claimText": "AIsle의 전체 사용자 참여도가 심각하게 낮다",
+        "evidenceRelation": "PARTIALLY_SUPPORTS",
+        "entailmentLevel": "WEAK_INFERENCE",
+        "directEvidenceRefs": [],
+        "supportingEvidenceRefs": [
+          "userCount"
+        ],
+        "missingEvidence": [
+          "comparison_baseline"
+        ],
+        "inferenceSteps": [],
+        "unsupportedLeap": false,
+        "semanticRisk": "MEDIUM",
+        "explanation": "Absolute count known; relative “very small” lacks baseline"
+      },
+      {
+        "claimId": "C004",
+        "claimText": "UX/UI 문제가 신규 사용자 및 참여 부족의 원인이다",
+        "evidenceRelation": "DOES_NOT_SUPPORT",
+        "entailmentLevel": "UNSUPPORTED",
+        "directEvidenceRefs": [],
+        "supportingEvidenceRefs": [
+          "commentsLast7d"
+        ],
+        "missingEvidence": [
+          "ux_events",
+          "user_feedback"
+        ],
+        "inferenceSteps": [],
+        "unsupportedLeap": true,
+        "semanticRisk": "HIGH",
+        "explanation": "Zero comments ≠ UX is the cause"
+      },
+      {
+        "claimId": "C005",
+        "claimText": "플랫폼이 stagnant 상태다",
+        "evidenceRelation": "UNKNOWN",
+        "entailmentLevel": "UNKNOWN",
+        "directEvidenceRefs": [],
+        "supportingEvidenceRefs": [],
+        "missingEvidence": [
+          "activeUsersLast7d",
+          "viewsLast7d"
+        ],
+        "inferenceSteps": [],
+        "unsupportedLeap": false,
+        "semanticRisk": "MEDIUM",
+        "explanation": "No strong pattern match; relation unknown"
+      }
+    ]
+  }
+]
