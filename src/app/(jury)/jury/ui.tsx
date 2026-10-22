@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { DISPLAY_FLAG_LABELS } from '@/lib/jury-product/review-display-model';
 import { redirect } from 'next/navigation';
 import { juryEntrySurface } from '@/components/jury/entry';
 import { OrganizationSwitcher } from '@/components/jury/OrganizationSwitcher';
@@ -534,7 +535,14 @@ export function ReviewsBody({ view }: { view: JuryConsoleView }) {
 }
 
 export function ReviewDetailBody({ screen, noted }: { screen: ReviewConsoleScreen; noted: boolean }) {
-  const missing = screen.partiallySupportedClaims.length + screen.hypotheses.length;
+  // AGG-01: counts, flags and source come only from screen.display (buildReviewDisplayModel).
+  const display = screen.display;
+  const missing = display ? display.missingEvidenceCount : screen.partiallySupportedClaims.length + screen.hypotheses.length;
+  const supportedCount = display ? display.claims.counts?.supported ?? null : screen.supportedClaims.length;
+  const problems = display ? display.problems.items : screen.topProblems;
+  const problemsUnavailable = display?.problems.state === 'UNAVAILABLE';
+  const noActionAllowed = !display || (display.decision.raw === 'ACCEPT' && display.flags.length === 0);
+  const fallbackAction = noActionAllowed ? '추가 조치가 필요하지 않습니다.' : '권장 조치 기록 없음';
   return (
     <>
       <section className={styles.panel}>
@@ -542,8 +550,14 @@ export function ReviewDetailBody({ screen, noted }: { screen: ReviewConsoleScree
         <h2 className={styles.pageTitle}>리뷰 결과</h2>
         <div className={styles.resultHighlight}>
           <span className={styles.label}>결론</span>
-          <strong><span className={styles.badge}>{userLabel(screen.decision)}</span></strong>
+          <strong><span className={styles.badge}>{display?.decision.withheld ? display.decision.label : userLabel(screen.decision)}</span></strong>
+          {display ? <span className={styles.badge} title={display.source.value}>{display.source.label}</span> : null}
           <p>왜: {screen.decisionMeaning}</p>
+          {display && display.flags.length > 0 ? (
+            <ul className={styles.muted}>
+              {display.flags.map((flag) => <li key={flag}>⚠ {DISPLAY_FLAG_LABELS[flag]}</li>)}
+            </ul>
+          ) : null}
           <p className={styles.muted}>{DECISION_GUIDANCE[screen.decision] ?? ''}</p>
         </div>
         <ConfidenceLine screen={screen} />
@@ -559,15 +573,21 @@ export function ReviewDetailBody({ screen, noted }: { screen: ReviewConsoleScree
       </section>
       <section className={styles.panel}>
         <h2>주요 문제</h2>
-        {screen.topProblems.length === 0 ? <p className={styles.muted}>없음</p> : (
-          <ul lang="en">{screen.topProblems.map((item) => <li key={item}>{item}</li>)}</ul>
+        {problemsUnavailable ? <p className={styles.muted}>집계 불가</p> : problems.length === 0 ? (
+          <p className={styles.muted}>{display ? '문제 목록 없음' : '없음'}</p>
+        ) : (
+          <>
+            <ul lang="en">{problems.map((item) => <li key={item}>{item}</li>)}</ul>
+            {display?.problems.severityNote ? <p className={styles.muted}>{display.problems.severityNote}</p> : null}
+          </>
         )}
       </section>
       <section className={styles.panel}>
         <div className={styles.actionPanel}>
           <div>
             <h2>권장 조치</h2>
-            <p lang={screen.expectedUserEffect || screen.risk ? 'en' : undefined}>{screen.expectedUserEffect || screen.risk || '추가 조치가 필요하지 않습니다.'}</p>
+            {screen.expectedUserEffect || screen.risk ? <span className={styles.badge}>AI 추정</span> : null}
+            <p lang={screen.expectedUserEffect || screen.risk ? 'en' : undefined}>{screen.expectedUserEffect || screen.risk || fallbackAction}</p>
           </div>
           {screen.humanChoices.length > 0 ? <span className={styles.badge}>확인 필요</span> : null}
         </div>
@@ -577,11 +597,11 @@ export function ReviewDetailBody({ screen, noted }: { screen: ReviewConsoleScree
         <h2>근거 요약</h2>
         <div className={styles.row}>
           <span className={styles.label}>핵심 근거</span>
-          <span>확인된 주장 {screen.supportedClaims.length}개 · <Link className={styles.inline} href={reviewTabHref(screen.reviewId, 'evidence')}>검증 근거 탭에서 보기</Link></span>
+          <span>{supportedCount === null ? '주장 기록 없음' : `확인된 주장 ${supportedCount}개`} · <Link className={styles.inline} href={reviewTabHref(screen.reviewId, 'evidence')}>검증 근거 탭에서 보기</Link></span>
         </div>
         <div className={styles.row}>
           <span className={styles.label}>검증 상태</span>
-          <span>부족한 근거 {missing}개 · <Link className={styles.inline} href={reviewTabHref(screen.reviewId, 'evidence')}>부족한 근거 보기</Link></span>
+          <span>{missing === null ? '부족한 근거 집계 불가' : `부족한 근거 ${missing}개`} · <Link className={styles.inline} href={reviewTabHref(screen.reviewId, 'evidence')}>부족한 근거 보기</Link></span>
         </div>
         <div className={styles.row}>
           <span className={styles.label}>위원 의견</span>

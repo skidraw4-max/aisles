@@ -2,6 +2,7 @@
  * Reads one tenant review and stores one human decision beside the Jury result.
  * The stored choice does not replace expectedDecision. This module does not create an improvement task.
  */
+import { buildReviewDisplayModel, type ReviewDisplayModel } from './review-display-model';
 import { createHash } from 'node:crypto';
 import { Prisma } from '@prisma/client';
 import { decideJuryMutation, resolveJuryActor, type JuryActor } from './access';
@@ -73,6 +74,8 @@ export type ReviewConsoleScreen = {
   };
   humanDecision: JuryDecision | null;
   humanChoices: Array<{ code: JuryDecision; label: string }>;
+  /** AGG-01 (RM-02): single display aggregation. UI renders counts/flags/source only from here. */
+  display?: ReviewDisplayModel;
   improvementTask: { id: string; taskType: 'VERIFICATION' | 'REWORD' } | null;
   canCreateImprovement: boolean;
   agentExecution: {
@@ -167,6 +170,17 @@ export function projectReviewConsole(input: {
   status: string | null;
   evidenceId: string | null;
   metrics: readonly { id: string; metric: string; value: number | null; availability: string }[];
+  /** AGG-01 extra stored fields (optional; absent = treated as not loaded/unknown). */
+  displayFacts?: {
+    boardRunId?: string | null;
+    claimStrength?: string | null;
+    revisionRequired?: boolean | null;
+    conflictDetected?: boolean | null;
+    overclaimDetected?: boolean | null;
+    resultSource?: string | null;
+    failureReason?: string | null;
+    metricIds?: readonly string[];
+  };
   humanDecision?: JuryDecision | null;
   improvementTask?: { id: string; taskType: 'VERIFICATION' | 'REWORD' } | null;
   agentExecution?: {
@@ -525,6 +539,27 @@ export function projectReviewConsole(input: {
       partiallySupportedClaims: [...input.result.finalSurface.partiallySupportedClaims],
       hypotheses: [...input.result.finalSurface.hypotheses],
       ...committeeView(input.result.finalSurface, input.result.evidenceStrength ?? null),
+      display: buildReviewDisplayModel({
+        result: {
+          id: input.result.id,
+          boardRunId: input.displayFacts?.boardRunId ?? null,
+          expectedDecision: input.result.expectedDecision,
+          finalSurface: input.result.finalSurface,
+          evidenceStrength: input.result.evidenceStrength ?? null,
+          claimStrength: input.displayFacts?.claimStrength ?? null,
+          revisionRequired: input.displayFacts?.revisionRequired ?? null,
+          conflictDetected: input.displayFacts?.conflictDetected ?? null,
+          overclaimDetected: input.displayFacts?.overclaimDetected ?? null,
+        },
+        request: {
+          status: input.status,
+          failureReason: input.displayFacts?.failureReason ?? null,
+          resultSource: input.displayFacts?.resultSource ?? null,
+        },
+        evidence: input.evidenceId
+          ? { id: input.evidenceId, metricIds: input.displayFacts?.metricIds ?? [], metrics: input.metrics }
+          : null,
+      }),
       humanDecision: stored,
       humanChoices,
       improvementTask,
@@ -721,6 +756,11 @@ export async function loadReviewConsole(
       evidenceStrength: true,
       completedAt: true,
       contractVersion: true,
+      boardRunId: true,
+      claimStrength: true,
+      revisionRequired: true,
+      conflictDetected: true,
+      overclaimDetected: true,
       humanDecision: {
         select: { tenantId: true, decision: true },
       },
@@ -767,10 +807,13 @@ export async function loadReviewConsole(
         select: {
           tenantId: true,
           status: true,
+          resultSource: true,
+          failureReason: true,
           evidence: {
             select: {
               id: true,
               tenantId: true,
+              metricIds: true,
               metrics: {
                 select: { id: true, tenantId: true, metric: true, value: true, availability: true },
               },
@@ -1034,6 +1077,18 @@ export async function loadReviewConsole(
       if (metric.tenantId !== actor.tenantId) return [];
       return [{ id: metric.id, metric: metric.metric, value: metric.value, availability: metric.availability }];
     }),
+    displayFacts: {
+      boardRunId: row.boardRunId,
+      claimStrength: row.claimStrength,
+      revisionRequired: row.revisionRequired,
+      conflictDetected: row.conflictDetected,
+      overclaimDetected: row.overclaimDetected,
+      resultSource: request?.resultSource ?? null,
+      failureReason: request?.failureReason ?? null,
+      metricIds: Array.isArray(evidence?.metricIds)
+        ? evidence.metricIds.filter((id): id is string => typeof id === 'string')
+        : [],
+    },
   });
 }
 
