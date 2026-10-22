@@ -2,7 +2,7 @@
  * Console form for declared catalog metrics.
  * Tenant, grants, and persistence stay in persistTenantEvidenceIntake.
  */
-import { resolveAnalysisPeriod } from '@/lib/ai-review-board/analysis-period';
+import { defaultEvidencePeriod, validateEvidencePeriod } from './evidence-period';
 import { decideJuryMutation, type JuryActor } from './access';
 import { containsSecret } from './agent-execution';
 import type { JuryConsoleView } from './console-view';
@@ -38,6 +38,7 @@ const INTAKE_REASONS = new Set<string>([
   'INVALID_TIMEZONE',
   'CREDENTIAL_IN_REASON',
   'INVALID_VALUE',
+  'INVALID_PERIOD',
   'PERSISTENCE_FAILED',
 ]);
 
@@ -46,9 +47,15 @@ export type ConsoleIntakeCommand = {
   memberships: readonly JuryMembership[];
   connectionId: string;
   scopeId: string;
-  metric: string;
-  availability: string;
-  value: string;
+  /** Single-metric form (legacy). Ignored when `metrics` is given. */
+  metric?: string;
+  availability?: string;
+  value?: string;
+  /** RM-09: several metrics in one evidence. */
+  metrics?: { metric: string; availability: string; value: string }[];
+  /** RM-09: user period (YYYY-MM-DD, KST). Both omitted = default 7-day window. */
+  periodStart?: string;
+  periodEnd?: string;
   now: string;
 };
 
@@ -133,27 +140,43 @@ export function projectConsoleEvidence(view: Pick<JuryConsoleView, 'evidence' | 
 
 export function buildConsoleIntakeInput(
   command: ConsoleIntakeCommand,
-): { ok: true; intake: TenantEvidenceIntakeInput } | { ok: false; reason: 'INVALID_VALUE' | 'CREDENTIAL_IN_REASON' } {
+): { ok: true; intake: TenantEvidenceIntakeInput } | { ok: false; reason: 'INVALID_VALUE' | 'INVALID_PERIOD' | 'CREDENTIAL_IN_REASON' } {
+  const rows = command.metrics ?? [{ metric: command.metric ?? '', availability: command.availability ?? '', value: command.value ?? '' }];
   if (containsSecret({
     connectionId: command.connectionId,
     scopeId: command.scopeId,
-    metric: command.metric,
-    availability: command.availability,
-    value: command.value,
+    rows,
+    periodStart: command.periodStart ?? '',
+    periodEnd: command.periodEnd ?? '',
   })) {
     return { ok: false, reason: 'CREDENTIAL_IN_REASON' };
   }
-  if (!pointer(command.connectionId) || !pointer(command.scopeId) || !pointer(command.metric)) {
-    return { ok: false, reason: 'INVALID_VALUE' };
+  if (!pointer(command.connectionId) || !pointer(command.scopeId)) return { ok: false, reason: 'INVALID_VALUE' };
+  if (rows.length === 0 || rows.length > 50) return { ok: false, reason: 'INVALID_VALUE' };
+  const seen = new Set<string>();
+  const metrics: { metric: string; availability: string; value: number | null }[] = [];
+  for (const row of rows) {
+    if (!pointer(row.metric) || seen.has(row.metric)) return { ok: false, reason: 'INVALID_VALUE' };
+    seen.add(row.metric);
+    if (!DECLARED_AVAILABILITY.includes(row.availability as (typeof DECLARED_AVAILABILITY)[number])) {
+      return { ok: false, reason: 'INVALID_VALUE' };
+    }
+    const value = declaredValue(row.availability, row.value);
+    if (value === 'INVALID') return { ok: false, reason: 'INVALID_VALUE' };
+    metrics.push({ metric: row.metric, availability: row.availability, value });
   }
-  if (!DECLARED_AVAILABILITY.includes(command.availability as (typeof DECLARED_AVAILABILITY)[number])) {
-    return { ok: false, reason: 'INVALID_VALUE' };
-  }
-  const value = declaredValue(command.availability, command.value);
-  if (value === 'INVALID') return { ok: false, reason: 'INVALID_VALUE' };
   const now = new Date(command.now);
   if (Number.isNaN(now.getTime())) return { ok: false, reason: 'INVALID_VALUE' };
-  const period = resolveAnalysisPeriod(now);
+  const start = command.periodStart?.trim() ?? '';
+  const end = command.periodEnd?.trim() ?? '';
+  let period: { start: string; end: string };
+  if (!start && !end) {
+    period = defaultEvidencePeriod(now);
+  } else {
+    const checked = validateEvidencePeriod(start, end, now);
+    if (!checked.ok) return checked;
+    period = checked.period;
+  }
   return {
     ok: true,
     intake: {
@@ -165,7 +188,7 @@ export function buildConsoleIntakeInput(
       periodStart: period.start,
       periodEnd: period.end,
       timezone: TENANT_INTAKE_TIMEZONE,
-      metrics: [{ metric: command.metric, availability: command.availability, value }],
+      metrics,
       sourceSystem: CONSOLE_INTAKE_SOURCE,
       sourceRef: CONSOLE_INTAKE_REF,
       adapterKey: CONSOLE_INTAKE_ADAPTER,
@@ -173,6 +196,18 @@ export function buildConsoleIntakeInput(
       now: command.now,
     },
   };
+}
+
+/** RM-09: form rows named `availability:<metric>` / `value:<metric>`; an empty availability means "not included". */
+export function consoleIntakeRowsFromForm(
+  metricNames: readonly string[],
+  get: (name: string) => string,
+): { metric: string; availability: string; value: string }[] {
+  return metricNames.flatMap((metric) => {
+    const availability = get(`availability:${metric}`).trim();
+    if (!availability) return [];
+    return [{ metric, availability, value: get(`value:${metric}`) }];
+  });
 }
 
 export function consoleIntakeCode(

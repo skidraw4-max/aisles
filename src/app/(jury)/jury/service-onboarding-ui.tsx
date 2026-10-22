@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { CollectPeriodFields } from './collect-period-fields';
 import { summarizeProblems } from '@/lib/jury-product/review-display-model';
 import { juryHref } from '@/lib/jury-product/jury-url';
 import type { JuryActor } from '@/lib/jury-product/access';
@@ -208,10 +209,9 @@ export function ServiceDetailBody({
             <input type="hidden" name="connectionId" value={connection.id} />
             <input type="hidden" name="tenantId" value="client-supplied-tenant" />
             <input type="hidden" name="purpose" value="aisle-self-observation" />
-            <input type="hidden" name="periodStart" value="2026-09-01" />
-            <input type="hidden" name="periodEnd" value="2026-09-07" />
+            <CollectPeriodFields />
             <input type="hidden" name="timezone" value="Asia/Seoul" />
-            <p className={styles.muted}>purpose aisle-self-observation · 2026-09-01 – 2026-09-07 · Asia/Seoul</p>
+            <p className={styles.muted}>purpose aisle-self-observation · Asia/Seoul</p>
             <OnboardingSubmit label="Collect Evidence" pendingLabel="Collecting evidence" />
           </form>
         ) : (

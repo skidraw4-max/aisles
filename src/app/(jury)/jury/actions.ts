@@ -3,7 +3,8 @@
 import { redirect } from 'next/navigation';
 import { decideJuryMutation, isJuryAction, planJuryCommand } from '@/lib/jury-product/access';
 import type { EvidencePack } from '@/lib/ai-review-board/types';
-import { buildConsoleIntakeInput, consoleIntakeCode } from '@/lib/jury-product/console-evidence-intake';
+import { buildConsoleIntakeInput, consoleIntakeCode, consoleIntakeRowsFromForm } from '@/lib/jury-product/console-evidence-intake';
+import { validateEvidencePeriod } from '@/lib/jury-product/evidence-period';
 import { JURY_MEMBER_ROLES, JURY_PRODUCT_DATA_ROOT } from '@/lib/jury-product/records';
 import { runTenantReview, tenantReviewCode } from '@/lib/jury-product/tenant-review';
 import { persistConsoleLoopStop } from '@/lib/jury-product/console-loop-operations-store';
@@ -325,9 +326,21 @@ export async function submitTenantEvidenceIntake(formData: FormData): Promise<vo
       memberships,
       connectionId: String(formData.get('connectionId') ?? ''),
       scopeId: String(formData.get('scopeId') ?? ''),
-      metric: String(formData.get('metric') ?? ''),
-      availability: String(formData.get('availability') ?? ''),
-      value: String(formData.get('value') ?? ''),
+      // RM-09: multi-metric rows + user period. Falls back to the single-metric fields for older forms.
+      ...(formData.getAll('metricName').length > 0
+        ? {
+            metrics: consoleIntakeRowsFromForm(
+              formData.getAll('metricName').map(String),
+              (name) => String(formData.get(name) ?? ''),
+            ),
+          }
+        : {
+            metric: String(formData.get('metric') ?? ''),
+            availability: String(formData.get('availability') ?? ''),
+            value: String(formData.get('value') ?? ''),
+          }),
+      periodStart: String(formData.get('periodStart') ?? ''),
+      periodEnd: String(formData.get('periodEnd') ?? ''),
       now: new Date().toISOString(),
     });
     if (!built.ok) {
@@ -1077,6 +1090,9 @@ export async function collectConnectedServiceEvidence(formData: FormData): Promi
   const connectionId = safeConnectionId(onboardingValue(formData, 'connectionId'));
   if (!actor.ok) redirect(`/jury/services?result=${actor.reason}`);
   if (!connectionId) redirect('/jury/services?result=NOT_FOUND');
+  // RM-09 (I-010): user-chosen period, validated (start ≤ end ≤ today KST, ≤ 92 days).
+  const period = validateEvidencePeriod(onboardingValue(formData, 'periodStart'), onboardingValue(formData, 'periodEnd'));
+  if (!period.ok) redirect(`/jury/services/${connectionId}?result=INVALID_PERIOD`);
   let target = `/jury/services/${connectionId}?result=STORE_UNAVAILABLE`;
   try {
     const decision = await runConnectedServiceEvidenceCollection({
