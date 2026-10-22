@@ -6,6 +6,9 @@ import { createHash } from 'node:crypto';
 import { decideJuryMutation, resolveJuryActor } from './access';
 import type { ProductReviewCore } from './review-boundary';
 import { persistProductReview } from './review-store';
+import { createLlmCallRecorder } from './llm-call-log';
+import { finishReviewAttempt, startReviewAttempt } from './review-tracking';
+import type { ProductReviewTrace } from './review-boundary';
 import {
   JURY_CORE_CONTRACT_VERSION,
   JURY_DECISIONS,
@@ -210,21 +213,52 @@ export async function runTenantReview(
   if (existing) return { ok: false, reason: 'REVIEW_ALREADY_EXISTS' };
   if (!core) return { ok: false, reason: 'REVIEW_NOT_EXECUTED' };
 
+  // RM-01: attempt lifecycle + per-LLM-call metadata (best-effort, never changes the outcome).
+  const trace: ProductReviewTrace = { resultSource: 'UNKNOWN_LEGACY', recorder: createLlmCallRecorder() };
+  const attemptId = await startReviewAttempt(prisma, {
+    tenantId: actor.tenantId,
+    reviewRequestKey: requestId,
+    evidenceId: evidence.id,
+    reviewType,
+    startedAt: new Date(),
+  });
+  const finish = async (
+    status: 'COMPLETED' | 'FAILED',
+    failureReason: TenantReviewFailure | null,
+    boardRunId?: string,
+  ): Promise<void> => {
+    await finishReviewAttempt(prisma, attemptId, {
+      tenantId: actor.tenantId,
+      reviewRequestKey: requestId,
+      status,
+      failureReason,
+      resultSource: trace.resultSource,
+      boardRunId: boardRunId ?? null,
+      calls: trace.recorder.calls,
+      finishedAt: new Date(),
+    });
+  };
+  const fail = async (reason: TenantReviewFailure, boardRunId?: string): Promise<TenantReviewOutcome> => {
+    await finish('FAILED', reason, boardRunId);
+    return { ok: false, reason };
+  };
+
   let reading: Awaited<ReturnType<ProductReviewCore>>;
   try {
     reading = await core({
       rootDir: JURY_PRODUCT_DATA_ROOT,
       evidence: projected.pack,
       ...(claim ? { claim } : {}),
+      trace,
     });
   } catch {
-    return { ok: false, reason: 'REVIEW_NOT_EXECUTED' };
+    return fail('REVIEW_NOT_EXECUTED');
   }
   if (!(JURY_DECISIONS as readonly string[]).includes(reading.expectedDecision)) {
-    return { ok: false, reason: 'DECISION_NOT_IN_CONTRACT' };
+    return fail('DECISION_NOT_IN_CONTRACT', reading.boardRunId);
   }
   if (!isStrength(reading.evidenceStrength) || !isClaim(reading.claimStrength)) {
-    return { ok: false, reason: 'CORE_READING_REJECTED' };
+    return fail('CORE_READING_REJECTED', reading.boardRunId);
   }
   const request: JuryReviewRequest =
     reviewType === 'CLAIM_VALIDATION'
@@ -269,7 +303,7 @@ export async function runTenantReview(
   };
   try {
     const stored = await persistProductReview({ request, result });
-    if (!stored.ok) return { ok: false, reason: 'PERSISTENCE_FAILED' };
+    if (!stored.ok) return fail('PERSISTENCE_FAILED', reading.boardRunId);
   } catch {
     const raced = await prisma.juryReviewRequest.findFirst({
       where: { id: requestId, tenantId: actor.tenantId },
@@ -277,11 +311,13 @@ export async function runTenantReview(
     });
     if (raced?.result) {
       const reused = toResult(raced.result);
-      if (!reused) return { ok: false, reason: 'PERSISTENCE_FAILED' };
+      if (!reused) return fail('PERSISTENCE_FAILED', reading.boardRunId);
+      await finish('FAILED', 'REVIEW_ALREADY_EXISTS', reading.boardRunId);
       return { ok: true, reused: true, request: toRequest(raced), result: reused };
     }
-    return { ok: false, reason: 'PERSISTENCE_FAILED' };
+    return fail('PERSISTENCE_FAILED', reading.boardRunId);
   }
+  await finish('COMPLETED', null, reading.boardRunId);
   return { ok: true, reused: false, request, result };
 }
 

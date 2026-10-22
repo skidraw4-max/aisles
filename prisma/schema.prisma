@@ -12,27 +12,27 @@ datasource db {
 
 // 2. 사용자 모델 (Supabase Auth user.id 와 동일한 UUID 문자열)
 model User {
-  id         String   @id // auth.users.id (Supabase)
-  username   String   @unique
-  email      String   @unique
-  avatarUrl  String? // Cloudflare R2 등 퍼블릭 URL
-  newsletterSubscribed Boolean @default(false)
-  digestFrequency DigestFrequency @default(DAILY)
+  id                   String                   @id // auth.users.id (Supabase)
+  username             String                   @unique
+  email                String                   @unique
+  avatarUrl            String? // Cloudflare R2 등 퍼블릭 URL
+  newsletterSubscribed Boolean                  @default(false)
+  digestFrequency      DigestFrequency          @default(DAILY)
   /// USER · BUILDER · ADMIN — 공지 관리 등은 ADMIN 만 (세션·서버 액션에서 검증)
-  role       Role     @default(USER)
+  role                 Role                     @default(USER)
   /// MBTI 16유형 (영문 4글자, 예: INTJ) — AI FORTUNE 카드 하이라이트용
-  mbti       String?  @db.VarChar(4)
-  posts      Post[]
-  postLikes  PostLike[]
-  bookmarks  Bookmark[]
-  comments   Comment[]
-  stances    PostStance[]
-  passwordResetTokens PasswordResetToken[]
-  gameScores GameScore[]
-  juryMemberships JuryMembership[]
-  juryServiceMembers JuryServiceMember[]
-  juryInvitationsSent OrganizationInvitation[] @relation("JuryInvitationInviter")
-  createdAt  DateTime @default(now())
+  mbti                 String?                  @db.VarChar(4)
+  posts                Post[]
+  postLikes            PostLike[]
+  bookmarks            Bookmark[]
+  comments             Comment[]
+  stances              PostStance[]
+  passwordResetTokens  PasswordResetToken[]
+  gameScores           GameScore[]
+  juryMemberships      JuryMembership[]
+  juryServiceMembers   JuryServiceMember[]
+  juryInvitationsSent  OrganizationInvitation[] @relation("JuryInvitationInviter")
+  createdAt            DateTime                 @default(now())
 }
 
 /// 게임별 최고 점수 (주간 weekKey / 전체 "all")
@@ -70,66 +70,66 @@ model PasswordResetToken {
 
 // 3. 게시물 모델 (4개의 복도 통합 관리)
 model Post {
-  id          String      @id @default(uuid())
-  category    Category
-  title       String
-  content     String?
-  thumbnail   String?
+  id                       String          @id @default(uuid())
+  category                 Category
+  title                    String
+  content                  String?
+  thumbnail                String?
   /// 대표 썸네일 외 추가 미디어 URL (최대 4개 + thumbnail = 5개까지)
-  attachmentUrls String[] @default([])
+  attachmentUrls           String[]        @default([])
   /// 상세·피드 조회수
-  views       Int         @default(0)
+  views                    Int             @default(0)
   /// 좋아요 수(비정규화). 실제 누른 유저는 `likes` 관계(PostLike)
-  likeCount   Int         @default(0)
+  likeCount                Int             @default(0)
   /// 메인 상단 등 에디터 픽 노출용
-  isFeatured  Boolean     @default(false)
+  isFeatured               Boolean         @default(false)
   /// 메인 LAUNCH 배너 슬라이더 노출 (관리자 승인)
-  featuredOnHome Boolean    @default(false)
+  featuredOnHome           Boolean         @default(false)
   /// LAUNCH 배너 노출 만료 (null = 무기한)
-  launchBannerUntil DateTime?
+  launchBannerUntil        DateTime?
   /// 출시·외부 서비스 페이지 등 연결 URL (선택)
-  externalLink String?
+  externalLink             String?
   /// GeekNews 크론 등 — 원문 URL로 중복 방지 (고유, 선택)
-  geeknewsOriginalUrl String? @unique @db.VarChar(2048)
+  geeknewsOriginalUrl      String?         @unique @db.VarChar(2048)
   /// Hacker News 크론 등 — 원문 URL로 중복 방지 (고유, 선택)
-  hackerNewsOriginalUrl String? @unique @db.VarChar(2048)
+  hackerNewsOriginalUrl    String?         @unique @db.VarChar(2048)
   /// Lobsters RSS 크론 등 — 원문 URL로 중복 방지 (고유, 선택)
-  lobstersOriginalUrl String? @unique @db.VarChar(2048)
+  lobstersOriginalUrl      String?         @unique @db.VarChar(2048)
   /// Techmeme RSS 크론 등 — 원문 URL로 중복 방지 (고유, 선택)
-  techmemeOriginalUrl String? @unique @db.VarChar(2048)
+  techmemeOriginalUrl      String?         @unique @db.VarChar(2048)
   /// The Verge RSS 등 — 원문 URL로 중복 방지 (고유, 선택)
-  vergeOriginalUrl String? @unique @db.VarChar(2048)
+  vergeOriginalUrl         String?         @unique @db.VarChar(2048)
   /// AI Breakfast (Beehiiv) 등 — 원문 URL로 중복 방지 (고유, 선택)
-  aiBreakfastOriginalUrl String? @unique @db.VarChar(2048)
+  aiBreakfastOriginalUrl   String?         @unique @db.VarChar(2048)
   /// MIT News RSS 등 — 원문 URL로 중복 방지 (고유, 선택)
-  mitNewsOriginalUrl String? @unique @db.VarChar(2048)
+  mitNewsOriginalUrl       String?         @unique @db.VarChar(2048)
   /// AI FORTUNE 주간 운세 — 동일 주차 중복 방지 (고유, 선택) 예: 2026-05-W3
-  aiFortuneWeekKey String? @unique @db.VarChar(32)
+  aiFortuneWeekKey         String?         @unique @db.VarChar(32)
   /// AI FORTUNE 주간 리포트 구조화 JSON (트렌드·16 MBTI 운세)
-  aiFortunePayload Json?
+  aiFortunePayload         Json?
   /// YouTube 자동 요약 게시 — 영상 ID 중복 방지 (고유, 선택)
-  youtubeVideoId String? @unique @db.VarChar(16)
+  youtubeVideoId           String?         @unique @db.VarChar(16)
   /// MIT_OCW | DEEPMIND — UI 배지·요약 스타일 구분
-  youtubeSyndicationSource String? @db.VarChar(16)
+  youtubeSyndicationSource String?         @db.VarChar(16)
   /// 해시태그 (#은 표시 시만 붙임)
-  tags        String[]    @default([])
+  tags                     String[]        @default([])
   /// 갤러리 이미지 역분석 — AI가 추정한 프롬프트 (캐시)
-  aiReversePrompt String? @db.Text
+  aiReversePrompt          String?         @db.Text
   /// 갤러리 이미지 역분석 전체 JSON (Gemini 응답)
-  aiImageAnalysis Json?
+  aiImageAnalysis          Json?
   /// 작성 주체 — HUMAN(UGC) / SYSTEM(크론·신디케이션) / AI(운세 등)
-  authorKind  PostAuthorKind @default(HUMAN)
-  author      User        @relation(fields: [authorId], references: [id])
-  authorId    String
-  metadata    AiMetadata?
-  launchInfo  LaunchInfo?
+  authorKind               PostAuthorKind  @default(HUMAN)
+  author                   User            @relation(fields: [authorId], references: [id])
+  authorId                 String
+  metadata                 AiMetadata?
+  launchInfo               LaunchInfo?
   /// 좋아요를 누른 유저와의 관계 (PostLike)
-  likes       PostLike[]
-  bookmarks   Bookmark[]
-  comments    Comment[]
-  viewDaily   PostViewDaily[]
-  stances     PostStance[]
-  createdAt   DateTime    @default(now())
+  likes                    PostLike[]
+  bookmarks                Bookmark[]
+  comments                 Comment[]
+  viewDaily                PostViewDaily[]
+  stances                  PostStance[]
+  createdAt                DateTime        @default(now())
 
   @@index([category, createdAt(sort: Desc)])
   @@index([featuredOnHome, launchBannerUntil])
@@ -222,24 +222,24 @@ enum StanceChoice {
 
 // 4. AI 레시피 및 빌드 정보 (Lab/Build 복도용 상세 데이터)
 model AiMetadata {
-  postId      String  @id
-  post        Post    @relation(fields: [postId], references: [id], onDelete: Cascade)
-  modelName   String? // 예: GPT-4o, Midjourney
-  prompt      String? @db.Text
-  params      Json?   // Seed, Temp 등 설정을 JSON 형태로 저장
+  postId                   String                   @id
+  post                     Post                     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  modelName                String? // 예: GPT-4o, Midjourney
+  prompt                   String?                  @db.Text
+  params                   Json? // Seed, Temp 등 설정을 JSON 형태로 저장
   /// `analyzePostPromptAnalysis` 결과 캐시 (프롬프트 지문과 함께만 유효)
   promptAnalysis           Json?
-  promptAnalysisPromptHash String? @db.VarChar(64)
+  promptAnalysisPromptHash String?                  @db.VarChar(64)
   /// 등록 직후 백그라운드 Gemini 분석 작업 상태 (null = 레거시·수동 분석만 해당)
   promptAnalysisStatus     PromptAnalysisJobStatus?
 }
 
 // 5. 서비스 홍보 정보 (Launchpad 복도용 상세 데이터)
 model LaunchInfo {
-  postId      String  @id
-  post        Post    @relation(fields: [postId], references: [id], onDelete: Cascade)
-  serviceUrl  String? // 서비스 바로가기 링크
-  status      String? // BETA, LIVE 등 상태
+  postId     String  @id
+  post       Post    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  serviceUrl String? // 서비스 바로가기 링크
+  status     String? // BETA, LIVE 등 상태
 }
 
 /// LAB 프롬프트 자동 분석(등록 후 비동기) 작업 상태
@@ -262,13 +262,13 @@ enum DigestFrequency {
 }
 
 enum Category {
-  RECIPE  // 프롬프트 복도 (LAB)
+  RECIPE // 프롬프트 복도 (LAB)
   GALLERY // 아트 복도
-  LOUNGE  // 라운지 · 텍스트 중심 (썸네일 선택)
-  GOSSIP  // 소셜·가십 복도
-  BUILD   // 빌드 복도
-  LAUNCH  // 서비스 복도
-  TREND   // 레거시(구 테크 트렌드) — 신규 외부 뉴스는 LOUNGE
+  LOUNGE // 라운지 · 텍스트 중심 (썸네일 선택)
+  GOSSIP // 소셜·가십 복도
+  BUILD // 빌드 복도
+  LAUNCH // 서비스 복도
+  TREND // 레거시(구 테크 트렌드) — 신규 외부 뉴스는 LOUNGE
   AI_FORTUNE // AI 주간 운세·커리어 가이드 (자동 게시)
 }
 
@@ -471,33 +471,34 @@ enum JuryChangeRiskLevel {
 }
 
 model JuryTenant {
-  id           String   @id
-  name         String
-  createdAt    DateTime @default(now())
-  memberships  JuryMembership[]
-  connections  JuryServiceConnection[]
-  scopes       JuryAccessScope[]
-  discoveries  JuryDiscoveryResult[]
-  metrics      JuryNormalizedMetric[]
-  evidence     JuryEvidence[]
-  requests     JuryReviewRequest[]
-  results      JuryReviewResult[]
-  tasks        JuryImprovementTask[]
-  executions   JuryAgentExecution[]
-  gates        JuryChangeGateResult[]
+  id                    String                     @id
+  name                  String
+  createdAt             DateTime                   @default(now())
+  memberships           JuryMembership[]
+  connections           JuryServiceConnection[]
+  scopes                JuryAccessScope[]
+  discoveries           JuryDiscoveryResult[]
+  metrics               JuryNormalizedMetric[]
+  evidence              JuryEvidence[]
+  requests              JuryReviewRequest[]
+  reviewAttempts        JuryReviewAttempt[]
+  results               JuryReviewResult[]
+  tasks                 JuryImprovementTask[]
+  executions            JuryAgentExecution[]
+  gates                 JuryChangeGateResult[]
   changeGateResolutions JuryChangeGateResolution[]
-  changeGateReviews JuryChangeGateReview[]
-  reReviews    JuryReReviewResult[]
-  audits       JuryAuditEvent[]
-  decisionTasks JuryDecisionTask[]
-  verificationResults JuryVerificationResult[]
-  verificationReviews JuryVerificationReview[]
-  productLoopPolicies JuryProductLoopPolicy[]
-  decisionCycles JuryDecisionCycle[]
-  autoLoopActivation JuryAutoLoopActivation?
-  humanDecisions JuryHumanDecision[]
-  serviceMembers JuryServiceMember[]
-  invitations OrganizationInvitation[]
+  changeGateReviews     JuryChangeGateReview[]
+  reReviews             JuryReReviewResult[]
+  audits                JuryAuditEvent[]
+  decisionTasks         JuryDecisionTask[]
+  verificationResults   JuryVerificationResult[]
+  verificationReviews   JuryVerificationReview[]
+  productLoopPolicies   JuryProductLoopPolicy[]
+  decisionCycles        JuryDecisionCycle[]
+  autoLoopActivation    JuryAutoLoopActivation?
+  humanDecisions        JuryHumanDecision[]
+  serviceMembers        JuryServiceMember[]
+  invitations           OrganizationInvitation[]
 }
 
 model JuryMembership {
@@ -515,24 +516,24 @@ model JuryMembership {
 }
 
 model JuryServiceConnection {
-  id               String               @id
-  tenantId         String
-  tenant           JuryTenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  serviceKey       String
-  displayName      String
-  accessMethod     JuryAccessMethod
-  status           JuryConnectionStatus
+  id              String                 @id
+  tenantId        String
+  tenant          JuryTenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  serviceKey      String
+  displayName     String
+  accessMethod    JuryAccessMethod
+  status          JuryConnectionStatus
   /// Pointer into a secret store. Not an OAuth token, API key, or password.
-  credentialRef    String?
-  createdByUserId  String?
-  createdAt        DateTime             @default(now())
-  updatedAt        DateTime             @updatedAt
-  scopes           JuryAccessScope[]
-  discoveries      JuryDiscoveryResult[]
-  metrics          JuryNormalizedMetric[]
-  evidence         JuryEvidence[]
-  requests         JuryReviewRequest[]
-  serviceMembers   JuryServiceMember[]
+  credentialRef   String?
+  createdByUserId String?
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
+  scopes          JuryAccessScope[]
+  discoveries     JuryDiscoveryResult[]
+  metrics         JuryNormalizedMetric[]
+  evidence        JuryEvidence[]
+  requests        JuryReviewRequest[]
+  serviceMembers  JuryServiceMember[]
 
   @@index([tenantId])
 }
@@ -571,9 +572,9 @@ model OrganizationInvitation {
 }
 
 model JuryAccessScope {
-  id               String          @id
+  id               String                @id
   tenantId         String
-  tenant           JuryTenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant           JuryTenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   connectionId     String
   connection       JuryServiceConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
   status           JuryScopeStatus
@@ -604,45 +605,45 @@ model JuryDiscoveryResult {
 }
 
 model JuryEvidence {
-  id           String                @id
-  tenantId     String
-  tenant       JuryTenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  connectionId String
-  connection   JuryServiceConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
-  purpose      String
-  periodStart  String
-  periodEnd    String
-  timezone     String
-  metricIds    Json
-  apiEvidence  Json?
-  uiEvidence   Json?
-  documentEvidence Json?
-  adapterKey   String
-  collectedAt  DateTime
-  contentHash  String?
+  id                  String                   @id
+  tenantId            String
+  tenant              JuryTenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  connectionId        String
+  connection          JuryServiceConnection    @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  purpose             String
+  periodStart         String
+  periodEnd           String
+  timezone            String
+  metricIds           Json
+  apiEvidence         Json?
+  uiEvidence          Json?
+  documentEvidence    Json?
+  adapterKey          String
+  collectedAt         DateTime
+  contentHash         String?
   /// Copied from the source EvidencePack. Not inferred at read time.
-  piiExcluded  Boolean
-  readOnly     Boolean
-  metrics      JuryNormalizedMetric[]
-  requests     JuryReviewRequest[]
-  decisionTasks JuryDecisionTask[]
+  piiExcluded         Boolean
+  readOnly            Boolean
+  metrics             JuryNormalizedMetric[]
+  requests            JuryReviewRequest[]
+  decisionTasks       JuryDecisionTask[]
   verificationResults JuryVerificationResult[]
   verificationReviews JuryVerificationReview[]
-  improvementTasks JuryImprovementTask[]
-  changeGateReviews JuryChangeGateReview[]
+  improvementTasks    JuryImprovementTask[]
+  changeGateReviews   JuryChangeGateReview[]
 
   @@unique([tenantId, connectionId, purpose, periodStart, periodEnd, timezone, contentHash], map: "JuryEvidence_identity_key")
   @@index([tenantId])
 }
 
 model JuryNormalizedMetric {
-  id             String            @id
+  id             String                @id
   tenantId       String
-  tenant         JuryTenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant         JuryTenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   connectionId   String
   connection     JuryServiceConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
   evidenceId     String?
-  evidence       JuryEvidence?     @relation(fields: [evidenceId], references: [id], onDelete: SetNull)
+  evidence       JuryEvidence?         @relation(fields: [evidenceId], references: [id], onDelete: SetNull)
   metric         String
   /// Null when availability is not AVAILABLE. Zero stays zero.
   value          Float?
@@ -664,70 +665,128 @@ model JuryNormalizedMetric {
 }
 
 model JuryReviewRequest {
-  id            String           @id
-  tenantId      String
-  tenant        JuryTenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  connectionId  String
-  connection    JuryServiceConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
-  evidenceId    String
-  evidence      JuryEvidence     @relation(fields: [evidenceId], references: [id], onDelete: Restrict)
-  reviewType    JuryReviewType
-  claim         String?
-  mode          JuryReviewMode
-  status        JuryReviewStatus
-  coreRootDir   String
+  id                String                @id
+  tenantId          String
+  tenant            JuryTenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  connectionId      String
+  connection        JuryServiceConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  evidenceId        String
+  evidence          JuryEvidence          @relation(fields: [evidenceId], references: [id], onDelete: Restrict)
+  reviewType        JuryReviewType
+  claim             String?
+  mode              JuryReviewMode
+  status            JuryReviewStatus
+  coreRootDir       String
   requestedByUserId String?
-  result        JuryReviewResult?
-  humanDecision JuryHumanDecision?
+  result            JuryReviewResult?
+  humanDecision     JuryHumanDecision?
+  /// RM-01: lifecycle metadata. Rows created before RM-01 keep resultSource=UNKNOWN_LEGACY.
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @default(now()) @updatedAt
+  resultSource      JuryResultSource      @default(UNKNOWN_LEGACY)
+  failureReason     String?
 
   @@index([tenantId])
 }
 
+/// RM-01: where a review result came from. VERIFIED_REAL is never set automatically (D-16).
+enum JuryResultSource {
+  REAL_MODEL
+  MOCK
+  FIXTURE
+  UNKNOWN_LEGACY
+  VERIFIED_REAL
+}
+
+/// RM-01: one row per review execution attempt (including failures that never create a JuryReviewRequest).
+model JuryReviewAttempt {
+  id               String           @id
+  tenantId         String
+  tenant           JuryTenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  /// Deterministic JuryReviewRequest id (may not exist yet when the attempt failed).
+  reviewRequestKey String
+  evidenceId       String
+  reviewType       JuryReviewType
+  status           JuryReviewStatus
+  failureReason    String?
+  resultSource     JuryResultSource @default(UNKNOWN_LEGACY)
+  boardRunId       String?
+  startedAt        DateTime
+  finishedAt       DateTime?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @default(now()) @updatedAt
+  llmCalls         JuryLlmCallLog[]
+
+  @@index([tenantId, reviewRequestKey])
+  @@index([status, startedAt])
+}
+
+/// RM-01 / D-14: per-LLM-call metadata only. No prompt, response, evidence text, or keys are stored.
+model JuryLlmCallLog {
+  id        String            @id
+  tenantId  String
+  attemptId String
+  attempt   JuryReviewAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  seq       Int
+  provider  String
+  model     String?
+  operation String
+  memberId  String?
+  status    String
+  errorCode String?
+  latencyMs Int
+  startedAt DateTime
+  createdAt DateTime          @default(now())
+
+  @@unique([attemptId, seq])
+  @@index([tenantId])
+}
+
 model JuryReviewResult {
-  id                 String               @id
-  tenantId           String
-  tenant             JuryTenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  reviewRequestId    String               @unique
-  request            JuryReviewRequest    @relation(fields: [reviewRequestId], references: [id], onDelete: Cascade)
-  boardRunId         String
-  evidenceStrength   JuryEvidenceStrength
-  claimStrength      JuryClaimStrength
-  conflictDetected   Boolean
-  overclaimDetected  Boolean
-  revisionRequired   Boolean
-  expectedDecision   JuryDecision
-  finalSurface       Json
-  contractVersion    String
-  completedAt        DateTime
+  id                   String                   @id
+  tenantId             String
+  tenant               JuryTenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  reviewRequestId      String                   @unique
+  request              JuryReviewRequest        @relation(fields: [reviewRequestId], references: [id], onDelete: Cascade)
+  boardRunId           String
+  evidenceStrength     JuryEvidenceStrength
+  claimStrength        JuryClaimStrength
+  conflictDetected     Boolean
+  overclaimDetected    Boolean
+  revisionRequired     Boolean
+  expectedDecision     JuryDecision
+  finalSurface         Json
+  contractVersion      String
+  completedAt          DateTime
   parentReviewResultId String?
-  parentReviewResult   JuryReviewResult?  @relation("ReviewLineage", fields: [parentReviewResultId], references: [id], onDelete: Restrict)
-  childReviews         JuryReviewResult[] @relation("ReviewLineage")
+  parentReviewResult   JuryReviewResult?        @relation("ReviewLineage", fields: [parentReviewResultId], references: [id], onDelete: Restrict)
+  childReviews         JuryReviewResult[]       @relation("ReviewLineage")
   verificationResultId String?
-  verificationResult   JuryVerificationResult? @relation("VerificationChildReview", fields: [verificationResultId], references: [id], onDelete: Restrict)
+  verificationResult   JuryVerificationResult?  @relation("VerificationChildReview", fields: [verificationResultId], references: [id], onDelete: Restrict)
   decisionTaskId       String?
-  decisionTask         JuryDecisionTask?  @relation("DecisionTaskChildReview", fields: [decisionTaskId], references: [id], onDelete: Restrict)
-  reReviewRequestId    String?            @unique
-  reReviewRequest      JuryVerificationReview? @relation("VerificationReviewExecution", fields: [reReviewRequestId], references: [id], onDelete: Restrict)
-  tasks              JuryImprovementTask[]
-  decisionTasks      JuryDecisionTask[]
-  verificationResults JuryVerificationResult[]
-  verificationReviews JuryVerificationReview[] @relation("VerificationReviewParent")
-  cycleRoot JuryDecisionCycle? @relation("CycleRoot")
-  cycleCurrents JuryDecisionCycle[] @relation("CycleCurrent")
-  changeGateReviews JuryChangeGateReview[] @relation("ChangeGateReviewParent")
-  humanDecision JuryHumanDecision?
+  decisionTask         JuryDecisionTask?        @relation("DecisionTaskChildReview", fields: [decisionTaskId], references: [id], onDelete: Restrict)
+  reReviewRequestId    String?                  @unique
+  reReviewRequest      JuryVerificationReview?  @relation("VerificationReviewExecution", fields: [reReviewRequestId], references: [id], onDelete: Restrict)
+  tasks                JuryImprovementTask[]
+  decisionTasks        JuryDecisionTask[]
+  verificationResults  JuryVerificationResult[]
+  verificationReviews  JuryVerificationReview[] @relation("VerificationReviewParent")
+  cycleRoot            JuryDecisionCycle?       @relation("CycleRoot")
+  cycleCurrents        JuryDecisionCycle[]      @relation("CycleCurrent")
+  changeGateReviews    JuryChangeGateReview[]   @relation("ChangeGateReviewParent")
+  humanDecision        JuryHumanDecision?
 
   @@index([tenantId])
 }
 
 /// Person's choice after reading a Jury result. It does not replace expectedDecision.
 model JuryHumanDecision {
-  id              String           @id
+  id              String            @id
   tenantId        String
-  tenant          JuryTenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  reviewResultId  String           @unique
-  reviewResult    JuryReviewResult @relation(fields: [reviewResultId], references: [id], onDelete: Restrict)
-  reviewRequestId String           @unique
+  tenant          JuryTenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  reviewResultId  String            @unique
+  reviewResult    JuryReviewResult  @relation(fields: [reviewResultId], references: [id], onDelete: Restrict)
+  reviewRequestId String            @unique
   reviewRequest   JuryReviewRequest @relation(fields: [reviewRequestId], references: [id], onDelete: Restrict)
   decision        JuryDecision
   actorUserId     String
@@ -738,35 +797,35 @@ model JuryHumanDecision {
 }
 
 model JuryImprovementTask {
-  id                   String        @id
-  tenantId             String
-  tenant               JuryTenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  reviewResultId       String
-  reviewResult         JuryReviewResult @relation(fields: [reviewResultId], references: [id], onDelete: Cascade)
-  diagnosis            String
-  acceptanceCriteria   Json
-  status               JuryTaskStatus
-  loopIndex            Int
-  loopPolicy           Json
-  parentTaskId         String?
-  stopReason           String?
-  decisionTaskId       String?
-  decisionTask         JuryDecisionTask? @relation(fields: [decisionTaskId], references: [id], onDelete: Restrict)
-  evidenceId           String?
-  evidence             JuryEvidence? @relation(fields: [evidenceId], references: [id], onDelete: Restrict)
-  taskType             JuryDecisionTaskType?
-  title                String?
-  description          String?
-  reason               String?
-  objective            String?
-  constraints          Json?
-  provenance           Json?
-  createdAt            DateTime?
-  updatedAt            DateTime?
-  executions           JuryAgentExecution[]
-  reReviews            JuryReReviewResult[]
-  changeGates          JuryChangeGateResult[]
-  changeGateReviews    JuryChangeGateReview[]
+  id                 String                 @id
+  tenantId           String
+  tenant             JuryTenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  reviewResultId     String
+  reviewResult       JuryReviewResult       @relation(fields: [reviewResultId], references: [id], onDelete: Cascade)
+  diagnosis          String
+  acceptanceCriteria Json
+  status             JuryTaskStatus
+  loopIndex          Int
+  loopPolicy         Json
+  parentTaskId       String?
+  stopReason         String?
+  decisionTaskId     String?
+  decisionTask       JuryDecisionTask?      @relation(fields: [decisionTaskId], references: [id], onDelete: Restrict)
+  evidenceId         String?
+  evidence           JuryEvidence?          @relation(fields: [evidenceId], references: [id], onDelete: Restrict)
+  taskType           JuryDecisionTaskType?
+  title              String?
+  description        String?
+  reason             String?
+  objective          String?
+  constraints        Json?
+  provenance         Json?
+  createdAt          DateTime?
+  updatedAt          DateTime?
+  executions         JuryAgentExecution[]
+  reReviews          JuryReReviewResult[]
+  changeGates        JuryChangeGateResult[]
+  changeGateReviews  JuryChangeGateReview[]
 
   @@unique([decisionTaskId, taskType])
   @@index([tenantId])
@@ -774,25 +833,25 @@ model JuryImprovementTask {
 
 /// Decision-to-task record. Separate from the agent-loop JuryImprovementTask.
 model JuryDecisionTask {
-  id             String                 @id
-  tenantId       String
-  tenant         JuryTenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  reviewResultId String
-  reviewResult   JuryReviewResult       @relation(fields: [reviewResultId], references: [id], onDelete: Restrict)
-  evidenceId     String
-  evidence       JuryEvidence           @relation(fields: [evidenceId], references: [id], onDelete: Restrict)
-  taskType       JuryDecisionTaskType
-  decision       JuryDecision
-  title          String
-  description    String
-  reason         String
-  status         JuryDecisionTaskStatus
-  createdAt      DateTime
-  updatedAt      DateTime
-  verificationResult JuryVerificationResult?
+  id                  String                   @id
+  tenantId            String
+  tenant              JuryTenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  reviewResultId      String
+  reviewResult        JuryReviewResult         @relation(fields: [reviewResultId], references: [id], onDelete: Restrict)
+  evidenceId          String
+  evidence            JuryEvidence             @relation(fields: [evidenceId], references: [id], onDelete: Restrict)
+  taskType            JuryDecisionTaskType
+  decision            JuryDecision
+  title               String
+  description         String
+  reason              String
+  status              JuryDecisionTaskStatus
+  createdAt           DateTime
+  updatedAt           DateTime
+  verificationResult  JuryVerificationResult?
   verificationReviews JuryVerificationReview[]
-  childReviews JuryReviewResult[] @relation("DecisionTaskChildReview")
-  improvementTasks JuryImprovementTask[]
+  childReviews        JuryReviewResult[]       @relation("DecisionTaskChildReview")
+  improvementTasks    JuryImprovementTask[]
 
   @@unique([reviewResultId, taskType])
   @@index([tenantId])
@@ -836,29 +895,29 @@ model JuryVerificationResult {
   createdAt        DateTime
   updatedAt        DateTime
   reviews          JuryVerificationReview[]
-  childReviews     JuryReviewResult[] @relation("VerificationChildReview")
+  childReviews     JuryReviewResult[]       @relation("VerificationChildReview")
 
   @@index([tenantId])
 }
 
 /// Request to re-enter jury review after verification. READY does not execute the core.
 model JuryVerificationReview {
-  id                   String                        @id
+  id                   String                       @id
   tenantId             String
-  tenant               JuryTenant                    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant               JuryTenant                   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   evidenceId           String
-  evidence             JuryEvidence                  @relation(fields: [evidenceId], references: [id], onDelete: Restrict)
+  evidence             JuryEvidence                 @relation(fields: [evidenceId], references: [id], onDelete: Restrict)
   parentReviewResultId String
-  parentReviewResult   JuryReviewResult              @relation("VerificationReviewParent", fields: [parentReviewResultId], references: [id], onDelete: Restrict)
-  verificationResultId String                        @unique
-  verificationResult   JuryVerificationResult        @relation(fields: [verificationResultId], references: [id], onDelete: Restrict)
+  parentReviewResult   JuryReviewResult             @relation("VerificationReviewParent", fields: [parentReviewResultId], references: [id], onDelete: Restrict)
+  verificationResultId String                       @unique
+  verificationResult   JuryVerificationResult       @relation(fields: [verificationResultId], references: [id], onDelete: Restrict)
   decisionTaskId       String
-  decisionTask         JuryDecisionTask              @relation(fields: [decisionTaskId], references: [id], onDelete: Restrict)
+  decisionTask         JuryDecisionTask             @relation(fields: [decisionTaskId], references: [id], onDelete: Restrict)
   type                 JuryVerificationReviewType
   status               JuryVerificationReviewStatus
   createdAt            DateTime
   updatedAt            DateTime
-  executedResult       JuryReviewResult? @relation("VerificationReviewExecution")
+  executedResult       JuryReviewResult?            @relation("VerificationReviewExecution")
 
   @@index([tenantId])
 }
@@ -873,9 +932,9 @@ enum JuryDecisionCycleStatus {
 
 /// Product decision-cycle limits. Null disables that one limit.
 model JuryProductLoopPolicy {
-  id                      String     @id
-  tenantId                String     @unique
-  tenant                  JuryTenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  id                      String              @id
+  tenantId                String              @unique
+  tenant                  JuryTenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   maxIterations           Int?
   maxVerificationAttempts Int?
   maxSameDecision         Int?
@@ -928,11 +987,11 @@ model JuryDecisionCycle {
 }
 
 model JuryAgentExecution {
-  id               String             @id
+  id               String                @id
   tenantId         String
-  tenant           JuryTenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant           JuryTenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   taskId           String
-  task             JuryImprovementTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  task             JuryImprovementTask   @relation(fields: [taskId], references: [id], onDelete: Cascade)
   agent            JuryAgentKind
   allowedPaths     Json
   deniedPaths      Json
@@ -955,17 +1014,17 @@ model JuryAgentExecution {
 }
 
 model JuryChangeGateResult {
-  id                 String               @id
+  id                 String                     @id
   tenantId           String
-  tenant             JuryTenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  executionId        String               @unique
-  execution          JuryAgentExecution   @relation(fields: [executionId], references: [id], onDelete: Cascade)
+  tenant             JuryTenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  executionId        String                     @unique
+  execution          JuryAgentExecution         @relation(fields: [executionId], references: [id], onDelete: Cascade)
   changedFiles       Json
   riskFlags          Json
   testsPassed        Boolean?
   gate               JuryGateResult
   improvementTaskId  String?
-  improvementTask    JuryImprovementTask? @relation(fields: [improvementTaskId], references: [id], onDelete: Restrict)
+  improvementTask    JuryImprovementTask?       @relation(fields: [improvementTaskId], references: [id], onDelete: Restrict)
   status             JuryChangeGateStatus?
   addedFiles         Json?
   modifiedFiles      Json?
@@ -1032,24 +1091,24 @@ enum JuryChangeGateReviewSource {
 
 /// Re-review after an APPROVED change gate. Separate from verification re-review.
 model JuryChangeGateReview {
-  id                   String                      @id
+  id                   String                     @id
   tenantId             String
-  tenant               JuryTenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant               JuryTenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   parentReviewResultId String
-  parentReviewResult   JuryReviewResult            @relation("ChangeGateReviewParent", fields: [parentReviewResultId], references: [id], onDelete: Restrict)
-  changeGateResultId   String                      @unique
-  changeGateResult     JuryChangeGateResult        @relation(fields: [changeGateResultId], references: [id], onDelete: Restrict)
+  parentReviewResult   JuryReviewResult           @relation("ChangeGateReviewParent", fields: [parentReviewResultId], references: [id], onDelete: Restrict)
+  changeGateResultId   String                     @unique
+  changeGateResult     JuryChangeGateResult       @relation(fields: [changeGateResultId], references: [id], onDelete: Restrict)
   agentExecutionId     String
   improvementTaskId    String
-  improvementTask      JuryImprovementTask         @relation(fields: [improvementTaskId], references: [id], onDelete: Restrict)
+  improvementTask      JuryImprovementTask        @relation(fields: [improvementTaskId], references: [id], onDelete: Restrict)
   evidenceId           String
-  evidence             JuryEvidence                @relation(fields: [evidenceId], references: [id], onDelete: Restrict)
+  evidence             JuryEvidence               @relation(fields: [evidenceId], references: [id], onDelete: Restrict)
   sourceEvidenceId     String
   reason               Json
   status               JuryChangeGateReviewStatus
   source               JuryChangeGateReviewSource
   errorCode            String?
-  reviewRequestId      String?                     @unique
+  reviewRequestId      String?                    @unique
   reviewResultId       String?
   provenance           Json
   createdAt            DateTime
@@ -1074,27 +1133,27 @@ model JuryReReviewResult {
 }
 
 model JuryAuditEvent {
-  id                 String    @id
-  tenantId           String
-  tenant             JuryTenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  timestamp          DateTime
-  actor              String
-  action             String
-  serviceKey         String?
-  accessMethod       String?
-  scopeId            String?
-  source             String?
-  evidenceId         String?
-  reviewId           String?
-  decision           String?
-  improvementTaskId  String?
-  agent              String?
-  changedFiles       Json?
-  testResult         String?
-  reReviewResultId   String?
-  decisionTaskId     String?
-  agentExecutionId   String?
-  provenance         Json?
+  id                String     @id
+  tenantId          String
+  tenant            JuryTenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  timestamp         DateTime
+  actor             String
+  action            String
+  serviceKey        String?
+  accessMethod      String?
+  scopeId           String?
+  source            String?
+  evidenceId        String?
+  reviewId          String?
+  decision          String?
+  improvementTaskId String?
+  agent             String?
+  changedFiles      Json?
+  testResult        String?
+  reReviewResultId  String?
+  decisionTaskId    String?
+  agentExecutionId  String?
+  provenance        Json?
 
   @@index([tenantId, timestamp])
 }
