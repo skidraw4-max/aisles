@@ -1,4 +1,6 @@
 import Link from 'next/link';
+import { formatKstFull } from './review-summary-format';
+import { displayText } from '@/lib/jury-product/ui-labels';
 import { CollectPeriodFields } from './collect-period-fields';
 import { summarizeProblems } from '@/lib/jury-product/review-display-model';
 import { juryHref } from '@/lib/jury-product/jury-url';
@@ -98,7 +100,7 @@ export function ServiceDetailBody({
   if (!detail) {
     return (
       <section className={styles.panel} role="alert">
-        <h2 className={styles.pageTitle}>Service</h2>
+        <h2 className={styles.pageTitle}>서비스</h2>
         <p>현재 tenant에서 이 서비스를 찾지 못했습니다.</p>
       </section>
     );
@@ -113,26 +115,26 @@ export function ServiceDetailBody({
 
       <h3>연결 상태</h3>
       <p>서비스 이름 {connection.displayName}</p>
-      <p>연결 방식 <span className={styles.badge}>{connection.accessMethod}</span></p>
+      <p>연결 방식 <span className={styles.badge}>{displayText(connection.accessMethod)}</span></p>
       <p>상태 <span className={styles.badge}>{connection.status === 'CONNECTED' ? '연결됨' : connection.status}</span></p>
       <details className={styles.technicalDetails}>
         <summary>관리자용 기술 정보</summary>
         <p>연결 어댑터 {github ? 'github' : MOCK_ONBOARDING_SERVICE.adapterKey}</p>
         <p>연결 정보 참조 {detail.credentialLabel}</p>
-        <p>생성일 {connection.createdAt}</p>
-        <p>수정일 {connection.updatedAt}</p>
+        <p>생성일 {formatKstFull(connection.createdAt)}</p>
+        <p>수정일 {formatKstFull(connection.updatedAt)}</p>
       </details>
 
       <h3>서비스 확인</h3>
       <p>상태 <span className={styles.badge}>{detail.discoveryStatus === 'DISCOVERY_PENDING' ? '서비스 확인 중' : detail.discoveryStatus}</span></p>
       {discovery ? (
         <>
-          <p>Adapter {github && !synthetic ? 'GitHubRepositoryDiscovery' : 'MockDiscoveryAdapter'}</p>
+          <p>어댑터 {github && !synthetic ? 'GitHubRepositoryDiscovery' : 'MockDiscoveryAdapter'}</p>
           {github && synthetic ? <p>This discovery is a mock placeholder. It is not a GitHub repository list.</p> : null}
-          <p>Explored {discovery.exploredAt}</p>
-          <p>Resources {discovery.surfaces.join(', ')} · {discovery.menus.join(', ')}</p>
-          <p>Data sources {discovery.dataSources.join(', ')}</p>
-          <p>Feasibility {discovery.feasibility}</p>
+          <p>탐색 시각 {formatKstFull(discovery.exploredAt)}</p>
+          <p>자원 {discovery.surfaces.join(', ')} · {discovery.menus.join(', ')}</p>
+          <p>데이터 원천 {discovery.dataSources.join(', ')}</p>
+          <p>수집 가능성 {discovery.feasibility}</p>
           {discovery.proposedMetrics.map((item) => (
             <p key={item.metric}>{item.metric}: {item.reason}</p>
           ))}
@@ -154,16 +156,16 @@ export function ServiceDetailBody({
         <p className={styles.muted}>Discovery 실행: 현재 역할에는 이 변경 권한이 없습니다.</p>
       )}
 
-      <h3>Access Scopes</h3>
+      <h3>접근 범위</h3>
       {scopes.length === 0 ? <p>{ONBOARDING_EMPTY_SCOPES}</p> : (
         <table className={styles.table}>
           <thead>
             <tr>
-              <th>Resource</th>
-              <th>Purpose</th>
-              <th>Access mode</th>
-              <th>Grant</th>
-              <th>Approval</th>
+              <th>자원</th>
+              <th>목적</th>
+              <th>접근 방식</th>
+              <th>권한</th>
+              <th>승인</th>
             </tr>
           </thead>
           <tbody>
@@ -173,7 +175,7 @@ export function ServiceDetailBody({
                 <td>{scope.grants.map((grant) => scopePurpose(grant.resource, discovery)).join(', ')}</td>
                 <td>{scope.grants.map((grant) => grant.mode).join(', ') || 'Not available'}</td>
                 <td>{scope.grants.some((grant) => grant.mode === 'READ') ? 'READ' : 'Not available'}</td>
-                <td><span className={styles.badge}>{scope.status}</span></td>
+                <td><span className={styles.badge}>{displayText(scope.status)}</span></td>
               </tr>
             ))}
           </tbody>
@@ -193,15 +195,15 @@ export function ServiceDetailBody({
         )
       ))}
 
-      <h3>Activation</h3>
-      <p>Status <span className={styles.badge}>{connection.status}</span></p>
-      {connection.status === 'CONNECTED' ? <p>CONNECTED</p> : <p>Not connected</p>}
-      <h3>Evidence</h3>
+      <h3>활성화</h3>
+      <p>상태 <span className={styles.badge}>{displayText(connection.status)}</span></p>
+      {connection.status === 'CONNECTED' ? <p>연결됨</p> : <p>연결되지 않음</p>}
+      <h3>자료</h3>
       {github ? (
         <p>
           Evidence collection stays closed until one repository scope is approved.
           {' '}
-          <Link className={styles.inline} href={juryHref('/services/github')}>GitHub repositories</Link>
+          <Link className={styles.inline} href={juryHref('/services/github')}>GitHub 저장소</Link>
         </p>
       ) : connection.status === 'CONNECTED' ? (
         canShowWrite(actor, 'connection.write') ? (
@@ -232,13 +234,13 @@ export function ServiceDetailBody({
           {row.metrics.map((metric) => (
             <p key={metric.id}>{metric.metric} {formatMeasuredValue(metric.value, metric.availability)}</p>
           ))}
-          <p>Review status <span className={styles.badge}>{row.reviewStatus ?? 'Not started'}</span></p>
-          {row.decision ? <p>Decision {row.decision}</p> : null}
-          {row.completedAt ? <p>Completed At {row.completedAt}</p> : null}
-          {row.summary ? <p>Summary {row.summary}</p> : null}
-          {row.decision ? <p>Top Problems {summarizeProblems(row.decision, row.topProblems).items.join(', ') || summarizeProblems(row.decision, row.topProblems).emptyText}</p> : null}
-          {row.expectedUserEffect ? <p>Expected User Effect {row.expectedUserEffect}</p> : null}
-          {row.risk ? <p>Risk {row.risk}</p> : null}
+          <p>심사 상태 <span className={styles.badge}>{row.reviewStatus ? displayText(row.reviewStatus) : '시작 전'}</span></p>
+          {row.decision ? <p>판정 {displayText(row.decision)}</p> : null}
+          {row.completedAt ? <p>완료 시각 {formatKstFull(row.completedAt)}</p> : null}
+          {row.summary ? <p>요약 {row.summary}</p> : null}
+          {row.decision ? <p>주요 문제 {summarizeProblems(row.decision, row.topProblems).items.join(', ') || summarizeProblems(row.decision, row.topProblems).emptyText}</p> : null}
+          {row.expectedUserEffect ? <p>예상 사용자 영향 {row.expectedUserEffect}</p> : null}
+          {row.risk ? <p>위험 {row.risk}</p> : null}
           {row.collectionStatus === 'AVAILABLE' && row.reviewStatus !== 'RUNNING' && canShowWrite(actor, 'review.start') ? (
             <form action={runConnectedServiceJuryReview}>
               <input type="hidden" name="connectionId" value={connection.id} />
@@ -247,14 +249,14 @@ export function ServiceDetailBody({
               <OnboardingSubmit label="Run Review" pendingLabel="Review running" />
             </form>
           ) : null}
-          {row.resultId ? <p><Link className={styles.inline} href={juryHref(`/reviews/${row.resultId}`)}>Reviews</Link></p> : null}
+          {row.resultId ? <p><Link className={styles.inline} href={juryHref(`/reviews/${row.resultId}`)}>심사 결과</Link></p> : null}
         </article>
       ))}
       {detail.canOpenEvidence ? (
         <p>
-          <Link className={styles.inline} href={juryHref('/evidence')}>Evidence</Link>
+          <Link className={styles.inline} href={juryHref('/evidence')}>자료</Link>
           {' · '}
-          <Link className={styles.inline} href={juryHref('/reviews')}>Reviews</Link>
+          <Link className={styles.inline} href={juryHref('/reviews')}>심사 결과</Link>
         </p>
       ) : null}
     </section>

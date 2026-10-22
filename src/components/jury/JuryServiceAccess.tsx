@@ -11,10 +11,10 @@ import styles from './jury-entry.module.css';
 import listStyles from './invitation.module.css';
 
 const PERMISSIONS = [
-  ['VIEW', 'View'],
-  ['REVIEW', 'Review'],
-  ['IMPROVE', 'Improve'],
-  ['AGENT', 'Agent'],
+  ['VIEW', '열람'],
+  ['REVIEW', '심사'],
+  ['IMPROVE', '개선'],
+  ['AGENT', '에이전트'],
 ] as const;
 
 type Permission = (typeof PERMISSIONS)[number][0];
@@ -56,7 +56,7 @@ export function JuryServiceMemberAdd({
       }
       router.refresh();
     } catch {
-      setMessage('Service access could not be changed');
+      setMessage('서비스 접근 권한을 변경하지 못했습니다');
     } finally {
       setLoading(false);
     }
@@ -65,11 +65,11 @@ export function JuryServiceMemberAdd({
   return (
     <form className={listStyles.controls} onSubmit={handleAdd}>
       <label className={styles.field}>
-        Find member
+        구성원 찾기
         <input className={styles.field} value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Name or email" />
       </label>
       <label className={styles.field}>
-        Add member
+        구성원 추가
         <select className={listStyles.select} value={selected} onChange={(event) => setMemberUserId(event.target.value)}>
           {visible.map((candidate) => (
             <option key={candidate.userId} value={candidate.userId}>
@@ -79,13 +79,13 @@ export function JuryServiceMemberAdd({
         </select>
       </label>
       <label className={styles.field}>
-        Permission
+        권한
         <select className={listStyles.select} value={permission} onChange={(event) => setPermission(event.target.value as Permission)}>
           {PERMISSIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
         </select>
       </label>
-      <button className={styles.primary} type="submit" disabled={loading || visible.length === 0}>Add member</button>
-      {visible.length === 0 ? <p className={listStyles.empty}>No matching organization members.</p> : null}
+      <button className={styles.primary} type="submit" disabled={loading || visible.length === 0}>구성원 추가</button>
+      {visible.length === 0 ? <p className={listStyles.empty}>일치하는 조직 구성원이 없습니다.</p> : null}
       {message ? <p className={styles.alert} role="alert">{message}</p> : null}
     </form>
   );
@@ -121,7 +121,7 @@ export function JuryServicePermissionControl({
       }
       router.refresh();
     } catch {
-      setMessage('Service access could not be changed');
+      setMessage('서비스 접근 권한을 변경하지 못했습니다');
     } finally {
       setLoading(false);
     }
@@ -130,12 +130,12 @@ export function JuryServicePermissionControl({
   return (
     <form className={listStyles.controls} onSubmit={handleSave}>
       <label className={styles.field}>
-        Permission
+        권한
         <select className={listStyles.select} value={nextPermission} onChange={(event) => setNextPermission(event.target.value as Permission)}>
           {PERMISSIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
         </select>
       </label>
-      <button className={styles.primary} type="submit" disabled={loading || nextPermission === permission}>Save permission</button>
+      <button className={styles.primary} type="submit" disabled={loading || nextPermission === permission}>권한 저장</button>
       {message ? <p className={styles.alert} role="alert">{message}</p> : null}
     </form>
   );
@@ -174,23 +174,23 @@ export function JuryServiceRemoveControl({
       setOpen(false);
       router.refresh();
     } catch {
-      setMessage('Service access could not be changed');
+      setMessage('서비스 접근 권한을 변경하지 못했습니다');
     } finally {
       setLoading(false);
     }
   };
 
-  if (!open) return <button className={listStyles.remove} type="button" onClick={() => setOpen(true)}>Remove</button>;
+  if (!open) return <button className={listStyles.remove} type="button" onClick={() => setOpen(true)}>삭제</button>;
   return (
     <div className={listStyles.confirm}>
-      <p>Remove service access for:</p>
+      <p>서비스 접근 권한 삭제 대상:</p>
       <p>{email}</p>
-      <p>Service: {serviceName}</p>
-      <p>Permission: {permissionLabel}</p>
+      <p>서비스: {serviceName}</p>
+      <p>권한: {permissionLabel}</p>
       {message ? <p className={styles.alert} role="alert">{message}</p> : null}
       <div className={listStyles.confirmActions}>
-        <button className={listStyles.remove} type="button" onClick={() => setOpen(false)} disabled={loading}>Cancel</button>
-        <button className={styles.primary} type="button" onClick={() => void handleRemove()} disabled={loading}>Remove</button>
+        <button className={listStyles.remove} type="button" onClick={() => setOpen(false)} disabled={loading}>취소</button>
+        <button className={styles.primary} type="button" onClick={() => void handleRemove()} disabled={loading}>삭제</button>
       </div>
     </div>
   );

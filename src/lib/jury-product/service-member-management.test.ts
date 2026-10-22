@@ -324,7 +324,7 @@ test('service access screen posts to the server and ignores caller identity', ()
   const action = readFileSync(new URL('../../app/(jury)/jury/organization/services/actions.ts', import.meta.url), 'utf8');
   const chrome = readFileSync(new URL('../../app/(jury)/jury/ui.tsx', import.meta.url), 'utf8');
   const db = readFileSync(new URL('./jury-db.ts', import.meta.url), 'utf8');
-  assert.match(page, /Service access/);
+  assert.match(page, /서비스 접근 권한/);
   assert.match(page, /listServiceAccess/);
   assert.match(page, /JuryServiceMemberAdd/);
   assert.match(chrome, /juryHref\('\/organization\/services'\)/);

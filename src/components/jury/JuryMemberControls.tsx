@@ -42,7 +42,7 @@ export function JuryMemberRoleControl({
       }
       router.refresh();
     } catch {
-      setMessage('Role could not be changed');
+      setMessage('역할을 변경하지 못했습니다');
     } finally {
       setLoading(false);
     }
@@ -51,14 +51,14 @@ export function JuryMemberRoleControl({
   return (
     <form className={listStyles.controls} onSubmit={handleSave}>
       <label className={styles.field}>
-        Role
+        역할
         <select className={listStyles.select} name="role" value={nextRole} onChange={(event) => setNextRole(event.target.value as (typeof ROLES)[number][0])}>
           {ROLES.map(([value, label]) => (
             <option key={value} value={value}>{label}</option>
           ))}
         </select>
       </label>
-      <button className={styles.primary} type="submit" disabled={loading || nextRole === role}>Save role</button>
+      <button className={styles.primary} type="submit" disabled={loading || nextRole === role}>역할 저장</button>
       {message ? <p className={styles.alert} role="alert">{message}</p> : null}
     </form>
   );
@@ -92,26 +92,26 @@ export function JuryMemberRemoveControl({
       setOpen(false);
       router.refresh();
     } catch {
-      setMessage('Member could not be removed');
+      setMessage('구성원을 삭제하지 못했습니다');
     } finally {
       setLoading(false);
     }
   };
 
   if (!open) {
-    return <button className={listStyles.remove} type="button" onClick={() => setOpen(true)}>Remove</button>;
+    return <button className={listStyles.remove} type="button" onClick={() => setOpen(true)}>삭제</button>;
   }
 
   return (
     <div className={listStyles.confirm}>
-      <p>Remove this member?</p>
+      <p>이 구성원을 삭제할까요?</p>
       <p>email: {email}</p>
       <p>역할: {roleLabel}</p>
-      <p>Removing this member will also remove their access to services in this organization.</p>
+      <p>이 구성원을 삭제하면 이 조직의 서비스 접근 권한도 함께 삭제됩니다.</p>
       {message ? <p className={styles.alert} role="alert">{message}</p> : null}
       <div className={listStyles.confirmActions}>
-        <button className={listStyles.remove} type="button" onClick={() => setOpen(false)} disabled={loading}>Cancel</button>
-        <button className={styles.primary} type="button" onClick={() => void handleRemove()} disabled={loading}>Remove</button>
+        <button className={listStyles.remove} type="button" onClick={() => setOpen(false)} disabled={loading}>취소</button>
+        <button className={styles.primary} type="button" onClick={() => void handleRemove()} disabled={loading}>삭제</button>
       </div>
     </div>
   );

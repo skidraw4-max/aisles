@@ -7,7 +7,7 @@ import { getJuryEntry } from '@/lib/jury-product/session';
 import { readJurySessionEmail } from '../../load';
 
 export const metadata: Metadata = {
-  title: 'Create your organization — AIsles Jury',
+  title: '조직 만들기 — AIsles Jury',
 };
 
 export default async function JuryOrganizationCreatePage() {

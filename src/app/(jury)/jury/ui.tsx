@@ -374,8 +374,8 @@ export function ServicesBody({ actor, view }: { actor: JuryActor; view: JuryCons
                 <td><Link className={styles.inline} href={juryHref(`/services/${row.id}`)}>{row.displayName}</Link></td>
                 <td title={row.accessMethod}>{displayText(row.accessMethod)}</td>
                 <td><span className={styles.badge} title={row.status}>{userLabel(row.status)}</span></td>
-                <td>{row.createdAt}</td>
-                <td>{row.updatedAt}</td>
+                <td>{formatKstFull(row.createdAt)}</td>
+                <td>{formatKstFull(row.updatedAt)}</td>
                 <td title={row.discoveryStatus}>{displayText(row.discoveryStatus)}</td>
                 <td title={row.scopeStatus}>{displayText(row.scopeStatus)}</td>
               </tr>
@@ -441,21 +441,21 @@ function CatalogScopeForm({ actor, view }: { actor: JuryActor; view: JuryConsole
   if (!form.visible) {
     return (
       <>
-        <h2>Catalog Metric Scope</h2>
+        <h2>카탈로그 지표 범위</h2>
         <p className={styles.muted}>Catalog scope 승인: 현재 역할에는 이 변경 권한이 없습니다.</p>
       </>
     );
   }
   return (
     <>
-      <h2>Catalog Metric Scope</h2>
+      <h2>카탈로그 지표 범위</h2>
       <p className={styles.muted}>Catalog metric만 선택합니다. Discovery placeholder는 승인 대상이 아닙니다.</p>
       {form.connections.map((connection) => (
         <form action={proposeCatalogScope} key={connection.id}>
           <p>{connection.label}</p>
           <input type="hidden" name="connectionId" value={connection.id} />
           <label>
-            Metric
+            지표
             <select className={styles.field} name="metric" defaultValue={form.metrics[0]}>
               {form.metrics.map((metric) => (
                 <option key={metric} value={metric}>{metric}</option>
@@ -594,9 +594,9 @@ export function ReviewDetailBody({ screen, noted }: { screen: ReviewConsoleScree
         {screen.humanDecision ? <p className={styles.muted}>사용자 확인: {userLabel(screen.humanDecision)}</p> : null}
         <details className={styles.technicalDetails}>
           <summary>기술 정보 보기</summary>
-          <div className={styles.row}><span className={styles.label}>Review ID</span><span>{screen.reviewId}</span></div>
+          <div className={styles.row}><span className={styles.label}>심사 ID</span><span>{screen.reviewId}</span></div>
           <div className={styles.row}><span className={styles.label}>상태</span><span>{userLabel(screen.status)}</span></div>
-          <div className={styles.row}><span className={styles.label}>완료일</span><span>{screen.completedAt}</span></div>
+          <div className={styles.row}><span className={styles.label}>완료일</span><span>{formatKstFull(screen.completedAt)}</span></div>
         </details>
       </section>
       <ResultComparison screen={screen} />
@@ -656,8 +656,8 @@ export function ReviewDetailBody({ screen, noted }: { screen: ReviewConsoleScree
             {screen.agentExecution.status === 'RUNNING' ? <p>진행 중</p> : null}
             {screen.agentExecution.status === 'COMPLETED' ? <p>완료</p> : null}
             {screen.agentExecution.status === 'BLOCKED' ? <p>중단됨</p> : null}
-            {screen.agentExecution.startedAt ? <p>시작: {screen.agentExecution.startedAt}</p> : null}
-            {screen.agentExecution.finishedAt ? <p>종료: {screen.agentExecution.finishedAt}</p> : null}
+            {screen.agentExecution.startedAt ? <p>시작: {formatKstFull(screen.agentExecution.startedAt)}</p> : null}
+            {screen.agentExecution.finishedAt ? <p>종료: {formatKstFull(screen.agentExecution.finishedAt)}</p> : null}
             {screen.agentExecution.summary ? <p>결과 요약: {screen.agentExecution.summary}</p> : null}
             {screen.agentExecution.changedFiles.map((file) => <p key={file}>변경 파일: {file}</p>)}
             {screen.agentExecution.testsRun.map((testName) => <p key={testName}>테스트: {testName}</p>)}
@@ -717,7 +717,7 @@ export function HumanReReviewBody({ screen }: { screen: ReviewConsoleScreen }) {
           <p>재심사: {screen.reReview.status}</p>
           {screen.reReview.reviewResultId ? <p>심사 결과: {screen.reReview.reviewResultId}</p> : null}
           {screen.reReview.decision ? <p>결론: {screen.reReview.decision}</p> : null}
-          {screen.reReview.completedAt ? <p>완료 시각: {screen.reReview.completedAt}</p> : null}
+          {screen.reReview.completedAt ? <p>완료 시각: {formatKstFull(screen.reReview.completedAt)}</p> : null}
         </>
       ) : null}
       {screen.canRunReReview && screen.agentExecution ? (
@@ -949,7 +949,7 @@ export function ImprovementsBody({
                       <span>완료</span>
                       <p className={styles.muted}>Mock</p>
                       {summaries[task.id] ? <p>{summaries[task.id]}</p> : null}
-                      {task.agentFinishedAt ? <p>{task.agentFinishedAt}</p> : null}
+                      {task.agentFinishedAt ? <p>{formatKstFull(task.agentFinishedAt)}</p> : null}
                     </>
                   ) : null}
                   {task.agentStatus === 'BLOCKED' ? <span>중단됨</span> : null}
@@ -980,7 +980,7 @@ export function ImprovementsBody({
                         <p>재심사</p>
                         <p title={reReviews[task.agentExecutionId].status}>{userLabel(reReviews[task.agentExecutionId].status)}</p>
                         {reReviews[task.agentExecutionId].decision ? <p>새 심사 결과 {userLabel(reReviews[task.agentExecutionId].decision)}</p> : null}
-                        {reReviews[task.agentExecutionId].completedAt ? <p>{reReviews[task.agentExecutionId].completedAt}</p> : null}
+                        {reReviews[task.agentExecutionId].completedAt ? <p>{formatKstFull(reReviews[task.agentExecutionId].completedAt)}</p> : null}
                         {reReviews[task.agentExecutionId].parentReviewResultId ? <p>원래 심사 결과 {reReviews[task.agentExecutionId].parentReviewResultId}</p> : null}
                         {reReviews[task.agentExecutionId].evidenceId ? <p>{reReviews[task.agentExecutionId].evidenceId}</p> : null}
                         {reReviews[task.agentExecutionId].reviewResultId ? (
@@ -1073,7 +1073,7 @@ export function AgentsBody({ actor, view }: { actor: JuryActor; view: JuryConsol
       {view.executions.map((row) => (
         <div className={styles.row} key={row.id}>
           <span>{row.agent}</span>
-          <span className={styles.muted}>{row.status}</span>
+          <span className={styles.muted}>{displayText(row.status)}</span>
         </div>
       ))}
       <WriteControl actor={actor} action="agent.execute" label="Agent 실행" returnTo={juryHref('/agents')} resourceId={view.executions[0]?.id} disabledHint={<>아직 저장 기능이 없습니다. <Link className={styles.inline} href={juryHref('/reviews')}>결과</Link>에서 리뷰 상세의 에이전트 실행을 사용하세요.</>} />
@@ -1176,7 +1176,7 @@ export function AuditBody({ view }: { view: JuryConsoleView }) {
                 <td title={event.action}>
                   {auditActionLabel(event.action)}
                   <br />
-                  <span className={styles.muted}>{event.action}</span>
+                  <span className={styles.muted}>{auditActionLabel(event.action)}</span>
                 </td>
                 <td className={styles.identifier} title={event.resource}>{compactIdentifier(event.resource)}</td>
                 <td title={event.status}>{auditActionLabel(event.status)}</td>
@@ -1240,11 +1240,11 @@ export function SettingsBody({
         <form action={changeJuryMembership}>
           <label>멤버 선택 또는 사용자 이메일<input className={styles.field} name="targetUserId" placeholder="멤버 식별자" required /></label>
           <select className={styles.field} name="role" defaultValue="DEVELOPER">
-            <option value="OWNER">OWNER</option>
-            <option value="ADMIN">ADMIN</option>
-            <option value="REVIEWER">REVIEWER</option>
-            <option value="DEVELOPER">DEVELOPER</option>
-            <option value="VIEWER">VIEWER</option>
+            <option value="OWNER">소유자</option>
+            <option value="ADMIN">관리자</option>
+            <option value="REVIEWER">리뷰어</option>
+            <option value="DEVELOPER">개발자</option>
+            <option value="VIEWER">열람자</option>
           </select>
           <select className={styles.field} name="command" defaultValue="ADD_MEMBER">
             <option value="ADD_MEMBER">추가</option>

@@ -1,4 +1,6 @@
 import type { Metadata } from 'next';
+import { formatKstFull } from '../../review-summary-format';
+import { displayText } from '@/lib/jury-product/ui-labels';
 import { redirect } from 'next/navigation';
 import { JuryEmailNotice } from '@/components/jury/JuryEmailNotice';
 import { JuryInvitationForm } from '@/components/jury/JuryInvitationForm';
@@ -11,7 +13,7 @@ import { JuryChrome } from '../../ui';
 import { readJurySessionEmail } from '../../load';
 
 export const metadata: Metadata = {
-  title: 'Invitations — AIsles Jury',
+  title: '초대 — AIsles Jury',
 };
 
 export default async function JuryInvitationsPage() {
@@ -35,32 +37,32 @@ export default async function JuryInvitationsPage() {
       {allowed ? (
         <>
           <JuryInvitationForm />
-          {invitations.length === 0 ? <p className={listStyles.empty}>No invitations yet.</p> : (
+          {invitations.length === 0 ? <p className={listStyles.empty}>아직 초대가 없습니다.</p> : (
             <table className={listStyles.table}>
               <thead>
                 <tr>
-                  <th>Email</th>
-                  <th>Role</th>
-                  <th>Status</th>
-                  <th>Expires</th>
-                  <th>Created</th>
+                  <th>이메일</th>
+                  <th>역할</th>
+                  <th>상태</th>
+                  <th>만료</th>
+                  <th>생성일</th>
                 </tr>
               </thead>
               <tbody>
                 {invitations.map((invitation) => (
                   <tr key={invitation.id}>
                     <td>{invitation.email}</td>
-                    <td>{invitation.role}</td>
-                    <td>{invitation.status}</td>
-                    <td>{invitation.expiresAt}</td>
-                    <td>{invitation.createdAt}</td>
+                    <td>{displayText(invitation.role)}</td>
+                    <td>{displayText(invitation.status)}</td>
+                    <td>{formatKstFull(invitation.expiresAt)}</td>
+                    <td>{formatKstFull(invitation.createdAt)}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           )}
         </>
-      ) : <p role="alert">Not authorized to invite</p>}
+      ) : <p role="alert">초대 권한이 없습니다</p>}
     </JuryChrome>
   );
 }

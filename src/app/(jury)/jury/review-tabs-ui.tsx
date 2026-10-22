@@ -226,7 +226,7 @@ export function ReviewEvidenceTab({ screen }: { screen: ReviewConsoleScreen }) {
         <p className={styles.eyebrow}>현재 메뉴 · 결과 · 검증 근거</p>
         <h2>측정된 사실</h2>
         <p className={styles.muted}>리뷰 자료</p>
-        <div className={styles.row}><span className={styles.label}>Evidence ID</span><span>{screen.evidenceId ?? '근거 미연결'}</span></div>
+        <div className={styles.row}><span className={styles.label}>자료 ID</span><span>{screen.evidenceId ?? '근거 미연결'}</span></div>
         <Link className={styles.inline} href={juryHref('/evidence')}>리뷰 자료 목록</Link>
         {screen.measured.length === 0 ? <p className={styles.muted}>측정된 값이 없습니다.</p> : null}
         {screen.measured.map((metric) => (

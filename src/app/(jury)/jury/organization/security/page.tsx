@@ -9,15 +9,15 @@ import { JuryChrome } from '../../ui';
 import { readJurySessionEmail } from '../../load';
 
 export const metadata: Metadata = {
-  title: 'Security — AIsles Jury',
+  title: '보안 — AIsles Jury',
 };
 
 const SECTIONS = [
-  ['authentication', 'Authentication'],
-  ['organizationAccess', 'Organization access'],
-  ['audit', 'Audit'],
-  ['serviceAccess', 'Service access'],
-  ['dangerZone', 'Danger zone'],
+  ['authentication', '인증'],
+  ['organizationAccess', '조직 접근'],
+  ['audit', '감사'],
+  ['serviceAccess', '서비스 접근 권한'],
+  ['dangerZone', '위험 구역'],
 ] as const;
 
 export default async function JuryOrganizationSecurityPage() {
@@ -30,8 +30,8 @@ export default async function JuryOrganizationSecurityPage() {
   const overview = organizationSecurityOverview();
   return (
     <JuryChrome actor={entry}>
-      <h2>Organization security</h2>
-      <p className={listStyles.empty}>This page shows the current policy. These settings cannot be changed here.</p>
+      <h2>조직 보안</h2>
+      <p className={listStyles.empty}>현재 정책을 보여 주는 화면입니다. 이 설정은 여기서 변경할 수 없습니다.</p>
       {SECTIONS.map(([key, title]) => (
         <section key={key}>
           <h3>{title}</h3>

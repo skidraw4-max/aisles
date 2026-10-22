@@ -15,7 +15,7 @@ import { JuryChrome } from '../../ui';
 import { readJurySessionEmail } from '../../load';
 
 export const metadata: Metadata = {
-  title: 'Members — AIsles Jury',
+  title: '구성원 — AIsles Jury',
 };
 
 const ASSIGNABLE = new Set(['ADMIN', 'REVIEWER', 'DEVELOPER', 'VIEWER']);
@@ -39,18 +39,18 @@ export default async function JuryMembersPage() {
     : {};
   return (
     <JuryChrome actor={actor}>
-      <h2>Members</h2>
-      {canInvite ? <p><Link href={juryHref('/organization/invitations')}>Invite member</Link></p> : null}
-      {members.length === 0 ? <p className={listStyles.empty}>No members yet.</p> : (
+      <h2>구성원</h2>
+      {canInvite ? <p><Link href={juryHref('/organization/invitations')}>구성원 초대</Link></p> : null}
+      {members.length === 0 ? <p className={listStyles.empty}>아직 구성원이 없습니다.</p> : (
         <table className={listStyles.table}>
           <thead>
             <tr>
-              <th>Member</th>
-              <th>Email</th>
-              <th>Role</th>
-              <th>Joined</th>
-              <th>Service access</th>
-              <th>Access</th>
+              <th>구성원</th>
+              <th>이메일</th>
+              <th>역할</th>
+              <th>가입일</th>
+              <th>서비스 접근 권한</th>
+              <th>접근</th>
             </tr>
           </thead>
           <tbody>

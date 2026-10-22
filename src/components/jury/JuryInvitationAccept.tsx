@@ -35,7 +35,7 @@ export function JuryInvitationAccept({
       router.push(juryHref('/'));
       router.refresh();
     } catch {
-      setMessage('Invalid invitation');
+      setMessage('유효하지 않은 초대');
     } finally {
       setLoading(false);
     }
@@ -44,12 +44,12 @@ export function JuryInvitationAccept({
   return (
     <form className={styles.form} onSubmit={handleAccept}>
       <p className={styles.copy}>
-        Join <strong>{organizationName}</strong> as {email}.
+        참여 <strong>{organizationName}</strong> as {email}.
       </p>
       {message ? <p className={styles.alert} role="alert">{message}</p> : null}
-      <button className={styles.primary} type="submit" disabled={loading}>Accept invitation</button>
+      <button className={styles.primary} type="submit" disabled={loading}>초대 수락</button>
       <p className={styles.signup}>
-        <Link className={styles.textLink} href={juryHref('/')}>Jury home</Link>
+        <Link className={styles.textLink} href={juryHref('/')}>Jury 홈</Link>
       </p>
     </form>
   );

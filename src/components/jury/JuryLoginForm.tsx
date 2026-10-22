@@ -68,11 +68,11 @@ export function JuryLoginForm({ notice, returnQuery }: { notice?: string; return
     <section className={styles.screen}>
       <div className={styles.frame}>
         <h1 className={styles.brand}>AIsles Jury</h1>
-        <h2 className={styles.loginTitle}>Sign in to your Jury workspace</h2>
+        <h2 className={styles.loginTitle}>Jury 작업 공간에 로그인</h2>
         {notice ? <p className={styles.note} role="status">{notice}</p> : null}
         <form className={styles.form} onSubmit={handleLogin}>
           <label className={styles.field}>
-            Email
+            이메일
             <input
               type="email"
               name="email"
@@ -83,7 +83,7 @@ export function JuryLoginForm({ notice, returnQuery }: { notice?: string; return
             />
           </label>
           <label className={styles.field}>
-            Password
+            비밀번호
             <input
               type="password"
               name="password"
@@ -95,18 +95,18 @@ export function JuryLoginForm({ notice, returnQuery }: { notice?: string; return
           </label>
           {message ? <p className={styles.alert} role="alert">{message}</p> : null}
           <button className={styles.primary} type="submit" disabled={loading}>
-            Sign In
+            로그인
           </button>
           <p className={styles.divider}>또는</p>
           <button className={styles.google} type="button" onClick={() => void handleGoogle()} disabled={loading}>
             <GoogleIcon />
-            Continue with Google
+            Google로 계속하기
           </button>
         </form>
         <p className={styles.signup}>
-          Don&apos;t have an account?{' '}
+          계정이 없나요?{' '}
           <Link className={styles.textLink} href={returnQuery ? jurySignupLink(returnQuery) : jurySignupHref()}>
-            Create account
+            계정 만들기
           </Link>
         </p>
       </div>

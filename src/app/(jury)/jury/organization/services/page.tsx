@@ -14,9 +14,11 @@ import { listServiceAccess } from '@/lib/jury-product/service-member-db';
 import { getJuryEntry } from '@/lib/jury-product/session';
 import { JuryChrome } from '../../ui';
 import { readJurySessionEmail } from '../../load';
+import { formatKstFull } from '../../review-summary-format';
+import { displayText } from '@/lib/jury-product/ui-labels';
 
 export const metadata: Metadata = {
-  title: 'Service access — AIsles Jury',
+  title: '서비스 접근 권한 — AIsles Jury',
 };
 
 export default async function JuryServiceAccessPage() {
@@ -31,26 +33,26 @@ export default async function JuryServiceAccessPage() {
   const services = actor.ok ? await listServiceAccess(actor.tenantId).catch(() => []) : [];
   return (
     <JuryChrome actor={actor}>
-      <h2>Service access</h2>
-      {services.length === 0 ? <p className={listStyles.empty}>No services connected yet.</p> : services.map((service) => (
+      <h2>서비스 접근 권한</h2>
+      {services.length === 0 ? <p className={listStyles.empty}>아직 연결된 서비스가 없습니다.</p> : services.map((service) => (
         <section key={service.connectionId}>
           <h3>{service.displayName}</h3>
           <p className={listStyles.empty}>
-            Status: {service.status || 'Unknown'}
+            상태: {service.status ? displayText(service.status) : '알 수 없음'}
             {' · '}
-            Connected: {service.createdAt ? service.createdAt.slice(0, 16).replace('T', ' ') : 'Unknown'}
+            연결 시각: {service.createdAt ? formatKstFull(service.createdAt) : '알 수 없음'}
             {' · '}
-            Members: {service.memberCount}
+            구성원: {service.memberCount}
           </p>
-          {service.members.length === 0 ? <p className={listStyles.empty}>No service members yet.</p> : (
+          {service.members.length === 0 ? <p className={listStyles.empty}>아직 서비스 구성원이 없습니다.</p> : (
             <table className={listStyles.table}>
               <thead>
                 <tr>
-                  <th>Member</th>
-                  <th>Email</th>
-                  <th>Organization role</th>
-                  <th>Permission</th>
-                  <th>Granted</th>
+                  <th>구성원</th>
+                  <th>이메일</th>
+                  <th>조직 역할</th>
+                  <th>권한</th>
+                  <th>부여됨</th>
                 </tr>
               </thead>
               <tbody>
@@ -58,7 +60,7 @@ export default async function JuryServiceAccessPage() {
                   <tr key={member.userId}>
                     <td>{member.displayName ?? member.email}</td>
                     <td>{member.email}</td>
-                    <td>{member.orgRole ? juryRoleLabel(member.orgRole) : 'No organization membership'}</td>
+                    <td>{member.orgRole ? juryRoleLabel(member.orgRole) : '조직 구성원 아님'}</td>
                     <td>
                       {manage ? (
                         <>

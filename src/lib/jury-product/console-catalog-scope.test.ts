@@ -173,7 +173,7 @@ test('catalog scope source does not read the host', () => {
     assert.equal(source.includes(token), false, token);
   }
   const ui = readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/ui.tsx'), 'utf8');
-  const body = ui.slice(ui.indexOf('Catalog Metric Scope'), ui.indexOf('export function ReviewsBody'));
+  const body = ui.slice(ui.indexOf('카탈로그 지표 범위'), ui.indexOf('export function ReviewsBody'));
   assert.equal(body.includes('proposeCatalogScope'), true);
   assert.equal(body.includes('name="tenantId"'), false);
   assert.equal(body.includes('acme.routes'), false);

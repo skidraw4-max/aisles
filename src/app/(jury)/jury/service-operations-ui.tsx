@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { formatKstFull } from './review-summary-format';
 import { CollectPeriodFields } from './collect-period-fields';
 import { summarizeProblems } from '@/lib/jury-product/review-display-model';
 import { juryHref } from '@/lib/jury-product/jury-url';
@@ -163,7 +164,7 @@ export function ServiceOperationDetail({
       {model.evidence.empty ? <p>{displayText('No evidence collected yet')}</p> : (
         <>
           <p>기간 {model.evidence.period}</p>
-          <p>최근 수집 {model.evidence.collectedAt}</p>
+          <p>최근 수집 {formatKstFull(model.evidence.collectedAt)}</p>
           <p>수집 방식 {model.evidence.adapter}</p>
           <p>측정된 지표 {model.evidence.measuredCount}</p>
           <p>측정되지 않은 지표 {model.evidence.notMeasuredCount}</p>
@@ -184,7 +185,7 @@ export function ServiceOperationDetail({
               <p>예상 사용자 효과 <span lang="en">{model.review.expectedUserEffect}</span></p>
               <p>위험 <span lang="en">{model.review.risk}</span></p>
               <TranslationHint />
-              <p>심사 시각 {model.review.reviewedAt}</p>
+              <p>심사 시각 {formatKstFull(model.review.reviewedAt)}</p>
             </>
           )}
 
@@ -231,10 +232,10 @@ export function ServiceOperationDetail({
       <h3>내 권한</h3>
       <p>조직 역할 <span title={model.access.organizationRole}>{userLabel(model.access.organizationRole)}</span></p>
       <p>서비스 권한 {model.access.servicePermission ?? '없음'}</p>
-      <p>VIEW {mark(model.access.capabilities.VIEW)}</p>
-      <p>REVIEW {mark(model.access.capabilities.REVIEW)}</p>
-      <p>IMPROVE {mark(model.access.capabilities.IMPROVE)}</p>
-      <p>AGENT {mark(model.access.capabilities.AGENT)}</p>
+      <p>열람(VIEW) {mark(model.access.capabilities.VIEW)}</p>
+      <p>심사(REVIEW) {mark(model.access.capabilities.REVIEW)}</p>
+      <p>개선(IMPROVE) {mark(model.access.capabilities.IMPROVE)}</p>
+      <p>에이전트(AGENT) {mark(model.access.capabilities.AGENT)}</p>
       <p className={styles.muted}>권한 변경은 관리 &gt; 서비스 연결에서 합니다.</p>
       <p><Link className={styles.inline} href={juryHref('/organization/services')}>서비스 연결</Link></p>
     </section>

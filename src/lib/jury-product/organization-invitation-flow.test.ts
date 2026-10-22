@@ -393,7 +393,7 @@ test('invitation routes stay inside Jury and do not carry a tenant id', () => {
   assert.match(invitePage, /JuryInvitationForm/);
   assert.match(invitePage, /listTenantInvitations/);
   assert.match(acceptPage, /Login/);
-  assert.match(acceptPage, /Create account/);
+  assert.match(acceptPage, /계정 만들기/);
   assert.match(createAction, /createOrganizationInvitationRecord/);
   assert.match(createAction, /getJuryActor/);
   assert.equal(createAction.includes('searchParams'), false);

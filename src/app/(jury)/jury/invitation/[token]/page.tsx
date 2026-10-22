@@ -47,7 +47,7 @@ export default async function JuryInvitationPage({ params }: { params: Promise<{
     <section className={styles.screen}>
       <div className={styles.frame}>
         <h1 className={styles.brand}>AIsles Jury</h1>
-        <h2 className={styles.loginTitle}>Organization invitation</h2>
+        <h2 className={styles.loginTitle}>조직 초대</h2>
         {preview.ok && !notice ? <p className={styles.copy}>{preview.invitation.tenantName}</p> : null}
         {notice ? <p className={styles.alert} role="alert">{notice}</p> : null}
         {canAccept && preview.ok ? (
@@ -59,9 +59,9 @@ export default async function JuryInvitationPage({ params }: { params: Promise<{
         ) : null}
         {!entry.ok && entry.reason === 'UNAUTHENTICATED' && preview.ok && preview.invitation.status === 'PENDING' ? (
           <p className={styles.signup}>
-            <Link className={styles.textLink} href={juryLoginHref(returnPath)}>Login</Link>
+            <Link className={styles.textLink} href={juryLoginHref(returnPath)}>로그인</Link>
             {' · '}
-            <Link className={styles.textLink} href={jurySignupLink(returnPath)}>Create account</Link>
+            <Link className={styles.textLink} href={jurySignupLink(returnPath)}>계정 만들기</Link>
           </p>
         ) : null}
       </div>
