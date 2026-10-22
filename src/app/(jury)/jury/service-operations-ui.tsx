@@ -1,3 +1,4 @@
+import type { QualityTrend } from '@/lib/jury-product/quality-trend';
 import Link from 'next/link';
 import { formatKstFull } from './review-summary-format';
 import { CollectPeriodFields } from './collect-period-fields';
@@ -266,5 +267,22 @@ function ProblemLine({ decision, topProblems }: { decision: string | null | unde
       {problems.items.length > 0 ? <span lang="en">{problems.items.join(', ')}</span> : <span>{problems.emptyText}</span>}
       {problems.severityNote ? <span> · {problems.severityNote}</span> : null}
     </p>
+  );
+}
+
+/** RM-16 (M-013): 품질 추세 — 검증된 실모델 결과 3건 이상일 때만 렌더링(호출부에서 visible 확인). */
+export function QualityTrendPanel({ trend }: { trend: Extract<QualityTrend, { visible: true }> }) {
+  return (
+    <section className={styles.panel}>
+      <h2>품질 추세</h2>
+      <p className={styles.muted}>검증된 실모델 결과만 표시합니다{trend.excluded ? ` (그 외 ${trend.excluded}건 제외)` : ''}. 점수·비율은 표시하지 않습니다.</p>
+      <ol>
+        {trend.points.map((p) => (
+          <li key={p.resultId}>
+            {formatKstFull(p.completedAt)} · {p.decision} · 수정 필요 항목 {p.problems === null ? '집계 불가' : `${p.problems}건`}
+          </li>
+        ))}
+      </ol>
+    </section>
   );
 }
