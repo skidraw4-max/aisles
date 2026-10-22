@@ -19,7 +19,7 @@ import { juryEmailVerificationDestination, juryHref, juryOAuthRedirect, safeJury
 import { JuryEmailNotice } from './JuryEmailNotice';
 import styles from './jury-entry.module.css';
 
-const GENERIC = 'Could not create the account. Try again.';
+const GENERIC = '계정을 만들 수 없습니다. 다시 시도해 주세요.';
 
 export function JurySignupForm({ returnQuery }: { returnQuery?: string | null }) {
   const router = useRouter();
@@ -57,7 +57,7 @@ export function JurySignupForm({ returnQuery }: { returnQuery?: string | null })
         session: data.session,
       });
       if (outcome === 'existing') {
-        setMessage('This email is already registered. Sign in instead.');
+        setMessage('이미 가입된 이메일입니다. 로그인해 주세요.');
         return;
       }
       if (outcome === 'enter' && data.session?.access_token) {
@@ -110,10 +110,10 @@ export function JurySignupForm({ returnQuery }: { returnQuery?: string | null })
       <div className={styles.frame}>
         <h1 className={styles.brand}>AIsles Jury</h1>
         <p className={styles.studio}>by AIsles Studio</p>
-        <h2 className={styles.loginTitle}>Create your Jury account</h2>
+        <h2 className={styles.loginTitle}>Jury 계정 만들기</h2>
         <form className={styles.form} onSubmit={handleSignup}>
           <label className={styles.field}>
-            Email
+            이메일
             <input
               type="email"
               name="email"
@@ -124,7 +124,7 @@ export function JurySignupForm({ returnQuery }: { returnQuery?: string | null })
             />
           </label>
           <label className={styles.field}>
-            Password
+            비밀번호
             <input
               type="password"
               name="password"
@@ -135,7 +135,7 @@ export function JurySignupForm({ returnQuery }: { returnQuery?: string | null })
             />
           </label>
           <label className={styles.field}>
-            Confirm password
+            비밀번호 확인
             <input
               type="password"
               name="confirmPassword"
@@ -147,18 +147,18 @@ export function JurySignupForm({ returnQuery }: { returnQuery?: string | null })
           </label>
           {message ? <p className={styles.alert} role="alert">{message}</p> : null}
           <button className={styles.primary} type="submit" disabled={loading}>
-            Create account
+            계정 만들기
           </button>
           <p className={styles.divider}>또는</p>
           <button className={styles.google} type="button" onClick={() => void handleGoogle()} disabled={loading}>
             <GoogleIcon />
-            Continue with Google
+            Google로 계속하기
           </button>
         </form>
         <p className={styles.signup}>
-          Already have an account?{' '}
+          이미 계정이 있나요?{' '}
           <Link className={styles.textLink} href={juryHref('/login')}>
-            Sign in
+            로그인
           </Link>
         </p>
       </div>

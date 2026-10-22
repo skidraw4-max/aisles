@@ -280,7 +280,7 @@ test('members and invitations stay linked without changing service permissions',
   const policy = readFileSync(new URL('./member-management.ts', import.meta.url), 'utf8');
   const db = readFileSync(new URL('./jury-db.ts', import.meta.url), 'utf8');
   const chrome = readFileSync(new URL('../../app/(jury)/jury/ui.tsx', import.meta.url), 'utf8');
-  assert.match(page, /Invite member/);
+  assert.match(page, /구성원 초대/);
   assert.match(page, /juryHref\('\/organization\/invitations'\)/);
   assert.match(page, /listOrganizationMembers/);
   assert.match(chrome, /juryHref\('\/organization\/members'\)/);

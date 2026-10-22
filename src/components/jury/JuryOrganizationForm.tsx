@@ -27,7 +27,7 @@ export function JuryOrganizationForm() {
       router.push(juryHref('/'));
       router.refresh();
     } catch {
-      setMessage('Organization could not be created.');
+      setMessage('조직을 만들 수 없습니다.');
     } finally {
       setLoading(false);
     }
@@ -38,11 +38,11 @@ export function JuryOrganizationForm() {
       <div className={styles.frame}>
         <h1 className={styles.brand}>AIsles Jury</h1>
         <p className={styles.studio}>by AIsles Studio</p>
-        <h2 className={styles.loginTitle}>Create your organization</h2>
-        <p className={styles.copy}>Set up an organization to start using AIsles Jury.</p>
+        <h2 className={styles.loginTitle}>조직 만들기</h2>
+        <p className={styles.copy}>AIsles Jury를 사용하려면 조직을 만드세요.</p>
         <form className={styles.form} onSubmit={handleCreate}>
           <label className={styles.field}>
-            Organization name
+            조직 이름
             <input
               name="organizationName"
               value={name}
@@ -53,7 +53,7 @@ export function JuryOrganizationForm() {
           </label>
           {message ? <p className={styles.alert} role="alert">{message}</p> : null}
           <button className={styles.primary} type="submit" disabled={loading}>
-            Create organization
+            조직 만들기
           </button>
         </form>
       </div>

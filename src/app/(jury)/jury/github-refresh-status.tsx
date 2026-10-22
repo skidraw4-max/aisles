@@ -15,7 +15,7 @@ export async function GithubRefreshStatus({ connectionId }: { connectionId: stri
   if (status.state === 'hidden') return null;
   return (
     <section className={styles.header} aria-label="GitHub Refresh 상태">
-      <h2 className={styles.title}>GitHub Refresh</h2>
+      <h2 className={styles.title}>GitHub 새로고침</h2>
       <p className={styles.lead}>{COPY[status.state]}</p>
     </section>
   );

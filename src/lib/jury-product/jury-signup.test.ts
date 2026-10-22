@@ -52,9 +52,9 @@ test('jury signup success asks for verification and an existing account stays a 
     'existing',
   );
   assert.equal(classifyJurySignUpResult({ errorMessage: 'database connection string leaked' }), 'failed');
-  assert.equal(juryAuthErrorMessage('User already registered'), 'This email is already registered. Sign in instead.');
-  assert.equal(juryAuthErrorMessage('database connection string leaked'), 'Could not create the account. Try again.');
-  assert.equal(juryAuthErrorMessage('User already registered').includes('registered'), true);
+  assert.equal(juryAuthErrorMessage('User already registered'), '이미 가입된 이메일입니다. 로그인해 주세요.');
+  assert.equal(juryAuthErrorMessage('database connection string leaked'), '계정을 만들 수 없습니다. 다시 시도해 주세요.');
+  assert.equal(juryAuthErrorMessage('User already registered').includes('가입된'), true);
   assert.equal(juryAuthErrorMessage('secret internal host').includes('secret'), false);
   assert.equal(maskJuryEmail('jane@example.com'), 'j***@example.com');
 });
@@ -89,9 +89,9 @@ test('jury signup uses Supabase signUp and leaves hub signup in place', () => {
   assert.equal(form.includes('/api/auth/signup'), false);
   assert.equal(form.includes('createJuryTenant'), false);
   assert.equal(form.includes('JuryMembership'), false);
-  assert.match(notice, /Check your email/);
-  assert.match(notice, /Back to Sign In/);
-  assert.match(notice, /Resend verification email/);
+  assert.match(notice, /이메일을 확인하세요/);
+  assert.match(notice, /로그인으로 돌아가기/);
+  assert.match(notice, /인증 메일 다시 보내기/);
   assert.match(notice, /juryHref\('\/login'\)/);
   assert.match(page, /getJuryEntry/);
   assert.match(page, /JurySignupForm/);

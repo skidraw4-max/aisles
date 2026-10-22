@@ -1,3 +1,3 @@
 export default function JuryServicesLoading() {
-  return <p>Loading service operations</p>;
+  return <p>서비스 운영 정보를 불러오는 중</p>;
 }

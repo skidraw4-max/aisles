@@ -295,8 +295,8 @@ test('github product flow source does not invent progress or a review pipeline',
     assert.equal(text.includes('installationId'), false);
   }
   assert.equal(panel.includes("juryHref('/organization/services')"), true);
-  assert.equal(panel.includes('Evidence strength'), true);
-  assert.equal(panel.includes('Claim strength'), true);
+  assert.equal(panel.includes('근거 강도'), true);
+  assert.equal(panel.includes('주장 강도'), true);
   assert.equal(panel.includes('<details>'), true);
   assert.equal(panel.includes('reviewView'), true);
   assert.equal(panel.includes('addJuryServiceMember'), false);

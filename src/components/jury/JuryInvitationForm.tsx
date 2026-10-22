@@ -32,7 +32,7 @@ export function JuryInvitationForm() {
       setEmail('');
       setRole('VIEWER');
     } catch {
-      setMessage('Invitation creation failed');
+      setMessage('초대를 만들지 못했습니다');
     } finally {
       setLoading(false);
     }
@@ -40,9 +40,9 @@ export function JuryInvitationForm() {
 
   return (
     <form className={styles.form} onSubmit={handleInvite}>
-      <h2 className={styles.loginTitle}>Invite member</h2>
+      <h2 className={styles.loginTitle}>구성원 초대</h2>
       <label className={styles.field}>
-        Email
+        이메일
         <input
           type="email"
           name="email"
@@ -53,7 +53,7 @@ export function JuryInvitationForm() {
         />
       </label>
       <label className={styles.field}>
-        Role
+        역할
         <select className={listStyles.select} name="role" value={role} onChange={(event) => setRole(event.target.value as (typeof INVITE_ROLES)[number])}>
           {INVITE_ROLES.map((item) => (
             <option key={item} value={item}>{item}</option>
@@ -63,11 +63,11 @@ export function JuryInvitationForm() {
       {message ? <p className={styles.alert} role="alert">{message}</p> : null}
       {invitationUrl ? (
         <label className={styles.field}>
-          Invitation link
+          초대 링크
           <input readOnly value={invitationUrl} aria-label="Invitation link" />
         </label>
       ) : null}
-      <button className={styles.primary} type="submit" disabled={loading}>Send invitation</button>
+      <button className={styles.primary} type="submit" disabled={loading}>초대 보내기</button>
     </form>
   );
 }

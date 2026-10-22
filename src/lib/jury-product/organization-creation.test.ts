@@ -148,7 +148,7 @@ test('the organization screen and action stay on the Jury URL boundary', () => {
   const form = readFileSync(new URL('../../components/jury/JuryOrganizationForm.tsx', import.meta.url), 'utf8');
   const action = readFileSync(new URL('../../app/(jury)/jury/organization/actions.ts', import.meta.url), 'utf8');
   const dashboard = readFileSync(new URL('../../app/(jury)/jury/page.tsx', import.meta.url), 'utf8');
-  assert.match(page, /Create your organization/);
+  assert.match(page, /조직 만들기/);
   assert.match(page, /getJuryEntry/);
   assert.match(form, /juryHref\('\/'\)/);
   assert.equal(form.includes('dangerouslySetInnerHTML'), false);
