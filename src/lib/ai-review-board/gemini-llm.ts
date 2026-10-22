@@ -8,6 +8,7 @@ import {
   GEMINI_REVIEW_BOARD_API_VERSION_CHAIN,
   GEMINI_REVIEW_BOARD_MODEL_CHAIN,
 } from '@/lib/gemini-models';
+import { currentLlmCallContext } from '@/lib/llm-call-context';
 import { ANTI_HERDING_DEBATE_RULES, CLAIM_CALIBRATION_RULES, EVIDENCE_SEMANTICS_RULES, MEMBER_FOCUS, PERSONA_SYSTEM, REVISION_QUALITY_RULES, REVISION_Q_CHECKLIST, SEMANTIC_JUDGE_RULES } from './personas';
 import { formatEvidencePackForPrompt } from './format-evidence-prompt';
 import { SCORE_DIMENSIONS } from './score-dimensions';
@@ -96,15 +97,24 @@ async function geminiJson(
           },
           { apiVersion },
         );
-        const result = await model.generateContent(user);
+        // Transport only (D-16): honour the Jury per-call timeout and record which model answered.
+        const ctx = currentLlmCallContext();
+        if (ctx?.signal?.aborted) throw ctx.signal.reason ?? new Error('LLM_TIMEOUT');
+        ctx?.attempts.push(modelId);
+        const result = await model.generateContent(user, ctx?.signal ? { signal: ctx.signal } : undefined);
         const text = result.response.text();
         const parsed = tryParseJson(text);
-        if (parsed) return { ok: true, parsed };
+        if (parsed) {
+          if (ctx) ctx.respondedModel = modelId;
+          return { ok: true, parsed };
+        }
         lastErr = new Error(
           `Non-JSON response from ${modelId}/${apiVersion} (len=${text.length})`,
         );
       } catch (e) {
         lastErr = e;
+        // Aborted by the per-call timeout: do not issue the fallback request.
+        if (currentLlmCallContext()?.signal?.aborted) throw e;
         if (isGeminiModelNotFoundForFallback(e)) continue;
         const classified = classifyGeminiFailure(e);
         if (
