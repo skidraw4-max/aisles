@@ -376,6 +376,20 @@ export function isClaimRequired(reviewType: JuryReviewType): boolean {
   return reviewType === 'CLAIM_VALIDATION';
 }
 
+/** RM-21 (I-026): max length of a user-entered claim (after trim). */
+export const JURY_CLAIM_MAX_LENGTH = 500;
+
+/** RM-21: trim + length guard for a user-entered claim. Empty after trim = no claim. */
+export function normalizeReviewClaim(raw: unknown):
+  | { ok: true; claim: string | undefined }
+  | { ok: false; reason: 'CLAIM_TOO_LONG' } {
+  if (typeof raw !== 'string') return { ok: true, claim: undefined };
+  const trimmed = raw.trim();
+  if (trimmed.length === 0) return { ok: true, claim: undefined };
+  if (trimmed.length > JURY_CLAIM_MAX_LENGTH) return { ok: false, reason: 'CLAIM_TOO_LONG' };
+  return { ok: true, claim: trimmed };
+}
+
 export function validateReviewRequestShape(input: {
   reviewType: JuryReviewType;
   claim?: string | null;

@@ -370,7 +370,8 @@ export async function submitTenantReview(formData: FormData): Promise<void> {
         clientTenantId: null,
         evidenceId: String(formData.get('evidenceId') ?? ''),
         reviewType: String(formData.get('reviewType') ?? ''),
-        claim: null,
+        // RM-21 (I-026): claim from the evidence card form; trimmed/limited server-side in runTenantReview.
+        claim: typeof formData.get('claim') === 'string' ? String(formData.get('claim')) : null,
         now: new Date().toISOString(),
       },
       tenantReviewCore,
