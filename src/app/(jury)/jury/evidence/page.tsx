@@ -7,7 +7,7 @@ export default async function JuryEvidencePage({
 }: {
   searchParams: Promise<{ result?: string | string[]; q?: string | string[]; filter?: string | string[]; page?: string | string[] }>;
 }) {
-  const { actor, view, notice } = await loadJuryShell(searchParams);
+  const { actor, view, notice } = await loadJuryShell(searchParams, { attempts: true });
   const query = readListQuery(await searchParams);
   return (
     <JuryChrome actor={actor} notice={notice}>
