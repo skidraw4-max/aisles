@@ -45,6 +45,7 @@ export default async function JuryServiceAccessPage() {
             구성원: {service.memberCount}
           </p>
           {service.members.length === 0 ? <p className={listStyles.empty}>아직 서비스 구성원이 없습니다.</p> : (
+            <div className={listStyles.tableWrap}>
             <table className={listStyles.table}>
               <thead>
                 <tr>
@@ -58,12 +59,12 @@ export default async function JuryServiceAccessPage() {
               <tbody>
                 {service.members.map((member) => (
                   <tr key={member.userId}>
-                    <td>{member.displayName ?? member.email}</td>
-                    <td>{member.email}</td>
-                    <td>{member.orgRole ? juryRoleLabel(member.orgRole) : '조직 구성원 아님'}</td>
+                    <td><span className={listStyles.ellipsisText} title={member.displayName ?? member.email}>{member.displayName ?? member.email}</span></td>
+                    <td><span className={listStyles.ellipsisText} title={member.email}>{member.email}</span></td>
+                    <td className={listStyles.nowrapCell}>{member.orgRole ? juryRoleLabel(member.orgRole) : '조직 구성원 아님'}</td>
                     <td>
                       {manage ? (
-                        <>
+                        <div className={listStyles.actionCell}>
                           <JuryServicePermissionControl
                             connectionId={service.connectionId}
                             memberUserId={member.userId}
@@ -76,14 +77,15 @@ export default async function JuryServiceAccessPage() {
                             serviceName={service.displayName}
                             permissionLabel={SERVICE_PERMISSION_LABEL[member.permission]}
                           />
-                        </>
+                        </div>
                       ) : SERVICE_PERMISSION_LABEL[member.permission]}
                     </td>
-                    <td>{member.grantedAt ? member.grantedAt.slice(0, 16).replace('T', ' ') : ''}</td>
+                    <td className={listStyles.nowrapCell}>{member.grantedAt ? member.grantedAt.slice(0, 16).replace('T', ' ') : ''}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
+            </div>
           )}
           {manage ? <JuryServiceMemberAdd connectionId={service.connectionId} candidates={service.candidates} /> : null}
         </section>

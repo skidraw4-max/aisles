@@ -42,6 +42,7 @@ export default async function JuryMembersPage() {
       <h2>구성원</h2>
       {canInvite ? <p><Link href={juryHref('/organization/invitations')}>구성원 초대</Link></p> : null}
       {members.length === 0 ? <p className={listStyles.empty}>아직 구성원이 없습니다.</p> : (
+        <div className={listStyles.tableWrap}>
         <table className={listStyles.table}>
           <thead>
             <tr>
@@ -62,17 +63,17 @@ export default async function JuryMembersPage() {
               });
               return (
                 <tr key={member.membershipId}>
-                  <td>{member.displayName ?? member.email}</td>
-                  <td>{member.email}</td>
-                  <td>{userLabel(member.role)}</td>
-                  <td>{member.joinedAt.slice(0, 16).replace('T', ' ')}</td>
+                  <td><span className={listStyles.ellipsisText} title={member.displayName ?? member.email}>{member.displayName ?? member.email}</span></td>
+                  <td><span className={listStyles.ellipsisText} title={member.email}>{member.email}</span></td>
+                  <td className={listStyles.nowrapCell}>{userLabel(member.role)}</td>
+                  <td className={listStyles.nowrapCell}>{member.joinedAt.slice(0, 16).replace('T', ' ')}</td>
                   <td>{serviceAccess[member.userId] ?? 0}</td>
                   <td>
                     {manageable && ASSIGNABLE.has(member.role) ? (
-                      <>
+                      <div className={listStyles.actionCell}>
                         <JuryMemberRoleControl memberUserId={member.userId} role={member.role as 'ADMIN' | 'REVIEWER' | 'DEVELOPER' | 'VIEWER'} />
                         <JuryMemberRemoveControl memberUserId={member.userId} email={member.email} roleLabel={userLabel(member.role)} />
-                      </>
+                      </div>
                     ) : <span>{userLabel(member.role)}</span>}
                   </td>
                 </tr>
@@ -80,6 +81,7 @@ export default async function JuryMembersPage() {
             })}
           </tbody>
         </table>
+        </div>
       )}
     </JuryChrome>
   );

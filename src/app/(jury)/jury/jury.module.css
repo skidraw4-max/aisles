@@ -1473,3 +1473,65 @@ a.inline {
     min-width: 0;
   }
 }
+
+/* I-036: table cells wrapping mid-value. Badges, dates and status cells stay on one line;
+   long names get a single-line ellipsis (full value in title). Scoped to new classes and
+   to badges inside .table only. */
+.table .badge,
+.table .statusBadge {
+  white-space: nowrap;
+}
+
+.table td.nowrapCell {
+  white-space: nowrap;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+.ellipsisText {
+  display: inline-block;
+  max-width: 16rem;
+  vertical-align: bottom;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+/* I-036: /jury/services tables scroll inside their wrapper (same pattern as .reviewsTableWrap). */
+.servicesTableWrap {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.table.servicesTable {
+  display: table;
+  width: 100%;
+  min-width: 960px;
+  table-layout: auto;
+  overflow: visible;
+}
+
+.table.servicesTableWide {
+  min-width: 1200px;
+}
+
+.table.servicesTable th,
+.table.servicesTable td {
+  white-space: nowrap;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+/* I-036: keep the RM-15 (I-020) stacked layout for the services tables on ≤480px. */
+@media (max-width: 480px) {
+  .table.servicesTable {
+    display: block;
+    min-width: 0;
+  }
+  .table.servicesTable td {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+}

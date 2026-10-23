@@ -83,7 +83,8 @@ export function ServiceOperationsList({
       {error ? <p>{error}</p> : null}
       {!error && rows && rows.length === 0 ? <p>현재 권한으로 볼 수 있는 서비스가 없습니다.</p> : null}
       {rows && rows.length > 0 ? (
-        <table className={styles.table}>
+        <div className={styles.servicesTableWrap}>
+        <table className={`${styles.table} ${styles.servicesTable} ${styles.servicesTableWide}`}>
           <thead>
             <tr>
               <th>서비스 이름</th>
@@ -101,7 +102,7 @@ export function ServiceOperationsList({
           <tbody>
             {rows.map((row) => (
               <tr key={row.connectionId}>
-                <td><Link className={styles.inline} href={juryHref(`/services/${row.connectionId}`)}>{row.name}</Link></td>
+                <td><Link className={`${styles.inline} ${styles.ellipsisText}`} href={juryHref(`/services/${row.connectionId}`)} title={row.name}>{row.name}</Link></td>
                 <td>{providers[row.connectionId]?.displayName ?? displayText('Unknown')}</td>
                 <td><span className={styles.badge} title={row.connectionStatus}>{userLabel(row.connectionStatus)}</span></td>
                 <td title={row.phase ?? undefined}>{row.phase ? userLabel(row.phase) : '—'}</td>
@@ -115,6 +116,7 @@ export function ServiceOperationsList({
             ))}
           </tbody>
         </table>
+        </div>
       ) : null}
     </section>
   );
