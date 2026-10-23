@@ -150,7 +150,23 @@ export function PreviousResultComparison({ comparison }: { comparison: ReviewCom
 }
 
 /** Confidence line: board confidence, else evidence strength (older results), else 확인 불가. */
+/** RM-20 phase 1 (I-024): claim strength line; '주장 입력 없음' when the request had no input claim. */
+function ClaimStrengthLine({ screen }: { screen: ReviewConsoleScreen }) {
+  const display = screen.display;
+  if (!display || !display.strength.claim) return null;
+  return <p className={styles.muted}>주장 강도: {display.strength.claim}{display.claimInput === 'NONE' ? ' (입력된 주장이 없어 강도를 확정하지 않음)' : ''}</p>;
+}
+
 export function ConfidenceLine({ screen }: { screen: ReviewConsoleScreen }) {
+  return (
+    <>
+      <ConfidenceValueLine screen={screen} />
+      <ClaimStrengthLine screen={screen} />
+    </>
+  );
+}
+
+function ConfidenceValueLine({ screen }: { screen: ReviewConsoleScreen }) {
   const confidence = screen.confidence;
   if (confidence?.source === 'BOARD') {
     return <p className={styles.muted}>위원회 확신도: {confidenceLabel(confidence.value)}</p>;

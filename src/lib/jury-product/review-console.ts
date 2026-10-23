@@ -179,6 +179,9 @@ export function projectReviewConsole(input: {
     overclaimDetected?: boolean | null;
     resultSource?: string | null;
     failureReason?: string | null;
+    /** RM-20/RM-21: stored request input (claim null/'' = no claim entered). */
+    reviewType?: string | null;
+    claim?: string | null;
     metricIds?: readonly string[];
   };
   humanDecision?: JuryDecision | null;
@@ -555,6 +558,9 @@ export function projectReviewConsole(input: {
           status: input.status,
           failureReason: input.displayFacts?.failureReason ?? null,
           resultSource: input.displayFacts?.resultSource ?? null,
+          // RM-20 phase 1: undefined when not loaded -> claimInput UNKNOWN (unchanged label).
+          reviewType: input.displayFacts?.reviewType,
+          claim: input.displayFacts?.claim,
         },
         evidence: input.evidenceId
           ? { id: input.evidenceId, metricIds: input.displayFacts?.metricIds ?? [], metrics: input.metrics }
@@ -809,6 +815,8 @@ export async function loadReviewConsole(
           status: true,
           resultSource: true,
           failureReason: true,
+          reviewType: true,
+          claim: true,
           evidence: {
             select: {
               id: true,
@@ -1085,6 +1093,8 @@ export async function loadReviewConsole(
       overclaimDetected: row.overclaimDetected,
       resultSource: request?.resultSource ?? null,
       failureReason: request?.failureReason ?? null,
+      reviewType: request?.reviewType ?? null,
+      claim: request?.claim ?? null,
       metricIds: Array.isArray(evidence?.metricIds)
         ? evidence.metricIds.filter((id): id is string => typeof id === 'string')
         : [],
