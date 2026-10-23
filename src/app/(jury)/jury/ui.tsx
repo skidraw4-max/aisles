@@ -34,6 +34,8 @@ import { CopyIdButton, ReviewSummaryDialog } from './ReviewSummaryDialog';
 import { formatKstFull, formatKstShort, shortId } from './review-summary-format';
 import { ConfidenceLine, ResultComparison, reviewTabHref } from './review-tabs-ui';
 import type { JuryMembership } from '@/lib/jury-product/records';
+import { JURY_CLAIM_MAX_LENGTH } from '@/lib/jury-product/records';
+import { ReviewRequestFields } from './review-request-fields';
 import { auditActionLabel, DECISION_GUIDANCE, displayText, traceLabel, userLabel } from '@/lib/jury-product/ui-labels';
 import styles from './jury.module.css';
 
@@ -163,6 +165,7 @@ function noticeText(code: string): string {
   if (code === 'REVIEW_NOT_EXECUTED') return 'Review를 실행하지 못했습니다.';
   if (code === 'REVIEW_ALREADY_EXISTS') return '같은 Review 요청이 이미 있습니다.';
   if (code === 'CLAIM_REQUIRED') return '이 Review에는 claim이 필요합니다.';
+  if (code === 'CLAIM_TOO_LONG') return `주장은 ${JURY_CLAIM_MAX_LENGTH}자 이하로 입력하세요.`;
   if (code === 'ALREADY_DECIDED') return '이미 결정된 scope입니다.';
   if (code === 'INVALID_ACTION') return '허용되지 않은 Human Decision입니다.';
   if (code === 'DECISION_LOCKED') return '이미 저장된 Human Decision은 바꾸지 않습니다.';
@@ -590,6 +593,11 @@ export function ReviewDetailBody({ screen, noted }: { screen: ReviewConsoleScree
           <p className={styles.muted}>{DECISION_GUIDANCE[screen.decision] ?? ''}</p>
         </div>
         <ConfidenceLine screen={screen} />
+        {screen.requestInput ? (
+          <p className={styles.muted}>
+            {screen.requestInput.reviewType === 'CLAIM_VALIDATION' ? '주장 검증' : '전체 리뷰'} · 검증한 주장: {screen.requestInput.claim ?? '주장 입력 없음'}
+          </p>
+        ) : null}
         <p className={styles.resultSummary} lang={screen.summary ? 'en' : undefined}>{screen.summary || '요약이 없습니다.'}</p>
         <TranslationHint />
         {screen.humanDecision ? <p className={styles.muted}>사용자 확인: {userLabel(screen.humanDecision)}</p> : null}
@@ -883,7 +891,7 @@ export function EvidenceBody({ actor, view, query = { q: '', filter: '', page: 1
           {canShowWrite(actor, 'review.start') ? (
             <form action={submitTenantReview}>
               <input type="hidden" name="evidenceId" value={row.id} />
-              <input type="hidden" name="reviewType" value="FULL_REVIEW" />
+              <ReviewRequestFields />
               <button className={styles.primaryButton} type="submit">리뷰 요청하기</button>
             </form>
           ) : null}

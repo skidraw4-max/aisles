@@ -31,6 +31,8 @@ const REVIEW_KEYS = [
   'memberOpinions', 'memberOpinionsOmitted', 'opinionDifferences', 'disputedPoints', 'confidence',
   // RM-02 AGG-01: display aggregation belongs to the review block
   'display',
+  // RM-21 (I-026): request review type + user claim belong to the review block
+  'requestInput',
 ] as const;
 const IMPROVEMENT_KEYS = [
   'improvementTask', 'canCreateImprovement', 'canHandoff', 'nextImprovement', 'canCreateReReviewImprovement',

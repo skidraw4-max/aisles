@@ -15,6 +15,7 @@ import {
   JURY_DECISIONS,
   JURY_PRODUCT_DATA_ROOT,
   JURY_REVIEW_TYPES,
+  normalizeReviewClaim,
   validateReviewRequestShape,
   type JuryClaimStrength,
   type JuryDecision,
@@ -52,6 +53,7 @@ export type TenantReviewFailure =
   | 'EVIDENCE_CONNECTION_MISMATCH'
   | 'PROJECTION_FAILED'
   | 'CLAIM_REQUIRED'
+  | 'CLAIM_TOO_LONG'
   | 'REVIEW_NOT_EXECUTED'
   | 'REVIEW_ALREADY_EXISTS'
   | 'DECISION_NOT_IN_CONTRACT'
@@ -74,6 +76,7 @@ const PUBLIC_REASONS = new Set<string>([
   'EVIDENCE_CONNECTION_MISMATCH',
   'PROJECTION_FAILED',
   'CLAIM_REQUIRED',
+  'CLAIM_TOO_LONG',
   'REVIEW_NOT_EXECUTED',
   'REVIEW_ALREADY_EXISTS',
   'DECISION_NOT_IN_CONTRACT',
@@ -111,7 +114,10 @@ export async function runTenantReview(
   const reviewType = command.reviewType as JuryReviewType;
   const claimShape = validateReviewRequestShape({ reviewType, claim: command.claim });
   if (!claimShape.ok) return { ok: false, reason: 'CLAIM_REQUIRED' };
-  const claim = typeof command.claim === 'string' ? command.claim.trim() : undefined;
+  // RM-21 (I-026): trimmed, length-limited. Empty after trim = no claim (FULL_REVIEW key stays claim '').
+  const normalizedClaim = normalizeReviewClaim(command.claim);
+  if (!normalizedClaim.ok) return { ok: false, reason: normalizedClaim.reason };
+  const claim = normalizedClaim.claim;
   if (!command.evidenceId.trim()) return { ok: false, reason: 'NOT_FOUND' };
 
   const { prisma } = await import('@/lib/prisma');
@@ -201,7 +207,7 @@ export async function runTenantReview(
   });
   if (!projected.ok) return projected;
 
-  const requestId = sha([actor.tenantId, evidence.id, reviewType, claim ?? '']);
+  const requestId = tenantReviewRequestKey(actor.tenantId, evidence.id, reviewType, claim);
   const existing = await prisma.juryReviewRequest.findFirst({
     where: { id: requestId, tenantId: actor.tenantId },
     include: { result: true },
@@ -209,7 +215,7 @@ export async function runTenantReview(
   if (existing?.result) {
     const reused = toResult(existing.result);
     if (!reused) return { ok: false, reason: 'PERSISTENCE_FAILED' };
-    return { ok: true, reused: true, request: toRequest(existing), result: reused };
+    return { ok: true, reused: true, request: toTenantReviewRequest(existing), result: reused };
   }
   if (existing) return { ok: false, reason: 'REVIEW_ALREADY_EXISTS' };
   if (!core) return { ok: false, reason: 'REVIEW_NOT_EXECUTED' };
@@ -334,12 +340,22 @@ export async function runTenantReview(
       const reused = toResult(raced.result);
       if (!reused) return fail('PERSISTENCE_FAILED', reading.boardRunId);
       await finish('FAILED', 'REVIEW_ALREADY_EXISTS', reading.boardRunId);
-      return { ok: true, reused: true, request: toRequest(raced), result: reused };
+      return { ok: true, reused: true, request: toTenantReviewRequest(raced), result: reused };
     }
     return fail('PERSISTENCE_FAILED', reading.boardRunId);
   }
   await finish('COMPLETED', null, reading.boardRunId, { id: result.id, decision: result.expectedDecision });
   return { ok: true, reused: false, request, result };
+}
+
+/** Request dedupe key. Unchanged formula: FULL_REVIEW without a claim hashes claim ''. */
+export function tenantReviewRequestKey(
+  tenantId: string,
+  evidenceId: string,
+  reviewType: JuryReviewType,
+  claim: string | undefined,
+): string {
+  return sha([tenantId, evidenceId, reviewType, claim ?? '']);
 }
 
 function sha(parts: readonly string[]): string {
@@ -354,7 +370,7 @@ function isClaim(value: string): value is JuryClaimStrength {
   return value === 'weak' || value === 'strong' || value === 'extreme';
 }
 
-function toRequest(row: {
+export function toTenantReviewRequest(row: {
   id: string;
   tenantId: string;
   connectionId: string;

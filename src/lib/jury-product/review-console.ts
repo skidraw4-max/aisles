@@ -76,6 +76,8 @@ export type ReviewConsoleScreen = {
   humanChoices: Array<{ code: JuryDecision; label: string }>;
   /** AGG-01 (RM-02): single display aggregation. UI renders counts/flags/source only from here. */
   display?: ReviewDisplayModel;
+  /** RM-21 (I-026): the request's review type and user-entered claim (null = none entered). */
+  requestInput?: { reviewType: string | null; claim: string | null };
   improvementTask: { id: string; taskType: 'VERIFICATION' | 'REWORD' } | null;
   canCreateImprovement: boolean;
   agentExecution: {
@@ -179,6 +181,9 @@ export function projectReviewConsole(input: {
     overclaimDetected?: boolean | null;
     resultSource?: string | null;
     failureReason?: string | null;
+    /** RM-20/RM-21: stored request input (claim null/'' = no claim entered). */
+    reviewType?: string | null;
+    claim?: string | null;
     metricIds?: readonly string[];
   };
   humanDecision?: JuryDecision | null;
@@ -539,6 +544,10 @@ export function projectReviewConsole(input: {
       partiallySupportedClaims: [...input.result.finalSurface.partiallySupportedClaims],
       hypotheses: [...input.result.finalSurface.hypotheses],
       ...committeeView(input.result.finalSurface, input.result.evidenceStrength ?? null),
+      requestInput: {
+        reviewType: input.displayFacts?.reviewType ?? null,
+        claim: input.displayFacts?.claim?.trim() ? input.displayFacts.claim.trim() : null,
+      },
       display: buildReviewDisplayModel({
         result: {
           id: input.result.id,
@@ -809,6 +818,8 @@ export async function loadReviewConsole(
           status: true,
           resultSource: true,
           failureReason: true,
+          reviewType: true,
+          claim: true,
           evidence: {
             select: {
               id: true,
@@ -1085,6 +1096,8 @@ export async function loadReviewConsole(
       overclaimDetected: row.overclaimDetected,
       resultSource: request?.resultSource ?? null,
       failureReason: request?.failureReason ?? null,
+      reviewType: request?.reviewType ?? null,
+      claim: request?.claim ?? null,
       metricIds: Array.isArray(evidence?.metricIds)
         ? evidence.metricIds.filter((id): id is string => typeof id === 'string')
         : [],
