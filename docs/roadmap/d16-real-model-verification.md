@@ -37,6 +37,8 @@
 
 ### VERIFIED_REAL 규칙
 - VERIFIED_REAL 지정은 E-1..E-5 **모두** 확인 후에만.
+- **VERIFIED_REAL의 의미 범위**: '실모델(Gemini)이 실제로 호출되어 계약대로 결과가 저장됨'만 뜻한다. **판정 품질(정답성·분별력)의 검증이 아니다.** 판정 품질은 아래 '관찰된 편차'와 I-032로 별도 추적한다.
+- **E-3 한계**: 공급자 콘솔 사용량은 **시간 단위** 집계이므로 분 단위·요청 단위 대조는 불가하다. 같은 시간대에 다른 호출(다른 앱·수동 테스트)이 있으면 구분할 수 없다. 앱 키↔콘솔 프로젝트 연결은 [확인 불가].
 - **F1–F3(t434 실행분)은 E-3 콘솔 대조가 끝나기 전까지 VERIFIED_REAL 지정 금지.** 대조 범위: 모델 `gemini-2.5-flash-lite`, UTC 2026-10-22 14:25–15:12, 기대 요청 수 111.
 - C1–C5도 동일: 실행 후 해당 시간대 E-3 대조 완료 전 지정 금지.
 
@@ -106,6 +108,7 @@
   - C3가 null 지표를 "집계 장애"로 단정.
   - C4는 참인 주장인데 REWORD.
   - 5건 전부 REWORD(판정 분별력 부족).
+  - 원인 후보 [코드 확인]: `callFrozenReviewPipeline`(src/lib/jury-product/review-core.ts)이 `void input.claim;`으로 사용자 주장을 버리고 보드에 전달하지 않는다. CLAIM_VALIDATION은 저장·요청 키에만 주장을 쓰고 실제 판정은 FULL_REVIEW와 같다. claimStrength·overclaimDetected는 사용자 주장이 아니라 Chairman 출력의 영어 어휘(`critical`, `due to` 등)로 계산되고, conflictDetected는 GA4↔DB 같은 지표 값 불일치만 본다. → I-032.
 
 ## VERIFIED_REAL 지정 기록 (2026-10-23, Preview DB만)
 - 메커니즘: `JuryReviewRequest.resultSource` enum(`JuryResultSource`)을 `REAL_MODEL` → `VERIFIED_REAL`로 수동 변경 [코드 확인: prisma/schema.prisma]. 자동 설정 경로 없음(D-16). `JuryReviewResult`에는 해당 필드 없음.
@@ -139,4 +142,10 @@
 - I-028: `/jury/organization/create` 화면에 로그아웃 버튼 없음(조직 없는 계정이 빠져나갈 수 없음). 미착수.
 - I-029: 연결 수집 카드에도 주장 입력 폼이 표시되나, 제출 시 `SCOPE_NOT_APPROVED`로 거부됨(연결 경로는 FULL_REVIEW만 가능). 폼 숨김 또는 경로 지원 필요. 미착수.
 - I-030 (UX): 리뷰 실행(약 2분) 중 진행 표시 없음, 완료 후 페이지가 넘어가지 않는 경우 있음(C5에서 관찰, 요청은 정상 완료). 미착수.
-- I-031 (UX): 주장 입력란에 글자 수 카운터 없음(서버 길이 제한만 존재). 미착수.
+- I-031 (UX): 주장 입력란에 글자 수 카운터 없음(서버 길이 제한만 존재). 패치 준비(fix/i031-claim-counter).
+- I-032 (판정): CLAIM_VALIDATION에서 사용자 주장이 보드 파이프라인에 전달되지 않음(`void input.claim`). 판정 로직 변경이므로 별도 승인 필요. 미착수.
+- 운영(prod) 실행 `7ded5a39`의 LLM 호출 수: **[확인 불가]** — 운영 DB 호출 로그·콘솔 대조를 하지 않았다(읽기 전용 원칙). 이 문서의 VERIFIED_REAL 기록은 Preview 8건에만 해당한다.
+
+## 링크
+- PR: https://github.com/skidraw4-max/aisles/pull/36 (Draft 유지)
+- 이슈: https://github.com/skidraw4-max/aisles/issues?q=I-024+OR+I-026+OR+I-027+OR+I-028+OR+I-029+OR+I-030+OR+I-031
