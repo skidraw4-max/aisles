@@ -821,7 +821,7 @@ export function EvidenceBody({ actor, view, query = { q: '', filter: '', page: 1
           form.scopes.map((scope) => (
             <form action={submitTenantEvidenceIntake} key={scope.scopeId}>
               <h3>리뷰 자료 입력</h3>
-              <p className={styles.muted}>선택한 서비스: {scope.label}</p>
+              <p className={`${styles.muted} ${styles.selectedService}`}>선택한 서비스: {scope.label}</p>
               <input type="hidden" name="connectionId" value={scope.connectionId} />
               <input type="hidden" name="scopeId" value={scope.scopeId} />
               {/* RM-09 (I-004): one evidence can carry several metrics and an explicit period. */}
