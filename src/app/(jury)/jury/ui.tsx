@@ -841,7 +841,7 @@ export function EvidenceBody({ actor, view, query = { q: '', filter: '', page: 1
                 <legend>분석 항목<span className={styles.requiredMark}>1개 이상</span></legend>
                 <p className={styles.muted}>입력하지 않을 항목은 「포함 안 함」으로 두세요. 포함하지 않은 항목은 미검사로 표시되며 문제 없음으로 보지 않습니다.</p>
                 {scope.metrics.map((metric, index) => (
-                  <div className={styles.row} key={metric}>
+                  <div className={`${styles.row} ${styles.metricRow}`} key={metric}>
                     <input type="hidden" name="metricName" value={metric} />
                     <span className={styles.label}>{metric}</span>
                     <select className={styles.field} name={`availability:${metric}`} defaultValue={index === 0 ? 'AVAILABLE' : ''} aria-label={`${metric} 자료 상태`}>
