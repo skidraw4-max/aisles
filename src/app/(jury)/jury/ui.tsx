@@ -864,7 +864,7 @@ export function EvidenceBody({ actor, view, query = { q: '', filter: '', page: 1
                   </div>
                 ))}
               </fieldset>
-              <button className={styles.primaryButton} type="submit">리뷰 자료 만들기</button>
+              <button className={`${styles.primaryButton} ${styles.intakeSubmit}`} type="submit">리뷰 자료 만들기</button>
             </form>
           ))
         )
