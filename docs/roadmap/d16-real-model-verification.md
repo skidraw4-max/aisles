@@ -98,7 +98,7 @@
 - 호출: 이번 실행 160회, 누계 271 / 상한 414 [DB 확인].
 - E-1 통과, E-2 통과(케이스별 OK 32행, seq 0–31 연속, boardRunId 일치), E-4 통과(schemaValid, enum 범위) [DB 확인].
 - E-5: CT 위반 0 [실제 확인: `buildReviewDisplayModel` 로컬 실행]. 분류 방법: NO_CLAIMS, DUPLICATE_*, PARTIAL_CONFIRMATION은 정보성으로 보고 위반에서 제외, 그 외 플래그를 위반으로 집계 [추론, 확인 필요]. F1–F3도 같은 방법으로 0.
-- E-3(공급자 콘솔 대조): 대기. VERIFIED_REAL 지정하지 않음.
+- E-3(공급자 콘솔 대조): 통과 — 아래 'VERIFIED_REAL 지정 기록' 참조.
 - 관찰된 편차 [추론]:
   - 반박된 주장(C1/C2/C5)에서도 conflictDetected=false.
   - C1/C3 claimStrength가 strong.
@@ -106,6 +106,31 @@
   - C3가 null 지표를 "집계 장애"로 단정.
   - C4는 참인 주장인데 REWORD.
   - 5건 전부 REWORD(판정 분별력 부족).
+
+## VERIFIED_REAL 지정 기록 (2026-10-23, Preview DB만)
+- 메커니즘: `JuryReviewRequest.resultSource` enum(`JuryResultSource`)을 `REAL_MODEL` → `VERIFIED_REAL`로 수동 변경 [코드 확인: prisma/schema.prisma]. 자동 설정 경로 없음(D-16). `JuryReviewResult`에는 해당 필드 없음.
+- 범위: Preview DB(aisles-jury-preview)의 아래 8건만. 운영 DB 변경 없음. `JuryReviewAttempt.resultSource`는 실행 기록이므로 REAL_MODEL 유지.
+- 조건: `resultSource='REAL_MODEL' AND status='COMPLETED' AND id IN (8건)`. 변경 전 8건 모두 REAL_MODEL/COMPLETED, 변경 후 8건 VERIFIED_REAL(반환 8행) [DB 확인].
+
+| 케이스 | 요청 id | 결과 id | 유형 | 생성(UTC) | 전 → 후 |
+|---|---|---|---|---|---|
+| F1 | 9b0faaa0 | fc97461a | FULL_REVIEW | 10-22 14:55 | REAL_MODEL → VERIFIED_REAL |
+| F2 | 90504bae | ed3b4256 | FULL_REVIEW | 10-22 15:07 | REAL_MODEL → VERIFIED_REAL |
+| F3 | dd61c4ed | 97ee11d5 | FULL_REVIEW | 10-22 15:11 | REAL_MODEL → VERIFIED_REAL |
+| C1 | b47f7333 | 50ddc102 | CLAIM_VALIDATION | 10-23 02:24 | REAL_MODEL → VERIFIED_REAL |
+| C2 | 8ddc68b2 | 518d7f4a | CLAIM_VALIDATION | 10-23 02:28 | REAL_MODEL → VERIFIED_REAL |
+| C3 | a500f726 | d3996a7f | CLAIM_VALIDATION | 10-23 02:32 | REAL_MODEL → VERIFIED_REAL |
+| C4 | d6d74e79 | c1491334 | CLAIM_VALIDATION | 10-23 02:35 | REAL_MODEL → VERIFIED_REAL |
+| C5 | 9d6c323b | 2cd7be0a | CLAIM_VALIDATION | 10-23 02:38 | REAL_MODEL → VERIFIED_REAL |
+
+증거 요약(8건 공통):
+- E-1 통과: REAL_MODEL, gemini-2.5-flash-lite [DB 확인].
+- E-2 통과: 케이스별 OK 32행, seq 0–31, boardRunId 일치, attempt COMPLETED (F1은 시도 2건) [DB 확인].
+- E-3 통과: AI Studio 사용량(Gemini 2.5 Flash Lite) UTC 10-22 14:00–16:00 = 111회, UTC 10-23 02:00–03:00 = 160회, 성공률 100% [실제 확인]. 시간 단위 집계라 분 단위 대조 불가, 해당 시간대 수치가 DB 호출 수와 정확히 일치하여 동일 호출로 판단 [추론]. 앱 키↔콘솔 프로젝트 연결은 [확인 불가].
+- E-4 통과: schemaValid, enum 범위 [DB 확인].
+- E-5 통과: CT 위반 0 (분류 방법은 [추론, 확인 필요]).
+- 승인: JD 일괄 승인(t447u, 이번 진행 한정).
+- 남은 편차(위 '관찰된 편차')는 지정과 별개로 추적.
 
 ## 관련 이슈 (D-16 추적성)
 - I-024 / RM-20: 주장 입력이 없을 때 주장 강도를 확정 표시하지 않음(1단계: 표시 계층만, '주장 입력 없음').
