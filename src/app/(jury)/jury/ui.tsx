@@ -37,6 +37,8 @@ import type { JuryMembership } from '@/lib/jury-product/records';
 import { JURY_CLAIM_MAX_LENGTH } from '@/lib/jury-product/records';
 import { ReviewRequestFields } from './review-request-fields';
 import { CONNECTED_EVIDENCE_REVIEW_NOTICE, evidenceReviewPath } from '@/lib/jury-product/evidence-review-path';
+import { ReviewSubmitButton } from './review-submit-button';
+import { evidenceReviewStatus } from '@/lib/jury-product/evidence-review-status';
 import { auditActionLabel, DECISION_GUIDANCE, displayText, traceLabel, userLabel } from '@/lib/jury-product/ui-labels';
 import styles from './jury.module.css';
 
@@ -873,6 +875,8 @@ export function EvidenceBody({ actor, view, query = { q: '', filter: '', page: 1
         const stored = view.evidence.find((item) => item.id === row.id);
         // I-029: connected-collection evidence is reviewed from its service page (FULL_REVIEW only).
         const servicePageHref = stored ? juryHref(`/services/${stored.connectionId}`) : null;
+        // I-030: stored state for this card (rebuilt from the DB on every render, so it survives a refresh).
+        const reviewState = evidenceReviewStatus(view, row.id, Date.now());
         return (
         <article key={row.id}>
           <div className={styles.row}><span className={styles.label}>리뷰 자료</span><span>{row.purpose}</span></div>
@@ -897,7 +901,7 @@ export function EvidenceBody({ actor, view, query = { q: '', filter: '', page: 1
               <form action={submitTenantReview}>
                 <input type="hidden" name="evidenceId" value={row.id} />
                 <ReviewRequestFields />
-                <button className={styles.primaryButton} type="submit">리뷰 요청하기</button>
+                <ReviewSubmitButton label="리뷰 요청하기" disabledReason={reviewState.inFlight ? '이 자료로 실행 중인 리뷰가 있습니다. 끝난 뒤 새로고침하면 결과를 볼 수 있습니다.' : null} />
               </form>
             ) : (
               <p className={styles.muted}>
@@ -911,6 +915,25 @@ export function EvidenceBody({ actor, view, query = { q: '', filter: '', page: 1
               </p>
             )
           ) : null}
+          {reviewState.open ? (
+            <div className={styles.row}>
+              <span className={styles.label}>최근 요청</span>
+              <span title={[reviewState.open.reasonCode, reviewState.open.llmErrorCode].filter(Boolean).join(' / ') || undefined}>
+                {reviewState.open.stateLabel}
+                {reviewState.open.startedAt ? ` · 시작 ${formatKstShort(reviewState.open.startedAt)}` : ''}
+                {reviewState.open.reason ? ` · ${reviewState.open.reason}` : ''}
+              </span>
+            </div>
+          ) : null}
+          {reviewState.latestResult ? (
+            <div className={styles.row}>
+              <span className={styles.label}>최근 결과</span>
+              <Link className={styles.inline} href={juryHref(`/reviews/${reviewState.latestResult.id}`)}>
+                결과 보기 · 완료 {formatKstShort(reviewState.latestResult.completedAt)}
+              </Link>
+            </div>
+          ) : null}
+          {!reviewState.attemptsLoaded ? <p className={styles.muted}>실행 기록을 불러오지 못해 진행 중인 요청은 확인할 수 없습니다.</p> : null}
         </article>
         );
       })}
