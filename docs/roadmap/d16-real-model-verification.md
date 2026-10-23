@@ -143,9 +143,9 @@
 - I-026 / RM-21: 증거 카드 '리뷰 요청하기'에 리뷰 유형·주장 입력(C1–C5 선행 조건).
 - I-027 / RM-19: 미수집 지표의 measured 값 투영(ISSUE-B) — 보류. t434/t435에서 임시로 I-025로 적었으나 `I-025`는 `docs/decisions/D-08-rereview-result-table.md`에서 이미 "JuryReReviewResult 0건"의 의미로 사용 중이라 I-027로 재지정(t436). 기존 I-025의 의미는 바꾸지 않는다.
 - I-028: `/jury/organization/create` 화면에 로그아웃 버튼 없음(조직 없는 계정이 빠져나갈 수 없음). 미착수.
-- I-029: 연결 수집 카드에도 주장 입력 폼이 표시되나, 제출 시 `SCOPE_NOT_APPROVED`로 거부됨(연결 경로는 FULL_REVIEW만 가능). 폼 숨김 또는 경로 지원 필요. Draft PR #37(폼 숨김 + 안내). 연결 경로 주장 검증 지원은 설계만(judging-design.md §C1).
-- I-030 (UX): 리뷰 실행(약 2분) 중 진행 표시 없음, 완료 후 페이지가 넘어가지 않는 경우 있음(C1·C5에서 관찰, 요청은 DB상 정상 완료). Draft PR #38. 폴링/비동기 상태 API는 설계만(judging-design.md §C2).
-- I-031 (UX): 주장 입력란에 글자 수 카운터 없음(서버 길이 제한만 존재). Draft PR #39(fix/i031-claim-counter).
+- I-029: 연결 수집 카드에도 주장 입력 폼이 표시되나, 제출 시 `SCOPE_NOT_APPROVED`로 거부됨(연결 경로는 FULL_REVIEW만 가능). 폼 숨김 또는 경로 지원 필요. PR #37(폼 숨김 + 안내, #40으로 main 반영 — GitHub 자동 merged 처리). 연결 경로 주장 검증 지원은 설계만(judging-design.md §C1).
+- I-030 (UX): 리뷰 실행(약 2분) 중 진행 표시 없음, 완료 후 페이지가 넘어가지 않는 경우 있음(C1·C5에서 관찰, 요청은 DB상 정상 완료). PR #38(#40에 포함되어 main 반영, PR은 병합 없이 닫힘). 폴링/비동기 상태 API는 설계만(judging-design.md §C2).
+- I-031 (UX): 주장 입력란에 글자 수 카운터 없음(서버 길이 제한만 존재). PR #39(fix/i031-claim-counter, #40에 포함되어 main 반영, PR은 병합 없이 닫힘).
 - I-032 (판정): CLAIM_VALIDATION에서 사용자 주장이 보드 파이프라인에 전달되지 않음(`void input.claim`). 판정 로직 변경이므로 별도 승인 필요. 미착수(설계: judging-design.md P1). 수정 전 C1–C5 결과는 주장 검증 기준선으로 쓰지 않는다.
 - I-033 (UI, t452u): `/jury/evidence` 모바일(390–410px) 가로 넘침. 원인 [실제 확인, 로컬 하네스]: 카드의 「기술 정보 자세히 보기」(`.technicalDetails`)를 펼치면 `.row`(flex) 안의 64자 evidence id가 줄바꿈되지 않고 min-content 폭(약 580px)을 유지해 문서 scrollWidth가 639px가 됨. 수정: `.technicalDetails .row`의 값 칸만 `min-width:0; overflow-wrap:anywhere`, 라벨은 `flex-shrink:0`(jury.module.css). 1280px 화면은 수정 전후 픽셀 동일. 접힌 상태의 Preview 가로 스크롤·우측 플로팅 버튼(Vercel 툴바로 추정) 근처 'DATABASE' 라벨은 로컬에서 재현되지 않음 — Preview 재확인 필요. 관련: I-029/I-030/I-031 통합 브랜치(integration/ux-i029-i031). 후속(t453u): Preview DevTools 측정(390·410에서 scrollWidth 608)의 원인은 리뷰 자료 입력 폼의 `<p class=muted>선택한 서비스: {표시명} / {scope id}`(`ui.tsx` EvidenceBody, 끊김 없는 긴 id). 수정: 해당 줄에만 `.selectedService { min-width:0; overflow-wrap:anywhere }` 추가(전역 `.muted` 미변경, 부모 form은 block이라 추가 수정 불필요). [실제 확인, 로컬 하네스·긴 scope id]: 390/410에서 scrollWidth 469→390/410(details 접힘·펼침 모두), 768·1280 화면은 수정 전후 픽셀 동일. Preview 재측정은 [확인 불가].
 - I-034 (UI, I-030 후속): 리뷰 요청 버튼(`ReviewSubmitButton`)의 처리 중 상태가 약 8ms 만에 풀려 버튼이 다시 활성화됨(중복 유료 실행 위험). 원인 [실제 확인, 로컬 하네스, React 19.2.4 / Next 15.5.14]: 폼 액션 실행 중 경과 시간 등 일반 setState가 일어나면 `useFormStatus().pending`이 false로 돌아감(setState 없는 최소 버튼은 유지, startTransition으로 감싸면 유지되지만 경과 시간이 액션 종료까지 멈춤). 수정: 진행 상태를 `useFormStatus` 대신 버튼이 직접 소유(`src/lib/jury-product/review-submit-progress.ts` 순수 리듀서) — 폼 submit 이벤트에서 ref 가드 + preventDefault/stopImmediatePropagation으로 중복 제출 차단, URL 변경(성공 이동·같은 경로 `?result=` 거절)·언마운트(오류 경계)·폼 reset(이동 없는 응답 → 3초 뒤 새로고침 안내)·한도+30초(브라우저 대기 중단 안내)로 정리. useActionState는 서버 액션 시그니처(prevState) 변경이 필요하고 같은 transition pending에 의존해 제외. 서버 액션·시그니처·폼·심사 로직·프롬프트·스키마 변경 없음. 검증 [실제 확인, 임시 하네스·모의 서버 액션, dev 및 별도 사본 next build/start]: 경과 시간 0→4초 동안 disabled 유지, 연타 5회+requestSubmit 2회에도 서버 호출 1회, 성공/거절/오류/무이동/타임아웃 정리, 거절 시 '화면이 이동하지 않았습니다' 오안내 없음. Preview·실제 리뷰 제출 경로는 [확인 불가].
@@ -153,6 +153,8 @@
 - 운영(prod) 실행 `7ded5a39`의 LLM 호출 수: **[확인 불가]** — 운영 DB 호출 로그·콘솔 대조를 하지 않았다(읽기 전용 원칙). 이 문서의 VERIFIED_REAL 기록은 Preview 8건에만 해당한다.
 
 ## 링크
-- PR: https://github.com/skidraw4-max/aisles/pull/36 (Draft 유지)
-- 관련 Draft PR: #37 (I-029) https://github.com/skidraw4-max/aisles/pull/37 · #38 (I-030) https://github.com/skidraw4-max/aisles/pull/38 · #39 (I-031) https://github.com/skidraw4-max/aisles/pull/39
+- PR: https://github.com/skidraw4-max/aisles/pull/36 (main에 병합됨, merge 커밋 325c898)
+- 관련 PR: #37 (I-029) https://github.com/skidraw4-max/aisles/pull/37 · #38 (I-030) https://github.com/skidraw4-max/aisles/pull/38 · #39 (I-031) https://github.com/skidraw4-max/aisles/pull/39
+  - 상태: #37은 head 39de5d5가 #40을 통해 변경 없이 main에 들어가 GitHub가 자동 merged 처리, #38·#39는 #40에 포함된 것으로 병합 없이 닫힘.
+- 통합 PR: #40 https://github.com/skidraw4-max/aisles/pull/40 (integration/ux-i029-i031, main에 병합됨, merge 커밋 e3fe85f)
 - 이슈 ID(I-0xx)는 이 문서와 docs/의 ID 체계이며 GitHub Issues로 등록돼 있지 않다 [추론: 이전 링크는 검색 URL이었음].
