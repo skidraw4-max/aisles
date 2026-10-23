@@ -18,4 +18,4 @@ export function evidenceReviewPath(evidence: { purpose: string }): EvidenceRevie
 }
 
 export const CONNECTED_EVIDENCE_REVIEW_NOTICE =
-  '연결 수집 자료는 이 화면에서 리뷰를 요청할 수 없습니다. 전체 리뷰는 서비스 화면에서 요청하세요. 주장 검증은 직접 입력 자료에서만 지원합니다.';
+  '연결 수집 자료는 이 화면에서 리뷰를 요청할 수 없습니다. 전체 리뷰는 서비스 화면에서 요청하세요(수집이 완료되고 실행 중인 리뷰가 없을 때 요청 버튼이 보입니다). 주장 검증은 직접 입력 자료에서만 지원합니다.';
