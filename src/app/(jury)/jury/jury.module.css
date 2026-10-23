@@ -1433,3 +1433,43 @@ a.inline {
   align-items: center;
   margin-top: 0.75rem;
 }
+
+/* I-033: the 64-char evidence id (and other unbreakable values) under "기술 정보 자세히 보기"
+   kept its min-content width in the flex .row and pushed the page wider than a 390–410px
+   viewport once the details were opened. Only the value cell of those rows may shrink and wrap;
+   labels keep one line; every other .row is unchanged. */
+.technicalDetails .row > :first-child {
+  flex-shrink: 0;
+}
+
+.technicalDetails .row > :last-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* I-033 (follow-up): the intake form's "선택한 서비스: {displayName} / {scopeId}" line carries an
+   unbroken scope id; let it wrap instead of widening the page on mobile. Scoped to this line only. */
+.selectedService {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* I-035: evidence intake metric rows. In the flex .row (nowrap) the metric name kept its
+   min-content width, so on 390–410px the availability select and the value input shrank below
+   their text ("사용 가", "측정값 (선"). On narrow screens the name takes its own line and the two
+   fields share the next line. Desktop/tablet (>720px) is unchanged. */
+@media (max-width: 720px) {
+  .metricRow {
+    flex-wrap: wrap;
+    gap: 0 0.75rem;
+  }
+  .metricRow > .label {
+    flex: 1 1 100%;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .metricRow > .field {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+}

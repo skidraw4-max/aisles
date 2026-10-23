@@ -36,6 +36,9 @@ import { ConfidenceLine, ResultComparison, reviewTabHref } from './review-tabs-u
 import type { JuryMembership } from '@/lib/jury-product/records';
 import { JURY_CLAIM_MAX_LENGTH } from '@/lib/jury-product/records';
 import { ReviewRequestFields } from './review-request-fields';
+import { CONNECTED_EVIDENCE_REVIEW_NOTICE, evidenceReviewPath } from '@/lib/jury-product/evidence-review-path';
+import { ReviewSubmitButton } from './review-submit-button';
+import { evidenceReviewStatus } from '@/lib/jury-product/evidence-review-status';
 import { auditActionLabel, DECISION_GUIDANCE, displayText, traceLabel, userLabel } from '@/lib/jury-product/ui-labels';
 import styles from './jury.module.css';
 
@@ -818,7 +821,7 @@ export function EvidenceBody({ actor, view, query = { q: '', filter: '', page: 1
           form.scopes.map((scope) => (
             <form action={submitTenantEvidenceIntake} key={scope.scopeId}>
               <h3>리뷰 자료 입력</h3>
-              <p className={styles.muted}>선택한 서비스: {scope.label}</p>
+              <p className={`${styles.muted} ${styles.selectedService}`}>선택한 서비스: {scope.label}</p>
               <input type="hidden" name="connectionId" value={scope.connectionId} />
               <input type="hidden" name="scopeId" value={scope.scopeId} />
               {/* RM-09 (I-004): one evidence can carry several metrics and an explicit period. */}
@@ -838,7 +841,7 @@ export function EvidenceBody({ actor, view, query = { q: '', filter: '', page: 1
                 <legend>분석 항목<span className={styles.requiredMark}>1개 이상</span></legend>
                 <p className={styles.muted}>입력하지 않을 항목은 「포함 안 함」으로 두세요. 포함하지 않은 항목은 미검사로 표시되며 문제 없음으로 보지 않습니다.</p>
                 {scope.metrics.map((metric, index) => (
-                  <div className={styles.row} key={metric}>
+                  <div className={`${styles.row} ${styles.metricRow}`} key={metric}>
                     <input type="hidden" name="metricName" value={metric} />
                     <span className={styles.label}>{metric}</span>
                     <select className={styles.field} name={`availability:${metric}`} defaultValue={index === 0 ? 'AVAILABLE' : ''} aria-label={`${metric} 자료 상태`}>
@@ -870,6 +873,10 @@ export function EvidenceBody({ actor, view, query = { q: '', filter: '', page: 1
       {allEvidence.length === 0 ? <p>{displayText(SHELL_EMPTY.evidence)}</p> : evidence.length === 0 ? <p className={styles.muted}>조건에 맞는 자료 없음</p> : null}
       {evidence.map((row) => {
         const stored = view.evidence.find((item) => item.id === row.id);
+        // I-029: connected-collection evidence is reviewed from its service page (FULL_REVIEW only).
+        const servicePageHref = stored ? juryHref(`/services/${stored.connectionId}`) : null;
+        // I-030: stored state for this card (rebuilt from the DB on every render, so it survives a refresh).
+        const reviewState = evidenceReviewStatus(view, row.id, Date.now());
         return (
         <article key={row.id}>
           <div className={styles.row}><span className={styles.label}>리뷰 자료</span><span>{row.purpose}</span></div>
@@ -889,12 +896,44 @@ export function EvidenceBody({ actor, view, query = { q: '', filter: '', page: 1
             </div>
           ))}
           {canShowWrite(actor, 'review.start') ? (
-            <form action={submitTenantReview}>
-              <input type="hidden" name="evidenceId" value={row.id} />
-              <ReviewRequestFields />
-              <button className={styles.primaryButton} type="submit">리뷰 요청하기</button>
-            </form>
+            // I-029: only declared-intake evidence can be reviewed from this card (runTenantReview scope check).
+            evidenceReviewPath(row) === 'TENANT_INTAKE' ? (
+              <form action={submitTenantReview}>
+                <input type="hidden" name="evidenceId" value={row.id} />
+                <ReviewRequestFields />
+                <ReviewSubmitButton label="리뷰 요청하기" disabledReason={reviewState.inFlight ? '이 자료로 실행 중인 리뷰가 있습니다. 끝난 뒤 새로고침하면 결과를 볼 수 있습니다.' : null} />
+              </form>
+            ) : (
+              <p className={styles.muted}>
+                {CONNECTED_EVIDENCE_REVIEW_NOTICE}
+                {servicePageHref ? (
+                  <>
+                    {' '}
+                    <Link className={styles.inline} href={servicePageHref}>서비스 화면으로 이동</Link>
+                  </>
+                ) : null}
+              </p>
+            )
           ) : null}
+          {reviewState.open ? (
+            <div className={styles.row}>
+              <span className={styles.label}>최근 요청</span>
+              <span title={[reviewState.open.reasonCode, reviewState.open.llmErrorCode].filter(Boolean).join(' / ') || undefined}>
+                {reviewState.open.stateLabel}
+                {reviewState.open.startedAt ? ` · 시작 ${formatKstShort(reviewState.open.startedAt)}` : ''}
+                {reviewState.open.reason ? ` · ${reviewState.open.reason}` : ''}
+              </span>
+            </div>
+          ) : null}
+          {reviewState.latestResult ? (
+            <div className={styles.row}>
+              <span className={styles.label}>최근 결과</span>
+              <Link className={styles.inline} href={juryHref(`/reviews/${reviewState.latestResult.id}`)}>
+                결과 보기 · 완료 {formatKstShort(reviewState.latestResult.completedAt)}
+              </Link>
+            </div>
+          ) : null}
+          {!reviewState.attemptsLoaded ? <p className={styles.muted}>실행 기록을 불러오지 못해 진행 중인 요청은 확인할 수 없습니다.</p> : null}
         </article>
         );
       })}
