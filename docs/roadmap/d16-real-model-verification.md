@@ -82,3 +82,4 @@
 - I-024 / RM-20: 주장 입력이 없을 때 주장 강도를 확정 표시하지 않음(1단계: 표시 계층만, '주장 입력 없음').
 - I-026 / RM-21: 증거 카드 '리뷰 요청하기'에 리뷰 유형·주장 입력(C1–C5 선행 조건).
 - I-027 / RM-19: 미수집 지표의 measured 값 투영(ISSUE-B) — 보류. t434/t435에서 임시로 I-025로 적었으나 `I-025`는 `docs/decisions/D-08-rereview-result-table.md`에서 이미 "JuryReReviewResult 0건"의 의미로 사용 중이라 I-027로 재지정(t436). 기존 I-025의 의미는 바꾸지 않는다.
+- I-033 (UI, t452u): `/jury/evidence` 모바일(390–410px) 가로 넘침. 원인 [실제 확인, 로컬 하네스]: 카드의 「기술 정보 자세히 보기」(`.technicalDetails`)를 펼치면 `.row`(flex) 안의 64자 evidence id가 줄바꿈되지 않고 min-content 폭(약 580px)을 유지해 문서 scrollWidth가 639px가 됨. 수정: `.technicalDetails .row`의 값 칸만 `min-width:0; overflow-wrap:anywhere`, 라벨은 `flex-shrink:0`(jury.module.css). 1280px 화면은 수정 전후 픽셀 동일. 접힌 상태의 Preview 가로 스크롤·우측 플로팅 버튼(Vercel 툴바로 추정) 근처 'DATABASE' 라벨은 로컬에서 재현되지 않음 — Preview 재확인 필요. 관련: I-029/I-030/I-031 통합 브랜치(integration/ux-i029-i031).

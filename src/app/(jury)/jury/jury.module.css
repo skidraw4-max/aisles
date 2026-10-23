@@ -1433,3 +1433,16 @@ a.inline {
   align-items: center;
   margin-top: 0.75rem;
 }
+
+/* I-033: the 64-char evidence id (and other unbreakable values) under "기술 정보 자세히 보기"
+   kept its min-content width in the flex .row and pushed the page wider than a 390–410px
+   viewport once the details were opened. Only the value cell of those rows may shrink and wrap;
+   labels keep one line; every other .row is unchanged. */
+.technicalDetails .row > :first-child {
+  flex-shrink: 0;
+}
+
+.technicalDetails .row > :last-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
