@@ -10,6 +10,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useFormStatus } from 'react-dom';
 import { useRouter } from 'next/navigation';
+import { reviewSubmitOutcome } from '@/lib/jury-product/review-submit-outcome';
 import styles from './jury.module.css';
 
 /** Matches `maxDuration` in the (jury) layout. */
@@ -22,9 +23,11 @@ export function ReviewSubmitButton({ label, disabledReason }: { label: string; d
   const [elapsed, setElapsed] = useState(0);
   const [settledWithoutNavigation, setSettledWithoutNavigation] = useState(false);
   const wasPending = useRef(false);
+  const hrefAtSubmit = useRef<string | null>(null);
 
   useEffect(() => {
     if (pending) {
+      if (!wasPending.current) hrefAtSubmit.current = window.location.href;
       wasPending.current = true;
       setSettledWithoutNavigation(false);
       setStartedAt((value) => value ?? Date.now());
@@ -33,8 +36,14 @@ export function ReviewSubmitButton({ label, disabledReason }: { label: string; d
     if (!wasPending.current) return;
     wasPending.current = false;
     setStartedAt(null);
-    // redirect() normally unmounts this card; still mounted a moment later = no navigation.
-    const timer = window.setTimeout(() => setSettledWithoutNavigation(true), 3000);
+    // redirect() normally unmounts this card. A refusal redirects to /jury/evidence?result=… (same
+    // route, notice shown by the page) — only an unchanged URL a moment later means no navigation.
+    const before = hrefAtSubmit.current;
+    const timer = window.setTimeout(() => {
+      if (before !== null && reviewSubmitOutcome(before, window.location.href) === 'NO_NAVIGATION') {
+        setSettledWithoutNavigation(true);
+      }
+    }, 3000);
     return () => window.clearTimeout(timer);
   }, [pending]);
 
