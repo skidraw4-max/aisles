@@ -66,6 +66,20 @@ export const RESULT_SOURCE_LABELS: Record<JuryResultSourceValue, string> = {
 const DECISION_LABELS: Record<string, string> = { ACCEPT: '수용', VERIFY: '확인 필요', REWORD: '수정 필요' };
 const EVIDENCE_STRENGTH_LABELS: Record<string, string> = { strong: '충분', moderate: '보통', unknown: '판단 불가' };
 const CLAIM_STRENGTH_LABELS: Record<string, string> = { weak: '약함', strong: '강함', extreme: '과도함' };
+/** RM-20 phase 1 (I-024): shown instead of a claim-strength label when the request had no input claim. */
+export const NO_INPUT_CLAIM_LABEL = '주장 입력 없음';
+/**
+ * RM-20 phase 1 (I-024): was a claim entered on the request?
+ * ENTERED: CLAIM_VALIDATION or a non-blank claim. NONE: request loaded, no claim, not CLAIM_VALIDATION.
+ * UNKNOWN: caller did not load request.claim (undefined) -> previous behaviour, label unchanged.
+ */
+export type ClaimInputState = 'ENTERED' | 'NONE' | 'UNKNOWN';
+
+export function claimInputState(request: ReviewDisplayInput['request']): ClaimInputState {
+  if (!request || request.claim === undefined) return 'UNKNOWN';
+  if (request.reviewType === 'CLAIM_VALIDATION') return 'ENTERED';
+  return typeof request.claim === 'string' && request.claim.trim().length > 0 ? 'ENTERED' : 'NONE';
+}
 const SOURCES = new Set<string>(['REAL_MODEL', 'MOCK', 'FIXTURE', 'UNKNOWN_LEGACY', 'VERIFIED_REAL']);
 
 export type ReviewDisplayInput = {
@@ -80,7 +94,14 @@ export type ReviewDisplayInput = {
     conflictDetected?: boolean | null;
     overclaimDetected?: boolean | null;
   } | null;
-  request?: { status?: string | null; failureReason?: string | null; resultSource?: string | null } | null;
+  request?: {
+    status?: string | null;
+    failureReason?: string | null;
+    resultSource?: string | null;
+    /** RM-20 phase 1: stored request input. claim undefined = not loaded (UNKNOWN); null/'' = no claim. */
+    reviewType?: string | null;
+    claim?: string | null;
+  } | null;
   /** undefined = caller did not load evidence (scope unknown); null = no evidence linked. */
   evidence?: { id: string; metricIds?: readonly string[]; metrics?: readonly { availability: string; metric?: string }[] } | null;
 };
@@ -105,7 +126,10 @@ export type ReviewDisplayModel = {
   missingEvidenceCount: number | null;
   aiInference: { label: 'AI 추정'; expectedUserEffect: string | null; risk: string | null };
   scope: { state: 'LINKED' | 'UNLINKED' | 'NOT_LOADED'; metricCount: number | null; uncheckedCount: number | null; /** RM-07 미검사 목록: same source as uncheckedCount. */ unchecked: string[] };
+  /** claim: claim-strength label, or NO_INPUT_CLAIM_LABEL when claimInput is NONE (I-024: no definite strength without an input claim). */
   strength: { evidence: string | null; claim: string | null };
+  /** RM-20 phase 1 (I-024). Display only; stored claimStrength and judging are unchanged. */
+  claimInput: ClaimInputState;
   committee: { conflictDetected: boolean | null; overclaimDetected: boolean | null };
   /** M-012: never computed until D-07. */
   compositeScore: null;
@@ -159,6 +183,7 @@ export function buildReviewDisplayModel(input: ReviewDisplayInput): ReviewDispla
   if (source.value === 'MOCK' || source.value === 'FIXTURE') flags.add('NON_REAL_SOURCE');
   if (source.value === 'UNKNOWN_LEGACY') flags.add('UNKNOWN_SOURCE');
   const execution = { status: input.request?.status ?? null, failureReason: input.request?.failureReason ?? null };
+  const claimInput = claimInputState(input.request);
 
   const emptyModel = (flag: DisplayFlag, schemaValid: boolean): ReviewDisplayModel => ({
     resultId: result?.id ?? null,
@@ -172,6 +197,7 @@ export function buildReviewDisplayModel(input: ReviewDisplayInput): ReviewDispla
     aiInference: { label: 'AI 추정', expectedUserEffect: null, risk: null },
     scope: { state: 'NOT_LOADED', metricCount: null, uncheckedCount: null, unchecked: [] },
     strength: { evidence: null, claim: null },
+    claimInput,
     committee: { conflictDetected: null, overclaimDetected: null },
     compositeScore: null,
     flags: [...flags, flag],
@@ -268,8 +294,11 @@ export function buildReviewDisplayModel(input: ReviewDisplayInput): ReviewDispla
     scope,
     strength: {
       evidence: result.evidenceStrength ? EVIDENCE_STRENGTH_LABELS[result.evidenceStrength] ?? null : null,
-      claim: result.claimStrength ? CLAIM_STRENGTH_LABELS[result.claimStrength] ?? null : null,
+      claim: claimInput === 'NONE'
+        ? NO_INPUT_CLAIM_LABEL
+        : result.claimStrength ? CLAIM_STRENGTH_LABELS[result.claimStrength] ?? null : null,
     },
+    claimInput,
     committee: { conflictDetected: result.conflictDetected ?? null, overclaimDetected: result.overclaimDetected ?? null },
     compositeScore: null,
     flags: [...flags],

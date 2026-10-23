@@ -564,6 +564,9 @@ export function projectReviewConsole(input: {
           status: input.status,
           failureReason: input.displayFacts?.failureReason ?? null,
           resultSource: input.displayFacts?.resultSource ?? null,
+          // RM-20 phase 1: undefined when not loaded -> claimInput UNKNOWN (unchanged label).
+          reviewType: input.displayFacts?.reviewType,
+          claim: input.displayFacts?.claim,
         },
         evidence: input.evidenceId
           ? { id: input.evidenceId, metricIds: input.displayFacts?.metricIds ?? [], metrics: input.metrics }
