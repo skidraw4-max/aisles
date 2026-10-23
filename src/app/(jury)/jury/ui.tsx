@@ -36,6 +36,7 @@ import { ConfidenceLine, ResultComparison, reviewTabHref } from './review-tabs-u
 import type { JuryMembership } from '@/lib/jury-product/records';
 import { JURY_CLAIM_MAX_LENGTH } from '@/lib/jury-product/records';
 import { ReviewRequestFields } from './review-request-fields';
+import { CONNECTED_EVIDENCE_REVIEW_NOTICE, evidenceReviewPath } from '@/lib/jury-product/evidence-review-path';
 import { auditActionLabel, DECISION_GUIDANCE, displayText, traceLabel, userLabel } from '@/lib/jury-product/ui-labels';
 import styles from './jury.module.css';
 
@@ -870,6 +871,8 @@ export function EvidenceBody({ actor, view, query = { q: '', filter: '', page: 1
       {allEvidence.length === 0 ? <p>{displayText(SHELL_EMPTY.evidence)}</p> : evidence.length === 0 ? <p className={styles.muted}>조건에 맞는 자료 없음</p> : null}
       {evidence.map((row) => {
         const stored = view.evidence.find((item) => item.id === row.id);
+        // I-029: connected-collection evidence is reviewed from its service page (FULL_REVIEW only).
+        const servicePageHref = stored ? juryHref(`/services/${stored.connectionId}`) : null;
         return (
         <article key={row.id}>
           <div className={styles.row}><span className={styles.label}>리뷰 자료</span><span>{row.purpose}</span></div>
@@ -889,11 +892,24 @@ export function EvidenceBody({ actor, view, query = { q: '', filter: '', page: 1
             </div>
           ))}
           {canShowWrite(actor, 'review.start') ? (
-            <form action={submitTenantReview}>
-              <input type="hidden" name="evidenceId" value={row.id} />
-              <ReviewRequestFields />
-              <button className={styles.primaryButton} type="submit">리뷰 요청하기</button>
-            </form>
+            // I-029: only declared-intake evidence can be reviewed from this card (runTenantReview scope check).
+            evidenceReviewPath(row) === 'TENANT_INTAKE' ? (
+              <form action={submitTenantReview}>
+                <input type="hidden" name="evidenceId" value={row.id} />
+                <ReviewRequestFields />
+                <button className={styles.primaryButton} type="submit">리뷰 요청하기</button>
+              </form>
+            ) : (
+              <p className={styles.muted}>
+                {CONNECTED_EVIDENCE_REVIEW_NOTICE}
+                {servicePageHref ? (
+                  <>
+                    {' '}
+                    <Link className={styles.inline} href={servicePageHref}>서비스 화면으로 이동</Link>
+                  </>
+                ) : null}
+              </p>
+            )
           ) : null}
         </article>
         );
