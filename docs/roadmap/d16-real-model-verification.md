@@ -4,7 +4,7 @@
 - Vercel Preview 배포: 스택 최상단 브랜치들이 READY (git push 시 자동 생성). Preview DB 라우팅은 `JURY_PREVIEW_DB*` env(Preview 전용).
 - Preview Supabase(aisles-jury-preview): RM-01 마이그레이션 적용 완료(`_prisma_migrations` 48행, 기존 요청 6건 UNKNOWN_LEGACY, 새 테이블 RLS on). Supabase 쪽 이력(`supabase_migrations`)에도 1행 기록됨.
 - Gemini 키: `GOOGLE_GENERATIVE_AI_API_KEY`가 Preview 대상에 존재(Production과 같은 변수 → 같은 Google 계정 과금). 값은 확인·출력하지 않음.
-- Preview에는 `JURY_LLM_*` 한도가 없음(이번 승인은 Production만) → 실행 전 Preview에도 같은 값 설정 권장(별도 승인).
+- LLM 한도 env: `JURY_LLM_CALL_TIMEOUT_MS`, `JURY_LLM_TOTAL_BUDGET_MS`는 Preview·Production 모두 존재 [실제 확인]. `AI_REVIEW_BOARD_MAX_CALLS_PER_RUN`은 미설정 → 기본값 40 적용 [코드 확인]. 값은 확인·기록하지 않음. (이전 "Preview에는 `JURY_LLM_*` 한도가 없음" 문장은 잘못이어서 정정.)
 
 ## 호출 수와 상한 — 중요
 - 리뷰 1회 = LLM 32회 (`EXPECTED_PIPELINE_LLM_CALLS`, 실행당 상한 기본 40).
@@ -37,6 +37,8 @@
 
 ### VERIFIED_REAL 규칙
 - VERIFIED_REAL 지정은 E-1..E-5 **모두** 확인 후에만.
+- **VERIFIED_REAL의 의미 범위**: '실모델(Gemini)이 실제로 호출되어 계약대로 결과가 저장됨'만 뜻한다. **판정 품질(정답성·분별력)의 검증이 아니다.** 판정 품질은 아래 '관찰된 편차'와 I-032로 별도 추적한다.
+- **E-3 한계**: 공급자 콘솔 사용량은 **시간 단위** 집계이므로 분 단위·요청 단위 대조는 불가하다. 같은 시간대에 다른 호출(다른 앱·수동 테스트)이 있으면 구분할 수 없다. 앱 키↔콘솔 프로젝트 연결은 [확인 불가].
 - **F1–F3(t434 실행분)은 E-3 콘솔 대조가 끝나기 전까지 VERIFIED_REAL 지정 금지.** 대조 범위: 모델 `gemini-2.5-flash-lite`, UTC 2026-10-22 14:25–15:12, 기대 요청 수 111.
 - C1–C5도 동일: 실행 후 해당 시간대 E-3 대조 완료 전 지정 금지.
 
@@ -78,7 +80,76 @@
 - 실행 중 `JuryLlmCallLog` 누계 감시, 다음 리뷰(32회)가 누계 414를 넘으면 시작하지 않음.
 - 실패 실행 과금 여부: 확인 불가(E-3 콘솔 대조로만 확인 가능).
 
+## C1–C5 실행 기록 (2026-10-23, Preview)
+> **주의 (I-032, t449u):** C1–C5는 **실제 주장 검증이 아니다.** `callFrozenReviewPipeline`이 `void input.claim;`으로 주장을 버려 보드(LLM)는 주장을 받지 못했다 [코드 확인]. 아래 '판정'·claimStrength·overclaim·conflict는 같은 자료에 대한 FULL_REVIEW와 같은 경로의 결과이며, 주장에 대한 판정으로 읽으면 안 된다. 이 기록이 입증하는 것은 실모델 호출·저장 계약(E-1~E-5)뿐이다.
+
+- 배포: `dpl_Hk55ijKLDanJj3vFvr9CqJTAJVmR`, 브랜치 `preview/d16-claim-cases`(빈 커밋 `9cf0ebc`), target=preview [실제 확인].
+- 계획 재정의 사유:
+  - Preview 자체 수집 지표가 모두 0 → 계획의 예상치(C1 ≈410 등) 전제 불성립.
+  - 연결 수집 카드(3a9faf49…)는 주장 검증 경로에서 `SCOPE_NOT_APPROVED`로 거부(`runTenantReview` 게이트, I-029) [코드 확인].
+  - 따라서 값 0인 수동 카드 사용: C1–C4 `43b34970…`(2026-10-14~20), C5 `6de20a9b…`(2026-10-15~21, C1과 evidenceId 다름). 기존 수동 카드는 건드리지 않음.
+  - 재정의된 기대: C1/C2 반박, C3 측정 0을 과장 없이 서술, C4 집계(0) 확인, C5는 C1과 같은 주장·새 evidence.
+
+| # | 요청 id | 결과 id | 시도 | LLM 호출 | 판정(주장 미전달, I-032) | claimStrength(보고서 어휘 기반) | overclaim | conflict |
+|---|---|---|---|---|---|---|---|---|
+| C1 | b47f7333 | 50ddc102 | 1 | 32 | REWORD | strong | true | false |
+| C2 | 8ddc68b2 | 518d7f4a | 1 | 32 | REWORD | weak | true | false |
+| C3 | a500f726 | d3996a7f | 1 | 32 | REWORD | strong | true | false |
+| C4 | d6d74e79 | c1491334 | 1 | 32 | REWORD | weak | true | false |
+| C5 | 9d6c323b | 2cd7be0a | 1 | 32 | REWORD | weak | true | false |
+
+- 모두 COMPLETED, resultSource REAL_MODEL, 모델 gemini-2.5-flash-lite, 오류·fallback 0 [DB 확인].
+- 호출: 이번 실행 160회, 누계 271 / 상한 414 [DB 확인].
+- E-1 통과, E-2 통과(케이스별 OK 32행, seq 0–31 연속, boardRunId 일치), E-4 통과(schemaValid, enum 범위) [DB 확인].
+- E-5: CT 위반 0 [실제 확인: `buildReviewDisplayModel` 로컬 실행] — **조건부 통과**. 분류 방법: NO_CLAIMS, DUPLICATE_*, PARTIAL_CONFIRMATION은 정보성으로 보고 위반에서 제외, 그 외 플래그를 위반으로 집계 [추론, 확인 필요]. F1–F3도 같은 방법으로 0.
+- E-3(공급자 콘솔 대조): 통과 — 아래 'VERIFIED_REAL 지정 기록' 참조.
+- 관찰된 편차 [추론]:
+  - 값 0과 맞지 않는 주장(C1/C2/C5, 사용자 기대상 반박 대상)에서도 conflictDetected=false. 단 현재 정의(GA4↔DB 같은 지표 값 불일치)상 직접 입력 자료에서는 항상 false이므로 정의대로의 결과다 [코드 확인].
+  - C1/C3 claimStrength가 strong.
+  - C1 finalSurface가 측정값 0을 "데이터 없음"으로 서술(I-027 유사).
+  - C3가 null 지표를 "집계 장애"로 단정.
+  - C4는 참인 주장인데 REWORD.
+  - 5건 전부 REWORD(판정 분별력 부족).
+  - 원인 [코드 확인]: `callFrozenReviewPipeline`(src/lib/jury-product/review-core.ts)이 `void input.claim;`으로 사용자 주장을 버리고 보드에 전달하지 않는다. CLAIM_VALIDATION은 저장·요청 키에만 주장을 쓰고 실제 판정은 FULL_REVIEW와 같다. claimStrength·overclaimDetected는 사용자 주장이 아니라 Chairman 출력의 영어 어휘(`critical`, `due to` 등)로 계산되고, conflictDetected는 GA4↔DB 같은 지표 값 불일치만 본다. → I-032.
+
+## VERIFIED_REAL 지정 기록 (2026-10-23, Preview DB만)
+- 메커니즘: `JuryReviewRequest.resultSource` enum(`JuryResultSource`)을 `REAL_MODEL` → `VERIFIED_REAL`로 수동 변경 [코드 확인: prisma/schema.prisma]. 자동 설정 경로 없음(D-16). `JuryReviewResult`에는 해당 필드 없음.
+- 범위: Preview DB(aisles-jury-preview)의 아래 8건만. 운영 DB 변경 없음. `JuryReviewAttempt.resultSource`는 실행 기록이므로 REAL_MODEL 유지.
+- 조건: `resultSource='REAL_MODEL' AND status='COMPLETED' AND id IN (8건)`. 변경 전 8건 모두 REAL_MODEL/COMPLETED, 변경 후 8건 VERIFIED_REAL(반환 8행) [DB 확인].
+
+| 케이스 | 요청 id | 결과 id | 유형 | 생성(UTC) | 전 → 후 |
+|---|---|---|---|---|---|
+| F1 | 9b0faaa0 | fc97461a | FULL_REVIEW | 10-22 14:55 | REAL_MODEL → VERIFIED_REAL |
+| F2 | 90504bae | ed3b4256 | FULL_REVIEW | 10-22 15:07 | REAL_MODEL → VERIFIED_REAL |
+| F3 | dd61c4ed | 97ee11d5 | FULL_REVIEW | 10-22 15:11 | REAL_MODEL → VERIFIED_REAL |
+| C1 | b47f7333 | 50ddc102 | CLAIM_VALIDATION | 10-23 02:24 | REAL_MODEL → VERIFIED_REAL |
+| C2 | 8ddc68b2 | 518d7f4a | CLAIM_VALIDATION | 10-23 02:28 | REAL_MODEL → VERIFIED_REAL |
+| C3 | a500f726 | d3996a7f | CLAIM_VALIDATION | 10-23 02:32 | REAL_MODEL → VERIFIED_REAL |
+| C4 | d6d74e79 | c1491334 | CLAIM_VALIDATION | 10-23 02:35 | REAL_MODEL → VERIFIED_REAL |
+| C5 | 9d6c323b | 2cd7be0a | CLAIM_VALIDATION | 10-23 02:38 | REAL_MODEL → VERIFIED_REAL |
+
+증거 요약(8건 공통):
+- E-1 통과: REAL_MODEL, gemini-2.5-flash-lite [DB 확인].
+- E-2 통과: 케이스별 OK 32행, seq 0–31, boardRunId 일치, attempt COMPLETED (F1은 시도 2건) [DB 확인].
+- E-3 통과(시간 단위 한계 있음): AI Studio 사용량(Gemini 2.5 Flash Lite) UTC 10-22 14:00–16:00 = 111회, UTC 10-23 02:00–03:00 = 160회, 성공률 100% [실제 확인]. 시간 단위 집계라 분 단위 대조 불가, 해당 시간대 수치가 DB 호출 수와 정확히 일치하여 동일 호출로 판단 [추론]. 앱 키↔콘솔 프로젝트 연결은 [확인 불가].
+- E-4 통과: schemaValid, enum 범위 [DB 확인].
+- E-5 조건부 통과: CT 위반 0 (분류 방법은 [추론, 확인 필요] — 분류 기준이 확정되면 재확인).
+- 승인: JD 일괄 승인(t447u, 이번 진행 한정).
+- 남은 편차(위 '관찰된 편차')는 지정과 별개로 추적.
+- **VERIFIED_REAL ≠ 판정 품질 검증.** C1–C5의 VERIFIED_REAL은 '실모델이 호출되고 결과가 계약대로 저장됨'만 뜻하며, I-032 때문에 주장 검증 품질에 대해서는 아무것도 보증하지 않는다.
+
 ## 관련 이슈 (D-16 추적성)
 - I-024 / RM-20: 주장 입력이 없을 때 주장 강도를 확정 표시하지 않음(1단계: 표시 계층만, '주장 입력 없음').
 - I-026 / RM-21: 증거 카드 '리뷰 요청하기'에 리뷰 유형·주장 입력(C1–C5 선행 조건).
 - I-027 / RM-19: 미수집 지표의 measured 값 투영(ISSUE-B) — 보류. t434/t435에서 임시로 I-025로 적었으나 `I-025`는 `docs/decisions/D-08-rereview-result-table.md`에서 이미 "JuryReReviewResult 0건"의 의미로 사용 중이라 I-027로 재지정(t436). 기존 I-025의 의미는 바꾸지 않는다.
+- I-028: `/jury/organization/create` 화면에 로그아웃 버튼 없음(조직 없는 계정이 빠져나갈 수 없음). 미착수.
+- I-029: 연결 수집 카드에도 주장 입력 폼이 표시되나, 제출 시 `SCOPE_NOT_APPROVED`로 거부됨(연결 경로는 FULL_REVIEW만 가능). 폼 숨김 또는 경로 지원 필요. Draft PR #37(폼 숨김 + 안내). 연결 경로 주장 검증 지원은 설계만(judging-design.md §C1).
+- I-030 (UX): 리뷰 실행(약 2분) 중 진행 표시 없음, 완료 후 페이지가 넘어가지 않는 경우 있음(C1·C5에서 관찰, 요청은 DB상 정상 완료). Draft PR #38. 폴링/비동기 상태 API는 설계만(judging-design.md §C2).
+- I-031 (UX): 주장 입력란에 글자 수 카운터 없음(서버 길이 제한만 존재). Draft PR #39(fix/i031-claim-counter).
+- I-032 (판정): CLAIM_VALIDATION에서 사용자 주장이 보드 파이프라인에 전달되지 않음(`void input.claim`). 판정 로직 변경이므로 별도 승인 필요. 미착수(설계: judging-design.md P1). 수정 전 C1–C5 결과는 주장 검증 기준선으로 쓰지 않는다.
+- 운영(prod) 실행 `7ded5a39`의 LLM 호출 수: **[확인 불가]** — 운영 DB 호출 로그·콘솔 대조를 하지 않았다(읽기 전용 원칙). 이 문서의 VERIFIED_REAL 기록은 Preview 8건에만 해당한다.
+
+## 링크
+- PR: https://github.com/skidraw4-max/aisles/pull/36 (Draft 유지)
+- 관련 Draft PR: #37 (I-029) https://github.com/skidraw4-max/aisles/pull/37 · #38 (I-030) https://github.com/skidraw4-max/aisles/pull/38 · #39 (I-031) https://github.com/skidraw4-max/aisles/pull/39
+- 이슈 ID(I-0xx)는 이 문서와 docs/의 ID 체계이며 GitHub Issues로 등록돼 있지 않다 [추론: 이전 링크는 검색 URL이었음].
