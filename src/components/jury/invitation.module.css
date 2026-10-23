@@ -76,7 +76,7 @@
 /* I-036: organization tables. Scroll inside a wrapper instead of breaking values mid-word;
    date/role/status cells stay on one line; the member action cell lays out horizontally. */
 .tableWrap {
-  width: min(100%, 48rem);
+  width: min(100%, 64rem);
   max-width: 100%;
   margin: 2rem auto 0;
   overflow-x: auto;
@@ -118,4 +118,19 @@
 .actionCell .controls {
   flex-wrap: nowrap;
   justify-content: flex-start;
+}
+
+/* I-036 (follow-up): controls inside the action cell keep their natural width;
+   the cell's overflow-wrap:anywhere was squeezing button labels into one column. */
+.actionCell {
+  overflow-wrap: normal;
+}
+
+.actionCell > *,
+.actionCell .controls > * {
+  flex: none;
+}
+
+.actionCell button {
+  white-space: nowrap;
 }
