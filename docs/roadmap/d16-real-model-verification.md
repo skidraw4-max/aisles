@@ -4,7 +4,7 @@
 - Vercel Preview 배포: 스택 최상단 브랜치들이 READY (git push 시 자동 생성). Preview DB 라우팅은 `JURY_PREVIEW_DB*` env(Preview 전용).
 - Preview Supabase(aisles-jury-preview): RM-01 마이그레이션 적용 완료(`_prisma_migrations` 48행, 기존 요청 6건 UNKNOWN_LEGACY, 새 테이블 RLS on). Supabase 쪽 이력(`supabase_migrations`)에도 1행 기록됨.
 - Gemini 키: `GOOGLE_GENERATIVE_AI_API_KEY`가 Preview 대상에 존재(Production과 같은 변수 → 같은 Google 계정 과금). 값은 확인·출력하지 않음.
-- Preview에는 `JURY_LLM_*` 한도가 없음(이번 승인은 Production만) → 실행 전 Preview에도 같은 값 설정 권장(별도 승인).
+- LLM 한도 env: `JURY_LLM_CALL_TIMEOUT_MS`, `JURY_LLM_TOTAL_BUDGET_MS`는 Preview·Production 모두 존재 [실제 확인]. `AI_REVIEW_BOARD_MAX_CALLS_PER_RUN`은 미설정 → 기본값 40 적용 [코드 확인]. 값은 확인·기록하지 않음. (이전 "Preview에는 `JURY_LLM_*` 한도가 없음" 문장은 잘못이어서 정정.)
 
 ## 호출 수와 상한 — 중요
 - 리뷰 1회 = LLM 32회 (`EXPECTED_PIPELINE_LLM_CALLS`, 실행당 상한 기본 40).
@@ -78,7 +78,40 @@
 - 실행 중 `JuryLlmCallLog` 누계 감시, 다음 리뷰(32회)가 누계 414를 넘으면 시작하지 않음.
 - 실패 실행 과금 여부: 확인 불가(E-3 콘솔 대조로만 확인 가능).
 
+## C1–C5 실행 기록 (2026-10-23, Preview)
+- 배포: `dpl_Hk55ijKLDanJj3vFvr9CqJTAJVmR`, 브랜치 `preview/d16-claim-cases`(빈 커밋 `9cf0ebc`), target=preview [실제 확인].
+- 계획 재정의 사유:
+  - Preview 자체 수집 지표가 모두 0 → 계획의 예상치(C1 ≈410 등) 전제 불성립.
+  - 연결 수집 카드(3a9faf49…)는 주장 검증 경로에서 `SCOPE_NOT_APPROVED`로 거부(`runTenantReview` 게이트, I-029) [코드 확인].
+  - 따라서 값 0인 수동 카드 사용: C1–C4 `43b34970…`(2026-10-14~20), C5 `6de20a9b…`(2026-10-15~21, C1과 evidenceId 다름). 기존 수동 카드는 건드리지 않음.
+  - 재정의된 기대: C1/C2 반박, C3 측정 0을 과장 없이 서술, C4 집계(0) 확인, C5는 C1과 같은 주장·새 evidence.
+
+| # | 요청 id | 결과 id | 시도 | LLM 호출 | 판정 | claimStrength | overclaim | conflict |
+|---|---|---|---|---|---|---|---|---|
+| C1 | b47f7333 | 50ddc102 | 1 | 32 | REWORD | strong | true | false |
+| C2 | 8ddc68b2 | 518d7f4a | 1 | 32 | REWORD | weak | true | false |
+| C3 | a500f726 | d3996a7f | 1 | 32 | REWORD | strong | true | false |
+| C4 | d6d74e79 | c1491334 | 1 | 32 | REWORD | weak | true | false |
+| C5 | 9d6c323b | 2cd7be0a | 1 | 32 | REWORD | weak | true | false |
+
+- 모두 COMPLETED, resultSource REAL_MODEL, 모델 gemini-2.5-flash-lite, 오류·fallback 0 [DB 확인].
+- 호출: 이번 실행 160회, 누계 271 / 상한 414 [DB 확인].
+- E-1 통과, E-2 통과(케이스별 OK 32행, seq 0–31 연속, boardRunId 일치), E-4 통과(schemaValid, enum 범위) [DB 확인].
+- E-5: CT 위반 0 [실제 확인: `buildReviewDisplayModel` 로컬 실행]. 분류 방법: NO_CLAIMS, DUPLICATE_*, PARTIAL_CONFIRMATION은 정보성으로 보고 위반에서 제외, 그 외 플래그를 위반으로 집계 [추론, 확인 필요]. F1–F3도 같은 방법으로 0.
+- E-3(공급자 콘솔 대조): 대기. VERIFIED_REAL 지정하지 않음.
+- 관찰된 편차 [추론]:
+  - 반박된 주장(C1/C2/C5)에서도 conflictDetected=false.
+  - C1/C3 claimStrength가 strong.
+  - C1 finalSurface가 측정값 0을 "데이터 없음"으로 서술(I-027 유사).
+  - C3가 null 지표를 "집계 장애"로 단정.
+  - C4는 참인 주장인데 REWORD.
+  - 5건 전부 REWORD(판정 분별력 부족).
+
 ## 관련 이슈 (D-16 추적성)
 - I-024 / RM-20: 주장 입력이 없을 때 주장 강도를 확정 표시하지 않음(1단계: 표시 계층만, '주장 입력 없음').
 - I-026 / RM-21: 증거 카드 '리뷰 요청하기'에 리뷰 유형·주장 입력(C1–C5 선행 조건).
 - I-027 / RM-19: 미수집 지표의 measured 값 투영(ISSUE-B) — 보류. t434/t435에서 임시로 I-025로 적었으나 `I-025`는 `docs/decisions/D-08-rereview-result-table.md`에서 이미 "JuryReReviewResult 0건"의 의미로 사용 중이라 I-027로 재지정(t436). 기존 I-025의 의미는 바꾸지 않는다.
+- I-028: `/jury/organization/create` 화면에 로그아웃 버튼 없음(조직 없는 계정이 빠져나갈 수 없음). 미착수.
+- I-029: 연결 수집 카드에도 주장 입력 폼이 표시되나, 제출 시 `SCOPE_NOT_APPROVED`로 거부됨(연결 경로는 FULL_REVIEW만 가능). 폼 숨김 또는 경로 지원 필요. 미착수.
+- I-030 (UX): 리뷰 실행(약 2분) 중 진행 표시 없음, 완료 후 페이지가 넘어가지 않는 경우 있음(C5에서 관찰, 요청은 정상 완료). 미착수.
+- I-031 (UX): 주장 입력란에 글자 수 카운터 없음(서버 길이 제한만 존재). 미착수.
