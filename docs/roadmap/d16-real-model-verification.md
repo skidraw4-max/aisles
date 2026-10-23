@@ -25,3 +25,54 @@
 1. Preview 배포 URL에서 테스트 조직/연결 생성 → F1~F5 순서로 증거 입력·리뷰 실행.
 2. 각 결과: resultSource=REAL_MODEL, JuryReviewAttempt COMPLETED, JuryLlmCallLog 32행 확인.
 3. 검수 후 VERIFIED_REAL 지정(수동, D-16 원칙) → M-013 추세(3점), M-011 비교, UI-05 체크리스트, O-지표 실값 확인.
+
+## 판정 기준 E-1..E-5 (t434 정의, t435 기록)
+| ID | 무엇을 | 통과 조건 | 확인 방법 |
+|---|---|---|---|
+| E-1 | 실모델 출처 | `resultSource=REAL_MODEL`, 모든 호출 model ID 기록(예: `gemini-2.5-flash-lite`), contract `v9.x-ev020` | DB 읽기 (`JuryReviewRequest`, `JuryLlmCallLog.model`, `JuryReviewResult.contractVersion`) |
+| E-2 | 호출 완결성 | `JuryLlmCallLog` 32행 OK, seq 0–31 연속, `boardRunId` 일치, attempt COMPLETED | DB 읽기 |
+| E-3 | 공급자 측 실호출 대조 | 콘솔 사용량(모델별 요청 수)이 실행 시간대 DB 호출 수와 일치 | Google AI Studio 또는 Cloud console 사용량, 모델별, UTC 범위 지정 (수동) |
+| E-4 | 스키마 | `schemaValid=true`, `finalSurface` 필드 타입, decision/strength enum 범위 | DB 읽기 + 로컬 검증 스크립트 |
+| E-5 | 표시 계약 | `buildReviewDisplayModel` CT 위반 0건 (정보성 flag는 위반 아님) | 로컬 검증 |
+
+VERIFIED_REAL 지정은 E-1..E-5 모두 확인 후에만(E-3 미확인 시 보류).
+
+## C1–C5 실행 계획 — ⚠ 결정 필요
+기존 D-16 문서에는 C1–C5가 없었다. 아래는 **t434 제안**을 그대로 기록한 것이며 JD 결정 전까지 실행하지 않는다. 모두 `CLAIM_VALIDATION`이며 RM-21(I-026, 주장 입력) 병합이 선행 조건이다.
+
+| # | 주장 | 증거 | 확인점 |
+|---|---|---|---|
+| C1 | 누적 가입자가 400명을 넘었다 | userCount 410 (AVAILABLE) | 근거 충분 |
+| C2 | 가입자가 두 배로 늘었다 | userCount만 (비교 기준 없음) | overclaim 탐지 |
+| C3 | 댓글 활동이 활발하다 | commentCount PERMISSION_DENIED | 근거 부족/보류 |
+| C4 | 게시글 수가 집계되고 있다 | postCount AVAILABLE | 단순 확인 |
+| C5 | C1 반복(재현성) | **새 evidence** (같은 evidence+claim이면 기존 결과 재사용, 0회 호출) | C1과 판정 비교 |
+
+호출: 5×32 = 160회(≈$2.40), 실패 1회 여유 포함 192회(≈$2.88). 단가 추정 $0.015/회.
+
+### 케이스별 기록 템플릿
+| 항목 | 값 |
+|---|---|
+| 케이스 | C? |
+| 입력(주장 / evidence id / 지표·availability) | |
+| 기대 | |
+| 실제(decision / evidenceStrength / claimStrength / overclaim) | |
+| 호출 수(OK/ERROR) | |
+| model ID | |
+| contract version | |
+| 시각(UTC 시작–종료, KST 병기) | |
+| 스키마 확인(E-4) | |
+| CT 결과(E-5) | |
+
+## 상한 303회와 중단 규칙
+- 상한 303회 승인(t435). 실행은 **재보고 후** 시작. 303회 × $0.015 = 최대 ≈ $4.545.
+- 303의 해석(총 누계 vs 기존 111회 위 추가)은 **결정 필요**: 총 누계면 잔여 192회(C1–C5+여유 1회와 정확히 일치), 추가면 총 414회.
+- 자동 재시도 없음. 실패 시 중단·보고 후 JD 판단.
+- 근거가 충분해지면 남은 케이스를 실행하지 않고 중단.
+- 실행 중 `JuryLlmCallLog` 누계 감시, 다음 리뷰(32회)가 상한을 넘으면 시작하지 않음.
+- 실패 실행 과금 여부: 확인 불가(E-3 콘솔 대조로만 확인 가능).
+
+## 관련 이슈
+- I-024 / RM-20: 주장 입력이 없을 때 주장 강도를 확정 표시하지 않음(1단계: 표시 계층만, '주장 입력 없음').
+- I-025 / RM-19: 미수집 지표의 measured 값 투영(ISSUE-B) — 보류. ⚠ ID 충돌: `I-025`는 `docs/decisions/D-08-rereview-result-table.md`에서 이미 사용(JuryReReviewResult 0건). 재번호 여부 결정 필요.
+- I-026 / RM-21: 증거 카드 '리뷰 요청하기'에 리뷰 유형·주장 입력(C1–C5 선행 조건).
