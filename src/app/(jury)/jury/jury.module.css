@@ -1427,6 +1427,18 @@ a.inline {
   margin: 0.5rem 0;
 }
 
+/* Layout fix: the 검색 input kept the global .field bottom margin, so the end-aligned 적용
+   button sat lower than the input and had a different height. Scoped to the list controls. */
+.listControls .field {
+  margin-bottom: 0;
+}
+
+.listControls .field,
+.listControls > .button {
+  box-sizing: border-box;
+  min-height: 2.75rem;
+}
+
 .pager {
   display: flex;
   gap: 0.75rem;
@@ -1471,5 +1483,26 @@ a.inline {
   .metricRow > .field {
     flex: 1 1 0;
     min-width: 0;
+  }
+}
+
+/* Layout fix: "리뷰 자료 만들기" sat flush against the 분석 항목 fieldset. */
+.intakeSubmit {
+  margin-top: 1rem;
+}
+
+/* Layout fix: in the flex .row (space-between) the metric name column took its text width, so
+   the availability select / value input started at a different x on every row. Desktop/tablet
+   (>720px) uses a shared grid column template; the I-035 mobile layout above is unchanged. */
+@media (min-width: 721px) {
+  .metricRow {
+    display: grid;
+    grid-template-columns: 9rem minmax(0, 1fr) minmax(0, 1fr);
+    column-gap: 1rem;
+    align-items: center;
+  }
+  .metricRow > .label {
+    min-width: 0;
+    overflow-wrap: anywhere;
   }
 }
