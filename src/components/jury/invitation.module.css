@@ -72,3 +72,65 @@
   flex-wrap: wrap;
   gap: 0.5rem;
 }
+
+/* I-036: organization tables. Scroll inside a wrapper instead of breaking values mid-word;
+   date/role/status cells stay on one line; the member action cell lays out horizontally. */
+.tableWrap {
+  width: min(100%, 64rem);
+  max-width: 100%;
+  margin: 2rem auto 0;
+  overflow-x: auto;
+}
+
+.tableWrap > .table {
+  width: 100%;
+  min-width: 720px;
+  margin: 0;
+  table-layout: auto;
+}
+
+.tableWrap > .table th {
+  white-space: nowrap;
+}
+
+.table td.nowrapCell {
+  white-space: nowrap;
+  overflow-wrap: normal;
+}
+
+.ellipsisText {
+  display: inline-block;
+  max-width: 12rem;
+  vertical-align: bottom;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  overflow-wrap: normal;
+}
+
+.actionCell {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: end;
+  gap: 0.5rem;
+}
+
+.actionCell .controls {
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+}
+
+/* I-036 (follow-up): controls inside the action cell keep their natural width;
+   the cell's overflow-wrap:anywhere was squeezing button labels into one column. */
+.actionCell {
+  overflow-wrap: normal;
+}
+
+.actionCell > *,
+.actionCell .controls > * {
+  flex: none;
+}
+
+.actionCell button {
+  white-space: nowrap;
+}

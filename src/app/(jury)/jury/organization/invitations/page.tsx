@@ -38,6 +38,7 @@ export default async function JuryInvitationsPage() {
         <>
           <JuryInvitationForm />
           {invitations.length === 0 ? <p className={listStyles.empty}>아직 초대가 없습니다.</p> : (
+            <div className={listStyles.tableWrap}>
             <table className={listStyles.table}>
               <thead>
                 <tr>
@@ -51,15 +52,16 @@ export default async function JuryInvitationsPage() {
               <tbody>
                 {invitations.map((invitation) => (
                   <tr key={invitation.id}>
-                    <td>{invitation.email}</td>
-                    <td>{displayText(invitation.role)}</td>
-                    <td>{displayText(invitation.status)}</td>
-                    <td>{formatKstFull(invitation.expiresAt)}</td>
-                    <td>{formatKstFull(invitation.createdAt)}</td>
+                    <td><span className={listStyles.ellipsisText} title={invitation.email}>{invitation.email}</span></td>
+                    <td className={listStyles.nowrapCell}>{displayText(invitation.role)}</td>
+                    <td className={listStyles.nowrapCell}>{displayText(invitation.status)}</td>
+                    <td className={listStyles.nowrapCell}>{formatKstFull(invitation.expiresAt)}</td>
+                    <td className={listStyles.nowrapCell}>{formatKstFull(invitation.createdAt)}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
+            </div>
           )}
         </>
       ) : <p role="alert">초대 권한이 없습니다</p>}

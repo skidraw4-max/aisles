@@ -337,11 +337,11 @@ export function DashboardBody({ view }: { view: JuryConsoleView }) {
             <tbody>
               {board.activity.map((event) => (
                 <tr key={event.id}>
-                  <td>{formatKstFull(event.timestamp)}</td>
+                  <td className={styles.nowrapCell}>{formatKstFull(event.timestamp)}</td>
                   <td className={styles.identifier} title={event.actor}>{compactIdentifier(event.actor)}</td>
                   <td title={event.action}>{auditActionLabel(event.action)}</td>
                   <td className={styles.identifier} title={event.resource}>{compactIdentifier(event.resource)}</td>
-                  <td><span className={styles.statusBadge} title={event.status}>{auditActionLabel(event.status)}</span></td>
+                  <td className={styles.nowrapCell}><span className={styles.statusBadge} title={event.status}>{auditActionLabel(event.status)}</span></td>
                 </tr>
               ))}
             </tbody>
@@ -363,7 +363,8 @@ export function ServicesBody({ actor, view }: { actor: JuryActor; view: JuryCons
         <p className={styles.muted}>서비스 추가: 현재 역할에는 이 변경 권한이 없습니다.</p>
       )}
       {rows.length === 0 ? <p>{displayText(SHELL_EMPTY.services)}</p> : (
-        <table className={styles.table}>
+        <div className={styles.servicesTableWrap}>
+        <table className={`${styles.table} ${styles.servicesTable}`}>
           <thead>
             <tr>
               <th>서비스 이름</th>
@@ -378,7 +379,7 @@ export function ServicesBody({ actor, view }: { actor: JuryActor; view: JuryCons
           <tbody>
             {rows.map((row) => (
               <tr key={row.id}>
-                <td><Link className={styles.inline} href={juryHref(`/services/${row.id}`)}>{row.displayName}</Link></td>
+                <td><Link className={`${styles.inline} ${styles.ellipsisText}`} href={juryHref(`/services/${row.id}`)} title={row.displayName}>{row.displayName}</Link></td>
                 <td title={row.accessMethod}>{displayText(row.accessMethod)}</td>
                 <td><span className={styles.badge} title={row.status}>{userLabel(row.status)}</span></td>
                 <td>{formatKstFull(row.createdAt)}</td>
@@ -389,6 +390,7 @@ export function ServicesBody({ actor, view }: { actor: JuryActor; view: JuryCons
             ))}
           </tbody>
         </table>
+        </div>
       )}
     </section>
   );
@@ -990,9 +992,9 @@ export function ImprovementsBody({
               <tr key={task.id}>
                 <td><span className={styles.badge} title={task.status}>{userLabel(task.status)}</span></td>
                 <td>{task.taskType ?? displayText(SHELL_UNAVAILABLE)}</td>
-                <td>{task.diagnosis}</td>
+                <td><span className={styles.ellipsisText} title={task.diagnosis}>{task.diagnosis}</span></td>
                 <td>{task.acceptanceCriteria.join(', ')}</td>
-                <td><Link className={styles.inline} href={juryHref(`/reviews/${task.sourceReviewId}`)}>{task.sourceReviewId}</Link></td>
+                <td><Link className={`${styles.inline} ${styles.identifier}`} href={juryHref(`/reviews/${task.sourceReviewId}`)} title={task.sourceReviewId}>{compactIdentifier(task.sourceReviewId)}</Link></td>
                 <td>{task.sourceService ?? displayText(SHELL_UNAVAILABLE)}</td>
                 <td title={task.approval ?? undefined}>{task.approval ? userLabel(task.approval) : displayText(SHELL_UNAVAILABLE)}</td>
                 <td>
@@ -1265,13 +1267,13 @@ export function AuditBody({ view, query = { q: '', filter: '', page: 1 } }: { vi
           <tbody>
             {events.map((event) => (
               <tr key={event.id}>
-                <td>{event.timestamp}</td>
+                <td className={styles.nowrapCell}>{event.timestamp}</td>
                 <td className={styles.identifier} title={event.actor}>{compactIdentifier(event.actor)}</td>
                 <td title={event.action}>
                   {auditActionLabel(event.action)}
                 </td>
                 <td className={styles.identifier} title={event.resource}>{compactIdentifier(event.resource)}</td>
-                <td title={event.status}>{auditActionLabel(event.status)}</td>
+                <td className={styles.nowrapCell} title={event.status}>{auditActionLabel(event.status)}</td>
               </tr>
             ))}
           </tbody>
@@ -1700,9 +1702,9 @@ function RequestStatusSection({ view }: { view: JuryConsoleView }) {
         <tbody>
           {rows.map((row) => (
             <tr key={row.key}>
-              <td title={row.state}><span className={styles.badge}>{row.stateLabel}</span></td>
-              <td title={row.startedAt ? formatKstFull(row.startedAt) : undefined}>{row.startedAt ? formatKstShort(row.startedAt) : '기록 없음'}</td>
-              <td title={row.finishedAt ? formatKstFull(row.finishedAt) : undefined}>{row.finishedAt ? formatKstShort(row.finishedAt) : '-'}</td>
+              <td className={styles.nowrapCell} title={row.state}><span className={styles.badge}>{row.stateLabel}</span></td>
+              <td className={styles.nowrapCell} title={row.startedAt ? formatKstFull(row.startedAt) : undefined}>{row.startedAt ? formatKstShort(row.startedAt) : '기록 없음'}</td>
+              <td className={styles.nowrapCell} title={row.finishedAt ? formatKstFull(row.finishedAt) : undefined}>{row.finishedAt ? formatKstShort(row.finishedAt) : '-'}</td>
               <td title={row.reviewType}>{userLabel(row.reviewType)}</td>
               <td className={styles.identifier} title={row.evidenceId}>{shortId(row.evidenceId)}</td>
               <td title={[row.reasonCode, row.llmErrorCode].filter(Boolean).join(' / ') || undefined}>
