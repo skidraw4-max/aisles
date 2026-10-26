@@ -1,7 +1,7 @@
 /**
  * I-040: persistence for READ_ONLY_ACCOUNT consent and credentials.
  * Writes go through an injected store so tests never touch a database.
- * The Prisma-backed store requires migration 20261026110000 (not applied; needs separate approval).
+ * The Prisma-backed store requires migration 20261026110000 (applied to Preview and Production on 2026-10-26).
  */
 import { randomUUID } from 'node:crypto';
 import type { JuryActor } from '../../access';

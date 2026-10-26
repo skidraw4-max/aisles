@@ -1,12 +1,12 @@
 /**
  * Service detail section for READ_ONLY_ACCOUNT (I-040 UI wiring). Server component.
- * Renders nothing unless READONLY_ACCOUNT_UI_ENABLED is on and the connection uses READ_ONLY_ACCOUNT.
+ * Renders nothing unless READONLY_ACCOUNT_UI_ENABLED is on (enabled in I-044) and the connection uses READ_ONLY_ACCOUNT.
  * State is loaded only when shown, so no DB query runs while the flag is off.
  */
 import * as React from 'react';
 import { READONLY_ACCOUNT_PHASE1_ENABLED, READONLY_ACCOUNT_UI_ENABLED, shouldShowReadonlyAccountSection } from '@/lib/jury-product/services/readonly-account/flags';
 import { ReadOnlyAccountCredentialForm } from './ReadOnlyAccountCredentialForm';
-import { acceptReadonlyAccountConsentAction, storeReadonlyAccountCredentialAction } from './readonly-account-actions';
+import { acceptReadonlyAccountConsentAction, runReadonlyAccountObservationAction, storeReadonlyAccountCredentialAction } from './readonly-account-actions';
 
 export type ReadonlyAccountSectionState = { consentAccepted: boolean; stored: { usernameHint: string; expiresAt: string } | null };
 
@@ -23,14 +23,19 @@ async function loadState(tenantId: string, connectionId: string) {
   return state;
 }
 
-async function consentFormAction(formData: FormData) {
+async function consentFormAction(_prev: unknown, formData: FormData) {
   'use server';
-  await acceptReadonlyAccountConsentAction(formData);
+  return acceptReadonlyAccountConsentAction(formData);
 }
 
-async function credentialFormAction(formData: FormData) {
+async function credentialFormAction(_prev: unknown, formData: FormData) {
   'use server';
-  await storeReadonlyAccountCredentialAction(formData);
+  return storeReadonlyAccountCredentialAction(formData);
+}
+
+async function observationFormAction(_prev: unknown, formData: FormData) {
+  'use server';
+  return runReadonlyAccountObservationAction(formData);
 }
 
 export async function ReadonlyAccountSection(props: {
@@ -51,6 +56,7 @@ export async function ReadonlyAccountSection(props: {
       stored={state.stored ?? undefined}
       consentAction={consentFormAction}
       credentialAction={credentialFormAction}
+      observationAction={observationFormAction}
       classes={{ root: props.className }}
     />
   );

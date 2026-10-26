@@ -11,7 +11,7 @@
 import type { AccountCredentialSecret } from './credential-crypto';
 import type { ObservationScope } from './consent';
 
-export const READONLY_ACCOUNT_EXECUTOR_ENABLED = false as boolean;
+export const READONLY_ACCOUNT_EXECUTOR_ENABLED = true as boolean;
 
 export type ObservedRequest = { method: string; url: string; isFormSubmit: boolean; isNavigation: boolean };
 export type RequestVerdict = 'allow' | 'block';
@@ -174,8 +174,11 @@ export async function executeReadonlyObservation(input: {
 }
 
 /** Gated entry point. Stays NOT_IMPLEMENTED until the flag is turned on with separate approval. */
-export async function runReadonlyObservation(input: Parameters<typeof executeReadonlyObservation>[0]): Promise<ExecutorReport> {
-  if (!READONLY_ACCOUNT_EXECUTOR_ENABLED) {
+export async function runReadonlyObservation(
+  input: Parameters<typeof executeReadonlyObservation>[0],
+  enabled: boolean = READONLY_ACCOUNT_EXECUTOR_ENABLED,
+): Promise<ExecutorReport> {
+  if (!enabled) {
     await input.driver.close().catch(() => undefined);
     return { ok: false, stop: 'NOT_IMPLEMENTED', loginAttempts: 0, snapshots: [], blockedRequests: [] };
   }

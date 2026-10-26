@@ -128,9 +128,9 @@ test('request guard: only GET/HEAD after login, single login POST, http and fore
   assert.equal(req('GET', 'https://app.example.com/x', true), 'block');
 });
 
-test('gated entry point stays disabled', async () => {
+test('gated entry point blocks everything when disabled', async () => {
   const { driver, log } = fakeDriver(pages);
-  const r = await runReadonlyObservation({ driver, credential, scope, login, actions: [] });
+  const r = await runReadonlyObservation({ driver, credential, scope, login, actions: [] }, false);
   assert.equal(r.stop, 'NOT_IMPLEMENTED');
   assert.equal(log.requests.length, 0);
 });

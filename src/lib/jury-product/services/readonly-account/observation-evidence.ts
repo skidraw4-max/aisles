@@ -73,6 +73,8 @@ export async function observeWithStoredCredential(input: {
   login: LoginPlan;
   actions: ObservationAction[];
   now?: Date;
+  /** Defaults to READONLY_ACCOUNT_EXECUTOR_ENABLED. */
+  executorEnabled?: boolean;
 }): Promise<ObservationRunResult> {
   if (input.record.destroyedAt || !input.record.ciphertext) {
     await input.driver.close().catch(() => undefined);
@@ -87,6 +89,6 @@ export async function observeWithStoredCredential(input: {
     await input.driver.close().catch(() => undefined);
     return { ok: false, reason: 'DECRYPT_FAILED' };
   }
-  const report = await runReadonlyObservation({ driver: input.driver, credential: dec.secret, scope: input.scope, login: input.login, actions: input.actions });
+  const report = await runReadonlyObservation({ driver: input.driver, credential: dec.secret, scope: input.scope, login: input.login, actions: input.actions }, input.executorEnabled);
   return { ok: true, summary: summarizeObservation(report) };
 }

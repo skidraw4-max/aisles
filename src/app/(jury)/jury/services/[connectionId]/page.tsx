@@ -12,6 +12,9 @@ import { JuryChrome } from '../../ui';
 import { ReadonlyAccountSection } from '../../readonly-account-section';
 import { loadJuryShell, readJurySessionEmail } from '../../load';
 
+/** READ_ONLY_ACCOUNT observation runs a headless browser from this page's server action (I-044). */
+export const maxDuration = 60;
+
 export default async function ServiceDetailPage({
   params,
   searchParams,

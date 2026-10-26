@@ -27,11 +27,11 @@
 | ID | 상태 | 구현 |
 |---|---|---|
 | I-039 | 완료 (마이그레이션 미적용) | `credential-crypto.ts`, 마이그레이션 `20261026110000_*` |
-| I-040 | 완료 (플래그 off) | `consent.ts`, `store.ts`, 서버 액션, 입력 폼. 서비스 상세 화면 연결은 `READONLY_ACCOUNT_UI_ENABLED`(off) 뒤 |
-| I-041 | 완료 (플래그 off) | `executor.ts` 가드 + `browser-driver.ts`(Playwright 호환 구조 타입, `context.route('**/*')`로 하위 요청 포함 검사, WebSocket·EventSource·ping·sendBeacon·서비스워커 차단, 로그인 후 폼 제출 차단, 클릭 1회 제한) |
-| I-042 | 완료 (미연결) | `key-provider.ts`(env 이름 `JURY_ACCOUNT_CREDENTIAL_KEK`/`_KEK_ID`만 참조, 없으면 NOT_CONFIGURED), `observation-evidence.ts`(복호화→관찰→건수·노출 여부 요약→EvidencePack docsHints 첨부, 본문·쿼리·계정 미포함) |
-| I-043 | 완료 (스위치 off, vercel.json cron 매일 18:00 UTC 등록, 스위치 off라 no-op) | `retention.ts`, `retention-route.ts`, `/api/cron/readonly-account-purge`(CRON_SECRET), 만료·수동 파기 감사 이벤트 |
-| I-044 | 대기 | 운영 승인 후 내부 tenant부터 플래그 on |
+| I-040 | 완료 (I-044에서 on) | `consent.ts`, `store.ts`, 서버 액션, 입력 폼. 서비스 상세 화면 연결은 `READONLY_ACCOUNT_UI_ENABLED` 뒤 |
+| I-041 | 완료 (I-044에서 on) | `executor.ts` 가드 + `browser-driver.ts`(Playwright 호환 구조 타입, `context.route('**/*')`로 하위 요청 포함 검사, WebSocket·EventSource·ping·sendBeacon·서비스워커 차단, 로그인 후 폼 제출 차단, 클릭 1회 제한) |
+| I-042 | 완료 (I-044에서 연결) | `key-provider.ts`(env 이름 `JURY_ACCOUNT_CREDENTIAL_KEK`/`_KEK_ID`만 참조, 없으면 NOT_CONFIGURED), `observation-evidence.ts`(복호화→관찰→건수·노출 여부 요약→EvidencePack docsHints 첨부, 본문·쿼리·계정 미포함) |
+| I-043 | 완료 (스위치 on, vercel.json cron 매일 18:00 UTC = 03:00 KST) | `retention.ts`, `retention-route.ts`, `/api/cron/readonly-account-purge`(CRON_SECRET), 만료·수동 파기 감사 이벤트 |
+| I-044 | 완료 (2026-10-26, 전체 tenant 플래그 on) | 4개 플래그 on, `METHOD_METADATA.READ_ONLY_ACCOUNT.implemented=true`, 자격증명 저장 액션이 env KEK 제공자(`resolveEnvKeyProvider`)로 암호화, KEK 미설정 시 `KEY_NOT_CONFIGURED`. `observation-run.ts`(권한·동의 범위·KEK·자격증명 확인 후 1회 관찰, 건수만 감사) + `browser-runtime.ts`(playwright-core + @sparticuz/chromium 지연 import, serviceWorkers block, 다운로드 off). 서비스 상세 화면에 관찰 실행 폼, 페이지 `maxDuration=60`, chromium bin은 `outputFileTracingIncludes`로 해당 라우트에만 포함 |
 
 ### 브라우저 런타임 선택
 저장소에는 원래 브라우저 자동화 의존성이 없었다.
