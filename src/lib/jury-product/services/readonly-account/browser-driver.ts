@@ -73,18 +73,47 @@ export const INIT_SCRIPT = `(() => {
 export function toObservedRequest(req: PwRequest): ObservedRequest {
   const method = req.method().toUpperCase();
   const isNavigation = req.isNavigationRequest();
-  return { method, url: req.url(), isNavigation, isFormSubmit: isNavigation && req.resourceType() === 'document' && method === 'POST' };
+  const resourceType = req.resourceType();
+  return { method, url: req.url(), isNavigation, isFormSubmit: isNavigation && resourceType === 'document' && method === 'POST', resourceType };
 }
 
+/**
+ * I-055: only rendered widgets count. A hidden placeholder (display:none / visibility:hidden on itself or an ancestor,
+ * or zero size) — e.g. a reCAPTCHA container a site only shows after a failed login — is not a challenge.
+ */
 export const CHALLENGE_PROBE = () => {
-  const doc = (globalThis as unknown as { document: { querySelector(s: string): unknown; body?: { innerText?: string } } }).document;
-  const has = (s: string) => Boolean(doc.querySelector(s));
+  type El = { getBoundingClientRect?(): { width: number; height: number }; parentElement?: El | null; getAttribute?(n: string): string | null };
+  const g = globalThis as unknown as {
+    document: { querySelectorAll(s: string): ArrayLike<El>; body?: { innerText?: string } };
+    getComputedStyle?: (el: El) => { display?: string; visibility?: string };
+  };
+  const doc = g.document;
+  const shown = (el: El) => {
+    const r = el.getBoundingClientRect ? el.getBoundingClientRect() : { width: 1, height: 1 };
+    if (!(r.width > 0 && r.height > 0)) return false;
+    for (let cur: El | null | undefined = el; cur; cur = cur.parentElement) {
+      const st = g.getComputedStyle ? g.getComputedStyle(cur) : null;
+      if (st && (st.display === 'none' || st.visibility === 'hidden' || st.visibility === 'collapse')) return false;
+      if (cur.getAttribute && cur.getAttribute('hidden') !== null) return false;
+    }
+    return true;
+  };
+  const has = (s: string) => Array.from(doc.querySelectorAll(s)).some(shown);
   if (has('iframe[src*="recaptcha"], iframe[src*="hcaptcha"], iframe[src*="challenges.cloudflare.com"], .g-recaptcha, .h-captcha, .cf-turnstile')) return 'CAPTCHA' as const;
   if (has('input[autocomplete="one-time-code"], input[name*="otp" i], input[name*="totp" i], input[name*="mfa" i]')) return 'TWO_FACTOR' as const;
   const text = (doc.body?.innerText ?? '').slice(0, 5000);
   if (/인증\\s*코드|인증번호|verification code|two-factor|2단계 인증/i.test(text)) return 'TWO_FACTOR' as const;
   return 'NONE' as const;
 };
+
+/** I-055: disabled attribute or aria-disabled="true" on the element (missing element = not disabled; click reports it). */
+export const DISABLED_PROBE = (selector: string) => {
+  const doc = (globalThis as unknown as { document: { querySelector(s: string): { disabled?: boolean; getAttribute(n: string): string | null } | null } }).document;
+  const el = doc.querySelector(selector);
+  if (!el) return false;
+  return el.disabled === true || el.getAttribute('aria-disabled') === 'true';
+};
+export const BUTTON_ENABLE_WAIT_MS = 3_000;
 
 type ProbeEl = { href?: string; innerText?: string; title?: string; getAttribute(n: string): string | null; hasAttribute(n: string): boolean; closest(s: string): unknown };
 type ProbeDoc = { querySelectorAll(s: string): ArrayLike<ProbeEl> };
@@ -230,6 +259,15 @@ export function createBrowserObservationDriver(launch: PwContextLauncher): Obser
     },
     async detectChallenge() {
       return (await ensure()).evaluate(CHALLENGE_PROBE).catch(() => 'NONE' as const);
+    },
+    async isDisabled(selector) {
+      const p = await ensure();
+      const deadline = Date.now() + BUTTON_ENABLE_WAIT_MS;
+      for (;;) {
+        const disabled = (await p.evaluate(DISABLED_PROBE, selector).catch(() => false)) === true;
+        if (!disabled || Date.now() >= deadline) return disabled;
+        await p.waitForTimeout(SETTLE_POLL_MS);
+      }
     },
     async snapshotText() {
       const text = await (await ensure()).evaluate(

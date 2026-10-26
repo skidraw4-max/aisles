@@ -10,11 +10,13 @@
  */
 import type { AccountCredentialSecret } from './credential-crypto';
 import type { ObservationScope } from './consent';
+import { allowedSitesOf, isSameSiteSubresource } from './same-site';
 import { DEFAULT_DISCOVERY, normalizeLinkKey, normalizeStats, pickLinks, type DiscoveredLink, type DiscoveryOptions, type PageStats } from './discovery';
 
 export const READONLY_ACCOUNT_EXECUTOR_ENABLED = true as boolean;
 
-export type ObservedRequest = { method: string; url: string; isFormSubmit: boolean; isNavigation: boolean };
+/** resourceType (I-055): Playwright resource type when known (script, stylesheet, image, font, xhr, fetch, document, ...). */
+export type ObservedRequest = { method: string; url: string; isFormSubmit: boolean; isNavigation: boolean; resourceType?: string };
 export type RequestVerdict = 'allow' | 'block';
 
 export interface ObservationDriver {
@@ -28,6 +30,8 @@ export interface ObservationDriver {
   click(selector: string, waitFor?: { successPathPrefix: string; loginPath: string }): Promise<void>;
   currentUrl(): Promise<string>;
   detectChallenge(): Promise<'NONE' | 'TWO_FACTOR' | 'CAPTCHA'>;
+  /** I-055: true when the element is still disabled after a short bounded wait (e.g. a JS-enabled login button). Optional. */
+  isDisabled?(selector: string): Promise<boolean>;
   snapshotText(): Promise<string>;
   /** I-049: links on the current page (href resolved, text, download attr, inside nav/menu/header/sidebar). Optional. */
   collectLinks?(): Promise<DiscoveredLink[]>;
@@ -49,6 +53,7 @@ export type ExecutorStop =
   | 'LOGIN_FAILED'
   | 'LOGIN_NOT_SUBMITTED'
   | 'LOGIN_NO_REDIRECT'
+  | 'LOGIN_BUTTON_DISABLED'
   | 'NAVIGATION_BLOCKED'
   | 'DRIVER_ERROR';
 
@@ -131,6 +136,8 @@ export function createRequestGuard(input: { scope: ObservationScope; loginOrigin
   const blocked: ExecutorReport['blockedRequests'] = [];
   const allowedOrigins = new Set(input.scope.allowedOrigins);
   const authOrigins = new Set((input.scope.authOrigins ?? []).filter((o) => !allowedOrigins.has(o)));
+  // I-055: static GET subresources (script/stylesheet/image/font) from the same registrable site are allowed.
+  const allowedSites = allowedSitesOf(input.scope.allowedOrigins);
   const guard = (req: ObservedRequest): RequestVerdict => {
     const origin = originOf(req.url);
     const method = req.method.toUpperCase();
@@ -148,6 +155,7 @@ export function createRequestGuard(input: { scope: ObservationScope; loginOrigin
       return 'block';
     }
     if (!origin || !allowedOrigins.has(origin)) {
+      if (origin && isSameSiteSubresource(req, allowedSites)) return 'allow';
       blocked.push({ method, url: req.url, reason: 'ORIGIN' });
       return 'block';
     }
@@ -221,6 +229,10 @@ export async function executeReadonlyObservation(input: {
     const userSet = await driver.fill(input.login.usernameSelector, input.credential.username);
     const passSet = await driver.fill(input.login.passwordSelector, input.credential.password);
     if (userSet === false || passSet === false) return stop('LOGIN_NOT_SUBMITTED', { finalUrl: originPath(await driver.currentUrl()) });
+    // I-055: a login button that stays disabled (e.g. its enabling script did not load) is reported, not clicked.
+    if (driver.isDisabled && (await driver.isDisabled(input.login.submitSelector).catch(() => false))) {
+      return stop('LOGIN_BUTTON_DISABLED', { finalUrl: originPath(await driver.currentUrl()) });
+    }
     policy.beginLoginSubmit();
     report.loginAttempts = 1;
     await driver.click(input.login.submitSelector, { successPathPrefix: input.login.successPathPrefix, loginPath: new URL(input.login.loginUrl).pathname });

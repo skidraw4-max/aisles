@@ -15,6 +15,8 @@ export type LatestObservationRun = {
   pages: { label: string; path: string; visible: boolean; textLength: number; discovered?: boolean; stats?: PageStats }[];
   blockedRequestCount: number;
   blockedByReason: { ORIGIN: number; METHOD: number; FORM_SUBMIT: number; LOGIN_ALREADY_USED: number };
+  /** I-055: blocked hostnames → count (empty for runs recorded before I-055). */
+  blockedHosts?: Record<string, number>;
   finalOrigin: string | null;
   finalPath: string | null;
   observedAt: string;
@@ -63,6 +65,13 @@ export function toLatestObservationRun(row: Row): LatestObservationRun {
       })
     : [];
   const b = (row.blockedByReason && typeof row.blockedByReason === 'object' ? row.blockedByReason : {}) as Record<string, unknown>;
+  const rawHosts = b.hosts && typeof b.hosts === 'object' && !Array.isArray(b.hosts) ? (b.hosts as Record<string, unknown>) : {};
+  const blockedHosts = Object.fromEntries(
+    Object.entries(rawHosts)
+      .filter(([h, c]) => /^[a-z0-9.-]{1,253}$/i.test(h) && typeof c === 'number' && c > 0)
+      .slice(0, 20)
+      .map(([h, c]) => [h, num(c)]),
+  );
   return {
     id: row.id,
     ok: row.ok,
@@ -74,6 +83,7 @@ export function toLatestObservationRun(row: Row): LatestObservationRun {
     pages,
     blockedRequestCount: row.blockedRequestCount,
     blockedByReason: { ORIGIN: num(b.ORIGIN), METHOD: num(b.METHOD), FORM_SUBMIT: num(b.FORM_SUBMIT), LOGIN_ALREADY_USED: num(b.LOGIN_ALREADY_USED) },
+    blockedHosts,
     finalOrigin: row.finalOrigin,
     finalPath: row.finalPath,
     observedAt: row.observedAt.toISOString(),

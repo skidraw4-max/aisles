@@ -52,7 +52,7 @@ function fakeContext(script: { onGoto?: (url: string, fire: (r: PwRequest) => Pr
 const scope = { allowedOrigins: ['https://app.example.com'], paths: ['/dashboard'] };
 
 test('maps playwright requests; POST document navigation counts as form submit', () => {
-  assert.deepEqual(toObservedRequest(req('post', 'https://a/x', 'document', true)), { method: 'POST', url: 'https://a/x', isNavigation: true, isFormSubmit: true });
+  assert.deepEqual(toObservedRequest(req('post', 'https://a/x', 'document', true)), { method: 'POST', url: 'https://a/x', isNavigation: true, isFormSubmit: true, resourceType: 'document' });
   assert.equal(toObservedRequest(req('POST', 'https://a/x', 'fetch')).isFormSubmit, false);
 });
 
