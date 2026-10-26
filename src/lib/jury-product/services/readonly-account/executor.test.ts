@@ -93,7 +93,7 @@ test('2FA or captcha stops and reports without retry', async () => {
 test('failed login is a single attempt and stops', async () => {
   const { driver, log } = fakeDriver(pages, { loginOk: false });
   const r = await executeReadonlyObservation({ driver, credential, scope, login, actions: [] });
-  assert.deepEqual([r.stop, r.loginAttempts, log.clicks], ['LOGIN_FAILED', 1, 1]);
+  assert.deepEqual([r.stop, r.loginAttempts, log.clicks], ['LOGIN_NO_REDIRECT', 1, 1]);
 });
 
 test('non-allowlisted actions and out-of-scope paths are rejected before any request', async () => {

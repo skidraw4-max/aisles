@@ -5,6 +5,7 @@
  * Credentials are encrypted with the env KEK provider (JURY_ACCOUNT_CREDENTIAL_KEK, referenced by name only).
  * When the KEK is missing the actions report KEY_NOT_CONFIGURED and nothing is stored.
  */
+import { revalidatePath } from 'next/cache';
 import { getJuryActor } from '@/lib/jury-product/session';
 import { createPrismaReadonlyAccountStore, persistReadonlyAccountConsent, persistReadonlyAccountCredential } from '@/lib/jury-product/services/readonly-account/store';
 import { READONLY_ACCOUNT_PHASE1_ENABLED } from '@/lib/jury-product/services/readonly-account/flags';
@@ -35,6 +36,7 @@ export async function acceptReadonlyAccountConsentAction(formData: FormData): Pr
     now: new Date().toISOString(),
     store: await createPrismaReadonlyAccountStore(),
   });
+  if (result.ok) revalidatePath('/jury/services/[connectionId]', 'page');
   return result.ok ? { ok: true } : result;
 }
 
@@ -54,6 +56,7 @@ export async function storeReadonlyAccountCredentialAction(formData: FormData): 
     keyProvider: keys.provider,
     store: await createPrismaReadonlyAccountStore(),
   });
+  if (result.ok) revalidatePath('/jury/services/[connectionId]', 'page');
   return result.ok ? { ok: true } : result;
 }
 

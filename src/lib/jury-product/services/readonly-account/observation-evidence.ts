@@ -49,6 +49,8 @@ export function logBlockedRequests(report: ExecutorReport, connectionId: string,
       ok: report.ok,
       stop: report.stop ?? null,
       loginAttempts: report.loginAttempts,
+      loginRequestUsed: report.loginRequestUsed ?? null,
+      finalUrl: report.finalUrl ?? null,
       blocked: describeBlockedRequests(report),
     }),
   );

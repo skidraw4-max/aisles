@@ -29,6 +29,8 @@ const STOP_TEXT: Record<string, string> = {
   ACTION_NOT_ALLOWED: '허용되지 않은 관찰 동작입니다.',
   CHALLENGE_REQUIRED: '추가 인증(캡차·2단계 인증)이 필요해 중단했습니다.',
   LOGIN_FAILED: '로그인에 실패했습니다.',
+  LOGIN_NOT_SUBMITTED: '로그인 요청이 전송되지 않았습니다. 입력란·로그인 버튼 선택자와 인증 서버 도메인을 확인해 주세요.',
+  LOGIN_NO_REDIRECT: '로그인 후 성공 경로로 이동하지 않았습니다. 아이디·비밀번호와 로그인 성공 경로 접두어를 확인해 주세요.',
   NOT_IMPLEMENTED: '관찰 실행기가 꺼져 있습니다.',
   NAVIGATION_BLOCKED: '허용 범위를 벗어난 이동이 차단되어 중단했습니다.',
   DRIVER_ERROR: '브라우저 실행 중 오류가 발생했습니다.',

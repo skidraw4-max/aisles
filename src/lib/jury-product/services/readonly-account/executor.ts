@@ -19,8 +19,10 @@ export type RequestVerdict = 'allow' | 'block';
 export interface ObservationDriver {
   /** Install a guard consulted for every outgoing request (including subresources). Blocked requests must be aborted. */
   setRequestGuard(guard: (request: ObservedRequest) => RequestVerdict): Promise<void>;
-  goto(url: string): Promise<void>;
-  fill(selector: string, value: string): Promise<void>;
+  /** opts.login (I-046): the login page; the driver also waits for network idle (bounded) so the form is hydrated. */
+  goto(url: string, opts?: { login?: boolean }): Promise<void>;
+  /** I-046: returns false when the value could not be set (verified after fill, re-filled once). void = not verifiable. */
+  fill(selector: string, value: string): Promise<boolean | void>;
   /** waitFor (I-045): after the click, wait until the URL leaves loginPath and starts with successPathPrefix, else network idle; max 15s. */
   click(selector: string, waitFor?: { successPathPrefix: string; loginPath: string }): Promise<void>;
   currentUrl(): Promise<string>;
@@ -40,6 +42,8 @@ export type ExecutorStop =
   | 'ACTION_NOT_ALLOWED'
   | 'CHALLENGE_REQUIRED'
   | 'LOGIN_FAILED'
+  | 'LOGIN_NOT_SUBMITTED'
+  | 'LOGIN_NO_REDIRECT'
   | 'NAVIGATION_BLOCKED'
   | 'DRIVER_ERROR';
 
@@ -48,6 +52,10 @@ export type ExecutorReport = {
   stop?: ExecutorStop;
   challenge?: 'TWO_FACTOR' | 'CAPTCHA';
   loginAttempts: number;
+  /** I-046: whether the single login request was let through. */
+  loginRequestUsed?: boolean;
+  /** I-046: URL after the login step, origin + path only (no query/hash). */
+  finalUrl?: string;
   snapshots: { label: string; url: string; text: string }[];
   blockedRequests: { method: string; url: string; reason: 'ORIGIN' | 'METHOD' | 'FORM_SUBMIT' | 'LOGIN_ALREADY_USED' }[];
 };
@@ -84,6 +92,16 @@ function isPasswordLoginRequest(url: string): boolean {
     return u.pathname === AUTH_LOGIN_PATH && u.searchParams.get('grant_type') === 'password' && [...u.searchParams.keys()].length === 1;
   } catch {
     return false;
+  }
+}
+
+/** origin + path only; never query or hash (may carry tokens or PII). */
+export function originPath(url: string): string {
+  try {
+    const u = new URL(url);
+    return u.origin === 'null' ? u.protocol : `${u.origin}${u.pathname}`;
+  } catch {
+    return 'invalid';
   }
 }
 
@@ -173,11 +191,12 @@ export async function executeReadonlyObservation(input: {
   };
   try {
     await driver.setRequestGuard(policy.guard);
-    await driver.goto(input.login.loginUrl);
+    await driver.goto(input.login.loginUrl, { login: true });
     const pre = await driver.detectChallenge();
     if (pre !== 'NONE') return stop('CHALLENGE_REQUIRED', { challenge: pre });
-    await driver.fill(input.login.usernameSelector, input.credential.username);
-    await driver.fill(input.login.passwordSelector, input.credential.password);
+    const userSet = await driver.fill(input.login.usernameSelector, input.credential.username);
+    const passSet = await driver.fill(input.login.passwordSelector, input.credential.password);
+    if (userSet === false || passSet === false) return stop('LOGIN_NOT_SUBMITTED', { finalUrl: originPath(await driver.currentUrl()) });
     policy.beginLoginSubmit();
     report.loginAttempts = 1;
     await driver.click(input.login.submitSelector, { successPathPrefix: input.login.successPathPrefix, loginPath: new URL(input.login.loginUrl).pathname });
@@ -185,9 +204,10 @@ export async function executeReadonlyObservation(input: {
     const post = await driver.detectChallenge();
     if (post !== 'NONE') return stop('CHALLENGE_REQUIRED', { challenge: post });
     const landed = new URL(await driver.currentUrl());
-    if (!policy.loginRequestUsed || landed.origin !== plan.loginOrigin || !landed.pathname.startsWith(input.login.successPathPrefix)) {
-      return stop('LOGIN_FAILED');
-    }
+    report.loginRequestUsed = policy.loginRequestUsed;
+    report.finalUrl = originPath(landed.toString());
+    if (!policy.loginRequestUsed) return stop('LOGIN_NOT_SUBMITTED');
+    if (landed.origin !== plan.loginOrigin || !landed.pathname.startsWith(input.login.successPathPrefix)) return stop('LOGIN_NO_REDIRECT');
     for (const action of input.actions) {
       if (action.type === 'goto') {
         const target = new URL(action.path, plan.loginOrigin).toString();
