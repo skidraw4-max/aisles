@@ -7,7 +7,8 @@ import { getJuryEntry } from '@/lib/jury-product/session';
 import { loadQualityTrend } from '@/lib/jury-product/quality-trend';
 import { GithubRefreshStatus } from '../../github-refresh-status';
 import { ServiceDetailBody } from '../../service-onboarding-ui';
-import { QualityTrendPanel, ServiceOperationDetail, ServiceOperationState } from '../../service-operations-ui';
+import { QualityTrendPanel, ServiceOperationDetail, ServiceOperationState, ServiceSummaryHeader } from '../../service-operations-ui';
+import { parseServiceTab, ServiceTabNav } from '../../service-detail-tabs';
 import { JuryChrome } from '../../ui';
 import { ReadonlyAccountSection } from '../../readonly-account-section';
 import { loadJuryShell, readJurySessionEmail } from '../../load';
@@ -24,7 +25,7 @@ export default async function ServiceDetailPage({
   searchParams,
 }: {
   params: Promise<{ connectionId: string }>;
-  searchParams: Promise<{ result?: string | string[] }>;
+  searchParams: Promise<{ result?: string | string[]; tab?: string | string[] }>;
 }) {
   const { connectionId } = await params;
   const query = await searchParams;
@@ -48,20 +49,29 @@ export default async function ServiceDetailPage({
     actorRole: null,
     permission: null,
   });
-  const trend = operation.ok ? await loadQualityTrend(actor, connectionId) : null;
+  // I-051: summary header always visible; the rest is split into ?tab= areas (개요 default).
+  const tab = parseServiceTab(query.tab);
+  const trend = operation.ok && tab === 'overview' ? await loadQualityTrend(actor, connectionId) : null;
+  if (!operation.ok) {
+    return (
+      <JuryChrome actor={actor} notice={notice}>
+        <ServiceOperationState reason={operation.reason} />
+      </JuryChrome>
+    );
+  }
+  const ready = actor.ok && view;
+  const accessMethod = ready ? view.connections.find((row) => row.id === connectionId && row.tenantId === actor.tenantId)?.accessMethod : undefined;
   return (
     <JuryChrome actor={actor} notice={notice}>
-      {operation.ok ? <ServiceOperationDetail model={operation.model} provider={providers[connectionId] ?? null} /> : <ServiceOperationState reason={operation.reason} />}
-      {trend?.visible ? <QualityTrendPanel trend={trend} /> : null}
-      {operation.ok && actor.ok && view ? <ServiceDetailBody actor={actor} view={view} connectionId={connectionId} /> : null}
-      {operation.ok && actor.ok && view ? (
-        <ReadonlyAccountSection
-          tenantId={actor.tenantId}
-          connectionId={connectionId}
-          accessMethod={view.connections.find((row) => row.id === connectionId && row.tenantId === actor.tenantId)?.accessMethod}
-        />
+      <ServiceSummaryHeader model={operation.model} />
+      <ServiceTabNav connectionId={connectionId} active={tab} />
+      <ServiceOperationDetail model={operation.model} provider={providers[connectionId] ?? null} section={tab} />
+      {tab === 'overview' && trend?.visible ? <QualityTrendPanel trend={trend} /> : null}
+      {ready && tab !== 'review' && tab !== 'history' ? <ServiceDetailBody actor={actor} view={view} connectionId={connectionId} section={tab} /> : null}
+      {ready && (tab === 'connect' || tab === 'results') ? (
+        <ReadonlyAccountSection tenantId={actor.tenantId} connectionId={connectionId} accessMethod={accessMethod} view={tab === 'connect' ? 'form' : 'result'} />
       ) : null}
-      <GithubRefreshStatus connectionId={connectionId} />
+      {tab === 'overview' ? <GithubRefreshStatus connectionId={connectionId} /> : null}
     </JuryChrome>
   );
 }
