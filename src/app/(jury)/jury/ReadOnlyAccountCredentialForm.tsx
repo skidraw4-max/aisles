@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { READONLY_ACCOUNT_CONSENT_TEXT } from '@/lib/jury-product/services/readonly-account/consent';
+import { READONLY_ACCOUNT_CONSENT_TEXT } from '@/lib/jury-product/services/readonly-account/consent-text';
 
 export type ReadOnlyAccountCredentialFormProps = {
   connectionId: string;
