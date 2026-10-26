@@ -520,10 +520,10 @@ export function ReadOnlyAccountStepper(props: ReadOnlyAccountCredentialFormProps
             <Field c={c} id={`${id}-login`} label="로그인 주소" required help="로그인 화면 주소 (https)">
               <input name="loginUrl" type="url" placeholder="https://app.example.com/login" className={c.input} disabled={!enabled} defaultValue={login?.loginUrl} required />
             </Field>
-            <Field c={c} id={`${id}-user`} label="아이디" required={!stored} help={stored ? `비워 두면 저장된 계정(${stored.usernameHint})을 그대로 써요` : '읽기 전용으로 만든 계정의 아이디'}>
+            <Field c={c} id={`${id}-user`} label="아이디" required={!stored} help={stored ? `비워 두면 저장된 아이디(${stored.usernameHint})를 그대로 써요` : '읽기 전용으로 만든 계정의 아이디'}>
               <input name="username" type="text" autoComplete="off" placeholder="viewer@example.com" className={c.input} disabled={!enabled} required={!stored} />
             </Field>
-            <Field c={c} id={`${id}-pass`} label="비밀번호" required={!stored} help="암호화해 저장하고 만료되면 폐기해요">
+            <Field c={c} id={`${id}-pass`} label="비밀번호" required={!stored} help={stored ? '비워 두면 저장된 비밀번호를 그대로 써요 · 암호화해 저장하고 만료되면 폐기해요' : '암호화해 저장하고 만료되면 폐기해요'}>
               <input name="password" type="password" autoComplete="new-password" className={c.input} disabled={!enabled} required={!stored} />
             </Field>
             <details open={advancedOpen} onToggle={(event) => setAdvancedOpen((event.currentTarget as HTMLDetailsElement).open)}>

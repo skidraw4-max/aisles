@@ -5,7 +5,7 @@
  */
 import { randomUUID } from 'node:crypto';
 import type { JuryActor } from '../../access';
-import type { CredentialKeyProvider } from './credential-crypto';
+import { decryptAccountCredential, type CredentialKeyProvider } from './credential-crypto';
 import type { ObservationScopeInput } from './consent';
 import {
   planConsent,
@@ -17,7 +17,7 @@ import {
   type ReadonlyAccountFailure,
 } from './consent';
 import type { LoginPlan } from './executor';
-import { normalizeLoginPlan } from './observation-run';
+import { normalizeLoginPlan, storedLoginPlan, type StoredCredentialRecord } from './observation-run';
 
 type ConnectionRow = { id: string; tenantId: string; serviceKey: string; accessMethod: string };
 type ConsentRow = {
@@ -40,6 +40,35 @@ export interface ReadonlyAccountStore {
   audit(event: { tenantId: string; actor: string; action: string; serviceKey: string; timestamp: string }): Promise<void>;
   /** I-054: saves the login plan (no secrets) on the consent row. Optional so older fakes keep working. */
   saveLoginSettings?(tenantId: string, consentId: string, settings: LoginPlan): Promise<void>;
+  /** I-067: active (not destroyed) credential, used only to fill a blank ID or password on replace. Optional. */
+  findActiveCredential?(tenantId: string, connectionId: string): Promise<StoredCredentialRecord | null>;
+}
+
+const isBlankText = (v: unknown) => typeof v !== 'string' || v.trim() === '';
+
+/**
+ * I-067: a blank ID or password reuses the stored (unexpired, not destroyed) value. Decrypted only in memory and
+ * passed straight to re-encryption; never logged or returned. Nothing stored → inputs unchanged (CREDENTIAL_INVALID).
+ */
+async function fillBlankFromStored(input: {
+  username: unknown;
+  password: unknown;
+  context: { tenantId: string; connectionId: string };
+  now: string;
+  keyProvider: CredentialKeyProvider;
+  store: ReadonlyAccountStore;
+}): Promise<{ username: unknown; password: unknown }> {
+  const needUser = isBlankText(input.username);
+  const needPass = isBlankText(input.password);
+  if ((!needUser && !needPass) || !input.store.findActiveCredential) return { username: input.username, password: input.password };
+  const record = await input.store.findActiveCredential(input.context.tenantId, input.context.connectionId).catch(() => null);
+  if (!record || record.destroyedAt || record.expiresAt.getTime() <= Date.parse(input.now)) return { username: input.username, password: input.password };
+  const stored = await decryptAccountCredential(record, input.context, input.keyProvider);
+  if (!stored.ok) return { username: input.username, password: input.password };
+  return {
+    username: needUser ? stored.secret.username : input.username,
+    password: needPass ? stored.secret.password : input.password,
+  };
 }
 
 function tenantOf(actor: JuryActor): string | null {
@@ -59,7 +88,11 @@ export async function persistReadonlyAccountConsent(input: {
   const planned = planConsent({ actor: input.actor, connection, scope: input.scope, accepted: input.accepted, now: input.now });
   if (!planned.ok || !input.actor.ok || !connection) return planned.ok ? { ok: false, reason: 'NOT_FOUND' } : planned;
   // I-054: the normalized scope is stored next to its hash so later steps need no re-entry.
-  await input.store.createConsent({ ...planned.consent, scope: planned.scope });
+  // I-067: re-consent (e.g. v3 → v4) keeps the previously saved login settings (no secrets) instead of dropping
+  // them, so the form does not fall back to the generic defaults and the user need not retype selectors.
+  const previous = await input.store.findLatestConsent(connection.tenantId, connection.id).catch(() => null);
+  const carried = previous ? storedLoginPlan(previous.loginSettings) : null;
+  await input.store.createConsent({ ...planned.consent, scope: planned.scope, ...(carried ? { loginSettings: carried } : {}) });
   await input.store.audit({
     tenantId: connection.tenantId,
     actor: input.actor.userId,
@@ -91,13 +124,16 @@ export async function persistReadonlyAccountCredential(input: {
   if (connection && consent && !scope) return { ok: false, reason: 'CONSENT_STALE' };
   const login = input.login ? normalizeLoginPlan(input.login) : null;
   if (input.login && !login) return { ok: false, reason: 'LOGIN_PLAN_INVALID' };
+  const filled = connection && input.actor.ok && input.actor.tenantId === connection.tenantId
+    ? await fillBlankFromStored({ username: input.username, password: input.password, context: { tenantId: connection.tenantId, connectionId: connection.id }, now: input.now, keyProvider: input.keyProvider, store: input.store })
+    : { username: input.username, password: input.password };
   const planned = await planCredentialStore({
     actor: input.actor,
     connection,
     consent,
     scope: scope ?? { allowedOrigins: [], paths: [], authOrigins: [] },
-    username: input.username,
-    password: input.password,
+    username: filled.username,
+    password: filled.password,
     retentionDays: input.retentionDays,
     now: input.now,
     keyProvider: input.keyProvider,
@@ -152,10 +188,24 @@ export async function createPrismaReadonlyAccountStore(): Promise<ReadonlyAccoun
       });
     },
     async createConsent(row) {
-      const { scope, loginSettings: _ignored, ...rest } = row;
+      const { scope, loginSettings, ...rest } = row;
       await prisma.juryConnectionConsent.create({
-        data: { ...rest, acceptedAt: new Date(row.acceptedAt), ...(scope ? { scope: scope as object } : {}) },
+        data: {
+          ...rest,
+          acceptedAt: new Date(row.acceptedAt),
+          ...(scope ? { scope: scope as object } : {}),
+          ...(loginSettings ? { loginSettings: { ...(loginSettings as object) } } : {}),
+        },
       });
+    },
+    async findActiveCredential(tenantId, connectionId) {
+      const row = await prisma.juryAccountCredential.findFirst({
+        where: { tenantId, connectionId, destroyedAt: null },
+        orderBy: { createdAt: 'desc' },
+        select: { algorithm: true, ciphertext: true, iv: true, authTag: true, wrappedDek: true, kekId: true, expiresAt: true, destroyedAt: true },
+      });
+      if (!row || !row.ciphertext || !row.iv || !row.authTag || !row.wrappedDek) return null;
+      return { ...row, algorithm: row.algorithm as StoredCredentialRecord['algorithm'], ciphertext: row.ciphertext, iv: row.iv, authTag: row.authTag, wrappedDek: row.wrappedDek };
     },
     async saveLoginSettings(tenantId, consentId, settings) {
       await prisma.juryConnectionConsent.updateMany({ where: { id: consentId, tenantId }, data: { loginSettings: { ...settings } } });
