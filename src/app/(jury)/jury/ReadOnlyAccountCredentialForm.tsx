@@ -16,6 +16,9 @@ import {
   CREDENTIAL_RETENTION_NOTE,
   SCOPE_REENTRY_NOTE,
   SELECTOR_HELP,
+  OBSERVATION_PATHS_HELP,
+  AUTO_DISCOVERY_NOTE,
+  DISCOVERED_PAGE_BADGE,
 } from '@/lib/jury-product/connected-service-copy';
 
 export type { ReadonlyAccountFormAction, ReadonlyAccountFormResult };
@@ -68,7 +71,9 @@ export function LatestObservationResult(props: { run: LatestObservationRun | nul
             <ul>
               {run.pages.map((p, i) => (
                 <li key={`${p.path}-${i}`}>
+                  {p.discovered ? `[${DISCOVERED_PAGE_BADGE}] ` : ''}
                   {p.label} ({p.path}) · {p.visible ? '내용 있음' : '내용 없음'} · 글자 수 {p.textLength}
+                  {p.stats ? ` · 목록 ${p.stats.listItems} · 카드 ${p.stats.cards} · 표 행 ${p.stats.tableRows} · 제목 ${p.stats.headings}` : ''}
                 </li>
               ))}
             </ul>
@@ -95,8 +100,9 @@ function ScopeFields(props: { id: string; inputClass?: string; disabled: boolean
       <label htmlFor={`${props.id}-auth`}>인증 서버 도메인 (선택, 한 줄에 하나, https · 예: Supabase 프로젝트 주소)</label>
       <p id={`${props.id}-auth-help`}>{AUTH_ORIGIN_HELP}</p>
       <textarea id={`${props.id}-auth`} name="authOrigins" aria-describedby={`${props.id}-auth-help`} className={props.inputClass} disabled={props.disabled} />
-      <label htmlFor={`${props.id}-paths`}>관찰 경로 (한 줄에 하나)</label>
-      <textarea id={`${props.id}-paths`} name="paths" className={props.inputClass} disabled={props.disabled} />
+      <label htmlFor={`${props.id}-paths`}>관찰 경로 (선택, 한 줄에 하나)</label>
+      <p id={`${props.id}-paths-help`}>{OBSERVATION_PATHS_HELP}</p>
+      <textarea id={`${props.id}-paths`} name="paths" aria-describedby={`${props.id}-paths-help`} className={props.inputClass} disabled={props.disabled} />
     </>
   );
 }
@@ -165,7 +171,8 @@ export function ReadOnlyAccountCredentialForm(props: ReadOnlyAccountCredentialFo
         <form action={observationFormAction} autoComplete="off">
           <input type="hidden" name="connectionId" value={props.connectionId} />
           <h4>읽기 전용 관찰 실행</h4>
-          <p>저장된 계정으로 한 번 로그인한 뒤 관찰 경로를 조회만 합니다. 입력·수정·삭제 요청은 차단됩니다.</p>
+          <p>저장된 계정으로 한 번 로그인한 뒤 관찰 경로와 자동으로 찾은 메뉴를 조회만 합니다. 입력·수정·삭제 요청은 차단됩니다.</p>
+          <p>{AUTO_DISCOVERY_NOTE}</p>
           <p>{SCOPE_REENTRY_NOTE}</p>
           <ScopeFields id={`${id}-obs`} inputClass={classes.input} disabled={!props.enabled} />
           <label htmlFor={`${id}-login`}>로그인 주소 (https)</label>

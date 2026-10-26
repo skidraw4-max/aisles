@@ -28,6 +28,7 @@ import {
 } from './actions';
 import { OnboardingSubmit } from './shell-client';
 import { ReviewSubmitButton } from './review-submit-button';
+import { ConnectedReviewStatus } from './connected-review-status';
 import {
   CONNECTED_REVIEW_PENDING_NOTE,
   CONNECTED_REVIEW_STALE_TEXT,
@@ -137,7 +138,8 @@ export function ServiceDetailBody({
       <p>상태 <span className={styles.badge}>{detail.discoveryStatus === 'DISCOVERY_PENDING' ? '서비스 확인 중' : detail.discoveryStatus}</span></p>
       {discovery ? (
         <>
-          <p>어댑터 {github && !synthetic ? 'GitHubRepositoryDiscovery' : 'MockDiscoveryAdapter'}</p>
+          {/* I-049: READ_ONLY_ACCOUNT does not use the mock discovery adapter; hide the misleading name. */}
+          {connection.accessMethod === 'READ_ONLY_ACCOUNT' ? null : <p>어댑터 {github && !synthetic ? 'GitHubRepositoryDiscovery' : 'MockDiscoveryAdapter'}</p>}
           {github && synthetic ? <p>This discovery is a mock placeholder. It is not a GitHub repository list.</p> : null}
           <p>탐색 시각 {formatKstFull(discovery.exploredAt)}</p>
           <p>자원 {discovery.surfaces.join(', ')} · {discovery.menus.join(', ')}</p>
@@ -243,8 +245,12 @@ export function ServiceDetailBody({
             <p key={metric.id}>{metric.metric} {connectedMetricText(metric.value, metric.availability, formatMeasuredValue)}</p>
           ))}
           {row.metrics.some((metric) => metric.availability !== 'AVAILABLE') ? <p className={styles.muted}>{UNMEASURED_METRICS_NOTE}</p> : null}
-          <p>심사 상태 <span className={styles.badge}>{connectedReviewStatusText(row.reviewStatus, row.reviewStale, displayText)}</span></p>
-          {row.reviewStale ? <p className={styles.muted} role="status">{CONNECTED_REVIEW_STALE_TEXT}</p> : null}
+          <ConnectedReviewStatus
+            badgeClass={styles.badge}
+            mutedClass={styles.muted}
+            statusText={connectedReviewStatusText(row.reviewStatus, row.reviewStale, displayText)}
+            staleText={row.reviewStale ? CONNECTED_REVIEW_STALE_TEXT : null}
+          />
           {row.decision ? <p>판정 {displayText(row.decision)}</p> : null}
           {row.completedAt ? <p>완료 시각 {formatKstFull(row.completedAt)}</p> : null}
           {row.summary ? <p>요약 {row.summary}</p> : null}

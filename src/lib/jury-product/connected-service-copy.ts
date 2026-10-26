@@ -10,6 +10,9 @@ export const CREDENTIAL_RETENTION_DAYS = 14;
 /** Shown when a connected-service (AISLE_SELF) review was cut off by the 300s function limit. */
 export const CONNECTED_REVIEW_STALE_TEXT = '시간 안에 끝나지 않아 중단됐어요. 다시 실행할 수 있어요';
 
+/** I-049: window event fired by ReviewSubmitButton when a review submit starts. */
+export const REVIEW_SUBMITTING_EVENT = 'jury:review-submitting';
+
 export const NOT_MEASURED_TEXT = '측정 안 됨';
 
 export const CONNECTED_REVIEW_PENDING_NOTE = '심사는 최대 5분 걸릴 수 있어요. 결과는 [결과] 메뉴에서 확인하세요';
@@ -34,6 +37,11 @@ export const SELECTOR_HELP = {
 } as const;
 
 export const CREDENTIAL_RETENTION_NOTE = `저장된 계정은 ${CREDENTIAL_RETENTION_DAYS}일 뒤 자동 파기됩니다. 계속 쓰려면 교체 저장으로 갱신하세요.`;
+
+/** I-049 */
+export const OBSERVATION_PATHS_HELP = '비워두면 로그인 후 접근 가능한 메뉴를 자동으로 찾아 관찰합니다. 입력한 경로는 함께 관찰합니다.';
+export const AUTO_DISCOVERY_NOTE = '로그인 후 메뉴를 자동으로 찾아 최대 20개 화면을 조회만 합니다(약 3~4분). 로그아웃·삭제·결제처럼 보이는 링크와 버튼·폼은 누르지 않습니다.';
+export const DISCOVERED_PAGE_BADGE = '자동 발견';
 
 export const READONLY_PROVIDER_LABEL = '읽기 전용 계정';
 export const READONLY_CONNECTION_NOTICE = '저장한 읽기 전용 계정으로 로그인해 허용한 화면만 조회합니다. 입력·수정·삭제 요청은 차단합니다.';
