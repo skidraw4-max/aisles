@@ -12,8 +12,12 @@ import { JuryChrome } from '../../ui';
 import { ReadonlyAccountSection } from '../../readonly-account-section';
 import { loadJuryShell, readJurySessionEmail } from '../../load';
 
-/** READ_ONLY_ACCOUNT observation runs a headless browser from this page's server action (I-044). */
-export const maxDuration = 60;
+/**
+ * READ_ONLY_ACCOUNT observation runs a headless browser from this page's server action (I-044),
+ * and the connected-service review (LLM, up to 240s budget) runs here too. I-048: a page-level
+ * value overrides the layout's 300s, so it must not be lower than the layout.
+ */
+export const maxDuration = 300;
 
 export default async function ServiceDetailPage({
   params,
