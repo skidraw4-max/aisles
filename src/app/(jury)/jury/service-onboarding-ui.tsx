@@ -37,6 +37,7 @@ import {
   connectedReviewStatusText,
 } from '@/lib/jury-product/connected-service-copy';
 import { canShowWrite } from './ui';
+import type { ServiceTab } from './service-detail-tabs-model';
 import styles from './jury.module.css';
 
 export function AddServiceBody({ actor }: { actor: Extract<JuryActor, { ok: true }> }) {
@@ -100,11 +101,16 @@ export function ServiceDetailBody({
   actor,
   view,
   connectionId,
+  section,
 }: {
   actor: Extract<JuryActor, { ok: true }>;
   view: JuryConsoleView;
   connectionId: string;
+  /** I-051: render only that tab's part; omitted renders the full legacy layout. */
+  section?: ServiceTab;
 }) {
+  const all = !section;
+  const show = (tab: ServiceTab) => all || section === tab;
   const detail = projectServiceOnboarding(view, connectionId);
   if (!detail) {
     return (
@@ -119,9 +125,11 @@ export function ServiceDetailBody({
   const synthetic = discovery ? isSyntheticMockDiscovery(connection.serviceKey, discovery.proposedMetrics) : false;
   return (
     <section className={styles.panel}>
-      <h2 className={styles.pageTitle}>{connection.displayName}</h2>
-      <p className={styles.muted}>연결 → 서비스 확인 → 접근 범위 → 활성화</p>
+      {all ? <h2 className={styles.pageTitle}>{connection.displayName}</h2> : null}
+      {all || section === 'connect' ? <p className={styles.muted}>연결 → 서비스 확인 → 접근 범위 → 활성화</p> : null}
 
+      {show('overview') ? (
+        <>
       <h3>연결 상태</h3>
       <p>서비스 이름 {connection.displayName}</p>
       <p>연결 방식 <span className={styles.badge}>{displayText(connection.accessMethod)}</span></p>
@@ -133,7 +141,14 @@ export function ServiceDetailBody({
         <p>생성일 {formatKstFull(connection.createdAt)}</p>
         <p>수정일 {formatKstFull(connection.updatedAt)}</p>
       </details>
+      <h3>활성화</h3>
+      <p>상태 <span className={styles.badge}>{displayText(connection.status)}</span></p>
+      {connection.status === 'CONNECTED' ? <p>연결됨</p> : <p>연결되지 않음</p>}
+        </>
+      ) : null}
 
+      {show('connect') ? (
+        <>
       <h3>서비스 확인</h3>
       <p>상태 <span className={styles.badge}>{detail.discoveryStatus === 'DISCOVERY_PENDING' ? '서비스 확인 중' : detail.discoveryStatus}</span></p>
       {discovery ? (
@@ -204,10 +219,11 @@ export function ServiceDetailBody({
           <p className={styles.muted} key={scope.id}>scope 승인: 현재 역할에는 이 변경 권한이 없습니다.</p>
         )
       ))}
+        </>
+      ) : null}
 
-      <h3>활성화</h3>
-      <p>상태 <span className={styles.badge}>{displayText(connection.status)}</span></p>
-      {connection.status === 'CONNECTED' ? <p>연결됨</p> : <p>연결되지 않음</p>}
+      {show('results') ? (
+        <>
       <h3>자료</h3>
       {github ? (
         <p>
@@ -275,6 +291,8 @@ export function ServiceDetailBody({
           {' · '}
           <Link className={styles.inline} href={juryHref('/reviews')}>심사 결과</Link>
         </p>
+      ) : null}
+        </>
       ) : null}
     </section>
   );

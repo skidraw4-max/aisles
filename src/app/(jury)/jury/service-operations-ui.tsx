@@ -15,6 +15,7 @@ import { displayText, userLabel } from '@/lib/jury-product/ui-labels';
 import { TranslationHint } from './ui-primitives';
 import { ReviewSubmitButton } from './review-submit-button';
 import { CONNECTED_REVIEW_PENDING_NOTE } from '@/lib/jury-product/connected-service-copy';
+import type { ServiceTab } from './service-detail-tabs-model';
 import styles from './jury.module.css';
 
 function mark(value: boolean): string {
@@ -128,20 +129,44 @@ export function ServiceOperationsList({
   );
 }
 
-export function ServiceOperationDetail({
-  model,
-  provider,
-}: {
-  model: ServiceOperationModel;
-  provider?: SafeProviderView | null;
-}) {
+/** I-051: always-visible summary header (name once, status badges, next action). */
+export function ServiceSummaryHeader({ model }: { model: ServiceOperationModel }) {
   return (
     <section className={styles.panel}>
       <h2 className={styles.pageTitle}>{model.name}</h2>
-      <p>연결 <span className={styles.badge} title={model.connectionStatus}>{userLabel(model.connectionStatus)}</span></p>
-      {model.phase ? <p>운영 상태 <span className={styles.badge} title={model.phase}>{userLabel(model.phase)}</span></p> : null}
-      {model.health ? <p>서비스 상태 <span className={styles.badge} title={model.health}>{userLabel(model.health)}</span></p> : null}
-      {provider ? (
+      <div className={styles.summaryHeader}>
+        <p>연결 <span className={styles.badge} title={model.connectionStatus}>{userLabel(model.connectionStatus)}</span></p>
+        {model.phase ? <p>운영 상태 <span className={styles.badge} title={model.phase}>{userLabel(model.phase)}</span></p> : null}
+        {model.health ? <p>서비스 상태 <span className={styles.badge} title={model.health}>{userLabel(model.health)}</span></p> : null}
+      </div>
+      <NextAction model={model} />
+    </section>
+  );
+}
+
+/** I-051: `section` renders only that tab's part; without it the full legacy layout is rendered. */
+export function ServiceOperationDetail({
+  model,
+  provider,
+  section,
+}: {
+  model: ServiceOperationModel;
+  provider?: SafeProviderView | null;
+  section?: ServiceTab;
+}) {
+  const all = !section;
+  const show = (tab: ServiceTab) => all || section === tab;
+  return (
+    <section className={styles.panel}>
+      {all ? (
+        <>
+          <h2 className={styles.pageTitle}>{model.name}</h2>
+          <p>연결 <span className={styles.badge} title={model.connectionStatus}>{userLabel(model.connectionStatus)}</span></p>
+          {model.phase ? <p>운영 상태 <span className={styles.badge} title={model.phase}>{userLabel(model.phase)}</span></p> : null}
+          {model.health ? <p>서비스 상태 <span className={styles.badge} title={model.health}>{userLabel(model.health)}</span></p> : null}
+        </>
+      ) : null}
+      {show('connect') && provider ? (
         <>
           <h3>연결 설정</h3>
           <p>제공자 {provider.displayName}</p>
@@ -158,17 +183,27 @@ export function ServiceOperationDetail({
         </>
       ) : null}
 
+      {show('overview') ? (
+        <>
       <h3>개요</h3>
       <p>검증 근거 {userLabel(model.parts.evidence)}</p>
       {model.parts.review ? <p>심사 {userLabel(model.parts.review)}</p> : null}
       {model.parts.improvement ? <p>개선 {userLabel(model.parts.improvement)}</p> : null}
       {model.parts.agent ? <p>에이전트 {userLabel(model.parts.agent)}</p> : null}
+        </>
+      ) : null}
 
+      {show('connect') ? (
+        <>
       <h3>연결 준비</h3>
       <p>서비스 확인 {userLabel(model.onboarding.discovery)}</p>
       <p>범위 {userLabel(model.onboarding.scope)}</p>
       <p>연결 {userLabel(model.onboarding.connection)}</p>
+        </>
+      ) : null}
 
+      {show('results') ? (
+        <>
       <h3>검증 근거</h3>
       {model.evidence.empty ? <p>{displayText('No evidence collected yet')}</p> : (
         <>
@@ -182,7 +217,11 @@ export function ServiceOperationDetail({
           <p>수집 상태 <span title={model.evidence.collectionStatus}>{displayText(model.evidence.collectionStatus)}</span></p>
         </>
       )}
+        </>
+      ) : null}
 
+      {show('review') ? (
+        <>
       {hasReviewAccess(model) ? (
         <>
           <h3>심사</h3>
@@ -230,9 +269,13 @@ export function ServiceOperationDetail({
           <p>Jury 심사 {userLabel(model.flow.jury)}</p>
         </>
       ) : null}
+        </>
+      ) : null}
 
-      <NextAction model={model} />
+      {all ? <NextAction model={model} /> : null}
 
+      {show('history') ? (
+        <>
       <h3>최근 활동</h3>
       {model.activity.length === 0 ? <p>{displayText('No activity')}</p> : model.activity.map((row) => (
         <p key={row.id}>{displayText(row.label)} · {displayText(row.age)}</p>
@@ -247,6 +290,8 @@ export function ServiceOperationDetail({
       <p>에이전트(AGENT) {mark(model.access.capabilities.AGENT)}</p>
       <p className={styles.muted}>권한 변경은 관리 &gt; 서비스 연결에서 합니다.</p>
       <p><Link className={styles.inline} href={juryHref('/organization/services')}>서비스 연결</Link></p>
+        </>
+      ) : null}
     </section>
   );
 }

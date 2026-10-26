@@ -7,7 +7,8 @@ import * as React from 'react';
 import { READONLY_ACCOUNT_PHASE1_ENABLED, READONLY_ACCOUNT_UI_ENABLED, shouldShowReadonlyAccountSection } from '@/lib/jury-product/services/readonly-account/flags';
 import { READONLY_ACCOUNT_CONSENT_VERSION } from '@/lib/jury-product/services/readonly-account/consent-text';
 import { loadLatestObservationRun, type LatestObservationRun } from '@/lib/jury-product/services/readonly-account/latest-observation';
-import { ReadOnlyAccountCredentialForm } from './ReadOnlyAccountCredentialForm';
+import styles from './jury.module.css';
+import { LatestObservationResult, ReadOnlyAccountCredentialForm } from './ReadOnlyAccountCredentialForm';
 import { acceptReadonlyAccountConsentAction, runReadonlyAccountObservationAction, storeReadonlyAccountCredentialAction } from './readonly-account-actions';
 
 export type ReadonlyAccountSectionState = {
@@ -53,9 +54,18 @@ export async function ReadonlyAccountSection(props: {
   uiEnabled?: boolean;
   load?: typeof loadState;
   className?: string;
+  /** I-051: 'form' = 1-2-3 steps (연결 설정 tab), 'result' = latest observation only (관찰 결과 tab). */
+  view?: 'form' | 'result';
 }) {
   if (!shouldShowReadonlyAccountSection({ uiEnabled: props.uiEnabled ?? READONLY_ACCOUNT_UI_ENABLED, accessMethod: props.accessMethod })) return null;
   const state = await (props.load ?? loadState)(props.tenantId, props.connectionId);
+  if (props.view === 'result') {
+    return (
+      <section className={props.className} aria-label="읽기 전용 관찰 결과">
+        <LatestObservationResult run={state.latestRun ?? null} />
+      </section>
+    );
+  }
   return (
     <ReadOnlyAccountCredentialForm
       connectionId={props.connectionId}
@@ -66,7 +76,16 @@ export async function ReadonlyAccountSection(props: {
       consentAction={consentFormAction}
       credentialAction={credentialFormAction}
       observationAction={observationFormAction}
-      classes={{ root: props.className }}
+      classes={{
+        root: props.className,
+        field: styles.field,
+        help: styles.fieldHelp,
+        required: styles.requiredMark,
+        optional: styles.optionalMark,
+        step: styles.stepCard,
+        steps: styles.stepList,
+        badge: styles.badge,
+      }}
     />
   );
 }
