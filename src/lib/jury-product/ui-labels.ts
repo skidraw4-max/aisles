@@ -186,6 +186,8 @@ export function auditActionLabel(value: string | null | undefined): string {
 /** Fixed English display strings produced by read-only projections. */
 export const TEXT_LABELS: Readonly<Record<string, string>> = {
   'Not available': '확인할 수 없음',
+  // I-053: evidence summary collectionStatus; same wording as 자료 (AVAILABLE)
+  'Collected': '사용 가능',
   'readonly.pagesObserved': '관찰 페이지 수',
   'readonly.pagesVisible': '내용 확인 페이지 수',
   'readonly.blockedRequests': '차단된 요청 수',
@@ -336,3 +338,54 @@ export const DECISION_GUIDANCE: Readonly<Record<string, string>> = {
   VERIFY: '근거가 부족한 주장이 있어요. 검증 근거 탭에서 부족한 근거를 확인한 뒤 자료를 보완해 다시 요청하세요.',
   REWORD: '표현이 근거보다 강해요. 검증 근거 탭에서 근거를 확인하고 표현을 수정한 뒤 다시 요청하세요.',
 };
+
+/** I-053: metric keys → Korean display names. Raw keys stay in 기술 정보. */
+export const METRIC_LABELS: Readonly<Record<string, string>> = {
+  userCount: '전체 사용자 수',
+  newUsersLast7d: '최근 7일 신규 사용자 수',
+  activeUsersLast7d: '최근 7일 활성 사용자 수',
+  postCount: '전체 게시글 수',
+  postsLast7d: '최근 7일 게시글 수',
+  commentsLast7d: '최근 7일 댓글 수',
+  viewsLast7d: '최근 7일 조회 수',
+  totalViews: '전체 조회 수',
+  commentCount: '전체 댓글 수',
+  usersLast7d: '최근 7일 사용자 수',
+  'ga4.newUsers': 'GA4 신규 사용자 수',
+  'ga4.activeUsers': 'GA4 활성 사용자 수',
+  'ga4.screenPageViews': 'GA4 페이지 조회 수',
+  'ga4.sessions': 'GA4 세션 수',
+  'ga4.engagedSessions': 'GA4 참여 세션 수',
+  'ga4.averageSessionDurationSec': 'GA4 평균 세션 시간(초)',
+  'readonly.pagesObserved': '관찰 페이지 수',
+  'readonly.pagesVisible': '내용 확인 페이지 수',
+  'readonly.blockedRequests': '차단된 요청 수',
+};
+
+export function metricLabel(metric: string): string {
+  if (METRIC_LABELS[metric]) return METRIC_LABELS[metric];
+  if (metric.startsWith('ga4.eventCount.')) return `GA4 이벤트 수 (${metric.slice('ga4.eventCount.'.length)})`;
+  if (metric.endsWith('.routes')) return '화면 경로 후보';
+  if (metric.endsWith('.api')) return 'API 자원 후보';
+  return TEXT_LABELS[metric] ?? metric;
+}
+
+/** I-053: discovery surface / data-source enums. */
+export const SURFACE_LABELS: Readonly<Record<string, string>> = {
+  FRONTEND: '사용자 화면', ADMIN: '관리자 화면', BO: '백오피스', API: 'API',
+};
+export const DATA_SOURCE_LABELS: Readonly<Record<string, string>> = {
+  API: 'API', SCREEN: '화면', FILE: '파일', STATS: '통계',
+};
+export function surfaceLabels(values: readonly string[]): string {
+  return values.map((v) => SURFACE_LABELS[v] ?? v).join(', ');
+}
+export function dataSourceLabels(values: readonly string[]): string {
+  return values.map((v) => DATA_SOURCE_LABELS[v] ?? v).join(', ');
+}
+
+/** I-053: access-scope resource such as `metric:https://x/.routes` → Korean label. */
+export function scopeResourceLabel(resource: string): string {
+  if (resource.startsWith('metric:')) return metricLabel(resource.slice('metric:'.length));
+  return discoveryMenuText(resource);
+}
