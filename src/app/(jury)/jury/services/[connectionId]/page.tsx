@@ -9,6 +9,7 @@ import { GithubRefreshStatus } from '../../github-refresh-status';
 import { ServiceDetailBody } from '../../service-onboarding-ui';
 import { QualityTrendPanel, ServiceOperationDetail, ServiceOperationState } from '../../service-operations-ui';
 import { JuryChrome } from '../../ui';
+import { ReadonlyAccountSection } from '../../readonly-account-section';
 import { loadJuryShell, readJurySessionEmail } from '../../load';
 
 export default async function ServiceDetailPage({
@@ -46,6 +47,13 @@ export default async function ServiceDetailPage({
       {operation.ok ? <ServiceOperationDetail model={operation.model} provider={providers[connectionId] ?? null} /> : <ServiceOperationState reason={operation.reason} />}
       {trend?.visible ? <QualityTrendPanel trend={trend} /> : null}
       {operation.ok && actor.ok && view ? <ServiceDetailBody actor={actor} view={view} connectionId={connectionId} /> : null}
+      {operation.ok && actor.ok && view ? (
+        <ReadonlyAccountSection
+          tenantId={actor.tenantId}
+          connectionId={connectionId}
+          accessMethod={view.connections.find((row) => row.id === connectionId && row.tenantId === actor.tenantId)?.accessMethod}
+        />
+      ) : null}
       <GithubRefreshStatus connectionId={connectionId} />
     </JuryChrome>
   );

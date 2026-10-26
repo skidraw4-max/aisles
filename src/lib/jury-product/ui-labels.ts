@@ -92,6 +92,8 @@ export const AUDIT_ACTION_LABELS: Readonly<Record<string, string>> = {
   INVITATION_ACCEPTED: '초대 수락',
   SERVICE_CONNECTION_CREATED: '서비스 연결 생성',
   SERVICE_CONNECTION_ACTIVATED: '서비스 연결 활성화',
+  READONLY_ACCOUNT_CONSENT_ACCEPTED: '읽기 전용 계정 동의',
+  READONLY_ACCOUNT_CREDENTIAL_STORED: '읽기 전용 계정 자격증명 저장',
   SERVICE_DISCOVERY_STARTED: '서비스 확인 시작',
   SERVICE_MEMBER_ADDED: '서비스 멤버 추가',
   SERVICE_MEMBER_REMOVED: '서비스 멤버 제거',
