@@ -60,3 +60,21 @@ test('renders 최근 관찰 결과 with counts and final path', () => {
   const empty = renderToStaticMarkup(createElement(LatestObservationResult, { run: null }));
   assert.match(empty, /아직 저장된 관찰 결과가 없습니다/);
 });
+
+import { readonlyAccountReasonText, withClientDeadline } from './result-text';
+
+test('client deadline resolves CLIENT_TIMEOUT when the action hangs', async () => {
+  let fire: () => void = () => {};
+  const wrapped = withClientDeadline(() => new Promise(() => {}), 70_000, (fn) => { fire = fn; return 1; }, () => {});
+  const p = wrapped(null, new FormData());
+  fire();
+  assert.deepEqual(await p, { ok: false, reason: 'CLIENT_TIMEOUT' });
+  assert.match(readonlyAccountReasonText('CLIENT_TIMEOUT'), /새로고침/);
+});
+
+test('client deadline maps thrown errors to CLIENT_ERROR and passes results through', async () => {
+  const thrower = withClientDeadline(async () => { throw new Error('network'); }, 70_000, () => 1, () => {});
+  assert.deepEqual(await thrower(null, new FormData()), { ok: false, reason: 'CLIENT_ERROR' });
+  const fine = withClientDeadline(async () => ({ ok: true }), 70_000, () => 1, () => {});
+  assert.deepEqual(await fine(null, new FormData()), { ok: true });
+});

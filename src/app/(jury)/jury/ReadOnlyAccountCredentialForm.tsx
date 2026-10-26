@@ -5,6 +5,7 @@ import { READONLY_ACCOUNT_CONSENT_TEXT } from '@/lib/jury-product/services/reado
 import {
   readonlyAccountReasonText,
   readonlyAccountStopText,
+  withClientDeadline,
   type ReadonlyAccountFormAction,
   type ReadonlyAccountFormResult,
 } from '@/lib/jury-product/services/readonly-account/result-text';
@@ -96,7 +97,8 @@ export function ReadOnlyAccountCredentialForm(props: ReadOnlyAccountCredentialFo
   const [consented, setConsented] = React.useState(Boolean(props.consentAccepted));
   const [consentResult, consentFormAction, consentPending] = React.useActionState(props.consentAction ?? noop, null);
   const [credentialResult, credentialFormAction, credentialPending] = React.useActionState(props.credentialAction ?? noop, null);
-  const [observationResult, observationFormAction, observationPending] = React.useActionState(props.observationAction ?? noop, null);
+  const observationWithDeadline = React.useMemo(() => withClientDeadline(props.observationAction ?? noop), [props.observationAction]);
+  const [observationResult, observationFormAction, observationPending] = React.useActionState(observationWithDeadline, null);
   const classes = props.classes ?? {};
   const inputsDisabled = !props.enabled || !consented;
   const consentMessage = resultText(consentResult, '동의를 저장했습니다.');
