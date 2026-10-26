@@ -44,7 +44,7 @@ test('committee labels, confidence and decision guidance are display-only Korean
   assert.equal(committeeRoleLabel('Z'), 'Z');
   assert.equal(confidenceLabel(0.64), '64%');
   assert.equal(confidenceLabel(null), '확인 불가');
-  assert.equal(MEMBER_OPINION_NOTICE.LEGACY.includes('재심사 시 표시됩니다'), true);
+  assert.equal(MEMBER_OPINION_NOTICE.LEGACY.includes('재심사 시 표시돼요'), true);
   for (const code of ['ACCEPT', 'VERIFY', 'REWORD']) {
     assert.equal(DECISION_GUIDANCE[code].length > 0, true, code);
     assert.equal(DECISION_GUIDANCE[code].includes('실패'), false, code);

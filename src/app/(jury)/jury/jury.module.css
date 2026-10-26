@@ -1626,3 +1626,63 @@ a.inline {
   margin: 0;
   overflow-wrap: anywhere;
 }
+
+/* I-052: service detail polish. Existing palette tokens only. */
+.serviceNextAction {
+  margin-top: 1rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--jury-c-148-163-184-0_16, rgba(148, 163, 184, 0.16));
+}
+
+.serviceNextAction > h3 {
+  margin-top: 0;
+}
+
+/* Section tabs inside the content area: small underline links, not a second top nav. */
+.serviceTabs {
+  display: flex;
+  flex-wrap: wrap;
+  overflow-x: visible;
+  gap: 0.25rem 1.25rem;
+  margin: 1.1rem 0 -0.25rem;
+  padding: 0 0.25rem;
+  border-bottom: 1px solid var(--jury-c-148-163-184-0_16, rgba(148, 163, 184, 0.16));
+  background: none;
+}
+
+.serviceTabs .tab,
+.serviceTabs a {
+  padding: 0.45rem 0 0.4rem;
+  margin-bottom: -1px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  background: none;
+  font-size: 0.9rem;
+  color: var(--jury-text-muted, #a8b5c9);
+  text-decoration: none;
+}
+
+.serviceTabs .tabActive {
+  border-bottom-color: var(--jury-accent, #72c7f3);
+  color: var(--jury-text-bright, #f5f7ff);
+  font-weight: 600;
+}
+
+.wrapText {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  min-width: 0;
+}
+
+.tableScroll {
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.tableScroll .table td,
+.tableScroll .table th {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}

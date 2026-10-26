@@ -19,3 +19,20 @@ export function parseServiceTab(value: string | string[] | undefined): ServiceTa
 export function serviceTabHref(connectionId: string, tab: ServiceTab): string {
   return juryHref(`/services/${connectionId}`, tab === 'overview' ? undefined : { tab });
 }
+
+/** I-052: sessionStorage key for the tab a form was submitted from (server actions redirect without ?tab=). */
+export function serviceTabMemoryKey(connectionId: string): string {
+  return `jury-service-tab:${connectionId}`;
+}
+
+/**
+ * I-052: after a server action redirects to `?result=…` without `?tab=`, return the URL (path + query)
+ * that restores the saved tab; null when nothing should change.
+ */
+export function restoreServiceTabUrl(href: string, saved: string | null): string | null {
+  if (!saved || saved === 'overview' || !SERVICE_TABS.some((t) => t.key === saved)) return null;
+  const url = new URL(href, 'http://local');
+  if (url.searchParams.has('tab') || !url.searchParams.has('result')) return null;
+  url.searchParams.set('tab', saved);
+  return `${url.pathname}${url.search}${url.hash}`;
+}

@@ -58,7 +58,7 @@ test('renders 최근 관찰 결과 with counts and final path', () => {
   assert.match(html, /관찰 페이지 2개/);
   assert.match(html, /https:\/\/app.example.com\/onboarding/);
   const empty = renderToStaticMarkup(createElement(LatestObservationResult, { run: null }));
-  assert.match(empty, /아직 저장된 관찰 결과가 없습니다/);
+  assert.match(empty, /아직 저장된 관찰 결과가 없어요/);
 });
 
 import { readonlyAccountReasonText, withClientDeadline } from './result-text';

@@ -17,7 +17,7 @@ import { AUDIT_ACTION_LABELS } from './ui-labels';
 test('I-048: credential retention note uses the real retention period (consent.ts)', () => {
   assert.equal(CREDENTIAL_RETENTION_DAYS, DEFAULT_RETENTION_DAYS);
   assert.equal(CREDENTIAL_RETENTION_DAYS, MAX_RETENTION_DAYS);
-  assert.equal(CREDENTIAL_RETENTION_NOTE, '저장된 계정은 14일 뒤 자동 파기됩니다. 계속 쓰려면 교체 저장으로 갱신하세요.');
+  assert.equal(CREDENTIAL_RETENTION_NOTE, '저장된 계정은 14일 뒤 자동 파기돼요. 계속 쓰려면 교체 저장으로 갱신하세요.');
 });
 
 test('I-048: copy module stays client-safe (no imports)', () => {

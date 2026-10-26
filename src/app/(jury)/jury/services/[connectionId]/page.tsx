@@ -9,6 +9,7 @@ import { GithubRefreshStatus } from '../../github-refresh-status';
 import { ServiceDetailBody } from '../../service-onboarding-ui';
 import { QualityTrendPanel, ServiceOperationDetail, ServiceOperationState, ServiceSummaryHeader } from '../../service-operations-ui';
 import { parseServiceTab, ServiceTabNav } from '../../service-detail-tabs';
+import { ServiceTabMemory } from '../../service-tab-memory';
 import { JuryChrome } from '../../ui';
 import { ReadonlyAccountSection } from '../../readonly-account-section';
 import { loadJuryShell, readJurySessionEmail } from '../../load';
@@ -63,13 +64,19 @@ export default async function ServiceDetailPage({
   const accessMethod = ready ? view.connections.find((row) => row.id === connectionId && row.tenantId === actor.tenantId)?.accessMethod : undefined;
   return (
     <JuryChrome actor={actor} notice={notice}>
-      <ServiceSummaryHeader model={operation.model} />
-      <ServiceTabNav connectionId={connectionId} active={tab} />
+      <ServiceSummaryHeader model={operation.model}>
+        <ServiceTabNav connectionId={connectionId} active={tab} />
+      </ServiceSummaryHeader>
+      <ServiceTabMemory connectionId={connectionId} tab={tab} />
+      {/* I-052: 관찰 결과 tab shows the latest observation first, then the evidence built from it. */}
+      {ready && tab === 'results' ? (
+        <ReadonlyAccountSection tenantId={actor.tenantId} connectionId={connectionId} accessMethod={accessMethod} view="result" />
+      ) : null}
       <ServiceOperationDetail model={operation.model} provider={providers[connectionId] ?? null} section={tab} />
       {tab === 'overview' && trend?.visible ? <QualityTrendPanel trend={trend} /> : null}
       {ready && tab !== 'review' && tab !== 'history' ? <ServiceDetailBody actor={actor} view={view} connectionId={connectionId} section={tab} /> : null}
-      {ready && (tab === 'connect' || tab === 'results') ? (
-        <ReadonlyAccountSection tenantId={actor.tenantId} connectionId={connectionId} accessMethod={accessMethod} view={tab === 'connect' ? 'form' : 'result'} />
+      {ready && tab === 'connect' ? (
+        <ReadonlyAccountSection tenantId={actor.tenantId} connectionId={connectionId} accessMethod={accessMethod} view="form" />
       ) : null}
       {tab === 'overview' ? <GithubRefreshStatus connectionId={connectionId} /> : null}
     </JuryChrome>

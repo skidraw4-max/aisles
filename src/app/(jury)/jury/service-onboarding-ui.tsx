@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { formatKstFull } from './review-summary-format';
-import { displayText } from '@/lib/jury-product/ui-labels';
+import { discoveryMenuText, displayText } from '@/lib/jury-product/ui-labels';
 import { CollectPeriodFields } from './collect-period-fields';
 import { summarizeProblems } from '@/lib/jury-product/review-display-model';
 import { juryHref } from '@/lib/jury-product/jury-url';
@@ -45,7 +45,7 @@ export function AddServiceBody({ actor }: { actor: Extract<JuryActor, { ok: true
     return (
       <section className={styles.panel}>
         <h2 className={styles.pageTitle}>서비스 연결</h2>
-        <p className={styles.muted}>현재 역할에는 서비스 연결 권한이 없습니다.</p>
+        <p className={styles.muted}>현재 역할에는 서비스 연결 권한이 없어요.</p>
       </section>
     );
   }
@@ -116,7 +116,7 @@ export function ServiceDetailBody({
     return (
       <section className={styles.panel} role="alert">
         <h2 className={styles.pageTitle}>서비스</h2>
-        <p>현재 tenant에서 이 서비스를 찾지 못했습니다.</p>
+        <p>현재 tenant에서 이 서비스를 찾지 못했어요.</p>
       </section>
     );
   }
@@ -131,9 +131,8 @@ export function ServiceDetailBody({
       {show('overview') ? (
         <>
       <h3>연결 상태</h3>
-      <p>서비스 이름 {connection.displayName}</p>
       <p>연결 방식 <span className={styles.badge}>{displayText(connection.accessMethod)}</span></p>
-      <p>상태 <span className={styles.badge}>{connection.status === 'CONNECTED' ? '연결됨' : connection.status}</span></p>
+      <p>상태 <span className={styles.badge}>{displayText(connection.status)}</span></p>
       <details className={styles.technicalDetails}>
         <summary>관리자용 기술 정보</summary>
         <p>연결 어댑터 {github ? 'github' : MOCK_ONBOARDING_SERVICE.adapterKey}</p>
@@ -150,16 +149,16 @@ export function ServiceDetailBody({
       {show('connect') ? (
         <>
       <h3>서비스 확인</h3>
-      <p>상태 <span className={styles.badge}>{detail.discoveryStatus === 'DISCOVERY_PENDING' ? '서비스 확인 중' : detail.discoveryStatus}</span></p>
+      <p>상태 <span className={styles.badge}>{displayText(detail.discoveryStatus)}</span></p>
       {discovery ? (
         <>
           {/* I-049: READ_ONLY_ACCOUNT does not use the mock discovery adapter; hide the misleading name. */}
           {connection.accessMethod === 'READ_ONLY_ACCOUNT' ? null : <p>어댑터 {github && !synthetic ? 'GitHubRepositoryDiscovery' : 'MockDiscoveryAdapter'}</p>}
           {github && synthetic ? <p>This discovery is a mock placeholder. It is not a GitHub repository list.</p> : null}
           <p>탐색 시각 {formatKstFull(discovery.exploredAt)}</p>
-          <p>자원 {discovery.surfaces.join(', ')} · {discovery.menus.join(', ')}</p>
+          <p className={styles.wrapText}>자원 {discovery.surfaces.join(', ')} · {discovery.menus.map(discoveryMenuText).join(', ')}</p>
           <p>데이터 원천 {discovery.dataSources.join(', ')}</p>
-          <p>수집 가능성 {discovery.feasibility}</p>
+          <p>수집 가능성 {displayText(discovery.feasibility)}</p>
           {discovery.proposedMetrics.map((item) => (
             <p key={item.metric}>{item.metric}: {item.reason}</p>
           ))}
@@ -178,11 +177,12 @@ export function ServiceDetailBody({
           <OnboardingSubmit label="Run Discovery" pendingLabel="Discovery running" />
         </form>
       ) : (
-        <p className={styles.muted}>Discovery 실행: 현재 역할에는 이 변경 권한이 없습니다.</p>
+        <p className={styles.muted}>서비스 확인 실행: 현재 역할에는 이 변경 권한이 없어요.</p>
       )}
 
       <h3>접근 범위</h3>
       {scopes.length === 0 ? <p>{ONBOARDING_EMPTY_SCOPES}</p> : (
+        <div className={styles.tableScroll}>
         <table className={styles.table}>
           <thead>
             <tr>
@@ -196,15 +196,16 @@ export function ServiceDetailBody({
           <tbody>
             {scopes.map((scope) => (
               <tr key={scope.id}>
-                <td>{scope.grants.map((grant) => grant.resource).join(', ') || 'Not available'}</td>
+                <td className={styles.wrapText}>{scope.grants.map((grant) => discoveryMenuText(grant.resource)).join(', ') || displayText('Not available')}</td>
                 <td>{scope.grants.map((grant) => scopePurpose(grant.resource, discovery)).join(', ')}</td>
-                <td>{scope.grants.map((grant) => grant.mode).join(', ') || 'Not available'}</td>
-                <td>{scope.grants.some((grant) => grant.mode === 'READ') ? 'READ' : 'Not available'}</td>
+                <td>{scope.grants.map((grant) => displayText(grant.mode)).join(', ') || displayText('Not available')}</td>
+                <td>{scope.grants.some((grant) => grant.mode === 'READ') ? displayText('READ') : displayText('Not available')}</td>
                 <td><span className={styles.badge}>{displayText(scope.status)}</span></td>
               </tr>
             ))}
           </tbody>
         </table>
+        </div>
       )}
       {scopes.filter((scope) => scope.status === 'PROPOSED' && !github).map((scope) => (
         canShowWrite(actor, 'scope.write') ? (
@@ -212,11 +213,11 @@ export function ServiceDetailBody({
             <input type="hidden" name="scopeId" value={scope.id} />
             <input type="hidden" name="connectionId" value={connection.id} />
             <input type="hidden" name="tenantId" value="client-supplied-tenant" />
-            <OnboardingSubmit label="Approve" pendingLabel="Saving approval" name="decision" value="APPROVE" />
-            <OnboardingSubmit label="Reject" pendingLabel="Saving rejection" name="decision" value="REJECT" />
+            <OnboardingSubmit label="승인" pendingLabel="승인 저장 중" name="decision" value="APPROVE" />
+            <OnboardingSubmit label="거절" pendingLabel="거절 저장 중" name="decision" value="REJECT" />
           </form>
         ) : (
-          <p className={styles.muted} key={scope.id}>scope 승인: 현재 역할에는 이 변경 권한이 없습니다.</p>
+          <p className={styles.muted} key={scope.id}>접근 범위 승인: 현재 역할에는 이 변경 권한이 없어요.</p>
         )
       ))}
         </>
@@ -239,27 +240,29 @@ export function ServiceDetailBody({
             <input type="hidden" name="purpose" value="aisle-self-observation" />
             <CollectPeriodFields />
             <input type="hidden" name="timezone" value="Asia/Seoul" />
-            <p className={styles.muted}>purpose aisle-self-observation · Asia/Seoul</p>
+            <p className={styles.muted}>기준 시간대: 한국 시간(KST)</p>
             <OnboardingSubmit label="자료 수집" pendingLabel="자료 수집 중" />
           </form>
         ) : (
-          <p className={styles.muted}>Evidence 수집: 현재 역할에는 이 변경 권한이 없습니다.</p>
+          <p className={styles.muted}>자료 수집: 현재 역할에는 이 변경 권한이 없어요.</p>
         )
       ) : (
-        <p>Evidence collection stays closed until the service is CONNECTED.</p>
+        <p>서비스가 연결된 뒤에 자료를 수집할 수 있어요.</p>
       )}
       {projectConnectedServiceFlow(view, connection.id).map((row) => (
         <article key={row.id}>
-          <p>purpose {row.purpose}</p>
-          <p>period {row.periodStart} – {row.periodEnd} · {row.timezone}</p>
-          <p>adapter {row.adapterKey}</p>
-          <p>contentHash {row.contentHash ?? '기록 없음'}</p>
-          <p>collection status <span className={styles.badge}>{row.collectionStatus}</span></p>
-          <p>readOnly {row.readOnly ? 'true' : 'false'}</p>
-          <p>piiExcluded {row.piiExcluded ? 'true' : 'false'}</p>
+          <p>수집 기간 {row.periodStart} – {row.periodEnd} · {row.timezone === 'Asia/Seoul' ? '한국 시간' : row.timezone}</p>
+          <p>수집 상태 <span className={styles.badge}>{displayText(row.collectionStatus)}</span></p>
           {row.metrics.map((metric) => (
-            <p key={metric.id}>{metric.metric} {connectedMetricText(metric.value, metric.availability, formatMeasuredValue)}</p>
+            <p key={metric.id}>{displayText(metric.metric)} {connectedMetricText(metric.value, metric.availability, formatMeasuredValue)}</p>
           ))}
+          <details className={styles.technicalDetails}>
+            <summary>기술 정보</summary>
+            <p>수집 목적 {row.purpose === 'aisle-self-observation' ? '서비스 자체 관찰' : row.purpose} ({row.purpose})</p>
+            <p>수집 어댑터 {row.adapterKey}</p>
+            <p className={styles.wrapText}>내용 해시 {row.contentHash ?? '기록 없음'}</p>
+            <p>읽기 전용 {row.readOnly ? '예' : '아니요'} · 개인정보 제외 {row.piiExcluded ? '예' : '아니요'}</p>
+          </details>
           {row.metrics.some((metric) => metric.availability !== 'AVAILABLE') ? <p className={styles.muted}>{UNMEASURED_METRICS_NOTE}</p> : null}
           <ConnectedReviewStatus
             badgeClass={styles.badge}
@@ -269,7 +272,14 @@ export function ServiceDetailBody({
           />
           {row.decision ? <p>판정 {displayText(row.decision)}</p> : null}
           {row.completedAt ? <p>완료 시각 {formatKstFull(row.completedAt)}</p> : null}
-          {row.summary ? <p>요약 {row.summary}</p> : null}
+          {row.summary ? (
+            <>
+              <p>
+                요약 <span lang="en">{row.summary}</span>
+              </p>
+              <p className={styles.muted}>요약은 AI 심사 원문(영어)을 그대로 보여줘요.</p>
+            </>
+          ) : null}
           {row.decision ? <p>주요 문제 {summarizeProblems(row.decision, row.topProblems).items.join(', ') || summarizeProblems(row.decision, row.topProblems).emptyText}</p> : null}
           {row.expectedUserEffect ? <p>예상 사용자 영향 {row.expectedUserEffect}</p> : null}
           {row.risk ? <p>위험 {row.risk}</p> : null}

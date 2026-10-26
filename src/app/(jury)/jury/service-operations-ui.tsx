@@ -1,3 +1,4 @@
+import type * as React from 'react';
 import type { QualityTrend } from '@/lib/jury-product/quality-trend';
 import Link from 'next/link';
 import { formatKstFull } from './review-summary-format';
@@ -11,7 +12,7 @@ import {
   runConnectedServiceJuryReview,
   runOnboardingDiscovery,
 } from './actions';
-import { displayText, userLabel } from '@/lib/jury-product/ui-labels';
+import { displayText, userLabel, userLabels } from '@/lib/jury-product/ui-labels';
 import { TranslationHint } from './ui-primitives';
 import { ReviewSubmitButton } from './review-submit-button';
 import { CONNECTED_REVIEW_PENDING_NOTE } from '@/lib/jury-product/connected-service-copy';
@@ -26,7 +27,7 @@ function NextAction({ model }: { model: ServiceOperationModel }) {
   const action = model.next;
   if (!action) return null;
   return (
-    <section>
+    <section className={styles.serviceNextAction}>
       <h3>다음 할 일</h3>
       <p title={action.label}>{displayText(action.label)}</p>
       <p>상태 <span className={styles.badge}>{userLabel(action.state)}</span></p>
@@ -62,8 +63,8 @@ function NextAction({ model }: { model: ServiceOperationModel }) {
       {action.state === 'AVAILABLE' && (action.id === 'review-improvement' || action.id === 'run-agent') && model.improvement.latestId ? (
         <p><Link className={styles.inline} href={juryHref(`/improvements/${model.improvement.latestId}`)}>{displayText(action.label)}</Link></p>
       ) : null}
-      {action.state === 'LOCKED' ? <p className={styles.muted}>현재 서비스 권한으로는 이 작업을 할 수 없습니다.</p> : null}
-      {action.state === 'NOT_READY' ? <p className={styles.muted}>앞 단계가 완료되면 이 작업을 할 수 있습니다.</p> : null}
+      {action.state === 'LOCKED' ? <p className={styles.muted}>현재 서비스 권한으로는 이 작업을 할 수 없어요.</p> : null}
+      {action.state === 'NOT_READY' ? <p className={styles.muted}>앞 단계가 완료되면 이 작업을 할 수 있어요.</p> : null}
     </section>
   );
 }
@@ -83,12 +84,12 @@ export function ServiceOperationsList({
         <div>
           <p className={styles.eyebrow}>현재 메뉴 · 서비스</p>
           <h2 className={styles.pageTitle}>서비스</h2>
-          <p className={styles.pageDescription}>서비스별 연결 상태, 검증 근거, 심사, 개선, 에이전트 상태를 확인합니다. 접근 권한 변경은 관리 &gt; 서비스 연결에서 합니다.</p>
+          <p className={styles.pageDescription}>서비스별 연결 상태, 검증 근거, 심사, 개선, 에이전트 상태를 확인해요. 접근 권한 변경은 관리 &gt; 서비스 연결에서 해요.</p>
         </div>
       </div>
       <p><Link className={styles.inline} href={juryHref('/services/github')}>GitHub 연결</Link></p>
       {error ? <p>{error}</p> : null}
-      {!error && rows && rows.length === 0 ? <p>현재 권한으로 볼 수 있는 서비스가 없습니다.</p> : null}
+      {!error && rows && rows.length === 0 ? <p>현재 권한으로 볼 수 있는 서비스가 없어요.</p> : null}
       {rows && rows.length > 0 ? (
         <div className={styles.servicesTableWrap}>
         <table className={`${styles.table} ${styles.servicesTable} ${styles.servicesTableWide}`}>
@@ -130,7 +131,7 @@ export function ServiceOperationsList({
 }
 
 /** I-051: always-visible summary header (name once, status badges, next action). */
-export function ServiceSummaryHeader({ model }: { model: ServiceOperationModel }) {
+export function ServiceSummaryHeader({ model, children }: { model: ServiceOperationModel; children?: React.ReactNode }) {
   return (
     <section className={styles.panel}>
       <h2 className={styles.pageTitle}>{model.name}</h2>
@@ -140,6 +141,7 @@ export function ServiceSummaryHeader({ model }: { model: ServiceOperationModel }
         {model.health ? <p>서비스 상태 <span className={styles.badge} title={model.health}>{userLabel(model.health)}</span></p> : null}
       </div>
       <NextAction model={model} />
+      {children}
     </section>
   );
 }
@@ -177,7 +179,7 @@ export function ServiceOperationDetail({
           <p>수명 주기 <span className={styles.badge} title={provider.configuration.lifecycle}>{userLabel(provider.configuration.lifecycle)}</span></p>
           <p>준비 상태 <span className={styles.badge} title={provider.configuration.readiness}>{userLabel(provider.configuration.readiness)}</span></p>
           <p>연결 상태 점검 <span className={styles.badge} title={provider.health}>{userLabel(provider.health)}</span></p>
-          <p>기능 {provider.configuration.capabilities.join(', ')}</p>
+          <p>기능 {userLabels(provider.configuration.capabilities)}</p>
           <p>{provider.configuration.notice}</p>
           {provider.provider === 'GITHUB' ? <p><Link className={styles.inline} href={juryHref('/services/github')}>GitHub 저장소</Link></p> : null}
         </>
@@ -207,14 +209,18 @@ export function ServiceOperationDetail({
       <h3>검증 근거</h3>
       {model.evidence.empty ? <p>{displayText('No evidence collected yet')}</p> : (
         <>
+          <p>근거 수집 시각 {formatKstFull(model.evidence.collectedAt)}</p>
+          <p className={styles.muted}>검증 근거는 [자료 수집]을 실행한 시점의 관찰 결과로 만들어져요. 그 뒤에 실행한 관찰은 자료를 다시 수집해야 반영돼요.</p>
           <p>기간 {model.evidence.period}</p>
-          <p>최근 수집 {formatKstFull(model.evidence.collectedAt)}</p>
-          <p>수집 방식 {model.evidence.adapter}</p>
           <p>측정된 지표 {model.evidence.measuredCount}</p>
           <p>측정되지 않은 지표 {model.evidence.notMeasuredCount}</p>
           <p>검증 근거 항목 {model.evidence.evidenceItemCount}</p>
-          <p>GA4 {model.evidence.ga4}</p>
           <p>수집 상태 <span title={model.evidence.collectionStatus}>{displayText(model.evidence.collectionStatus)}</span></p>
+          <details className={styles.technicalDetails}>
+            <summary>기술 정보</summary>
+            <p>수집 어댑터 {model.evidence.adapter ?? '기록 없음'}</p>
+            <p>GA4 {model.evidence.ga4 === 'available' ? '측정됨' : model.evidence.ga4 === 'not measured' ? '측정 안 됨' : '연동 없음'}</p>
+          </details>
         </>
       )}
         </>
@@ -283,12 +289,12 @@ export function ServiceOperationDetail({
 
       <h3>내 권한</h3>
       <p>조직 역할 <span title={model.access.organizationRole}>{userLabel(model.access.organizationRole)}</span></p>
-      <p>서비스 권한 {model.access.servicePermission ?? '없음'}</p>
+      <p>서비스 권한 {model.access.servicePermission ? userLabel(model.access.servicePermission) : '없음'}</p>
       <p>열람(VIEW) {mark(model.access.capabilities.VIEW)}</p>
       <p>심사(REVIEW) {mark(model.access.capabilities.REVIEW)}</p>
       <p>개선(IMPROVE) {mark(model.access.capabilities.IMPROVE)}</p>
       <p>에이전트(AGENT) {mark(model.access.capabilities.AGENT)}</p>
-      <p className={styles.muted}>권한 변경은 관리 &gt; 서비스 연결에서 합니다.</p>
+      <p className={styles.muted}>권한 변경은 관리 &gt; 서비스 연결에서 해요.</p>
       <p><Link className={styles.inline} href={juryHref('/organization/services')}>서비스 연결</Link></p>
         </>
       ) : null}
@@ -302,11 +308,11 @@ export function ServiceOperationState({
   reason: 'NOT_FOUND' | 'FORBIDDEN' | 'STORE_UNAVAILABLE' | 'UNAUTHENTICATED' | 'NO_MEMBERSHIP';
 }) {
   const copy = {
-    NOT_FOUND: '서비스를 찾을 수 없습니다.',
-    FORBIDDEN: '이 서비스에 접근할 권한이 없습니다.',
-    STORE_UNAVAILABLE: 'Jury 저장소가 아직 준비되지 않았습니다.',
-    UNAUTHENTICATED: '로그인이 필요합니다.',
-    NO_MEMBERSHIP: '조직 멤버십이 필요합니다.',
+    NOT_FOUND: '서비스를 찾을 수 없어요.',
+    FORBIDDEN: '이 서비스에 접근할 권한이 없어요.',
+    STORE_UNAVAILABLE: 'Jury 저장소가 아직 준비되지 않았어요.',
+    UNAUTHENTICATED: '로그인이 필요해요.',
+    NO_MEMBERSHIP: '조직 멤버십이 필요해요.',
   }[reason];
   return <section className={styles.panel}><h2>서비스</h2><p>{copy}</p></section>;
 }
@@ -328,7 +334,7 @@ export function QualityTrendPanel({ trend }: { trend: Extract<QualityTrend, { vi
   return (
     <section className={styles.panel}>
       <h2>품질 추세</h2>
-      <p className={styles.muted}>검증된 실모델 결과만 표시합니다{trend.excluded ? ` (그 외 ${trend.excluded}건 제외)` : ''}. 점수·비율은 표시하지 않습니다.</p>
+      <p className={styles.muted}>검증된 실모델 결과만 표시해요{trend.excluded ? ` (그 외 ${trend.excluded}건 제외)` : ''}. 점수·비율은 표시하지 않아요.</p>
       <ol>
         {trend.points.map((p) => (
           <li key={p.resultId}>
