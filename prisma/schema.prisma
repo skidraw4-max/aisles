@@ -501,6 +501,7 @@ model JuryTenant {
   accountCredentials    JuryAccountCredential[]
   connectionConsents    JuryConnectionConsent[]
   readonlyObservations  JuryReadonlyObservationRun[]
+  visualAudits          JuryVisualAudit[]
   invitations           OrganizationInvitation[]
 }
 
@@ -540,6 +541,7 @@ model JuryServiceConnection {
   accountCredentials   JuryAccountCredential[]
   consents             JuryConnectionConsent[]
   readonlyObservations JuryReadonlyObservationRun[]
+  visualAudits         JuryVisualAudit[]
 
   @@index([tenantId])
 }
@@ -612,9 +614,167 @@ model JuryReadonlyObservationRun {
   finalOrigin         String?
   finalPath           String?
   observedAt          DateTime
+  /// I-058: OBSERVATION (default) or SCREEN_AUDIT chunk.
+  kind                String                @default("OBSERVATION")
+  /// I-058: set when the run belongs to a screen audit.
+  auditId             String?
+  /// I-058: DESKTOP | MOBILE when kind = SCREEN_AUDIT.
+  viewport            String?
 
   @@index([tenantId])
   @@index([connectionId, observedAt])
+  @@index([auditId])
+}
+
+/// I-058: result status shared by audit pages, test results and findings. NOT_TESTED = not executed (never PASS).
+enum JuryAuditStatus {
+  PASS
+  FAIL
+  PARTIAL
+  NOT_TESTED
+  BLOCKED
+  ERROR
+}
+
+enum JuryAuditEvidenceKind {
+  SCREENSHOT
+  DOM_METRIC
+  A11Y
+}
+
+/// I-058: one screen audit (화면 심사) of a READ_ONLY_ACCOUNT connection. No page text, no credentials.
+model JuryVisualAudit {
+  id             String                @id
+  tenantId       String
+  tenant         JuryTenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  connectionId   String
+  connection     JuryServiceConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  actorUserId    String
+  /// I-064: re-review of an earlier audit.
+  parentAuditId  String?
+  parent         JuryVisualAudit?      @relation("JuryVisualAuditParent", fields: [parentAuditId], references: [id], onDelete: SetNull)
+  children       JuryVisualAudit[]     @relation("JuryVisualAuditParent")
+  consentVersion String
+  /// QUEUED | RUNNING | DONE | FAILED
+  state          String
+  status         JuryAuditStatus?
+  /// ["DESKTOP","MOBILE"]
+  viewports      Json
+  /// I-066: AI visual evaluation used (default false).
+  aiEnabled      Boolean               @default(false)
+  /// area -> counts; no overall score.
+  summary        Json?
+  createdAt      DateTime              @default(now())
+  startedAt      DateTime?
+  finishedAt     DateTime?
+  pages          JuryAuditPage[]
+  evidence       JuryAuditEvidence[]
+  testCases      JuryAuditTestCase[]
+  findings       JuryAuditFinding[]
+
+  @@index([tenantId])
+  @@index([connectionId, createdAt])
+  @@index([parentAuditId])
+}
+
+model JuryAuditPage {
+  id         String              @id
+  auditId    String
+  audit      JuryVisualAudit     @relation(fields: [auditId], references: [id], onDelete: Cascade)
+  tenantId   String
+  /// origin-relative path without query string.
+  path       String
+  label      String?
+  viewport   String
+  status     JuryAuditStatus
+  httpStatus Int?
+  /// layout metrics (counts / sizes only).
+  metrics    Json?
+  capturedAt DateTime
+  evidence   JuryAuditEvidence[]
+  findings   JuryAuditFinding[]
+
+  @@index([auditId])
+  @@index([tenantId])
+}
+
+/// I-058/I-060: screenshots live in a private bucket; only the key and hash are stored. Masked before capture.
+model JuryAuditEvidence {
+  id         String                @id
+  auditId    String
+  audit      JuryVisualAudit       @relation(fields: [auditId], references: [id], onDelete: Cascade)
+  pageId     String?
+  page       JuryAuditPage?        @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  tenantId   String
+  kind       JuryAuditEvidenceKind
+  storageKey String?
+  sha256     String?
+  masked     Boolean               @default(false)
+  byteSize   Int?
+  width      Int?
+  height     Int?
+  data       Json?
+  expiresAt  DateTime
+  deletedAt  DateTime?
+  createdAt  DateTime              @default(now())
+
+  @@index([auditId])
+  @@index([tenantId])
+  @@index([expiresAt])
+}
+
+model JuryAuditTestCase {
+  id        String                @id
+  auditId   String
+  audit     JuryVisualAudit       @relation(fields: [auditId], references: [id], onDelete: Cascade)
+  tenantId  String
+  key       String
+  area      String
+  viewport  String
+  title     String
+  createdAt DateTime              @default(now())
+  results   JuryAuditTestResult[]
+
+  @@unique([auditId, key, viewport])
+  @@index([tenantId])
+}
+
+model JuryAuditTestResult {
+  id         String            @id
+  testCaseId String
+  testCase   JuryAuditTestCase @relation(fields: [testCaseId], references: [id], onDelete: Cascade)
+  auditId    String
+  tenantId   String
+  status     JuryAuditStatus
+  detail     Json?
+  createdAt  DateTime          @default(now())
+
+  @@index([testCaseId])
+  @@index([auditId])
+  @@index([tenantId])
+}
+
+model JuryAuditFinding {
+  id          String          @id
+  auditId     String
+  audit       JuryVisualAudit @relation(fields: [auditId], references: [id], onDelete: Cascade)
+  pageId      String?
+  page        JuryAuditPage?  @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  tenantId    String
+  area        String
+  rule        String
+  /// RULE | AI
+  source      String          @default("RULE")
+  severity    String
+  status      JuryAuditStatus
+  viewport    String
+  message     String
+  evidenceIds Json?
+  createdAt   DateTime        @default(now())
+
+  @@index([auditId])
+  @@index([pageId])
+  @@index([tenantId])
 }
 
 model JuryServiceMember {
