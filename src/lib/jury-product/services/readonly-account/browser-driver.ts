@@ -12,6 +12,7 @@
  * 3. Init script disables WebSocket, EventSource, sendBeacon, RTCPeerConnection and blocks form submit after login.
  */
 import type { ObservationDriver, ObservedRequest, RequestVerdict } from './executor';
+import { LAYOUT_PROBE } from '../screen-audit/layout-probe';
 
 export interface PwRequest {
   method(): string;
@@ -34,6 +35,8 @@ export interface PwPage {
   waitForURL(url: (url: URL) => boolean, options?: { timeout?: number; waitUntil?: 'load' | 'domcontentloaded' | 'networkidle' | 'commit' }): Promise<void>;
   waitForLoadState(state?: 'load' | 'domcontentloaded' | 'networkidle', options?: { timeout?: number }): Promise<void>;
   url(): string;
+  /** I-059: optional in fakes. */
+  setViewportSize?(size: { width: number; height: number }): Promise<void>;
   evaluate<R>(fn: () => R): Promise<R>;
   evaluate<R, A>(fn: (arg: A) => R, arg: A): Promise<R>;
 }
@@ -305,6 +308,15 @@ export function createBrowserObservationDriver(launch: PwContextLauncher, option
     },
     async pageStats() {
       return (await ensure()).evaluate(PAGE_STATS_PROBE).catch(() => ({ listItems: 0, cards: 0, tableRows: 0, headings: 0 }));
+    },
+    async setViewport(viewport) {
+      const p = await ensure();
+      if (!p.setViewportSize) throw new Error('viewport not supported');
+      await p.setViewportSize({ width: viewport.width, height: viewport.height });
+      await waitForSettle(p);
+    },
+    async layoutMetrics() {
+      return (await ensure()).evaluate(LAYOUT_PROBE);
     },
     async close() {
       const c = context;
