@@ -10,6 +10,7 @@
  */
 import type { AccountCredentialSecret } from './credential-crypto';
 import type { ObservationScope } from './consent';
+import { DEFAULT_DISCOVERY, normalizeLinkKey, normalizeStats, pickLinks, type DiscoveredLink, type DiscoveryOptions, type PageStats } from './discovery';
 
 export const READONLY_ACCOUNT_EXECUTOR_ENABLED = true as boolean;
 
@@ -28,6 +29,10 @@ export interface ObservationDriver {
   currentUrl(): Promise<string>;
   detectChallenge(): Promise<'NONE' | 'TWO_FACTOR' | 'CAPTCHA'>;
   snapshotText(): Promise<string>;
+  /** I-049: links on the current page (href resolved, text, download attr, inside nav/menu/header/sidebar). Optional. */
+  collectLinks?(): Promise<DiscoveredLink[]>;
+  /** I-049: structural counts of the current page (no text). Optional. */
+  pageStats?(): Promise<PageStats>;
   close(): Promise<void>;
 }
 
@@ -56,9 +61,13 @@ export type ExecutorReport = {
   loginRequestUsed?: boolean;
   /** I-046: URL after the login step, origin + path only (no query/hash). */
   finalUrl?: string;
-  snapshots: { label: string; url: string; text: string }[];
+  snapshots: { label: string; url: string; text: string; stats?: PageStats; discovered?: boolean }[];
+  /** I-049: auto-discovery outcome. stoppedBy explains a partial result. */
+  discovery?: { enabled: boolean; found: number; visited: number; skipped: number; errors: number; stoppedBy: DiscoveryStop };
   blockedRequests: { method: string; url: string; reason: 'ORIGIN' | 'METHOD' | 'FORM_SUBMIT' | 'LOGIN_ALREADY_USED' }[];
 };
+
+export type DiscoveryStop = 'DONE' | 'MAX_PAGES' | 'BUDGET' | 'CHALLENGE' | 'SESSION_LOST' | 'UNSUPPORTED';
 
 const READ_METHODS = new Set(['GET', 'HEAD']);
 
@@ -178,7 +187,12 @@ export async function executeReadonlyObservation(input: {
   scope: ObservationScope;
   login: LoginPlan;
   actions: readonly ObservationAction[];
+  /** I-049: menu auto-discovery after the explicit actions. false/undefined = off (pre-I-049 behavior). */
+  discover?: Partial<DiscoveryOptions> | false;
+  clock?: () => number;
 }): Promise<ExecutorReport> {
+  const clock = input.clock ?? Date.now;
+  const startedAt = clock();
   const report: ExecutorReport = { ok: false, loginAttempts: 0, snapshots: [], blockedRequests: [] };
   const plan = validateObservationPlan(input);
   if (!plan.ok) return { ...report, stop: plan.stop };
@@ -208,6 +222,27 @@ export async function executeReadonlyObservation(input: {
     report.finalUrl = originPath(landed.toString());
     if (!policy.loginRequestUsed) return stop('LOGIN_NOT_SUBMITTED');
     if (landed.origin !== plan.loginOrigin || !landed.pathname.startsWith(input.login.successPathPrefix)) return stop('LOGIN_NO_REDIRECT');
+    const opts: DiscoveryOptions | null = input.discover ? { ...DEFAULT_DISCOVERY, ...input.discover } : null;
+    const loginPath = new URL(input.login.loginUrl).pathname;
+    const visited = new Set<string>();
+    const queue: { key: string; path: string; label: string; depth: number }[] = [];
+    const queued = new Set<string>();
+    const harvest = async (depth: number) => {
+      if (!opts || !driver.collectLinks || depth >= opts.maxDepth) return;
+      const here = await driver.currentUrl();
+      const links = await driver.collectLinks().catch(() => [] as DiscoveredLink[]);
+      for (const l of pickLinks(links, here, input.scope.allowedOrigins, { loginPath, limit: opts.perPageLinks })) {
+        if (queued.has(l.key) || visited.has(l.key)) continue;
+        queued.add(l.key);
+        queue.push({ ...l, depth: depth + 1 });
+      }
+    };
+    const stats = async () => (driver.pageStats ? normalizeStats(await driver.pageStats().catch(() => undefined)) : undefined);
+    if (opts) {
+      visited.add(normalizeLinkKey(landed));
+      report.snapshots.push({ label: '로그인 후 첫 화면', url: landed.toString(), text: await driver.snapshotText(), stats: await stats(), discovered: true });
+      await harvest(0);
+    }
     for (const action of input.actions) {
       if (action.type === 'goto') {
         const target = new URL(action.path, plan.loginOrigin).toString();
@@ -217,8 +252,53 @@ export async function executeReadonlyObservation(input: {
         const challenge = await driver.detectChallenge();
         if (challenge !== 'NONE') return stop('CHALLENGE_REQUIRED', { challenge });
       } else {
-        report.snapshots.push({ label: action.label, url: await driver.currentUrl(), text: await driver.snapshotText() });
+        const url = await driver.currentUrl();
+        if (opts) visited.add(normalizeLinkKey(new URL(url)));
+        report.snapshots.push({ label: action.label, url, text: await driver.snapshotText(), ...(opts ? { stats: await stats() } : {}) });
+        await harvest(0);
       }
+    }
+    if (opts) {
+      const d: NonNullable<ExecutorReport['discovery']> = { enabled: true, found: 0, visited: 0, skipped: 0, errors: 0, stoppedBy: driver.collectLinks ? 'DONE' : 'UNSUPPORTED' };
+      report.discovery = d;
+      while (queue.length > 0) {
+        if (report.snapshots.length >= opts.maxPages) {
+          d.stoppedBy = 'MAX_PAGES';
+          break;
+        }
+        if (clock() - startedAt >= opts.budgetMs) {
+          d.stoppedBy = 'BUDGET';
+          break;
+        }
+        const next = queue.shift()!;
+        if (visited.has(next.key)) continue;
+        visited.add(next.key);
+        try {
+          await driver.goto(next.key);
+          const now = new URL(await driver.currentUrl());
+          if (!input.scope.allowedOrigins.includes(now.origin)) {
+            d.skipped += 1;
+            continue;
+          }
+          if (now.pathname === loginPath) {
+            d.stoppedBy = 'SESSION_LOST';
+            break;
+          }
+          const challenge = await driver.detectChallenge();
+          if (challenge !== 'NONE') {
+            d.stoppedBy = 'CHALLENGE';
+            break;
+          }
+          visited.add(normalizeLinkKey(now));
+          report.snapshots.push({ label: next.label, url: now.toString(), text: await driver.snapshotText(), stats: await stats(), discovered: true });
+          d.visited += 1;
+          await harvest(next.depth);
+        } catch {
+          d.errors += 1;
+        }
+      }
+      d.found = queued.size;
+      d.skipped += queue.filter((q) => !visited.has(q.key)).length;
     }
     await driver.close();
     return { ...report, ok: true };

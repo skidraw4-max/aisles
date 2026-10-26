@@ -50,6 +50,7 @@ export const BLOCKED_RESOURCE_TYPES = new Set(['websocket', 'eventsource', 'ping
 export const MAX_SNAPSHOT_CHARS = 20_000;
 const TIMEOUT_MS = 15_000;
 const LOGIN_IDLE_MS = 10_000;
+const PAGE_IDLE_MS = 3_000;
 const REFILL_DELAY_MS = 500;
 
 /** Runs in the page. Kept as a string so it is not transpiled with Node globals. */
@@ -79,6 +80,34 @@ export const CHALLENGE_PROBE = () => {
   const text = (doc.body?.innerText ?? '').slice(0, 5000);
   if (/인증\\s*코드|인증번호|verification code|two-factor|2단계 인증/i.test(text)) return 'TWO_FACTOR' as const;
   return 'NONE' as const;
+};
+
+type ProbeEl = { href?: string; innerText?: string; title?: string; getAttribute(n: string): string | null; hasAttribute(n: string): boolean; closest(s: string): unknown };
+type ProbeDoc = { querySelectorAll(s: string): ArrayLike<ProbeEl> };
+
+/** I-049: reads links only (href, short text, download attr, nav membership). Never clicks. Max 300 links. */
+export const COLLECT_LINKS_PROBE = () => {
+  const doc = (globalThis as unknown as { document: ProbeDoc }).document;
+  const NAV = 'nav, header, aside, [role="navigation"], [role="menu"], [role="menubar"], [class*="sidebar" i], [class*="menu" i], [class*="nav" i]';
+  const out: { href: string; text: string; download: boolean; nav: boolean }[] = [];
+  const list = Array.from(doc.querySelectorAll('a[href]'));
+  for (const a of list.slice(0, 300)) {
+    const text = (a.innerText || a.getAttribute('aria-label') || a.title || '').trim().slice(0, 80);
+    out.push({ href: a.href ?? '', text, download: a.hasAttribute('download'), nav: Boolean(a.closest(NAV)) });
+  }
+  return out;
+};
+
+/** I-049: structural counts only (no text). */
+export const PAGE_STATS_PROBE = () => {
+  const doc = (globalThis as unknown as { document: ProbeDoc }).document;
+  const count = (s: string) => doc.querySelectorAll(s).length;
+  return {
+    listItems: count('main li, [role="main"] li, [role="listitem"]') || count('li'),
+    cards: count('[class*="card" i], article'),
+    tableRows: count('tbody tr, [role="row"]'),
+    headings: count('h1, h2, h3'),
+  };
 };
 
 /** I-045: URL match first (SPA logins navigate via script after an async auth call), else network idle; total ≤ 15s. */
@@ -141,6 +170,8 @@ export function createBrowserObservationDriver(launch: PwContextLauncher): Obser
       await p.goto(url, { waitUntil: 'domcontentloaded', timeout: TIMEOUT_MS }).catch(() => undefined);
       // I-046: let client JS hydrate the login form before typing (bounded; long-polling pages never go idle).
       if (opts?.login) await p.waitForLoadState('networkidle', { timeout: LOGIN_IDLE_MS }).catch(() => undefined);
+      // I-049: short bounded settle for post-login pages so client-rendered menus/lists exist before reading them.
+      else await p.waitForLoadState('networkidle', { timeout: PAGE_IDLE_MS }).catch(() => undefined);
     },
     async fill(selector, value) {
       return fillVerified(await ensure(), selector, value);
@@ -164,6 +195,12 @@ export function createBrowserObservationDriver(launch: PwContextLauncher): Obser
         () => (globalThis as unknown as { document: { body?: { innerText?: string } } }).document.body?.innerText ?? '',
       );
       return text.slice(0, MAX_SNAPSHOT_CHARS);
+    },
+    async collectLinks() {
+      return (await ensure()).evaluate(COLLECT_LINKS_PROBE).catch(() => []);
+    },
+    async pageStats() {
+      return (await ensure()).evaluate(PAGE_STATS_PROBE).catch(() => ({ listItems: 0, cards: 0, tableRows: 0, headings: 0 }));
     },
     async close() {
       const c = context;
