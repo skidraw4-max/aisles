@@ -31,6 +31,7 @@ import { loadShellIdentity } from './load';
 import { LogoutButton, ProductNav } from './shell-client';
 import { TranslationHint } from './ui-primitives';
 import { CopyIdButton, ReviewSummaryDialog } from './ReviewSummaryDialog';
+import { AcceptanceCriteriaDialog } from './AcceptanceCriteriaDialog';
 import { formatKstFull, formatKstShort, shortId } from './review-summary-format';
 import { ConfidenceLine, ResultComparison, reviewTabHref } from './review-tabs-ui';
 import type { JuryMembership } from '@/lib/jury-product/records';
@@ -943,6 +944,17 @@ export function EvidenceBody({ actor, view, query = { q: '', filter: '', page: 1
   );
 }
 
+const criteriaDialogClasses = {
+  button: styles.summaryButton,
+  dialog: styles.summaryDialog,
+  inner: styles.summaryDialogInner,
+  close: styles.summaryDialogClose,
+  title: styles.summaryDialogTitle,
+  body: styles.summaryDialogBody,
+  footer: styles.summaryDialogFooter,
+  secondaryButton: styles.secondaryButton,
+};
+
 export function ImprovementsBody({
   actor,
   view,
@@ -993,7 +1005,7 @@ export function ImprovementsBody({
                 <td><span className={styles.badge} title={task.status}>{userLabel(task.status)}</span></td>
                 <td>{task.taskType ?? displayText(SHELL_UNAVAILABLE)}</td>
                 <td><span className={styles.ellipsisText} title={task.diagnosis}>{task.diagnosis}</span></td>
-                <td>{task.acceptanceCriteria.join(', ')}</td>
+                <td className={styles.nowrapCell}><AcceptanceCriteriaDialog criteria={task.acceptanceCriteria} classes={criteriaDialogClasses} /></td>
                 <td><Link className={`${styles.inline} ${styles.identifier}`} href={juryHref(`/reviews/${task.sourceReviewId}`)} title={task.sourceReviewId}>{compactIdentifier(task.sourceReviewId)}</Link></td>
                 <td>{task.sourceService ?? displayText(SHELL_UNAVAILABLE)}</td>
                 <td title={task.approval ?? undefined}>{task.approval ? userLabel(task.approval) : displayText(SHELL_UNAVAILABLE)}</td>
