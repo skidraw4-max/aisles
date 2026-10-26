@@ -1,5 +1,5 @@
 /** Client-safe consent text (no node:* imports) so client components can render it. */
-export const READONLY_ACCOUNT_CONSENT_VERSION = 'readonly-account-consent-v3';
+export const READONLY_ACCOUNT_CONSENT_VERSION = 'readonly-account-consent-v4';
 
 export const READONLY_ACCOUNT_CONSENT_TEXT = [
   '제공하는 계정의 권한 수준과 관계없이 Jury는 지정한 범위의 화면을 읽기로만 관찰하며 저장·제출·삭제를 하지 않습니다.',
@@ -8,5 +8,8 @@ export const READONLY_ACCOUNT_CONSENT_TEXT = [
   '인증 서버 도메인(예: Supabase)을 지정하면 그 도메인에는 로그인 요청 1건(비밀번호 로그인)과 조회(GET/HEAD/OPTIONS)만 허용하며, 그 밖의 쓰기 요청은 차단합니다.',
   '권한이 높은 계정일수록 유출 또는 의도치 않은 변경 시 영향이 커질 수 있습니다. 심사 전용 최소 권한 계정 사용을 권장합니다.',
   '자격증명은 암호화되어 저장되고 화면·로그에 표시되지 않으며, 심사 종료 또는 보관 기간 만료 시 파기됩니다.',
+  '화면 심사 시 같은 화면을 데스크톱(1366×768)·모바일(390×844) 크기로 열어 레이아웃·글자 잘림·터치 영역·명도 대비·메뉴 표시를 측정합니다.',
+  '화면 심사 스크린샷은 찍기 전에 입력칸·개인정보로 보이는 글자·프로필 이미지를 가린 뒤 촬영하고, 가리기에 실패하면 저장하지 않습니다. 비공개 저장소에 14일 보관 후 자동 삭제됩니다. /mypage 등 개인정보 화면은 기본으로 열지 않습니다.',
+  'AI 화면 평가는 기본으로 꺼져 있으며, 켜는 경우에도 가린 스크린샷과 측정값만 사용합니다.',
   '심사 후 계정 비밀번호 변경 또는 계정 삭제를 권장합니다.',
 ] as const;

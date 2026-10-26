@@ -121,7 +121,7 @@ test('I-049 explicit paths still visited; discovery off keeps pre-I-049 behavior
 });
 
 test('I-049 consent v3: paths optional, text covers all menus under the allowed domain, re-consent required', () => {
-  assert.equal(READONLY_ACCOUNT_CONSENT_VERSION, 'readonly-account-consent-v3');
+  assert.match(READONLY_ACCOUNT_CONSENT_VERSION, /^readonly-account-consent-v[3-9]$/); // I-065 bumped to v4
   assert.ok(READONLY_ACCOUNT_CONSENT_TEXT.some((l) => l.includes('허용 도메인 안에서 접근 가능한 모든 메뉴')));
   const n = normalizeObservationScope({ allowedOrigins: [O], paths: [] });
   assert.equal(n.ok, true);
