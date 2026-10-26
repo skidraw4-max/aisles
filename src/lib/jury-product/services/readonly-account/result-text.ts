@@ -5,7 +5,7 @@ export type ReadonlyAccountFormResult =
 
 export type ReadonlyAccountFormAction = (prev: ReadonlyAccountFormResult | null, formData: FormData) => ReadonlyAccountFormResult | null | Promise<ReadonlyAccountFormResult | null>;
 
-/** I-047: client wait limit for the observation action (server maxDuration is 60s). */
+/** I-047: client wait limit for the observation action (the observation itself is bounded well under 60s; the page maxDuration is 300s since I-048). */
 export const OBSERVATION_CLIENT_TIMEOUT_MS = 70_000;
 
 /**

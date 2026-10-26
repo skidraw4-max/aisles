@@ -4,6 +4,11 @@
  * Missing data is labelled as missing ("기록 없음"), never as "no problem".
  */
 import type { JuryConsoleView, JuryReviewAttemptRow } from './console-view';
+import { REVIEW_STALE_RUNNING_MS, isStaleRunningReview } from './review-stale';
+
+import { CONNECTED_REVIEW_STALE_TEXT } from './connected-service-copy';
+
+export { CONNECTED_REVIEW_STALE_TEXT };
 
 export const STALE_RUNNING_DEFAULT_MS = 15 * 60 * 1000;
 
@@ -12,7 +17,7 @@ const FAILURE_LABELS: Record<string, string> = {
   DECISION_NOT_IN_CONTRACT: '판정 값이 계약 범위를 벗어났습니다',
   CORE_READING_REJECTED: '심사 결과 형식이 올바르지 않습니다',
   PERSISTENCE_FAILED: '결과 저장에 실패했습니다',
-  REVIEW_ALREADY_EXISTS: '동시에 실행된 다른 요청의 결과를 사용했습니다',
+  REVIEW_ALREADY_EXISTS: '진행 중인 심사가 있어요. 잠시 후 결과를 확인하세요',
 };
 
 const LLM_ERROR_LABELS: Record<string, string> = {
@@ -58,13 +63,16 @@ export function buildRequestStatusRows(
     list.push(attempt);
     byKey.set(attempt.reviewRequestKey, list);
   }
+  const selfKeys = new Set(view.requests.filter((r) => r.mode === 'AISLE_SELF').map((r) => r.id));
   const rows: RequestStatusRow[] = [];
   for (const [key, list] of byKey) {
     if (withResult.has(key)) continue;
     const latest = [...list].sort((a, b) => b.startedAt.localeCompare(a.startedAt))[0]!;
     if (latest.status === 'COMPLETED') continue;
     let state: RequestStatusRow['state'] = latest.status === 'FAILED' ? 'FAILED' : latest.status === 'QUEUED' ? 'QUEUED' : 'RUNNING';
-    if (state === 'RUNNING' && !latest.finishedAt && now - Date.parse(latest.startedAt) > staleMs) state = 'STALE';
+    const self = selfKeys.has(key);
+    const limit = self ? Math.min(staleMs, REVIEW_STALE_RUNNING_MS) : staleMs;
+    if (state === 'RUNNING' && !latest.finishedAt && now - Date.parse(latest.startedAt) > limit) state = 'STALE';
     const failed = state === 'FAILED' || state === 'STALE';
     rows.push({
       key,
@@ -76,7 +84,9 @@ export function buildRequestStatusRows(
       finishedAt: latest.finishedAt,
       reason: failed
         ? state === 'STALE'
-          ? '완료 기록 없이 중단됨 (시간 초과 추정)'
+          ? self
+            ? CONNECTED_REVIEW_STALE_TEXT
+            : '완료 기록 없이 중단됨 (시간 초과 추정)'
           : failureReasonLabel(latest.failureReason, latest.lastLlmErrorCode)
         : null,
       reasonCode: latest.failureReason,
@@ -89,7 +99,10 @@ export function buildRequestStatusRows(
   for (const request of view.requests) {
     if (withResult.has(request.id) || byKey.has(request.id)) continue;
     if (request.status === 'COMPLETED') continue;
-    const state: RequestStatusRow['state'] = request.status === 'FAILED' ? 'FAILED' : request.status === 'QUEUED' ? 'QUEUED' : 'RUNNING';
+    let state: RequestStatusRow['state'] = request.status === 'FAILED' ? 'FAILED' : request.status === 'QUEUED' ? 'QUEUED' : 'RUNNING';
+    // I-048: a connected review row orphaned by a killed function has no attempt; detect it from updatedAt.
+    const staleSelf = request.mode === 'AISLE_SELF' && isStaleRunningReview(request.status, request.updatedAt ?? null, now);
+    if (staleSelf) state = 'STALE';
     rows.push({
       key: request.id,
       evidenceId: request.evidenceId,
@@ -98,7 +111,7 @@ export function buildRequestStatusRows(
       stateLabel: STATE_LABELS[state],
       startedAt: null,
       finishedAt: null,
-      reason: state === 'FAILED' ? failureReasonLabel(request.failureReason ?? null, null) : null,
+      reason: staleSelf ? CONNECTED_REVIEW_STALE_TEXT : state === 'FAILED' ? failureReasonLabel(request.failureReason ?? null, null) : null,
       reasonCode: request.failureReason ?? null,
       llmErrorCode: null,
       attempts: 0,

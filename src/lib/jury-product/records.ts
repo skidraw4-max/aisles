@@ -250,6 +250,8 @@ type JuryReviewRequestBase = {
   resultSource?: 'REAL_MODEL' | 'MOCK' | 'FIXTURE' | 'VERIFIED_REAL';
   /** RM-01 stored failure reason; display only. */
   failureReason?: string;
+  /** I-048: last row update (ISO); used only to detect an abandoned RUNNING connected review. */
+  updatedAt?: string;
 };
 
 /** A claim sentence is required only when the review exists to validate that sentence. */

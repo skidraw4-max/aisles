@@ -27,7 +27,18 @@ import styles from './jury.module.css';
 /** Matches `maxDuration` in the (jury) layout. */
 export const REVIEW_ACTION_LIMIT_SECONDS = 300;
 
-export function ReviewSubmitButton({ label, disabledReason }: { label: string; disabledReason?: string | null }) {
+export function ReviewSubmitButton({
+  label,
+  disabledReason,
+  pendingLabel = '리뷰 진행 중…',
+  pendingNote,
+}: {
+  label: string;
+  disabledReason?: string | null;
+  /** I-048: optional wording for the connected-service review button. Defaults keep the evidence card unchanged. */
+  pendingLabel?: string;
+  pendingNote?: string;
+}) {
   const router = useRouter();
   const buttonRef = useRef<HTMLButtonElement>(null);
   const progressRef = useRef<ReviewSubmitProgress>(IDLE_PROGRESS);
@@ -84,14 +95,14 @@ export function ReviewSubmitButton({ label, disabledReason }: { label: string; d
   return (
     <>
       <button ref={buttonRef} className={styles.primaryButton} type="submit" disabled={busy || blocked} aria-busy={submitting || undefined}>
-        {submitting ? `리뷰 진행 중… ${elapsed}초` : label}
+        {submitting ? `${pendingLabel} ${elapsed}초` : label}
       </button>
       {blocked && !busy ? <p className={styles.muted}>{disabledReason}</p> : null}
       {submitting ? (
         <p className={styles.muted} role="status" aria-live="polite">
           {overLimit
             ? `서버 실행 한도(${REVIEW_ACTION_LIMIT_SECONDS}초)를 넘었습니다. 완료·실패 여부는 새로고침 후 이 카드의 상태나 리뷰 목록에서 확인하세요. 다시 요청하지 마세요.`
-            : 'AI 심사를 실행하고 있습니다. 보통 2~3분 걸립니다. 버튼을 다시 누르지 마세요. 완료되면 결과 화면으로 이동합니다.'}
+            : pendingNote ?? 'AI 심사를 실행하고 있습니다. 보통 2~3분 걸립니다. 버튼을 다시 누르지 마세요. 완료되면 결과 화면으로 이동합니다.'}
         </p>
       ) : null}
       {progress.phase === 'TIMED_OUT' ? (

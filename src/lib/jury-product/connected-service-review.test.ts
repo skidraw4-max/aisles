@@ -109,11 +109,12 @@ test('connected service source reuses the access, evidence, and projection bound
   assert.equal(source.includes("expectedDecision: 'ACCEPT'"), false);
   assert.equal(source.includes('GA4_PROPERTY_ID'), true);
   const ui = readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/service-onboarding-ui.tsx'), 'utf8');
-  assert.equal(ui.includes('Collect Evidence'), true);
-  assert.equal(ui.includes('Run Review'), true);
+  // I-048: Korean labels replace "Collect Evidence" / "Run Review".
+  assert.equal(ui.includes('label="자료 수집"'), true);
+  assert.equal(ui.includes('label="심사 실행"'), true);
   assert.equal(ui.includes('formatMeasuredValue'), true);
-  assert.equal(ui.includes('Collecting evidence'), true);
-  assert.equal(ui.includes('Review running'), true);
+  assert.equal(ui.includes('pendingLabel="자료 수집 중"'), true);
+  assert.equal(ui.includes('pendingLabel="심사 진행 중"'), true);
   for (const label of ['Run Agent', 'Run Change Gate', 'Run Re-review', 'Auto Fix', 'Run Loop']) {
     assert.equal(ui.includes(label), false, label);
   }

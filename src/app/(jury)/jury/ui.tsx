@@ -167,7 +167,7 @@ function noticeText(code: string): string {
   if (code === 'EVIDENCE_CONNECTION_MISMATCH') return 'Evidence와 connection이 일치하지 않습니다.';
   if (code === 'PROJECTION_FAILED') return 'Evidence를 Review 입력으로 만들지 못했습니다. Review는 실행하지 않습니다.';
   if (code === 'REVIEW_NOT_EXECUTED') return 'Review를 실행하지 못했습니다.';
-  if (code === 'REVIEW_ALREADY_EXISTS') return '같은 Review 요청이 이미 있습니다.';
+  if (code === 'REVIEW_ALREADY_EXISTS') return '진행 중인 심사가 있어요. 잠시 후 결과를 확인하세요.';
   if (code === 'CLAIM_REQUIRED') return '이 Review에는 claim이 필요합니다.';
   if (code === 'CLAIM_TOO_LONG') return `주장은 ${JURY_CLAIM_MAX_LENGTH}자 이하로 입력하세요.`;
   if (code === 'ALREADY_DECIDED') return '이미 결정된 scope입니다.';

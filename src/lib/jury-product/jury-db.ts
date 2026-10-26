@@ -770,6 +770,7 @@ export async function loadJuryCatalog(tenantId: string): Promise<JuryConsoleCata
           ? { resultSource: row.resultSource }
           : {}),
         ...(row.failureReason ? { failureReason: row.failureReason } : {}),
+        ...(row.updatedAt instanceof Date ? { updatedAt: row.updatedAt.toISOString() } : {}),
       };
       if (reviewType === 'CLAIM_VALIDATION') {
         if (!row.claim || row.claim.trim().length === 0) return [];

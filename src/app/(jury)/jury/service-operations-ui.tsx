@@ -13,6 +13,8 @@ import {
 } from './actions';
 import { displayText, userLabel } from '@/lib/jury-product/ui-labels';
 import { TranslationHint } from './ui-primitives';
+import { ReviewSubmitButton } from './review-submit-button';
+import { CONNECTED_REVIEW_PENDING_NOTE } from '@/lib/jury-product/connected-service-copy';
 import styles from './jury.module.css';
 
 function mark(value: boolean): string {
@@ -44,12 +46,16 @@ function NextAction({ model }: { model: ServiceOperationModel }) {
           <button className={styles.button} type="submit">검증 근거 수집</button>
         </form>
       ) : null}
-      {action.state === 'AVAILABLE' && action.id === 'run-review' && model.evidence.evidenceId ? (
+      {action.state === 'AVAILABLE' && action.id === 'run-review' && model.evidence.evidenceId && model.review.running ? (
+        <p className={styles.muted} role="status">진행 중인 심사가 있어요. 잠시 후 결과를 확인하세요.</p>
+      ) : null}
+      {action.state === 'AVAILABLE' && action.id === 'run-review' && model.evidence.evidenceId && !model.review.running ? (
         <form action={runConnectedServiceJuryReview}>
           <input type="hidden" name="connectionId" value={model.connectionId} />
           <input type="hidden" name="evidenceId" value={model.evidence.evidenceId} />
           <input type="hidden" name="tenantId" value="client-supplied-tenant" />
-          <button className={styles.button} type="submit">심사 실행</button>
+          <ReviewSubmitButton label="심사 실행" pendingLabel="심사 진행 중" pendingNote={CONNECTED_REVIEW_PENDING_NOTE} />
+          <p className={styles.muted}>{CONNECTED_REVIEW_PENDING_NOTE}</p>
         </form>
       ) : null}
       {action.state === 'AVAILABLE' && (action.id === 'review-improvement' || action.id === 'run-agent') && model.improvement.latestId ? (
@@ -180,7 +186,7 @@ export function ServiceOperationDetail({
       {hasReviewAccess(model) ? (
         <>
           <h3>심사</h3>
-          {model.review.empty ? <p>심사 없음</p> : (
+          {model.review.empty ? (model.review.running ? <p>진행 중</p> : <p>심사 없음</p>) : (
             <>
               <p>결론 <span title={model.review.decision ?? undefined}>{displayText(model.review.decision)}</span></p>
               <p>요약 <span lang="en">{model.review.statusSummary}</span></p>
@@ -206,10 +212,10 @@ export function ServiceOperationDetail({
             <>
               <p>상태 <span title={model.agent.status ?? undefined}>{displayText(model.agent.status)}</span></p>
               <p>제공자 {model.agent.provider}</p>
-              <p>시작 {model.agent.startedAt ?? displayText('Not available')}</p>
-              <p>종료 {model.agent.finishedAt ?? displayText('Not available')}</p>
+              <p>시작 {model.agent.startedAt ?? '기록 없음'}</p>
+              <p>종료 {model.agent.finishedAt ?? '기록 없음'}</p>
               <p>변경 파일 {model.agent.changedFilesCount ?? 0}</p>
-              <p>테스트 통과 {model.agent.testsPassed === null ? displayText('Not available') : model.agent.testsPassed ? '예' : '아니오'}</p>
+              <p>테스트 통과 {model.agent.testsPassed === null ? '기록 없음' : model.agent.testsPassed ? '예' : '아니오'}</p>
             </>
           )}
         </>

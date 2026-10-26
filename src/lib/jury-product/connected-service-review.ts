@@ -16,7 +16,10 @@ import { persistProductEvidence, type PersistCommand, type PersistResult } from 
 import { JURY_INTERACTIVE_TRANSACTION, notePersistenceFailure } from './persistence-diagnostic';
 import { projectEvidenceToPack } from './projection';
 import { isGithubInstallationConnection } from './services/github/onboarding-discovery';
-import type { ProductReviewCore } from './review-boundary';
+import type { ProductReviewCore, ProductReviewTrace } from './review-boundary';
+import { createLlmCallRecorder } from './llm-call-log';
+import { finishReviewAttempt, startReviewAttempt } from './review-tracking';
+import { isStaleRunningReview } from './review-stale';
 import { recordReviewAudit } from './review-audit';
 import {
   JURY_CLAIM_STRENGTHS,
@@ -97,7 +100,7 @@ export function describeEvidenceCollection(
   return 'NOT_AVAILABLE';
 }
 
-export function projectConnectedServiceFlow(view: JuryConsoleView, connectionId: string) {
+export function projectConnectedServiceFlow(view: JuryConsoleView, connectionId: string, now: number = Date.now()) {
   const evidence = view.evidence
     .filter((row) => row.connectionId === connectionId && row.tenantId === view.tenantId)
     .slice()
@@ -124,6 +127,8 @@ export function projectConnectedServiceFlow(view: JuryConsoleView, connectionId:
         availability: metric.availability,
       })),
       reviewStatus: request?.status ?? null,
+      /** I-048: RUNNING with no update for >330s; the review can be run again. */
+      reviewStale: request ? isStaleRunningReview(request.status, request.updatedAt ?? null, now) : false,
       decision: result?.expectedDecision ?? null,
       completedAt: result?.completedAt ?? null,
       summary: result?.finalSurface.statusSummary ?? null,
@@ -493,7 +498,7 @@ async function markReviewFailed(
   const prisma = await loadPrisma();
   await prisma.juryReviewRequest.updateMany({
     where: { id: requestId, tenantId, status: 'RUNNING' },
-    data: { status: 'FAILED' },
+    data: { status: 'FAILED', ...(audit ? { failureReason: audit.failureReason } : {}) },
   });
   // RM-08: terminal audit event for failed reviews (best-effort; STARTED is written in the claim tx).
   if (audit) {
@@ -568,10 +573,12 @@ export async function runConnectedServiceReview(
     if (existing?.result && existing.result.tenantId === actor.tenantId) {
       return { kind: 'reused' as const, resultId: existing.result.id, decision: existing.result.expectedDecision };
     }
-    if (existing?.status === 'FAILED') {
+    // I-048: a RUNNING row left behind by a killed function (no update for >330s) is retryable like FAILED.
+    const stale = existing ? isStaleRunningReview(existing.status, existing.updatedAt, Date.now()) : false;
+    if (existing && (existing.status === 'FAILED' || stale)) {
       const reclaimed = await tx.juryReviewRequest.updateMany({
-        where: { id: requestId, tenantId: actor.tenantId, status: 'FAILED' },
-        data: { status: 'RUNNING' },
+        where: { id: requestId, tenantId: actor.tenantId, status: existing.status, updatedAt: existing.updatedAt },
+        data: { status: 'RUNNING', failureReason: null, updatedAt: new Date() },
       });
       if (reclaimed.count !== 1) return { kind: 'busy' as const };
       await tx.juryAuditEvent.create({ data: reviewStartedAudit(actor.userId, actor.tenantId, evidence, requestId) });
@@ -611,19 +618,44 @@ export async function runConnectedServiceReview(
     };
   }
 
+  // I-048 (RM-01 parity): attempt lifecycle + per-LLM-call metadata on this path too (best-effort).
+  const trace: ProductReviewTrace = { resultSource: 'UNKNOWN_LEGACY', recorder: createLlmCallRecorder() };
+  const attemptId = await startReviewAttempt(prisma, {
+    tenantId: actor.tenantId,
+    reviewRequestKey: requestId,
+    evidenceId: evidence.id,
+    reviewType: 'FULL_REVIEW',
+    startedAt: new Date(),
+  });
+  const finishAttempt = (status: 'COMPLETED' | 'FAILED', failureReason: string | null, boardRunId?: string) =>
+    finishReviewAttempt(prisma, attemptId, {
+      tenantId: actor.tenantId,
+      reviewRequestKey: requestId,
+      status,
+      failureReason,
+      resultSource: trace.resultSource,
+      boardRunId: boardRunId ?? null,
+      calls: trace.recorder.calls,
+      finishedAt: new Date(),
+    });
+  const fail = async (reason: ConnectedReviewFailure, boardRunId?: string) => {
+    await markReviewFailed(requestId, actor.tenantId, { actorUserId: actor.userId, evidenceId: evidence.id, failureReason: reason });
+    await finishAttempt('FAILED', reason, boardRunId);
+    return { ok: false as const, reason };
+  };
+
   let reading: Awaited<ReturnType<ProductReviewCore>>;
   try {
     reading = await command.core({
       rootDir: JURY_PRODUCT_DATA_ROOT,
       evidence: projection.pack,
+      trace,
     });
   } catch {
-    await markReviewFailed(requestId, actor.tenantId, { actorUserId: actor.userId, evidenceId: evidence.id, failureReason: 'REVIEW_NOT_EXECUTED' });
-    return { ok: false, reason: 'REVIEW_NOT_EXECUTED' };
+    return fail('REVIEW_NOT_EXECUTED');
   }
   if (!(JURY_DECISIONS as readonly string[]).includes(reading.expectedDecision)) {
-    await markReviewFailed(requestId, actor.tenantId, { actorUserId: actor.userId, evidenceId: evidence.id, failureReason: 'DECISION_NOT_IN_CONTRACT' });
-    return { ok: false, reason: 'DECISION_NOT_IN_CONTRACT' };
+    return fail('DECISION_NOT_IN_CONTRACT', reading.boardRunId);
   }
   if (
     !(JURY_EVIDENCE_STRENGTHS as readonly string[]).includes(reading.evidenceStrength) ||
@@ -631,8 +663,7 @@ export async function runConnectedServiceReview(
     typeof reading.boardRunId !== 'string' ||
     reading.boardRunId.length === 0
   ) {
-    await markReviewFailed(requestId, actor.tenantId, { actorUserId: actor.userId, evidenceId: evidence.id, failureReason: 'CORE_READING_REJECTED' });
-    return { ok: false, reason: 'CORE_READING_REJECTED' };
+    return fail('CORE_READING_REJECTED', typeof reading.boardRunId === 'string' ? reading.boardRunId : undefined);
   }
   const decision = reading.expectedDecision as JuryDecision;
   const resultId = sha([requestId, reading.boardRunId]);
@@ -686,6 +717,7 @@ export async function runConnectedServiceReview(
       where: { reviewRequestId: requestId, tenantId: actor.tenantId },
     });
     if (raced && (JURY_DECISIONS as readonly string[]).includes(raced.expectedDecision)) {
+      await finishAttempt('COMPLETED', null, reading.boardRunId);
       return {
         ok: true,
         reused: true,
@@ -695,8 +727,8 @@ export async function runConnectedServiceReview(
         status: 'COMPLETED',
       };
     }
-    await markReviewFailed(requestId, actor.tenantId, { actorUserId: actor.userId, evidenceId: evidence.id, failureReason: 'PERSISTENCE_FAILED' });
-    return { ok: false, reason: 'PERSISTENCE_FAILED' };
+    return fail('PERSISTENCE_FAILED', reading.boardRunId);
   }
+  await finishAttempt('COMPLETED', null, reading.boardRunId);
   return { ok: true, reused: false, requestId, resultId, decision, status: 'COMPLETED' };
 }

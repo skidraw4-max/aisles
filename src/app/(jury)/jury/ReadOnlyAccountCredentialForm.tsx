@@ -10,6 +10,13 @@ import {
   type ReadonlyAccountFormResult,
 } from '@/lib/jury-product/services/readonly-account/result-text';
 import type { LatestObservationRun } from '@/lib/jury-product/services/readonly-account/latest-observation';
+import {
+  AUTH_ORIGIN_HELP,
+  BLOCKED_REQUESTS_NOTE,
+  CREDENTIAL_RETENTION_NOTE,
+  SCOPE_REENTRY_NOTE,
+  SELECTOR_HELP,
+} from '@/lib/jury-product/connected-service-copy';
 
 export type { ReadonlyAccountFormAction, ReadonlyAccountFormResult };
 
@@ -50,6 +57,7 @@ export function LatestObservationResult(props: { run: LatestObservationRun | nul
             관찰 페이지 {run.pagesObserved}개 (내용 확인 {run.pagesVisible}개) · 차단된 요청 {run.blockedRequestCount}건 (도메인 {run.blockedByReason.ORIGIN}, 메서드{' '}
             {run.blockedByReason.METHOD}, 폼 제출 {run.blockedByReason.FORM_SUBMIT}, 재로그인 {run.blockedByReason.LOGIN_ALREADY_USED})
           </p>
+          <p>{BLOCKED_REQUESTS_NOTE}</p>
           {run.finalOrigin ? (
             <p>
               마지막 위치: {run.finalOrigin}
@@ -85,7 +93,8 @@ function ScopeFields(props: { id: string; inputClass?: string; disabled: boolean
       <label htmlFor={`${props.id}-origins`}>허용 도메인 (한 줄에 하나, https)</label>
       <textarea id={`${props.id}-origins`} name="allowedOrigins" className={props.inputClass} disabled={props.disabled} />
       <label htmlFor={`${props.id}-auth`}>인증 서버 도메인 (선택, 한 줄에 하나, https · 예: Supabase 프로젝트 주소)</label>
-      <textarea id={`${props.id}-auth`} name="authOrigins" className={props.inputClass} disabled={props.disabled} />
+      <p id={`${props.id}-auth-help`}>{AUTH_ORIGIN_HELP}</p>
+      <textarea id={`${props.id}-auth`} name="authOrigins" aria-describedby={`${props.id}-auth-help`} className={props.inputClass} disabled={props.disabled} />
       <label htmlFor={`${props.id}-paths`}>관찰 경로 (한 줄에 하나)</label>
       <textarea id={`${props.id}-paths`} name="paths" className={props.inputClass} disabled={props.disabled} />
     </>
@@ -140,7 +149,8 @@ export function ReadOnlyAccountCredentialForm(props: ReadOnlyAccountCredentialFo
             저장됨 ({props.stored.usernameHint}), 만료 {formatKst(props.stored.expiresAt)}
           </p>
         ) : null}
-        <p>동의한 허용 도메인, 인증 서버 도메인, 관찰 경로를 같은 내용으로 입력해 주세요.</p>
+        <p>{CREDENTIAL_RETENTION_NOTE}</p>
+        <p>동의한 허용 도메인, 인증 서버 도메인, 관찰 경로를 같은 내용으로 입력해 주세요. {SCOPE_REENTRY_NOTE}</p>
         <ScopeFields id={`${id}-cred`} inputClass={classes.input} disabled={inputsDisabled} />
         <label htmlFor={`${id}-user`}>아이디</label>
         <input id={`${id}-user`} name="username" type="text" autoComplete="off" className={classes.input} disabled={inputsDisabled} />
@@ -156,16 +166,21 @@ export function ReadOnlyAccountCredentialForm(props: ReadOnlyAccountCredentialFo
           <input type="hidden" name="connectionId" value={props.connectionId} />
           <h4>읽기 전용 관찰 실행</h4>
           <p>저장된 계정으로 한 번 로그인한 뒤 관찰 경로를 조회만 합니다. 입력·수정·삭제 요청은 차단됩니다.</p>
+          <p>{SCOPE_REENTRY_NOTE}</p>
           <ScopeFields id={`${id}-obs`} inputClass={classes.input} disabled={!props.enabled} />
           <label htmlFor={`${id}-login`}>로그인 주소 (https)</label>
           <input id={`${id}-login`} name="loginUrl" type="url" className={classes.input} disabled={!props.enabled} />
           <label htmlFor={`${id}-usel`}>아이디 입력란 선택자</label>
-          <input id={`${id}-usel`} name="usernameSelector" type="text" className={classes.input} disabled={!props.enabled} />
+          <p>{SELECTOR_HELP.username}</p>
+          <input id={`${id}-usel`} name="usernameSelector" type="text" placeholder="#email" className={classes.input} disabled={!props.enabled} />
           <label htmlFor={`${id}-psel`}>비밀번호 입력란 선택자</label>
-          <input id={`${id}-psel`} name="passwordSelector" type="text" className={classes.input} disabled={!props.enabled} />
+          <p>{SELECTOR_HELP.password}</p>
+          <input id={`${id}-psel`} name="passwordSelector" type="text" placeholder="#password" className={classes.input} disabled={!props.enabled} />
           <label htmlFor={`${id}-ssel`}>로그인 버튼 선택자</label>
-          <input id={`${id}-ssel`} name="submitSelector" type="text" className={classes.input} disabled={!props.enabled} />
+          <p>{SELECTOR_HELP.submit}</p>
+          <input id={`${id}-ssel`} name="submitSelector" type="text" placeholder="button[type=submit]" className={classes.input} disabled={!props.enabled} />
           <label htmlFor={`${id}-succ`}>로그인 성공 경로 접두어</label>
+          <p>{SELECTOR_HELP.successPrefix}</p>
           <input id={`${id}-succ`} name="successPathPrefix" type="text" defaultValue="/" className={classes.input} disabled={!props.enabled} />
           <button type="submit" className={classes.button} disabled={!props.enabled || observationPending}>
             관찰 실행
