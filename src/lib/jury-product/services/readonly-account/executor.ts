@@ -11,6 +11,7 @@
 import type { AccountCredentialSecret } from './credential-crypto';
 import type { ObservationScope } from './consent';
 import { allowedSitesOf, isSameSiteSubresource } from './same-site';
+import type { LayoutMetrics } from '../screen-audit/layout-probe';
 import { DEFAULT_DISCOVERY, normalizeLinkKey, normalizeStats, pickLinks, type DiscoveredLink, type DiscoveryOptions, type PageStats } from './discovery';
 
 export const READONLY_ACCOUNT_EXECUTOR_ENABLED = true as boolean;
@@ -39,6 +40,10 @@ export interface ObservationDriver {
   collectLinks?(): Promise<DiscoveredLink[]>;
   /** I-049: structural counts of the current page (no text). Optional. */
   pageStats?(): Promise<PageStats>;
+  /** I-059: resize the current page (screen audit). Optional. */
+  setViewport?(viewport: { width: number; height: number }): Promise<void>;
+  /** I-059: layout metrics of the current page (numbers and boxes only, no text). Optional. */
+  layoutMetrics?(): Promise<LayoutMetrics>;
   close(): Promise<void>;
 }
 
@@ -221,6 +226,8 @@ export async function executeReadonlyObservation(input: {
   /** I-049: menu auto-discovery after the explicit actions. false/undefined = off (pre-I-049 behavior). */
   discover?: Partial<DiscoveryOptions> | false;
   clock?: () => number;
+  /** I-059: called after each observed page while the browser is still on it (screen audit). Errors are ignored. */
+  onPage?: (page: { label: string; url: string }) => Promise<void>;
 }): Promise<ExecutorReport> {
   const clock = input.clock ?? Date.now;
   const startedAt = clock();
@@ -230,6 +237,10 @@ export async function executeReadonlyObservation(input: {
   const policy = createRequestGuard({ scope: input.scope, loginOrigin: plan.loginOrigin });
   report.blockedRequests = policy.blocked;
   const { driver } = input;
+  const afterPage = async () => {
+    const last = report.snapshots[report.snapshots.length - 1];
+    if (input.onPage && last) await input.onPage({ label: last.label, url: last.url }).catch(() => undefined);
+  };
   let step: ExecutorStep = 'LOGIN_PAGE';
   const stop = async (reason: ExecutorStop, extra: Partial<ExecutorReport> = {}) => {
     await driver.close().catch(() => undefined);
@@ -294,6 +305,7 @@ export async function executeReadonlyObservation(input: {
     if (opts) {
       visited.add(normalizeLinkKey(landed));
       report.snapshots.push({ label: '로그인 후 첫 화면', url: landed.toString(), text: await driver.snapshotText(), stats: await stats(), discovered: true });
+      await afterPage();
       await harvest(0);
     }
     step = 'ACTIONS';
@@ -309,6 +321,7 @@ export async function executeReadonlyObservation(input: {
         const url = await driver.currentUrl();
         if (opts) visited.add(normalizeLinkKey(new URL(url)));
         report.snapshots.push({ label: action.label, url, text: await driver.snapshotText(), ...(opts ? { stats: await stats() } : {}) });
+        await afterPage();
         await harvest(0);
       }
     }
@@ -360,6 +373,7 @@ export async function executeReadonlyObservation(input: {
             ...(finalKey !== next.key ? { requestedUrl: next.key } : {}),
           });
           d.visited += 1;
+          await afterPage();
           await harvest(next.depth);
         } catch {
           d.errors += 1;

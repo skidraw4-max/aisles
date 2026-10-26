@@ -113,6 +113,8 @@ export async function runStoredCredentialObservation(input: {
   now?: Date;
   executorEnabled?: boolean;
   discover?: Partial<DiscoveryOptions> | false;
+  /** I-059: screen audit hook (see screen-audit/audit-hook.ts). */
+  onPage?: (page: { label: string; url: string }) => Promise<void>;
 }): Promise<{ ok: true; summary: ObservationSummary } | { ok: false; reason: ObservationRunFailure }> {
   const now = input.now ?? new Date();
   const tenantId = input.actor.ok ? input.actor.tenantId : null;
@@ -150,6 +152,7 @@ export async function runStoredCredentialObservation(input: {
     discover: input.discover ?? DEFAULT_DISCOVERY,
     now,
     executorEnabled: input.executorEnabled,
+    onPage: input.onPage,
   });
   // I-056: a run that logged in with typed settings remembers them on the consent, so the next run can leave them blank.
   if (result.ok && result.summary.ok && !isBlank(input.login.loginUrl) && consent.id && input.store.saveLoginSettings) {
