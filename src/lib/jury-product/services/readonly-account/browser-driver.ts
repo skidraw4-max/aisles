@@ -164,6 +164,9 @@ export async function waitAfterLoginClick(p: PwPage, waitFor?: { successPathPref
  * I-046: wait for the field to be visible (Playwright fill also waits for enabled/editable), fill, then read the
  * value back. Hydration can reset a controlled input, so re-fill once after a short delay. Values are never logged.
  */
+/** I-056: bounded wait for a login field before reporting LOGIN_FIELD_NOT_FOUND. */
+export const FIELD_WAIT_MS = 10_000;
+
 export async function fillVerified(p: PwPage, selector: string, value: string): Promise<boolean> {
   await p.waitForSelector(selector, { state: 'visible', timeout: TIMEOUT_MS });
   for (let attempt = 0; attempt < 2; attempt += 1) {
@@ -259,6 +262,13 @@ export function createBrowserObservationDriver(launch: PwContextLauncher): Obser
     },
     async detectChallenge() {
       return (await ensure()).evaluate(CHALLENGE_PROBE).catch(() => 'NONE' as const);
+    },
+    async hasField(selector) {
+      const p = await ensure();
+      return p
+        .waitForSelector(selector, { state: 'visible', timeout: FIELD_WAIT_MS })
+        .then(() => true)
+        .catch(() => false);
     },
     async isDisabled(selector) {
       const p = await ensure();

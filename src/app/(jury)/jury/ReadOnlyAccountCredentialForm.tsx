@@ -5,6 +5,9 @@ import { READONLY_ACCOUNT_CONSENT_TEXT } from '@/lib/jury-product/services/reado
 import {
   readonlyAccountReasonText,
   readonlyAccountStopText,
+  readonlyAccountStopDetail,
+  usesDefaultLoginSelectors,
+  DEFAULT_SELECTOR_WARNING,
   withClientDeadline,
   type ReadonlyAccountFormAction,
   type ReadonlyAccountFormResult,
@@ -88,6 +91,7 @@ export function LatestObservationResult(props: { run: LatestObservationRun | nul
         <>
           <p>
             {formatKst(run.observedAt)} · {run.ok ? '성공' : '중단'} · {readonlyAccountStopText(run.stop)}
+            {readonlyAccountStopDetail(run) ? ` (${readonlyAccountStopDetail(run)})` : ''}
           </p>
           <p>
             관찰 페이지 {run.pagesObserved}개 (내용 확인 {run.pagesVisible}개) · 차단된 요청 {run.blockedRequestCount}건 (도메인 {run.blockedByReason.ORIGIN}, 메서드{' '}
@@ -561,6 +565,11 @@ export function ReadOnlyAccountStepper(props: ReadOnlyAccountCredentialFormProps
         ) : (
           <p className={c.help}>① 범위에 동의하면 입력할 수 있어요.</p>
         )}
+        {current > 2 && stored && usesDefaultLoginSelectors(login) ? (
+          <p className={c.help} role="note">
+            {DEFAULT_SELECTOR_WARNING}
+          </p>
+        ) : null}
       </div>
 
       <div className={c.step} data-step="3" data-state={state(3)} id="observe">

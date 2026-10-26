@@ -28,6 +28,9 @@ export type ObservationSummary = {
   /** I-047: origin + path of the last page (no query string). */
   finalOrigin: string | null;
   finalPath: string | null;
+  /** I-056: diagnosis for stopped runs (step names only). */
+  failedStep?: ExecutorReport['failedStep'] | null;
+  missingField?: ExecutorReport['missingField'] | null;
   piiExcluded: true;
   readOnly: true;
 };
@@ -69,6 +72,8 @@ export function logBlockedRequests(report: ExecutorReport, connectionId: string,
       connectionId,
       ok: report.ok,
       stop: report.stop ?? null,
+      failedStep: report.failedStep ?? null,
+      missingField: report.missingField ?? null,
       loginAttempts: report.loginAttempts,
       loginRequestUsed: report.loginRequestUsed ?? null,
       finalUrl: report.finalUrl ?? null,
@@ -76,7 +81,10 @@ export function logBlockedRequests(report: ExecutorReport, connectionId: string,
       pagesObserved: report.snapshots.length,
       pages: report.snapshots.map((s) => ({ label: s.label.slice(0, 64), visible: s.text.trim().length > 0, textLength: s.text.length })),
       discovery: report.discovery ?? null,
-      blocked: describeBlockedRequests(report),
+      // I-056: counts first so the line stays useful when the log viewer truncates it; list capped at 40.
+      blockedCount: report.blockedRequests.length,
+      blockedHosts: blockedHostCounts(report.blockedRequests),
+      blocked: describeBlockedRequests(report).slice(0, 40),
     }),
   );
 }
@@ -105,6 +113,8 @@ export function summarizeObservation(report: ExecutorReport): ObservationSummary
     blockedByReason,
     blockedHosts: blockedHostCounts(report.blockedRequests),
     ...finalOf(report.finalUrl),
+    failedStep: report.failedStep ?? null,
+    missingField: report.missingField ?? null,
     piiExcluded: true,
     readOnly: true,
   };
