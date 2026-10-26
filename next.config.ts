@@ -15,7 +15,8 @@ const nextConfig: NextConfig = {
     formats: ['image/avif', 'image/webp'],
     remotePatterns: buildImageRemotePatterns(),
   },
-  serverExternalPackages: ['sharp'],
+  /** Readonly-account browser runtime (I-041): keep the native chromium binary and playwright out of webpack bundles. */
+  serverExternalPackages: ['sharp', '@sparticuz/chromium', 'playwright-core'],
   /** Ensure the custom Jury domain reaches the existing /jury route even when the host is normalized before middleware. */
   async rewrites() {
     return {

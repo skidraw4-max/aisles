@@ -34,6 +34,6 @@
 | I-044 | 대기 | 운영 승인 후 내부 tenant부터 플래그 on |
 
 ### 브라우저 런타임 선택
-저장소에 브라우저 자동화 의존성이 없다. 플래그 off 상태에서 번들 크기를 늘리지 않도록 의존성은 추가하지 않았고,
-활성화 시 `playwright-core` + `@sparticuz/chromium`(Vercel Functions 용량 한도 내, 브라우저 다운로드 없음)을 추가한다.
+저장소에는 원래 브라우저 자동화 의존성이 없었다.
+`playwright-core@1.59.1`(Chromium 147 기준) + `@sparticuz/chromium@147.0.0`을 정확한 버전으로 고정해 추가했다(CI Node 20.19.2와 호환되는 마지막 계열, 148 이상은 Node 22 필요). 두 패키지는 `next.config.ts` `serverExternalPackages`로 번들에서 제외한다. 실제 import·실행은 플래그 활성화 단계에서 연결한다.
 런처는 `serviceWorkers: 'block'`, `acceptDownloads: false`로 컨텍스트를 생성해야 한다.
