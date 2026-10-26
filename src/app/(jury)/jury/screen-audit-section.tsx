@@ -29,7 +29,7 @@ export async function ScreenAuditSection(props: { tenantId: string; connectionId
       </section>
     );
   }
-  const view = await loadScreenAuditView(props.tenantId, props.connectionId).catch(() => ({ latest: null, history: [] }));
+  const view = await loadScreenAuditView(props.tenantId, props.connectionId).catch(() => ({ latest: null, history: [], diff: null }));
   const latest = view.latest;
   const rows = latest ? areaRows(latest.summary) : [];
   const stop = latest ? stopText(latest.summary) : null;
@@ -49,6 +49,29 @@ export async function ScreenAuditSection(props: { tenantId: string; connectionId
             최근 심사 · {formatKst(latest.createdAt)} · {latest.status ? STATUS_LABEL[latest.status] ?? latest.status : latest.state === 'RUNNING' ? '진행 중' : '결과 없음'}
           </h3>
           {latest.parentAuditId ? <p>이전 심사를 다시 확인한 재심사입니다.</p> : null}
+          {view.diff ? (
+            <div role="group" aria-label="이전 심사와 비교">
+              <h3>이전 심사와 비교</h3>
+              <p>
+                고쳐짐 {view.diff.fixed.length}건 · 그대로 {view.diff.remaining.length}건 · 새로 발견 {view.diff.added.length}건
+              </p>
+              {(['fixed', 'remaining', 'added'] as const).map((k) =>
+                view.diff![k].length > 0 ? (
+                  <details key={k}>
+                    <summary>{k === 'fixed' ? '고쳐짐' : k === 'remaining' ? '그대로' : '새로 발견'}</summary>
+                    <ul>
+                      {view.diff![k].map((d) => (
+                        <li key={`${d.rule}|${d.viewport}|${d.path}`}>
+                          {VIEWPORT_LABEL[d.viewport] ?? d.viewport} · {d.path ?? '-'} · {d.message}
+                        </li>
+                      ))}
+                    </ul>
+                  </details>
+                ) : null,
+              )}
+              <p>다시 확인하지 못한 화면의 문제는 “고쳐짐”으로 세지 않습니다.</p>
+            </div>
+          ) : null}
           {stop ? <p role="note">{stop}</p> : null}
           {rows.length > 0 ? (
             <table>

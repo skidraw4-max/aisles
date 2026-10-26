@@ -56,3 +56,21 @@ export function stopText(summary: unknown): string | null {
 }
 
 export const SEVERITY_ORDER: Record<string, number> = { HIGH: 0, MEDIUM: 1, LOW: 2 };
+
+/** I-064: re-review diff. Findings match on rule + viewport + page path (ids differ between runs). */
+export type DiffFinding = { rule: string; viewport: string; path: string | null; message: string };
+export type AuditDiff = { fixed: DiffFinding[]; remaining: DiffFinding[]; added: DiffFinding[] };
+export function findingKey(f: DiffFinding): string {
+  return `${f.rule}|${f.viewport}|${f.path ?? ''}`;
+}
+export function diffAudits(previous: DiffFinding[], current: DiffFinding[], currentTestedPaths?: Set<string>): AuditDiff {
+  const cur = new Map(current.map((f) => [findingKey(f), f]));
+  const prev = new Map(previous.map((f) => [findingKey(f), f]));
+  // A previous finding counts as fixed only if its page/viewport was measured again this time.
+  const measured = (f: DiffFinding) => !currentTestedPaths || currentTestedPaths.has(`${f.viewport}|${f.path ?? ''}`);
+  return {
+    fixed: [...prev.values()].filter((f) => !cur.has(findingKey(f)) && measured(f)),
+    remaining: [...prev.values()].filter((f) => cur.has(findingKey(f))),
+    added: [...cur.values()].filter((f) => !prev.has(findingKey(f))),
+  };
+}
