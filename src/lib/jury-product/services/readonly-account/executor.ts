@@ -21,7 +21,8 @@ export interface ObservationDriver {
   setRequestGuard(guard: (request: ObservedRequest) => RequestVerdict): Promise<void>;
   goto(url: string): Promise<void>;
   fill(selector: string, value: string): Promise<void>;
-  click(selector: string): Promise<void>;
+  /** waitFor (I-045): after the click, wait until the URL leaves loginPath and starts with successPathPrefix, else network idle; max 15s. */
+  click(selector: string, waitFor?: { successPathPrefix: string; loginPath: string }): Promise<void>;
   currentUrl(): Promise<string>;
   detectChallenge(): Promise<'NONE' | 'TWO_FACTOR' | 'CAPTCHA'>;
   snapshotText(): Promise<string>;
@@ -67,15 +68,48 @@ function pathAllowed(scope: ObservationScope, path: string): boolean {
   return scope.paths.some((p) => path === p || path.startsWith(p.endsWith('/') ? p : `${p}/`) || path.startsWith(`${p}?`));
 }
 
+/**
+ * I-045 auth origins (e.g. Supabase): never navigable, never a form-submit target.
+ * - any phase: GET/HEAD/OPTIONS (OPTIONS = CORS preflight; post-login GET covers /rest/v1 reads)
+ * - login phase: exactly one POST to /auth/v1/token?grant_type=password (shares the single login slot)
+ * - refresh_token POST is NOT allowed: a fresh password login returns a new session, and a run lasts well under
+ *   the token lifetime, so refresh is not needed. Every other write (POST/PUT/PATCH/DELETE) stays blocked.
+ */
+export const AUTH_LOGIN_PATH = '/auth/v1/token';
+const AUTH_READ_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
+
+function isPasswordLoginRequest(url: string): boolean {
+  try {
+    const u = new URL(url);
+    return u.pathname === AUTH_LOGIN_PATH && u.searchParams.get('grant_type') === 'password' && [...u.searchParams.keys()].length === 1;
+  } catch {
+    return false;
+  }
+}
+
 /** Pure request policy; exported for tests and for real driver adapters. */
 export function createRequestGuard(input: { scope: ObservationScope; loginOrigin: string }) {
   let phase: 'PRE_LOGIN' | 'LOGIN_SUBMITTING' | 'POST_LOGIN' = 'PRE_LOGIN';
   let loginRequestUsed = false;
   const blocked: ExecutorReport['blockedRequests'] = [];
   const allowedOrigins = new Set(input.scope.allowedOrigins);
+  const authOrigins = new Set((input.scope.authOrigins ?? []).filter((o) => !allowedOrigins.has(o)));
   const guard = (req: ObservedRequest): RequestVerdict => {
     const origin = originOf(req.url);
     const method = req.method.toUpperCase();
+    if (origin && authOrigins.has(origin)) {
+      if (req.isFormSubmit || req.isNavigation) {
+        blocked.push({ method, url: req.url, reason: req.isFormSubmit ? 'FORM_SUBMIT' : 'ORIGIN' });
+        return 'block';
+      }
+      if (AUTH_READ_METHODS.has(method)) return 'allow';
+      if (method === 'POST' && phase === 'LOGIN_SUBMITTING' && !loginRequestUsed && isPasswordLoginRequest(req.url)) {
+        loginRequestUsed = true;
+        return 'allow';
+      }
+      blocked.push({ method, url: req.url, reason: loginRequestUsed && phase !== 'POST_LOGIN' && method === 'POST' ? 'LOGIN_ALREADY_USED' : 'METHOD' });
+      return 'block';
+    }
     if (!origin || !allowedOrigins.has(origin)) {
       blocked.push({ method, url: req.url, reason: 'ORIGIN' });
       return 'block';
@@ -146,7 +180,7 @@ export async function executeReadonlyObservation(input: {
     await driver.fill(input.login.passwordSelector, input.credential.password);
     policy.beginLoginSubmit();
     report.loginAttempts = 1;
-    await driver.click(input.login.submitSelector);
+    await driver.click(input.login.submitSelector, { successPathPrefix: input.login.successPathPrefix, loginPath: new URL(input.login.loginUrl).pathname });
     policy.endLogin();
     const post = await driver.detectChallenge();
     if (post !== 'NONE') return stop('CHALLENGE_REQUIRED', { challenge: post });

@@ -43,6 +43,8 @@ function ScopeFields(props: { id: string; inputClass?: string; disabled: boolean
     <>
       <label htmlFor={`${props.id}-origins`}>허용 도메인 (한 줄에 하나, https)</label>
       <textarea id={`${props.id}-origins`} name="allowedOrigins" className={props.inputClass} disabled={props.disabled} />
+      <label htmlFor={`${props.id}-auth`}>인증 서버 도메인 (선택, 한 줄에 하나, https · 예: Supabase 프로젝트 주소)</label>
+      <textarea id={`${props.id}-auth`} name="authOrigins" className={props.inputClass} disabled={props.disabled} />
       <label htmlFor={`${props.id}-paths`}>관찰 경로 (한 줄에 하나)</label>
       <textarea id={`${props.id}-paths`} name="paths" className={props.inputClass} disabled={props.disabled} />
     </>
@@ -96,7 +98,7 @@ export function ReadOnlyAccountCredentialForm(props: ReadOnlyAccountCredentialFo
             저장됨 ({props.stored.usernameHint}), 만료 {formatKst(props.stored.expiresAt)}
           </p>
         ) : null}
-        <p>동의한 허용 도메인과 관찰 경로를 같은 내용으로 입력해 주세요.</p>
+        <p>동의한 허용 도메인, 인증 서버 도메인, 관찰 경로를 같은 내용으로 입력해 주세요.</p>
         <ScopeFields id={`${id}-cred`} inputClass={classes.input} disabled={inputsDisabled} />
         <label htmlFor={`${id}-user`}>아이디</label>
         <input id={`${id}-user`} name="username" type="text" autoComplete="off" className={classes.input} disabled={inputsDisabled} />

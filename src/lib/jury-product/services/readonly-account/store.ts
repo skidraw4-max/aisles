@@ -6,6 +6,7 @@
 import { randomUUID } from 'node:crypto';
 import type { JuryActor } from '../../access';
 import type { CredentialKeyProvider } from './credential-crypto';
+import type { ObservationScopeInput } from './consent';
 import {
   planConsent,
   planCredentialStore,
@@ -33,7 +34,7 @@ function tenantOf(actor: JuryActor): string | null {
 export async function persistReadonlyAccountConsent(input: {
   actor: JuryActor;
   connectionId: string;
-  scope: { allowedOrigins: readonly string[]; paths: readonly string[] };
+  scope: ObservationScopeInput;
   accepted: boolean;
   now: string;
   store: ReadonlyAccountStore;

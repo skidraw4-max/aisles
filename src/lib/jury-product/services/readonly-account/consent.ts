@@ -19,7 +19,9 @@ export { READONLY_ACCOUNT_CONSENT_TEXT, READONLY_ACCOUNT_CONSENT_VERSION } from 
 export const DEFAULT_RETENTION_DAYS = 14;
 export const MAX_RETENTION_DAYS = 14;
 
-export type ObservationScope = { allowedOrigins: string[]; paths: string[] };
+/** authOrigins (I-045): auth/API origins (e.g. a Supabase project) the login page talks to. Never navigable. */
+export type ObservationScope = { allowedOrigins: string[]; paths: string[]; authOrigins?: string[] };
+export type ObservationScopeInput = { allowedOrigins: readonly string[]; paths: readonly string[]; authOrigins?: readonly string[] };
 
 export type ReadonlyAccountFailure =
   | 'UNAUTHENTICATED'
@@ -35,19 +37,26 @@ export type ReadonlyAccountFailure =
   | 'NOT_IMPLEMENTED';
 
 export function normalizeObservationScope(
-  input: { allowedOrigins: readonly string[]; paths: readonly string[] },
+  input: ObservationScopeInput,
 ): { ok: true; scope: ObservationScope } | { ok: false; reason: 'SCOPE_INVALID' } {
-  const origins = new Set<string>();
-  for (const raw of input.allowedOrigins) {
-    let url: URL;
-    try {
-      url = new URL(raw.trim());
-    } catch {
-      return { ok: false, reason: 'SCOPE_INVALID' };
+  const parseOrigins = (list: readonly string[]): Set<string> | null => {
+    const out = new Set<string>();
+    for (const raw of list) {
+      let url: URL;
+      try {
+        url = new URL(raw.trim());
+      } catch {
+        return null;
+      }
+      if (url.protocol !== 'https:' || url.username || url.password) return null;
+      out.add(url.origin);
     }
-    if (url.protocol !== 'https:' || url.username || url.password) return { ok: false, reason: 'SCOPE_INVALID' };
-    origins.add(url.origin);
-  }
+    return out;
+  };
+  const origins = parseOrigins(input.allowedOrigins);
+  const authOrigins = parseOrigins(input.authOrigins ?? []);
+  if (!origins || !authOrigins || authOrigins.size > 5) return { ok: false, reason: 'SCOPE_INVALID' };
+  for (const o of authOrigins) if (origins.has(o)) authOrigins.delete(o);
   const paths = new Set<string>();
   for (const raw of input.paths) {
     const path = raw.trim();
@@ -55,7 +64,9 @@ export function normalizeObservationScope(
     paths.add(path);
   }
   if (origins.size === 0 || paths.size === 0 || origins.size > 10 || paths.size > 20) return { ok: false, reason: 'SCOPE_INVALID' };
-  return { ok: true, scope: { allowedOrigins: [...origins].sort(), paths: [...paths].sort() } };
+  const scope: ObservationScope = { allowedOrigins: [...origins].sort(), paths: [...paths].sort() };
+  if (authOrigins.size > 0) scope.authOrigins = [...authOrigins].sort();
+  return { ok: true, scope };
 }
 
 export function observationScopeHash(scope: ObservationScope, version = READONLY_ACCOUNT_CONSENT_VERSION): string {
@@ -79,7 +90,7 @@ export function authorizeReadonlyAccountConnection(actor: JuryActor, connection:
 export function planConsent(input: {
   actor: JuryActor;
   connection: ConnectionView | null;
-  scope: { allowedOrigins: readonly string[]; paths: readonly string[] };
+  scope: ObservationScopeInput;
   accepted: boolean;
   now: string;
   allocateId?: () => string;

@@ -22,7 +22,7 @@ function lines(value: FormDataEntryValue | null): string[] {
 }
 
 function scopeOf(formData: FormData) {
-  return { allowedOrigins: lines(formData.get('allowedOrigins')), paths: lines(formData.get('paths')) };
+  return { allowedOrigins: lines(formData.get('allowedOrigins')), authOrigins: lines(formData.get('authOrigins')), paths: lines(formData.get('paths')) };
 }
 
 export async function acceptReadonlyAccountConsentAction(formData: FormData): Promise<ReadonlyAccountActionResult> {
