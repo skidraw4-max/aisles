@@ -62,10 +62,42 @@ const STOP_TEXT: Record<string, string> = {
   LOGIN_NOT_SUBMITTED: '로그인 요청이 전송되지 않았어요. 입력란·로그인 버튼 선택자와 인증 서버 도메인을 확인해 주세요.',
   LOGIN_NO_REDIRECT: '로그인 후 성공 경로로 이동하지 않았어요. 아이디·비밀번호와 로그인 성공 경로 접두어를 확인해 주세요.',
   LOGIN_BUTTON_DISABLED: '로그인 버튼이 비활성 상태라 누르지 않고 중단했어요. 로그인 버튼 선택자를 확인하고, 아래 차단된 도메인에 로그인 화면에 필요한 스크립트가 있는지 확인해 주세요.',
+  LOGIN_FIELD_NOT_FOUND: '로그인 화면에서 입력란이나 로그인 버튼을 찾지 못했어요. 로그인 설정(고급)의 선택자를 사이트에 맞게 바꿔 주세요.',
   NOT_IMPLEMENTED: '관찰 실행기가 꺼져 있어요.',
   NAVIGATION_BLOCKED: '허용 범위를 벗어난 이동이 차단되어 중단했어요.',
   DRIVER_ERROR: '브라우저 실행 중 오류가 발생했어요.',
 };
+
+const FIELD_TEXT: Record<string, string> = { USERNAME: '아이디 입력란', PASSWORD: '비밀번호 입력란', SUBMIT: '로그인 버튼' };
+const STEP_TEXT: Record<string, string> = {
+  LOGIN_PAGE: '로그인 화면 열기',
+  FILL_USERNAME: '아이디 입력',
+  FILL_PASSWORD: '비밀번호 입력',
+  SUBMIT: '로그인 버튼 누르기',
+  AFTER_LOGIN: '로그인 후 화면 확인',
+  ACTIONS: '관찰 경로 조회',
+  DISCOVERY: '메뉴 자동 관찰',
+};
+
+/** I-056: extra detail for a stopped run (no selectors, no values). */
+export function readonlyAccountStopDetail(input: { stop?: string | null; failedStep?: string | null; missingField?: string | null }): string | null {
+  if (!input.stop) return null;
+  if (input.stop === 'LOGIN_FIELD_NOT_FOUND' && input.missingField) return `찾지 못한 항목: ${FIELD_TEXT[input.missingField] ?? input.missingField}`;
+  if (input.failedStep) return `중단된 단계: ${STEP_TEXT[input.failedStep] ?? input.failedStep}`;
+  return null;
+}
+
+/** I-056: the form's built-in placeholders; a stored plan still using them likely needs site-specific selectors. */
+export const DEFAULT_LOGIN_SELECTORS = { usernameSelector: '#email', passwordSelector: '#password', submitSelector: 'button[type=submit]' } as const;
+export function usesDefaultLoginSelectors(login: { usernameSelector?: string; passwordSelector?: string; submitSelector?: string } | null | undefined): boolean {
+  if (!login) return false;
+  return (
+    login.usernameSelector === DEFAULT_LOGIN_SELECTORS.usernameSelector &&
+    login.passwordSelector === DEFAULT_LOGIN_SELECTORS.passwordSelector &&
+    login.submitSelector === DEFAULT_LOGIN_SELECTORS.submitSelector
+  );
+}
+export const DEFAULT_SELECTOR_WARNING = '저장된 로그인 설정이 기본값(#email / #password)이에요. 사이트의 실제 입력란 선택자로 바꾸지 않으면 입력란을 찾지 못할 수 있어요.';
 
 export function readonlyAccountReasonText(reason: string): string {
   return REASON_TEXT[reason] ?? '처리하지 못했어요.';

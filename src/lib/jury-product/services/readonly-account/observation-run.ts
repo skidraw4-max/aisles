@@ -29,7 +29,9 @@ export interface ObservationRunStore {
   findLatestConsent(
     tenantId: string,
     connectionId: string,
-  ): Promise<{ connectionId: string; tenantId: string; version: string; scopeHash: string; scope?: unknown; loginSettings?: unknown } | null>;
+  ): Promise<{ id?: string; connectionId: string; tenantId: string; version: string; scopeHash: string; scope?: unknown; loginSettings?: unknown } | null>;
+  /** I-056: remember typed login settings after a successful run. Optional. */
+  saveLoginSettings?(tenantId: string, consentId: string, settings: LoginPlan): Promise<void>;
   findActiveCredential(tenantId: string, connectionId: string): Promise<StoredCredentialRecord | null>;
   audit(event: { tenantId: string; actor: string; action: string; serviceKey: string; timestamp: string }): Promise<void>;
   /** I-047: persists the PII-free summary. Optional so older fakes keep working. */
@@ -149,6 +151,14 @@ export async function runStoredCredentialObservation(input: {
     now,
     executorEnabled: input.executorEnabled,
   });
+  // I-056: a run that logged in with typed settings remembers them on the consent, so the next run can leave them blank.
+  if (result.ok && result.summary.ok && !isBlank(input.login.loginUrl) && consent.id && input.store.saveLoginSettings) {
+    try {
+      await input.store.saveLoginSettings(auth.connection.tenantId, consent.id, login);
+    } catch (error) {
+      console.warn(JSON.stringify({ event: 'readonly_account_login_settings_save_failed', connectionId: auth.connection.id, error: error instanceof Error ? error.name : 'unknown' }));
+    }
+  }
   if (result.ok && input.store.recordRun) {
     try {
       await input.store.recordRun({
@@ -178,6 +188,7 @@ export async function createPrismaObservationRunStore(): Promise<ObservationRunS
   return {
     findConnection: base.findConnection,
     findLatestConsent: base.findLatestConsent,
+    saveLoginSettings: base.saveLoginSettings,
     audit: base.audit,
     async recordRun(run) {
       const { randomUUID } = await import('node:crypto');
@@ -197,7 +208,8 @@ export async function createPrismaObservationRunStore(): Promise<ObservationRunS
           pages: s.pages,
           blockedRequestCount: s.blockedRequestCount,
           // I-055: hostnames are stored inside the existing JSON column (no schema change).
-          blockedByReason: { ...s.blockedByReason, hosts: s.blockedHosts ?? {} },
+          // I-056: stop diagnosis (step names only) shares the same JSON column.
+          blockedByReason: { ...s.blockedByReason, hosts: s.blockedHosts ?? {}, ...(s.failedStep || s.missingField ? { diag: { failedStep: s.failedStep ?? null, missingField: s.missingField ?? null } } : {}) },
           finalOrigin: s.finalOrigin,
           finalPath: s.finalPath,
           observedAt: new Date(run.observedAt),

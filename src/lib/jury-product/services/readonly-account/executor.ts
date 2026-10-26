@@ -32,6 +32,8 @@ export interface ObservationDriver {
   detectChallenge(): Promise<'NONE' | 'TWO_FACTOR' | 'CAPTCHA'>;
   /** I-055: true when the element is still disabled after a short bounded wait (e.g. a JS-enabled login button). Optional. */
   isDisabled?(selector: string): Promise<boolean>;
+  /** I-056: true when the element becomes visible within a bounded wait. Optional (drivers without it skip the check). */
+  hasField?(selector: string): Promise<boolean>;
   snapshotText(): Promise<string>;
   /** I-049: links on the current page (href resolved, text, download attr, inside nav/menu/header/sidebar). Optional. */
   collectLinks?(): Promise<DiscoveredLink[]>;
@@ -54,12 +56,21 @@ export type ExecutorStop =
   | 'LOGIN_NOT_SUBMITTED'
   | 'LOGIN_NO_REDIRECT'
   | 'LOGIN_BUTTON_DISABLED'
+  | 'LOGIN_FIELD_NOT_FOUND'
   | 'NAVIGATION_BLOCKED'
   | 'DRIVER_ERROR';
+
+/** I-056: which step was running when the run stopped (DRIVER_ERROR diagnosis). No selectors or values. */
+export type ExecutorStep = 'LOGIN_PAGE' | 'FILL_USERNAME' | 'FILL_PASSWORD' | 'SUBMIT' | 'AFTER_LOGIN' | 'ACTIONS' | 'DISCOVERY';
+export type LoginField = 'USERNAME' | 'PASSWORD' | 'SUBMIT';
 
 export type ExecutorReport = {
   ok: boolean;
   stop?: ExecutorStop;
+  /** I-056: step that was running when a stop happened. */
+  failedStep?: ExecutorStep;
+  /** I-056: set with LOGIN_FIELD_NOT_FOUND. */
+  missingField?: LoginField;
   challenge?: 'TWO_FACTOR' | 'CAPTCHA';
   loginAttempts: number;
   /** I-046: whether the single login request was let through. */
@@ -217,17 +228,34 @@ export async function executeReadonlyObservation(input: {
   const policy = createRequestGuard({ scope: input.scope, loginOrigin: plan.loginOrigin });
   report.blockedRequests = policy.blocked;
   const { driver } = input;
+  let step: ExecutorStep = 'LOGIN_PAGE';
   const stop = async (reason: ExecutorStop, extra: Partial<ExecutorReport> = {}) => {
     await driver.close().catch(() => undefined);
-    return { ...report, ...extra, ok: false, stop: reason };
+    return { ...report, failedStep: step, ...extra, ok: false, stop: reason };
   };
   try {
     await driver.setRequestGuard(policy.guard);
     await driver.goto(input.login.loginUrl, { login: true });
     const pre = await driver.detectChallenge();
     if (pre !== 'NONE') return stop('CHALLENGE_REQUIRED', { challenge: pre });
+    // I-056: a selector that matches nothing is reported as LOGIN_FIELD_NOT_FOUND instead of a generic DRIVER_ERROR.
+    if (driver.hasField) {
+      const fields: [LoginField, string][] = [
+        ['USERNAME', input.login.usernameSelector],
+        ['PASSWORD', input.login.passwordSelector],
+        ['SUBMIT', input.login.submitSelector],
+      ];
+      for (const [field, selector] of fields) {
+        if (!(await driver.hasField(selector).catch(() => false))) {
+          return stop('LOGIN_FIELD_NOT_FOUND', { missingField: field, finalUrl: originPath(await driver.currentUrl().catch(() => '')) });
+        }
+      }
+    }
+    step = 'FILL_USERNAME';
     const userSet = await driver.fill(input.login.usernameSelector, input.credential.username);
+    step = 'FILL_PASSWORD';
     const passSet = await driver.fill(input.login.passwordSelector, input.credential.password);
+    step = 'SUBMIT';
     if (userSet === false || passSet === false) return stop('LOGIN_NOT_SUBMITTED', { finalUrl: originPath(await driver.currentUrl()) });
     // I-055: a login button that stays disabled (e.g. its enabling script did not load) is reported, not clicked.
     if (driver.isDisabled && (await driver.isDisabled(input.login.submitSelector).catch(() => false))) {
@@ -237,6 +265,7 @@ export async function executeReadonlyObservation(input: {
     report.loginAttempts = 1;
     await driver.click(input.login.submitSelector, { successPathPrefix: input.login.successPathPrefix, loginPath: new URL(input.login.loginUrl).pathname });
     policy.endLogin();
+    step = 'AFTER_LOGIN';
     const post = await driver.detectChallenge();
     if (post !== 'NONE') return stop('CHALLENGE_REQUIRED', { challenge: post });
     const landed = new URL(await driver.currentUrl());
@@ -265,6 +294,7 @@ export async function executeReadonlyObservation(input: {
       report.snapshots.push({ label: '로그인 후 첫 화면', url: landed.toString(), text: await driver.snapshotText(), stats: await stats(), discovered: true });
       await harvest(0);
     }
+    step = 'ACTIONS';
     for (const action of input.actions) {
       if (action.type === 'goto') {
         const target = new URL(action.path, plan.loginOrigin).toString();
@@ -283,6 +313,7 @@ export async function executeReadonlyObservation(input: {
     if (opts) {
       const d: NonNullable<ExecutorReport['discovery']> = { enabled: true, found: 0, visited: 0, skipped: 0, errors: 0, stoppedBy: driver.collectLinks ? 'DONE' : 'UNSUPPORTED', redirects: [] };
       report.discovery = d;
+      step = 'DISCOVERY';
       while (queue.length > 0) {
         if (report.snapshots.length >= opts.maxPages) {
           d.stoppedBy = 'MAX_PAGES';

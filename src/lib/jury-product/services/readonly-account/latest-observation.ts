@@ -20,6 +20,9 @@ export type LatestObservationRun = {
   finalOrigin: string | null;
   finalPath: string | null;
   observedAt: string;
+  /** I-056: stop diagnosis (step names only). */
+  failedStep?: string | null;
+  missingField?: string | null;
 };
 
 type Row = {
@@ -72,7 +75,11 @@ export function toLatestObservationRun(row: Row): LatestObservationRun {
       .slice(0, 20)
       .map(([h, c]) => [h, num(c)]),
   );
+  const diag = b.diag && typeof b.diag === 'object' ? (b.diag as Record<string, unknown>) : {};
+  const token = (v: unknown) => (typeof v === 'string' && /^[A-Z_]{1,32}$/.test(v) ? v : null);
   return {
+    ...(token(diag.failedStep) ? { failedStep: token(diag.failedStep) } : {}),
+    ...(token(diag.missingField) ? { missingField: token(diag.missingField) } : {}),
     id: row.id,
     ok: row.ok,
     stop: row.stop,
