@@ -28,6 +28,7 @@ export interface PwPage {
   goto(url: string, options?: { waitUntil?: 'load' | 'domcontentloaded' | 'networkidle'; timeout?: number }): Promise<unknown>;
   fill(selector: string, value: string, options?: { timeout?: number }): Promise<void>;
   click(selector: string, options?: { timeout?: number }): Promise<void>;
+  waitForURL(url: (url: URL) => boolean, options?: { timeout?: number; waitUntil?: 'load' | 'domcontentloaded' | 'networkidle' | 'commit' }): Promise<void>;
   waitForLoadState(state?: 'load' | 'domcontentloaded' | 'networkidle', options?: { timeout?: number }): Promise<void>;
   url(): string;
   evaluate<R>(fn: () => R): Promise<R>;
@@ -75,6 +76,23 @@ export const CHALLENGE_PROBE = () => {
   return 'NONE' as const;
 };
 
+/** I-045: URL match first (SPA logins navigate via script after an async auth call), else network idle; total ≤ 15s. */
+export async function waitAfterLoginClick(p: PwPage, waitFor?: { successPathPrefix: string; loginPath: string }, timeoutMs = TIMEOUT_MS): Promise<void> {
+  const deadline = Date.now() + timeoutMs;
+  const left = () => Math.max(0, deadline - Date.now());
+  if (waitFor) {
+    const matched = await p
+      .waitForURL((u) => u.pathname !== waitFor.loginPath && u.pathname.startsWith(waitFor.successPathPrefix), { timeout: left(), waitUntil: 'commit' })
+      .then(() => true)
+      .catch(() => false);
+    if (matched) {
+      await p.waitForLoadState('domcontentloaded', { timeout: left() }).catch(() => undefined);
+      return;
+    }
+  }
+  if (left() > 0) await p.waitForLoadState('networkidle', { timeout: left() }).catch(() => undefined);
+}
+
 export function createBrowserObservationDriver(launch: PwContextLauncher): ObservationDriver {
   let context: PwContext | null = null;
   let page: PwPage | null = null;
@@ -105,12 +123,12 @@ export function createBrowserObservationDriver(launch: PwContextLauncher): Obser
     async fill(selector, value) {
       await (await ensure()).fill(selector, value, { timeout: TIMEOUT_MS });
     },
-    async click(selector) {
+    async click(selector, waitFor) {
       const p = await ensure();
       if (loginClicked) throw new Error('only the single login click is allowed');
       loginClicked = true;
       await p.click(selector, { timeout: TIMEOUT_MS });
-      await p.waitForLoadState('domcontentloaded', { timeout: TIMEOUT_MS }).catch(() => undefined);
+      await waitAfterLoginClick(p, waitFor);
       await p.evaluate(() => (globalThis as unknown as { sessionStorage: { setItem(k: string, v: string): void } }).sessionStorage.setItem('__jury_block_submit', '1')).catch(() => undefined);
     },
     async currentUrl() {

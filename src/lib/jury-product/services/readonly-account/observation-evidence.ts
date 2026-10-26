@@ -3,6 +3,7 @@
  * Output carries counts and visibility only: no snapshot text, no URLs beyond the scoped path, no username/password.
  */
 import type { EvidencePack } from '@/lib/ai-review-board/types';
+import type { ObservationScope } from './consent';
 import { decryptAccountCredential, type CredentialKeyProvider, type EncryptedAccountCredential } from './credential-crypto';
 import { runReadonlyObservation, type ExecutorReport, type LoginPlan, type ObservationAction, type ObservationDriver } from './executor';
 
@@ -26,6 +27,31 @@ function pathOf(url: string): string {
   } catch {
     return '';
   }
+}
+
+/** I-045: method + origin + path only (no query string, no headers/bodies/values). */
+export function describeBlockedRequests(report: ExecutorReport): { method: string; origin: string; path: string; reason: string }[] {
+  return report.blockedRequests.map((b) => {
+    try {
+      const u = new URL(b.url);
+      return { method: b.method, origin: u.origin, path: u.pathname, reason: b.reason };
+    } catch {
+      return { method: b.method, origin: 'invalid', path: '', reason: b.reason };
+    }
+  });
+}
+
+export function logBlockedRequests(report: ExecutorReport, connectionId: string, log: (line: string) => void = console.info): void {
+  log(
+    JSON.stringify({
+      event: 'readonly_account_observation',
+      connectionId,
+      ok: report.ok,
+      stop: report.stop ?? null,
+      loginAttempts: report.loginAttempts,
+      blocked: describeBlockedRequests(report),
+    }),
+  );
 }
 
 export function summarizeObservation(report: ExecutorReport): ObservationSummary {
@@ -69,7 +95,7 @@ export async function observeWithStoredCredential(input: {
   context: { tenantId: string; connectionId: string };
   provider: CredentialKeyProvider;
   driver: ObservationDriver;
-  scope: { allowedOrigins: string[]; paths: string[] };
+  scope: ObservationScope;
   login: LoginPlan;
   actions: ObservationAction[];
   now?: Date;
@@ -90,5 +116,6 @@ export async function observeWithStoredCredential(input: {
     return { ok: false, reason: 'DECRYPT_FAILED' };
   }
   const report = await runReadonlyObservation({ driver: input.driver, credential: dec.secret, scope: input.scope, login: input.login, actions: input.actions }, input.executorEnabled);
+  logBlockedRequests(report, input.context.connectionId);
   return { ok: true, summary: summarizeObservation(report) };
 }

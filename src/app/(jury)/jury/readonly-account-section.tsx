@@ -5,6 +5,7 @@
  */
 import * as React from 'react';
 import { READONLY_ACCOUNT_PHASE1_ENABLED, READONLY_ACCOUNT_UI_ENABLED, shouldShowReadonlyAccountSection } from '@/lib/jury-product/services/readonly-account/flags';
+import { READONLY_ACCOUNT_CONSENT_VERSION } from '@/lib/jury-product/services/readonly-account/consent-text';
 import { ReadOnlyAccountCredentialForm } from './ReadOnlyAccountCredentialForm';
 import { acceptReadonlyAccountConsentAction, runReadonlyAccountObservationAction, storeReadonlyAccountCredentialAction } from './readonly-account-actions';
 
@@ -13,7 +14,7 @@ export type ReadonlyAccountSectionState = { consentAccepted: boolean; stored: { 
 async function loadState(tenantId: string, connectionId: string) {
   const { prisma } = await import('@/lib/prisma');
   const [consent, credential] = await Promise.all([
-    prisma.juryConnectionConsent.findFirst({ where: { tenantId, connectionId }, select: { id: true } }),
+    prisma.juryConnectionConsent.findFirst({ where: { tenantId, connectionId, version: READONLY_ACCOUNT_CONSENT_VERSION }, select: { id: true } }),
     prisma.juryAccountCredential.findFirst({ where: { tenantId, connectionId, destroyedAt: null }, orderBy: { createdAt: 'desc' }, select: { usernameHint: true, expiresAt: true } }),
   ]);
   const state: ReadonlyAccountSectionState = {

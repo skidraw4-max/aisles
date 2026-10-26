@@ -8,6 +8,7 @@ import type { JuryActor } from '../../access';
 import {
   authorizeReadonlyAccountConnection,
   normalizeObservationScope,
+  type ObservationScopeInput,
   observationScopeHash,
   type ReadonlyAccountFailure,
 } from './consent';
@@ -67,7 +68,7 @@ export function actionsForPaths(paths: readonly string[]): ObservationAction[] {
 export async function runStoredCredentialObservation(input: {
   actor: JuryActor;
   connectionId: string;
-  scope: { allowedOrigins: readonly string[]; paths: readonly string[] };
+  scope: ObservationScopeInput;
   login: Record<keyof LoginPlan, unknown>;
   store: ObservationRunStore;
   keys: KeyProviderResolution;

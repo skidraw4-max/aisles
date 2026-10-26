@@ -29,6 +29,7 @@ function fakeContext(script: { onGoto?: (url: string, fire: (r: PwRequest) => Pr
       if (to) current = to;
     },
     async waitForLoadState() {},
+    async waitForURL() {},
     url: () => current,
     evaluate: (async () => {
       log.evaluates += 1;
