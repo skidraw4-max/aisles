@@ -2,15 +2,15 @@
 
 /**
  * I-040: server actions for READ_ONLY_ACCOUNT consent and credential storage.
- * Disabled until the migration and KMS key provider receive separate approval; not wired into any page yet.
+ * Disabled until the migration and KMS key provider receive separate approval; rendered on the service detail page only behind READONLY_ACCOUNT_UI_ENABLED (off).
  */
 import { getJuryActor } from '@/lib/jury-product/session';
 import { createPrismaReadonlyAccountStore, persistReadonlyAccountConsent } from '@/lib/jury-product/services/readonly-account/store';
+import { READONLY_ACCOUNT_PHASE1_ENABLED } from '@/lib/jury-product/services/readonly-account/flags';
 import type { ReadonlyAccountFailure } from '@/lib/jury-product/services/readonly-account/consent';
 
 export type ReadonlyAccountActionResult = { ok: true } | { ok: false; reason: ReadonlyAccountFailure };
 
-const READONLY_ACCOUNT_PHASE1_ENABLED = false as boolean;
 
 function lines(value: FormDataEntryValue | null): string[] {
   return typeof value === 'string' ? value.split(/\r?\n/).map((v) => v.trim()).filter(Boolean) : [];

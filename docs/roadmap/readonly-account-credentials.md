@@ -22,3 +22,18 @@
 - 법무: 동의 문구·고객 서비스 약관(자동 접근) 검토.
 
 설계 원문: Grok Bot Page「READ_ONLY_ACCOUNT 실연결 설계안」.
+
+## 진행 현황 (2026-10-26)
+| ID | 상태 | 구현 |
+|---|---|---|
+| I-039 | 완료 (마이그레이션 미적용) | `credential-crypto.ts`, 마이그레이션 `20261026110000_*` |
+| I-040 | 완료 (플래그 off) | `consent.ts`, `store.ts`, 서버 액션, 입력 폼. 서비스 상세 화면 연결은 `READONLY_ACCOUNT_UI_ENABLED`(off) 뒤 |
+| I-041 | 완료 (플래그 off) | `executor.ts` 가드 + `browser-driver.ts`(Playwright 호환 구조 타입, `context.route('**/*')`로 하위 요청 포함 검사, WebSocket·EventSource·ping·sendBeacon·서비스워커 차단, 로그인 후 폼 제출 차단, 클릭 1회 제한) |
+| I-042 | 완료 (미연결) | `key-provider.ts`(env 이름 `JURY_ACCOUNT_CREDENTIAL_KEK`/`_KEK_ID`만 참조, 없으면 NOT_CONFIGURED), `observation-evidence.ts`(복호화→관찰→건수·노출 여부 요약→EvidencePack docsHints 첨부, 본문·쿼리·계정 미포함) |
+| I-043 | 완료 (스위치 off, cron 미등록) | `retention.ts`, `retention-route.ts`, `/api/cron/readonly-account-purge`(CRON_SECRET), 만료·수동 파기 감사 이벤트 |
+| I-044 | 대기 | 운영 승인 후 내부 tenant부터 플래그 on |
+
+### 브라우저 런타임 선택
+저장소에 브라우저 자동화 의존성이 없다. 플래그 off 상태에서 번들 크기를 늘리지 않도록 의존성은 추가하지 않았고,
+활성화 시 `playwright-core` + `@sparticuz/chromium`(Vercel Functions 용량 한도 내, 브라우저 다운로드 없음)을 추가한다.
+런처는 `serviceWorkers: 'block'`, `acceptDownloads: false`로 컨텍스트를 생성해야 한다.
