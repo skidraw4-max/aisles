@@ -1,13 +1,13 @@
 'use client';
 import * as React from 'react';
-import type { ScreenAuditActionResult } from './screen-audit-actions';
+import type { runScreenAuditAction } from './screen-audit-actions';
 import { STATUS_LABEL } from '@/lib/jury-product/services/screen-audit/view-model';
 
 export function ScreenAuditRunButton(props: {
   connectionId: string;
   parentAuditId?: string | null;
   label: string;
-  action: (prev: ScreenAuditActionResult, formData: FormData) => Promise<ScreenAuditActionResult>;
+  action: typeof runScreenAuditAction;
   className?: string;
 }) {
   const [result, formAction, pending] = React.useActionState(props.action, null);
