@@ -3,6 +3,8 @@
  * It is not stored and it does not invent a lifecycle column.
  */
 import { decideJuryMutation, type JuryActor } from './access';
+import { isStaleRunningReview } from './review-stale';
+import { AUDIT_ACTION_LABELS } from './ui-labels';
 import type { JuryConsoleView } from './console-view';
 import { authorizeJuryServiceFeature } from './service-feature-authorization';
 import { highestServicePermission, type ServiceGrantRow } from './service-member-management';
@@ -80,6 +82,8 @@ export type ServiceOperationModel = {
     expectedUserEffect: string | null;
     risk: string | null;
     reviewedAt: string | null;
+    /** I-048: a non-stale RUNNING request exists for the latest evidence (shown as "진행 중", not "심사 없음"). */
+    running?: boolean;
   };
   improvement: { empty: boolean; openCount: number; latestStatus: string | null; latestTitle: string | null; latestId: string | null };
   agent: {
@@ -153,7 +157,8 @@ function activityLabel(action: string): string | null {
     CHANGE_GATE_COMPLETED: 'Change Gate approved',
     REVIEW_REREVIEW_COMPLETED: 'Re-review completed',
   };
-  return known[action] ?? action.replaceAll('_', ' ');
+  // I-048: READONLY_* and other audited actions use their Korean label instead of raw enum text.
+  return known[action] ?? AUDIT_ACTION_LABELS[action] ?? action.replaceAll('_', ' ');
 }
 
 function age(timestamp: string, now: string): string {
@@ -317,7 +322,13 @@ export function projectServiceOperation(
   const discovered = slice.discoveries.length > 0;
   const scopeApproved = slice.scopes.some((row) => row.status === 'APPROVED');
   const evidenceView = evidenceSummary(evidence, slice.metrics);
-  const reviewView = reviewSummary(review);
+  const reviewView = {
+    ...reviewSummary(review),
+    running:
+      !review &&
+      Boolean(evidence) &&
+      slice.requests.some((row) => row.evidenceId === evidence!.id && row.status === 'RUNNING' && !isStaleRunningReview(row.status, row.updatedAt ?? null, Date.parse(now))),
+  };
   const agentBlocked = execution?.status === 'BLOCKED';
   const health: ServiceHealth = agentBlocked
     ? 'BLOCKED'

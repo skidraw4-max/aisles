@@ -18,6 +18,7 @@ import {
 } from './provider-types';
 import { projectConnectionConfiguration, type ConnectionConfiguration } from './connection-configuration';
 import { getServiceProviderDefinition, resolveServiceProvider } from './provider-registry';
+import { READONLY_PROVIDER_LABEL } from '../connected-service-copy';
 
 export function deriveCredentialStatus(input: {
   credentialRef?: string | null;
@@ -210,7 +211,11 @@ export function projectProviderView(input: {
     ok: true,
     view: {
       provider: definition.definition.provider,
-      displayName: definition.definition.displayName,
+      // I-048: a READ_ONLY_ACCOUNT connection is not a mock to the user, even though it uses the mock adapter slot.
+      displayName:
+        input.connection.accessMethod === 'READ_ONLY_ACCOUNT' && definition.definition.provider === 'MOCK'
+          ? READONLY_PROVIDER_LABEL
+          : definition.definition.displayName,
       connectionMethod: mapConnectionMethod(input.connection.accessMethod),
       health,
       credentialStatus,

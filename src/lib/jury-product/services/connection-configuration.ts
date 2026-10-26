@@ -18,6 +18,7 @@ import {
   type ServiceAccessScope,
   type ServiceProviderId,
 } from './provider-types';
+import { READONLY_CONNECTION_NOTICE } from '../connected-service-copy';
 
 export const CONNECTION_LIFECYCLES = [
   'UNCONFIGURED',
@@ -192,7 +193,9 @@ export function projectConnectionConfiguration(input: {
       capabilities,
       notice: githubInstall
         ? 'GitHub App 설치로 저장소 메타데이터와 내용을 읽기 전용으로 확인합니다. 저장소는 수정하지 않습니다.'
-        : '연결 준비 단계입니다. 외부 인증은 실행하지 않습니다.',
+        : connectionMethod === 'READ_ONLY_ACCOUNT'
+          ? READONLY_CONNECTION_NOTICE
+          : '연결 준비 단계입니다. 외부 인증은 실행하지 않습니다.',
     },
   };
 }

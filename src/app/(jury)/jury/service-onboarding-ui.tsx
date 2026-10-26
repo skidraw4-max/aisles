@@ -27,6 +27,14 @@ import {
   startServiceOnboarding,
 } from './actions';
 import { OnboardingSubmit } from './shell-client';
+import { ReviewSubmitButton } from './review-submit-button';
+import {
+  CONNECTED_REVIEW_PENDING_NOTE,
+  CONNECTED_REVIEW_STALE_TEXT,
+  UNMEASURED_METRICS_NOTE,
+  connectedMetricText,
+  connectedReviewStatusText,
+} from '@/lib/jury-product/connected-service-copy';
 import { canShowWrite } from './ui';
 import styles from './jury.module.css';
 
@@ -214,7 +222,7 @@ export function ServiceDetailBody({
             <CollectPeriodFields />
             <input type="hidden" name="timezone" value="Asia/Seoul" />
             <p className={styles.muted}>purpose aisle-self-observation · Asia/Seoul</p>
-            <OnboardingSubmit label="Collect Evidence" pendingLabel="Collecting evidence" />
+            <OnboardingSubmit label="자료 수집" pendingLabel="자료 수집 중" />
           </form>
         ) : (
           <p className={styles.muted}>Evidence 수집: 현재 역할에는 이 변경 권한이 없습니다.</p>
@@ -227,26 +235,29 @@ export function ServiceDetailBody({
           <p>purpose {row.purpose}</p>
           <p>period {row.periodStart} – {row.periodEnd} · {row.timezone}</p>
           <p>adapter {row.adapterKey}</p>
-          <p>contentHash {row.contentHash ?? 'Not available'}</p>
+          <p>contentHash {row.contentHash ?? '기록 없음'}</p>
           <p>collection status <span className={styles.badge}>{row.collectionStatus}</span></p>
           <p>readOnly {row.readOnly ? 'true' : 'false'}</p>
           <p>piiExcluded {row.piiExcluded ? 'true' : 'false'}</p>
           {row.metrics.map((metric) => (
-            <p key={metric.id}>{metric.metric} {formatMeasuredValue(metric.value, metric.availability)}</p>
+            <p key={metric.id}>{metric.metric} {connectedMetricText(metric.value, metric.availability, formatMeasuredValue)}</p>
           ))}
-          <p>심사 상태 <span className={styles.badge}>{row.reviewStatus ? displayText(row.reviewStatus) : '시작 전'}</span></p>
+          {row.metrics.some((metric) => metric.availability !== 'AVAILABLE') ? <p className={styles.muted}>{UNMEASURED_METRICS_NOTE}</p> : null}
+          <p>심사 상태 <span className={styles.badge}>{connectedReviewStatusText(row.reviewStatus, row.reviewStale, displayText)}</span></p>
+          {row.reviewStale ? <p className={styles.muted} role="status">{CONNECTED_REVIEW_STALE_TEXT}</p> : null}
           {row.decision ? <p>판정 {displayText(row.decision)}</p> : null}
           {row.completedAt ? <p>완료 시각 {formatKstFull(row.completedAt)}</p> : null}
           {row.summary ? <p>요약 {row.summary}</p> : null}
           {row.decision ? <p>주요 문제 {summarizeProblems(row.decision, row.topProblems).items.join(', ') || summarizeProblems(row.decision, row.topProblems).emptyText}</p> : null}
           {row.expectedUserEffect ? <p>예상 사용자 영향 {row.expectedUserEffect}</p> : null}
           {row.risk ? <p>위험 {row.risk}</p> : null}
-          {row.collectionStatus === 'AVAILABLE' && row.reviewStatus !== 'RUNNING' && canShowWrite(actor, 'review.start') ? (
+          {row.collectionStatus === 'AVAILABLE' && (row.reviewStatus !== 'RUNNING' || row.reviewStale) && canShowWrite(actor, 'review.start') ? (
             <form action={runConnectedServiceJuryReview}>
               <input type="hidden" name="connectionId" value={connection.id} />
               <input type="hidden" name="evidenceId" value={row.id} />
               <input type="hidden" name="tenantId" value="client-supplied-tenant" />
-              <OnboardingSubmit label="Run Review" pendingLabel="Review running" />
+              <ReviewSubmitButton label="심사 실행" pendingLabel="심사 진행 중" pendingNote={CONNECTED_REVIEW_PENDING_NOTE} />
+              <p className={styles.muted}>{CONNECTED_REVIEW_PENDING_NOTE}</p>
             </form>
           ) : null}
           {row.resultId ? <p><Link className={styles.inline} href={juryHref(`/reviews/${row.resultId}`)}>심사 결과</Link></p> : null}

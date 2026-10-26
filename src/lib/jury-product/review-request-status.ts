@@ -6,8 +6,9 @@
 import type { JuryConsoleView, JuryReviewAttemptRow } from './console-view';
 import { REVIEW_STALE_RUNNING_MS, isStaleRunningReview } from './review-stale';
 
-/** I-048: shown when a connected-service (AISLE_SELF) review was cut off by the 300s function limit. */
-export const CONNECTED_REVIEW_STALE_TEXT = '시간 안에 끝나지 않아 중단됐어요. 다시 실행할 수 있어요';
+import { CONNECTED_REVIEW_STALE_TEXT } from './connected-service-copy';
+
+export { CONNECTED_REVIEW_STALE_TEXT };
 
 export const STALE_RUNNING_DEFAULT_MS = 15 * 60 * 1000;
 
