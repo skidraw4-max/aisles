@@ -5,8 +5,8 @@ export type ReadonlyAccountFormResult =
 
 export type ReadonlyAccountFormAction = (prev: ReadonlyAccountFormResult | null, formData: FormData) => ReadonlyAccountFormResult | null | Promise<ReadonlyAccountFormResult | null>;
 
-/** I-047: client wait limit for the observation action (the observation itself is bounded well under 60s; the page maxDuration is 300s since I-048). */
-export const OBSERVATION_CLIENT_TIMEOUT_MS = 70_000;
+/** I-049: client wait limit. Login + auto-discovery is budgeted at ~200s (+ per-page timeout) under the 300s page maxDuration. */
+export const OBSERVATION_CLIENT_TIMEOUT_MS = 280_000;
 
 /**
  * I-047: wraps a form action so the UI never hangs: resolves CLIENT_TIMEOUT after `ms`,
@@ -43,7 +43,7 @@ const REASON_TEXT: Record<string, string> = {
   ACCESS_METHOD_UNSUPPORTED: '읽기 전용 계정 방식의 연결이 아닙니다.',
   SCOPE_INVALID: '허용 도메인(https)과 관찰 경로(/로 시작)를 확인해 주세요.',
   CONSENT_REQUIRED: '먼저 동의를 저장해 주세요.',
-  CONSENT_STALE: '허용 도메인·관찰 경로가 동의한 내용과 다릅니다.',
+  CONSENT_STALE: '허용 도메인·관찰 경로가 동의한 내용과 다르거나, 동의 내용이 바뀌어(메뉴 자동 관찰 추가) 다시 동의가 필요합니다. 동의를 다시 저장해 주세요.',
   CREDENTIAL_INVALID: '아이디와 비밀번호를 확인해 주세요.',
   RETENTION_INVALID: '보관 기간이 올바르지 않습니다.',
   NOT_IMPLEMENTED: '준비 중인 기능입니다.',

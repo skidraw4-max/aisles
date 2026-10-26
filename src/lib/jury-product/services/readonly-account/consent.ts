@@ -63,7 +63,8 @@ export function normalizeObservationScope(
     if (!path.startsWith('/') || path.startsWith('//') || /\s/.test(path)) return { ok: false, reason: 'SCOPE_INVALID' };
     paths.add(path);
   }
-  if (origins.size === 0 || paths.size === 0 || origins.size > 10 || paths.size > 20) return { ok: false, reason: 'SCOPE_INVALID' };
+  // I-049: paths are optional (consent v3 covers auto-discovered menus within the allowed origins).
+  if (origins.size === 0 || origins.size > 10 || paths.size > 20) return { ok: false, reason: 'SCOPE_INVALID' };
   const scope: ObservationScope = { allowedOrigins: [...origins].sort(), paths: [...paths].sort() };
   if (authOrigins.size > 0) scope.authOrigins = [...authOrigins].sort();
   return { ok: true, scope };

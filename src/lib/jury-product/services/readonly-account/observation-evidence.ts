@@ -5,7 +5,10 @@
 import type { EvidencePack } from '@/lib/ai-review-board/types';
 import type { ObservationScope } from './consent';
 import { decryptAccountCredential, type CredentialKeyProvider, type EncryptedAccountCredential } from './credential-crypto';
+import type { DiscoveryOptions, PageStats } from './discovery';
 import { runReadonlyObservation, type ExecutorReport, type LoginPlan, type ObservationAction, type ObservationDriver } from './executor';
+
+export type ObservedPage = { label: string; path: string; visible: boolean; textLength: number; discovered?: boolean; stats?: PageStats };
 
 export type ObservationSummary = {
   source: 'READ_ONLY_ACCOUNT';
@@ -14,7 +17,9 @@ export type ObservationSummary = {
   challenge: ExecutorReport['challenge'] | null;
   loginAttempts: number;
   pagesObserved: number;
-  pages: { label: string; path: string; visible: boolean; textLength: number }[];
+  pages: ObservedPage[];
+  /** I-049: auto-discovery outcome (not persisted as a column; pages carry discovered=true). */
+  discovery: ExecutorReport['discovery'] | null;
   blockedRequestCount: number;
   blockedByReason: Record<'ORIGIN' | 'METHOD' | 'FORM_SUBMIT' | 'LOGIN_ALREADY_USED', number>;
   /** I-047: origin + path of the last page (no query string). */
@@ -67,6 +72,7 @@ export function logBlockedRequests(report: ExecutorReport, connectionId: string,
       // I-047: per-page counts only; page text is never logged.
       pagesObserved: report.snapshots.length,
       pages: report.snapshots.map((s) => ({ label: s.label.slice(0, 64), visible: s.text.trim().length > 0, textLength: s.text.length })),
+      discovery: report.discovery ?? null,
       blocked: describeBlockedRequests(report),
     }),
   );
@@ -75,7 +81,14 @@ export function logBlockedRequests(report: ExecutorReport, connectionId: string,
 export function summarizeObservation(report: ExecutorReport): ObservationSummary {
   const blockedByReason = { ORIGIN: 0, METHOD: 0, FORM_SUBMIT: 0, LOGIN_ALREADY_USED: 0 };
   for (const b of report.blockedRequests) blockedByReason[b.reason] += 1;
-  const pages = report.snapshots.map((s) => ({ label: s.label.slice(0, 64), path: pathOf(s.url), visible: s.text.trim().length > 0, textLength: s.text.length }));
+  const pages: ObservedPage[] = report.snapshots.map((s) => ({
+    label: s.label.slice(0, 64),
+    path: pathOf(s.url),
+    visible: s.text.trim().length > 0,
+    textLength: s.text.length,
+    ...(s.discovered ? { discovered: true } : {}),
+    ...(s.stats ? { stats: s.stats } : {}),
+  }));
   return {
     source: 'READ_ONLY_ACCOUNT',
     ok: report.ok,
@@ -84,6 +97,7 @@ export function summarizeObservation(report: ExecutorReport): ObservationSummary
     loginAttempts: report.loginAttempts,
     pagesObserved: pages.length,
     pages,
+    discovery: report.discovery ?? null,
     blockedRequestCount: report.blockedRequests.length,
     blockedByReason,
     ...finalOf(report.finalUrl),
@@ -100,7 +114,7 @@ export function attachObservationToPack(
   const visible = summary.pages.filter((p) => p.visible).length;
   const hints = [
     `READ_ONLY_ACCOUNT observation: ok=${summary.ok}${summary.stop ? ` stop=${summary.stop}` : ''}${summary.challenge ? ` challenge=${summary.challenge}` : ''}`,
-    `READ_ONLY_ACCOUNT pages: observed=${summary.pagesObserved} visible=${visible} (${summary.pages.map((p) => `${p.label}:${p.visible ? 'visible' : 'empty'}`).join(', ') || 'none'})`,
+    `READ_ONLY_ACCOUNT pages: observed=${summary.pagesObserved} visible=${visible} (${summary.pages.map((p) => `${p.label}:${p.visible ? 'visible' : 'empty'}${p.stats ? ` [${p.path} lists=${p.stats.listItems} cards=${p.stats.cards} rows=${p.stats.tableRows} headings=${p.stats.headings}]` : ''}`).join(', ') || 'none'})`,
     `READ_ONLY_ACCOUNT blocked requests: total=${summary.blockedRequestCount} origin=${summary.blockedByReason.ORIGIN} method=${summary.blockedByReason.METHOD} form=${summary.blockedByReason.FORM_SUBMIT} loginReuse=${summary.blockedByReason.LOGIN_ALREADY_USED}`,
   ];
   return {
@@ -120,6 +134,7 @@ export async function observeWithStoredCredential(input: {
   scope: ObservationScope;
   login: LoginPlan;
   actions: ObservationAction[];
+  discover?: Partial<DiscoveryOptions> | false;
   now?: Date;
   /** Defaults to READONLY_ACCOUNT_EXECUTOR_ENABLED. */
   executorEnabled?: boolean;
@@ -137,7 +152,7 @@ export async function observeWithStoredCredential(input: {
     await input.driver.close().catch(() => undefined);
     return { ok: false, reason: 'DECRYPT_FAILED' };
   }
-  const report = await runReadonlyObservation({ driver: input.driver, credential: dec.secret, scope: input.scope, login: input.login, actions: input.actions }, input.executorEnabled);
+  const report = await runReadonlyObservation({ driver: input.driver, credential: dec.secret, scope: input.scope, login: input.login, actions: input.actions, discover: input.discover }, input.executorEnabled);
   logBlockedRequests(report, input.context.connectionId);
   return { ok: true, summary: summarizeObservation(report) };
 }
