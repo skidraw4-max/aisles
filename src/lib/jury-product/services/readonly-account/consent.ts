@@ -3,6 +3,7 @@
  * Account permission level is not restricted (decision 2026-10-26); a read-only account is only recommended.
  * Jury-side read-only enforcement (GET-only, origin allowlist, no form submit) is unchanged and lives in the executor (I-041).
  */
+import { isForbiddenHostname } from './net-guard';
 import { createHash, randomUUID } from 'node:crypto';
 import { decideJuryMutation, type JuryActor } from '../../access';
 import {
@@ -49,6 +50,8 @@ export function normalizeObservationScope(
         return null;
       }
       if (url.protocol !== 'https:' || url.username || url.password) return null;
+      // I-057: no IP literals, localhost, internal or metadata hostnames.
+      if (isForbiddenHostname(url.hostname)) return null;
       out.add(url.origin);
     }
     return out;

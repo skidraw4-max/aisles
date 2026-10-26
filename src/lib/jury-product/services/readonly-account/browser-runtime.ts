@@ -6,6 +6,7 @@
  */
 import { createBrowserObservationDriver, type PwContext, type PwPage, type PwRoute } from './browser-driver';
 import type { ObservationDriver } from './executor';
+import { createHostCheck } from './net-guard';
 
 export async function launchServerlessChromiumContext(): Promise<PwContext> {
   const [{ chromium }, sparticuz] = await Promise.all([import('playwright-core'), import('@sparticuz/chromium')]);
@@ -33,5 +34,6 @@ export async function launchServerlessChromiumContext(): Promise<PwContext> {
 }
 
 export function createServerlessObservationDriver(): ObservationDriver {
-  return createBrowserObservationDriver(launchServerlessChromiumContext);
+  // I-057: every request host must resolve to public addresses only (private IP / metadata blocked).
+  return createBrowserObservationDriver(launchServerlessChromiumContext, { hostCheck: createHostCheck().check });
 }

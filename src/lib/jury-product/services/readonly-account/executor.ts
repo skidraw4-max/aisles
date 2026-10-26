@@ -69,6 +69,8 @@ export type ExecutorReport = {
   stop?: ExecutorStop;
   /** I-056: step that was running when a stop happened. */
   failedStep?: ExecutorStep;
+  /** I-057: wall-clock run time in ms (measurement for the Vercel time budget). */
+  elapsedMs?: number;
   /** I-056: set with LOGIN_FIELD_NOT_FOUND. */
   missingField?: LoginField;
   challenge?: 'TWO_FACTOR' | 'CAPTCHA';
@@ -231,7 +233,7 @@ export async function executeReadonlyObservation(input: {
   let step: ExecutorStep = 'LOGIN_PAGE';
   const stop = async (reason: ExecutorStop, extra: Partial<ExecutorReport> = {}) => {
     await driver.close().catch(() => undefined);
-    return { ...report, failedStep: step, ...extra, ok: false, stop: reason };
+    return { ...report, failedStep: step, ...extra, ok: false, stop: reason, elapsedMs: clock() - startedAt };
   };
   try {
     await driver.setRequestGuard(policy.guard);
@@ -367,7 +369,7 @@ export async function executeReadonlyObservation(input: {
       d.skipped += queue.filter((q) => !visited.has(q.key)).length;
     }
     await driver.close();
-    return { ...report, ok: true };
+    return { ...report, ok: true, elapsedMs: clock() - startedAt };
   } catch {
     return stop('DRIVER_ERROR');
   }
