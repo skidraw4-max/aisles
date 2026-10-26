@@ -61,9 +61,19 @@ export type ExecutorReport = {
   loginRequestUsed?: boolean;
   /** I-046: URL after the login step, origin + path only (no query/hash). */
   finalUrl?: string;
-  snapshots: { label: string; url: string; text: string; stats?: PageStats; discovered?: boolean }[];
+  /** url = final URL after any redirect; requestedUrl (I-050) is set when the navigation was redirected elsewhere. */
+  snapshots: { label: string; url: string; text: string; stats?: PageStats; discovered?: boolean; requestedUrl?: string }[];
   /** I-049: auto-discovery outcome. stoppedBy explains a partial result. */
-  discovery?: { enabled: boolean; found: number; visited: number; skipped: number; errors: number; stoppedBy: DiscoveryStop };
+  discovery?: {
+    enabled: boolean;
+    found: number;
+    visited: number;
+    skipped: number;
+    errors: number;
+    stoppedBy: DiscoveryStop;
+    /** I-050: links whose final URL redirected to an already-observed page (not counted as new pages). */
+    redirects?: { from: string; to: string }[];
+  };
   blockedRequests: { method: string; url: string; reason: 'ORIGIN' | 'METHOD' | 'FORM_SUBMIT' | 'LOGIN_ALREADY_USED' }[];
 };
 
@@ -259,7 +269,7 @@ export async function executeReadonlyObservation(input: {
       }
     }
     if (opts) {
-      const d: NonNullable<ExecutorReport['discovery']> = { enabled: true, found: 0, visited: 0, skipped: 0, errors: 0, stoppedBy: driver.collectLinks ? 'DONE' : 'UNSUPPORTED' };
+      const d: NonNullable<ExecutorReport['discovery']> = { enabled: true, found: 0, visited: 0, skipped: 0, errors: 0, stoppedBy: driver.collectLinks ? 'DONE' : 'UNSUPPORTED', redirects: [] };
       report.discovery = d;
       while (queue.length > 0) {
         if (report.snapshots.length >= opts.maxPages) {
@@ -289,8 +299,21 @@ export async function executeReadonlyObservation(input: {
             d.stoppedBy = 'CHALLENGE';
             break;
           }
-          visited.add(normalizeLinkKey(now));
-          report.snapshots.push({ label: next.label, url: now.toString(), text: await driver.snapshotText(), stats: await stats(), discovered: true });
+          const finalKey = normalizeLinkKey(now);
+          if (finalKey !== next.key && visited.has(finalKey)) {
+            // I-050: redirected to a page already observed (e.g. EXPLORE → /onboarding) → duplicate, not a new page.
+            (d.redirects ??= []).push({ from: next.path, to: originPath(now.toString()).slice(now.origin.length) || '/' });
+            continue;
+          }
+          visited.add(finalKey);
+          report.snapshots.push({
+            label: next.label,
+            url: now.toString(),
+            text: await driver.snapshotText(),
+            stats: await stats(),
+            discovered: true,
+            ...(finalKey !== next.key ? { requestedUrl: next.key } : {}),
+          });
           d.visited += 1;
           await harvest(next.depth);
         } catch {

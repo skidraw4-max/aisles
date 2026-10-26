@@ -97,3 +97,30 @@ test('only one click is allowed and the executor runs end-to-end on the fake bro
   assert.equal(log.outcomes.filter((o) => o.method === 'POST' && o.result === 'continue').length, 1);
   await assert.rejects(() => driver.click('#again'));
 });
+
+test('I-050 waitForSettle polls until the text length is stable, and never exceeds its cap', async () => {
+  const { waitForSettle } = await import('./browser-driver');
+  let t = 0;
+  const lengths = [7, 7, 120, 199, 199, 199];
+  let i = 0;
+  const idle: number[] = [];
+  const page = {
+    async waitForLoadState(_s: string, o?: { timeout?: number }) { idle.push(o?.timeout ?? -1); },
+    async waitForTimeout(ms: number) { t += ms; },
+    evaluate: async () => lengths[Math.min(i++, lengths.length - 1)],
+  } as unknown as PwPage;
+  const polls = await waitForSettle(page, { now: () => t, maxMs: 5_000, pollMs: 400, stableChecks: 2 });
+  assert.equal(polls, 6); // 7,7 (one stable) → 120 reset → 199,199,199 (two stable)
+  assert.ok(idle[0] > 0 && idle[0] <= 5_000);
+  let t2 = 0;
+  let n = 0;
+  const growing = {
+    async waitForLoadState() {},
+    async waitForTimeout(ms: number) { t2 += ms; },
+    evaluate: async () => ++n * 10,
+  } as unknown as PwPage;
+  await waitForSettle(growing, { now: () => t2, maxMs: 2_000, pollMs: 400 });
+  assert.ok(t2 <= 2_000, `capped at ${t2}`);
+  const unmeasurable = { async waitForLoadState() {}, async waitForTimeout() { throw new Error('no wait'); }, evaluate: async () => 'NONE' } as unknown as PwPage;
+  assert.equal(await waitForSettle(unmeasurable, { maxMs: 1_000 }), 1);
+});

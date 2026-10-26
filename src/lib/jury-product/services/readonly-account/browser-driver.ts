@@ -52,6 +52,10 @@ const TIMEOUT_MS = 15_000;
 const LOGIN_IDLE_MS = 10_000;
 const PAGE_IDLE_MS = 3_000;
 const REFILL_DELAY_MS = 500;
+/** I-050: per-page settle cap (network idle + text stability), keeps 20 pages well inside the ~200s budget. */
+export const SETTLE_MAX_MS = 5_000;
+export const SETTLE_POLL_MS = 400;
+export const SETTLE_STABLE_CHECKS = 2;
 
 /** Runs in the page. Kept as a string so it is not transpiled with Node globals. */
 export const INIT_SCRIPT = `(() => {
@@ -142,6 +146,41 @@ export async function fillVerified(p: PwPage, selector: string, value: string): 
   return false;
 }
 
+/** I-050: body text length (no text leaves the page). */
+export const TEXT_LENGTH_PROBE = () =>
+  ((globalThis as unknown as { document: { body?: { innerText?: string } } }).document.body?.innerText ?? '').length;
+
+/**
+ * I-050: wait for a client-rendered page to settle before reading it. Bounded network idle, then poll the body text
+ * length until it is non-empty and unchanged for SETTLE_STABLE_CHECKS consecutive polls. Never exceeds maxMs.
+ * Returns the number of polls (for tests/diagnostics).
+ */
+export async function waitForSettle(p: PwPage, opts: { maxMs?: number; pollMs?: number; stableChecks?: number; now?: () => number } = {}): Promise<number> {
+  const now = opts.now ?? Date.now;
+  const maxMs = opts.maxMs ?? SETTLE_MAX_MS;
+  const pollMs = opts.pollMs ?? SETTLE_POLL_MS;
+  const need = opts.stableChecks ?? SETTLE_STABLE_CHECKS;
+  const deadline = now() + maxMs;
+  const left = () => Math.max(0, deadline - now());
+  await p.waitForLoadState('networkidle', { timeout: Math.min(PAGE_IDLE_MS, left()) }).catch(() => undefined);
+  let last = -1;
+  let stable = 0;
+  let polls = 0;
+  while (left() > 0) {
+    const raw = await p.evaluate(TEXT_LENGTH_PROBE).catch(() => -1);
+    polls += 1;
+    if (typeof raw !== 'number') break; // driver cannot measure → do not block
+    if (raw > 0 && raw === last) {
+      stable += 1;
+      if (stable >= need) break;
+    } else stable = 0;
+    last = raw;
+    if (left() <= 0) break;
+    await p.waitForTimeout(Math.min(pollMs, left()));
+  }
+  return polls;
+}
+
 export function createBrowserObservationDriver(launch: PwContextLauncher): ObservationDriver {
   let context: PwContext | null = null;
   let page: PwPage | null = null;
@@ -170,8 +209,8 @@ export function createBrowserObservationDriver(launch: PwContextLauncher): Obser
       await p.goto(url, { waitUntil: 'domcontentloaded', timeout: TIMEOUT_MS }).catch(() => undefined);
       // I-046: let client JS hydrate the login form before typing (bounded; long-polling pages never go idle).
       if (opts?.login) await p.waitForLoadState('networkidle', { timeout: LOGIN_IDLE_MS }).catch(() => undefined);
-      // I-049: short bounded settle for post-login pages so client-rendered menus/lists exist before reading them.
-      else await p.waitForLoadState('networkidle', { timeout: PAGE_IDLE_MS }).catch(() => undefined);
+      // I-049/I-050: bounded settle for post-login pages so client-rendered menus/lists exist before reading them.
+      else await waitForSettle(p);
     },
     async fill(selector, value) {
       return fillVerified(await ensure(), selector, value);
@@ -182,6 +221,8 @@ export function createBrowserObservationDriver(launch: PwContextLauncher): Obser
       loginClicked = true;
       await p.click(selector, { timeout: TIMEOUT_MS });
       await waitAfterLoginClick(p, waitFor);
+      // I-050: the first post-login screen is client-rendered too; settle before it is read.
+      await waitForSettle(p);
       await p.evaluate(() => (globalThis as unknown as { sessionStorage: { setItem(k: string, v: string): void } }).sessionStorage.setItem('__jury_block_submit', '1')).catch(() => undefined);
     },
     async currentUrl() {

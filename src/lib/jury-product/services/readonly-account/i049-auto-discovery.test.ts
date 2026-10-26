@@ -151,3 +151,40 @@ test('I-049 UI: optional paths help, MockDiscoveryAdapter hidden for READ_ONLY_A
   const button = readFileSync(new URL('review-submit-button.tsx', root), 'utf8');
   assert.ok(button.includes('REVIEW_SUBMITTING_EVENT'));
 });
+
+test('I-050 a link that redirects to an already-observed page is recorded as a redirect, not a new page', async () => {
+  const site: Site = {
+    '/home': { links: [nav('/explore', 'EXPLORE'), nav('/projects', '프로젝트')], text: 'home page' },
+    '/projects': { text: 'projects page' },
+  };
+  const { driver } = driverFor(site);
+  const goto = driver.goto.bind(driver);
+  let current = '';
+  driver.goto = async (target) => {
+    await goto(target);
+    current = target === login.loginUrl ? '' : target.endsWith('/explore') ? `${O}/home` : target;
+  };
+  driver.currentUrl = async () => current || `${O}/home`;
+  const r = await executeReadonlyObservation({ driver, credential, scope, login, actions: [], discover: {} });
+  assert.equal(r.ok, true);
+  assert.deepEqual(r.snapshots.map((s) => new URL(s.url).pathname), ['/home', '/projects']);
+  assert.deepEqual(r.discovery?.redirects, [{ from: '/explore', to: '/home' }]);
+  assert.equal(r.discovery?.visited, 1);
+});
+
+test('I-050 a redirect to a new page keeps the final URL and the requested URL', async () => {
+  const site: Site = { '/home': { links: [nav('/go', 'GO')] }, '/landing': { text: 'landing' } };
+  const { driver } = driverFor(site);
+  const goto = driver.goto.bind(driver);
+  let current = '';
+  driver.goto = async (target) => {
+    await goto(target);
+    current = target === login.loginUrl ? '' : target.endsWith('/go') ? `${O}/landing` : target;
+  };
+  driver.currentUrl = async () => current || `${O}/home`;
+  const r = await executeReadonlyObservation({ driver, credential, scope, login, actions: [], discover: {} });
+  const page = r.snapshots.find((s) => s.url === `${O}/landing`);
+  assert.ok(page);
+  assert.equal(page?.requestedUrl, `${O}/go`);
+  assert.deepEqual(r.discovery?.redirects, []);
+});
