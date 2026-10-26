@@ -17,6 +17,19 @@ async function handle(req: NextRequest) {
     loadStore: createPrismaRetentionStore,
     now: () => new Date(),
   });
+  // I-060: expired masked screenshots share the same authorized daily run.
+  if (res.status === 200) {
+    try {
+      const [{ purgeExpiredScreenshots, createPrismaScreenshotRetentionStore }, { createSupabaseScreenshotSink }] = await Promise.all([
+        import('@/lib/jury-product/services/screen-audit/screenshot-retention'),
+        import('@/lib/jury-product/services/screen-audit/screenshot-store'),
+      ]);
+      const screenshots = await purgeExpiredScreenshots(await createPrismaScreenshotRetentionStore(), await createSupabaseScreenshotSink(), new Date());
+      return NextResponse.json({ ...(res.body as object), screenshots }, { status: res.status });
+    } catch {
+      return NextResponse.json({ ...(res.body as object), screenshots: { error: true } }, { status: res.status });
+    }
+  }
   return NextResponse.json(res.body, { status: res.status });
 }
 

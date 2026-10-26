@@ -13,6 +13,7 @@
  */
 import type { ObservationDriver, ObservedRequest, RequestVerdict } from './executor';
 import { LAYOUT_PROBE } from '../screen-audit/layout-probe';
+import { MASK_ATTR, MASK_PROBE, UNMASK_PROBE } from '../screen-audit/mask-probe';
 
 export interface PwRequest {
   method(): string;
@@ -37,6 +38,8 @@ export interface PwPage {
   url(): string;
   /** I-059: optional in fakes. */
   setViewportSize?(size: { width: number; height: number }): Promise<void>;
+  /** I-060: optional in fakes. */
+  screenshot?(options: { type: 'jpeg'; quality: number; fullPage: false; animations?: 'disabled' }): Promise<Uint8Array>;
   evaluate<R>(fn: () => R): Promise<R>;
   evaluate<R, A>(fn: (arg: A) => R, arg: A): Promise<R>;
 }
@@ -317,6 +320,20 @@ export function createBrowserObservationDriver(launch: PwContextLauncher, option
     },
     async layoutMetrics() {
       return (await ensure()).evaluate(LAYOUT_PROBE);
+    },
+    async captureMasked() {
+      const p = await ensure();
+      if (!p.screenshot) return null;
+      try {
+        const mask = await p.evaluate(MASK_PROBE, MASK_ATTR);
+        if (!mask.ok) return null;
+        const bytes = await p.screenshot({ type: 'jpeg', quality: 60, fullPage: false, animations: 'disabled' });
+        return { bytes, masked: true as const, maskedCount: mask.masked };
+      } catch {
+        return null;
+      } finally {
+        await p.evaluate(UNMASK_PROBE, MASK_ATTR).catch(() => undefined);
+      }
     },
     async close() {
       const c = context;
