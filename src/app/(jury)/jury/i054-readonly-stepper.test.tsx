@@ -52,7 +52,7 @@ test('step 2: scope collapses to a summary with 수정; login URL, id, password 
 test('step 2 with a credential but no login plan (after re-consent) allows saving only the login URL', () => {
   const html = render({ consentAccepted: true, scope, stored });
   assert.match(html, /name="loginOnly" value="1"/);
-  assert.match(html, /비워 두면 저장된 계정\(ab\*\*\*\)을 그대로 써요/);
+  assert.match(html, /비워 두면 저장된 아이디\(ab\*\*\*\)를 그대로 써요/);
 });
 
 test('step 3: one big primary 관찰 실행 button, no scope or login inputs, summaries with 교체', () => {
