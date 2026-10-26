@@ -196,7 +196,8 @@ export async function createPrismaObservationRunStore(): Promise<ObservationRunS
           pagesVisible: s.pages.filter((p) => p.visible).length,
           pages: s.pages,
           blockedRequestCount: s.blockedRequestCount,
-          blockedByReason: s.blockedByReason,
+          // I-055: hostnames are stored inside the existing JSON column (no schema change).
+          blockedByReason: { ...s.blockedByReason, hosts: s.blockedHosts ?? {} },
           finalOrigin: s.finalOrigin,
           finalPath: s.finalPath,
           observedAt: new Date(run.observedAt),

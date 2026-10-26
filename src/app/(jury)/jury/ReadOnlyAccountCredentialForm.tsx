@@ -93,6 +93,14 @@ export function LatestObservationResult(props: { run: LatestObservationRun | nul
             관찰 페이지 {run.pagesObserved}개 (내용 확인 {run.pagesVisible}개) · 차단된 요청 {run.blockedRequestCount}건 (도메인 {run.blockedByReason.ORIGIN}, 메서드{' '}
             {run.blockedByReason.METHOD}, 폼 제출 {run.blockedByReason.FORM_SUBMIT}, 재로그인 {run.blockedByReason.LOGIN_ALREADY_USED})
           </p>
+          {Object.keys(run.blockedHosts ?? {}).length > 0 ? (
+            <p>
+              차단된 도메인:{' '}
+              {Object.entries(run.blockedHosts ?? {})
+                .map(([h, c]) => `${h} ${c}건`)
+                .join(', ')}
+            </p>
+          ) : null}
           <p>{BLOCKED_REQUESTS_NOTE}</p>
           <p>이 결과는 [자료 수집]을 다시 실행해야 검증 근거에 반영돼요.</p>
           {run.finalOrigin ? (

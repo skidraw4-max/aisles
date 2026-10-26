@@ -6,6 +6,7 @@ import type { EvidencePack } from '@/lib/ai-review-board/types';
 import type { ObservationScope } from './consent';
 import { decryptAccountCredential, type CredentialKeyProvider, type EncryptedAccountCredential } from './credential-crypto';
 import type { DiscoveryOptions, PageStats } from './discovery';
+import { blockedHostCounts } from './same-site';
 import { runReadonlyObservation, type ExecutorReport, type LoginPlan, type ObservationAction, type ObservationDriver } from './executor';
 
 export type ObservedPage = { label: string; path: string; visible: boolean; textLength: number; discovered?: boolean; stats?: PageStats };
@@ -22,6 +23,8 @@ export type ObservationSummary = {
   discovery: ExecutorReport['discovery'] | null;
   blockedRequestCount: number;
   blockedByReason: Record<'ORIGIN' | 'METHOD' | 'FORM_SUBMIT' | 'LOGIN_ALREADY_USED', number>;
+  /** I-055: blocked request hostnames → count (no paths/queries), top 20. */
+  blockedHosts: Record<string, number>;
   /** I-047: origin + path of the last page (no query string). */
   finalOrigin: string | null;
   finalPath: string | null;
@@ -100,6 +103,7 @@ export function summarizeObservation(report: ExecutorReport): ObservationSummary
     discovery: report.discovery ?? null,
     blockedRequestCount: report.blockedRequests.length,
     blockedByReason,
+    blockedHosts: blockedHostCounts(report.blockedRequests),
     ...finalOf(report.finalUrl),
     piiExcluded: true,
     readOnly: true,

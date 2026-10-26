@@ -61,6 +61,7 @@ const STOP_TEXT: Record<string, string> = {
   LOGIN_FAILED: '로그인에 실패했어요.',
   LOGIN_NOT_SUBMITTED: '로그인 요청이 전송되지 않았어요. 입력란·로그인 버튼 선택자와 인증 서버 도메인을 확인해 주세요.',
   LOGIN_NO_REDIRECT: '로그인 후 성공 경로로 이동하지 않았어요. 아이디·비밀번호와 로그인 성공 경로 접두어를 확인해 주세요.',
+  LOGIN_BUTTON_DISABLED: '로그인 버튼이 비활성 상태라 누르지 않고 중단했어요. 로그인 버튼 선택자를 확인하고, 아래 차단된 도메인에 로그인 화면에 필요한 스크립트가 있는지 확인해 주세요.',
   NOT_IMPLEMENTED: '관찰 실행기가 꺼져 있어요.',
   NAVIGATION_BLOCKED: '허용 범위를 벗어난 이동이 차단되어 중단했어요.',
   DRIVER_ERROR: '브라우저 실행 중 오류가 발생했어요.',
