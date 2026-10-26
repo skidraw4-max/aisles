@@ -5,6 +5,7 @@ export const SERVICE_TABS = [
   { key: 'overview', label: '개요' },
   { key: 'connect', label: '연결 설정' },
   { key: 'results', label: '관찰 결과' },
+  { key: 'screen', label: '화면 심사' },
   { key: 'review', label: '심사·개선' },
   { key: 'history', label: '기록' },
 ] as const;

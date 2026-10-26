@@ -12,6 +12,7 @@ import { parseServiceTab, ServiceTabNav } from '../../service-detail-tabs';
 import { ServiceTabMemory } from '../../service-tab-memory';
 import { JuryChrome } from '../../ui';
 import { ReadonlyAccountSection, readonlyObservationNeeded } from '../../readonly-account-section';
+import { ScreenAuditSection } from '../../screen-audit-section';
 import { loadJuryShell, readJurySessionEmail } from '../../load';
 
 /**
@@ -76,10 +77,12 @@ export default async function ServiceDetailPage({
       ) : null}
       <ServiceOperationDetail model={operation.model} provider={providers[connectionId] ?? null} section={tab} />
       {tab === 'overview' && trend?.visible ? <QualityTrendPanel trend={trend} /> : null}
-      {ready && tab !== 'review' && tab !== 'history' ? <ServiceDetailBody actor={actor} view={view} connectionId={connectionId} section={tab} /> : null}
+      {ready && tab !== 'review' && tab !== 'history' && tab !== 'screen' ? <ServiceDetailBody actor={actor} view={view} connectionId={connectionId} section={tab} /> : null}
       {ready && tab === 'connect' ? (
         <ReadonlyAccountSection tenantId={actor.tenantId} connectionId={connectionId} accessMethod={accessMethod} view="form" />
       ) : null}
+      {/* I-063: 화면 심사 (screen audit) tab. */}
+      {ready && tab === 'screen' ? <ScreenAuditSection tenantId={actor.tenantId} connectionId={connectionId} accessMethod={accessMethod} /> : null}
       {tab === 'overview' ? <GithubRefreshStatus connectionId={connectionId} /> : null}
     </JuryChrome>
   );

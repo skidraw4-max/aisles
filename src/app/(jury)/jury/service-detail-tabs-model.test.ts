@@ -2,8 +2,8 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { parseServiceTab, SERVICE_TABS, serviceTabHref } from './service-detail-tabs-model';
 
-test('I-051: five service areas in order, 개요 first', () => {
-  assert.deepEqual(SERVICE_TABS.map((t) => t.label), ['개요', '연결 설정', '관찰 결과', '심사·개선', '기록']);
+test('I-051/I-063: service areas in order, 개요 first, 화면 심사 before 심사·개선', () => {
+  assert.deepEqual(SERVICE_TABS.map((t) => t.label), ['개요', '연결 설정', '관찰 결과', '화면 심사', '심사·개선', '기록']);
 });
 
 test('I-051: ?tab= falls back to overview for missing or unknown values', () => {
