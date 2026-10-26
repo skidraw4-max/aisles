@@ -21,6 +21,8 @@ export type ReadonlyAccountSectionState = {
   /** I-054: hash-verified scope / login plan saved with the latest consent (null for older consents). */
   scope?: StoredScopeView | null;
   login?: StoredLoginView | null;
+  /** Any consent exists (possibly an outdated version): ① then reopens with a re-consent notice. */
+  hadConsent?: boolean;
 };
 
 
@@ -45,7 +47,8 @@ async function loadState(tenantId: string, connectionId: string) {
   const { prisma } = await import('@/lib/prisma');
   const [consent, credential, latestRun] = await Promise.all([
     prisma.juryConnectionConsent.findFirst({
-      where: { tenantId, connectionId, version: READONLY_ACCOUNT_CONSENT_VERSION },
+      // Latest consent of any version: an outdated one counts as "needs re-consent", not as done.
+      where: { tenantId, connectionId },
       orderBy: { acceptedAt: 'desc' },
       select: { id: true, version: true, scopeHash: true, scope: true, loginSettings: true },
     }),
@@ -53,7 +56,8 @@ async function loadState(tenantId: string, connectionId: string) {
     loadLatestObservationRun(prisma, tenantId, connectionId).catch(() => null),
   ]);
   const state: ReadonlyAccountSectionState = {
-    consentAccepted: Boolean(consent),
+    consentAccepted: consent?.version === READONLY_ACCOUNT_CONSENT_VERSION,
+    hadConsent: Boolean(consent),
     stored: credential ? { usernameHint: credential.usernameHint ?? '', expiresAt: credential.expiresAt.toISOString() } : null,
     latestRun,
     scope: scopeView(consent),
@@ -104,6 +108,7 @@ export async function ReadonlyAccountSection(props: {
       scope={state.scope ?? null}
       login={state.login ?? null}
       consentAccepted={state.consentAccepted}
+      hadConsent={state.hadConsent ?? state.consentAccepted}
       stored={state.stored ?? undefined}
       latestRun={state.latestRun ?? null}
       consentAction={consentFormAction}

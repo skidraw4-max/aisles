@@ -97,6 +97,41 @@ test('header next action, DEGRADED warning badge and route wording', async () =>
 test('section picks legacy only for consents without stored scope', async () => {
   const { readonlySectionMode } = await import('@/lib/jury-product/services/readonly-account/flow');
   assert.equal(readonlySectionMode({ consentAccepted: false, scope: null }), 'stepper');
-  assert.equal(readonlySectionMode({ consentAccepted: true, scope: null }), 'legacy');
+  assert.equal(readonlySectionMode({ consentAccepted: true, scope: null }), 'stepper');
   assert.equal(readonlySectionMode({ consentAccepted: true, scope }), 'stepper');
+});
+
+test('t494: re-consent reopens ① with fields, checkbox and 동의 저장 as the current step', async () => {
+  const { consentStepDone, reconsentNeeded, resultNeedsReconsent } = await import('@/lib/jury-product/services/readonly-account/flow');
+  // done only with current consent + hash-verified stored scope + no stale/required result
+  assert.equal(consentStepDone({ consentAccepted: true, scope }), true);
+  assert.equal(consentStepDone({ consentAccepted: true, scope: null }), false); // no stored scope / hash mismatch / old version
+  assert.equal(consentStepDone({ consentAccepted: false, scope: null }), false);
+  assert.equal(consentStepDone({ consentAccepted: true, scope }, [{ ok: false, reason: 'CONSENT_STALE' }]), false);
+  assert.equal(consentStepDone({ consentAccepted: true, scope }, [{ ok: false, reason: 'CONSENT_REQUIRED' }]), false);
+  assert.equal(consentStepDone({ consentAccepted: true, scope }, [{ ok: false, reason: 'LOGIN_FAILED' }]), true);
+  assert.equal(resultNeedsReconsent({ ok: true }), false);
+  assert.equal(reconsentNeeded({ consentAccepted: true, scope: null }), true);
+  assert.equal(reconsentNeeded({ consentAccepted: false, scope: null }), false);
+  assert.equal(currentReadonlyStep({ scope, stored, login, reconsent: true }), 1);
+
+  for (const props of [
+    { consentAccepted: true, scope: null, stored }, // current version, scope not stored (pre-I-054) or hash mismatch
+    { consentAccepted: false, hadConsent: true, scope: null, stored, login }, // outdated consent version
+  ]) {
+    const html = render(props);
+    assert.match(html, /name="allowedOrigins"/);
+    assert.match(html, /name="consent"/);
+    assert.match(html, /동의 저장<\/button>/);
+    assert.match(html, /class="cur"[^>]*>① 범위/);
+    assert.doesNotMatch(html, /동의 완료 ✓/);
+    assert.match(html, /다시 동의가 필요해요/);
+    assert.doesNotMatch(html, /name="username"/);
+  }
+});
+
+test('t494: section always uses the stepper and loads consent of any version', () => {
+  const src = readFileSync(new URL('./readonly-account-section.tsx', import.meta.url), 'utf8');
+  assert.match(src, /where: \{ tenantId, connectionId \}/);
+  assert.match(src, /consentAccepted: consent\?\.version === READONLY_ACCOUNT_CONSENT_VERSION/);
 });

@@ -9,6 +9,7 @@ import {
   type ReadonlyAccountFormAction,
   type ReadonlyAccountFormResult,
 } from '@/lib/jury-product/services/readonly-account/result-text';
+import { consentStepDone, reconsentNeeded, resultNeedsReconsent } from '@/lib/jury-product/services/readonly-account/flow';
 import type { LatestObservationRun } from '@/lib/jury-product/services/readonly-account/latest-observation';
 import {
   AUTH_ORIGIN_HELP,
@@ -26,6 +27,8 @@ export type ReadOnlyAccountCredentialFormProps = {
   connectionId: string;
   enabled: boolean;
   consentAccepted?: boolean;
+  /** I-054 t494: a consent of any version exists (drives the re-consent notice on ①). */
+  hadConsent?: boolean;
   stored?: { usernameHint: string; expiresAt: string } | null;
   consentAction?: ReadonlyAccountFormAction;
   credentialAction?: ReadonlyAccountFormAction;
@@ -191,7 +194,7 @@ function LegacyReadOnlyAccountForm(props: ReadOnlyAccountCredentialFormProps & {
   }, [credentialResult]);
   const classes = props.classes ?? {};
   const enabled = props.enabled;
-  const consentDone = Boolean(props.consentAccepted);
+  const consentDone = Boolean(props.consentAccepted) && !(consentResult?.ok ? [] : [credentialResult, observationResult]).some(resultNeedsReconsent);
   const stored = props.stored ?? null;
   const credentialOpen = !stored || editingCredential;
   const credentialInputsDisabled = !enabled || !consented;
@@ -351,8 +354,8 @@ const DEFAULT_LOGIN: StoredLoginView = {
 };
 
 /** I-054: which step is open when nothing is being edited. */
-export function currentReadonlyStep(input: { scope?: StoredScopeView | null; stored?: unknown; login?: StoredLoginView | null }): StepNo {
-  if (!input.scope) return 1;
+export function currentReadonlyStep(input: { scope?: StoredScopeView | null; stored?: unknown; login?: StoredLoginView | null; reconsent?: boolean }): StepNo {
+  if (!input.scope || input.reconsent) return 1;
   if (!input.stored || !input.login) return 2;
   return 3;
 }
@@ -388,7 +391,6 @@ export function ReadOnlyAccountStepper(props: ReadOnlyAccountCredentialFormProps
   const scope = props.scope ?? null;
   const login = props.login ?? null;
   const stored = props.stored ?? null;
-  const current = currentReadonlyStep({ scope, stored, login });
   const [editing, setEditing] = React.useState<StepNo | null>(null);
   const [consented, setConsented] = React.useState(false);
   const [notice, setNotice] = React.useState<string | null>(null);
@@ -397,6 +399,12 @@ export function ReadOnlyAccountStepper(props: ReadOnlyAccountCredentialFormProps
   const observationWithDeadline = React.useMemo(() => withClientDeadline(props.observationAction ?? noop), [props.observationAction]);
   const [observationResult, observationFormAction, observationPending] = React.useActionState(observationWithDeadline, null);
   const [advancedOpen, setAdvancedOpen] = React.useState(false);
+  // Same rule as the notice: a CONSENT_STALE/CONSENT_REQUIRED result reopens ① (until a new consent is saved).
+  const staleResults = consentResult?.ok ? [] : [credentialResult, observationResult];
+  const hadConsent = Boolean(props.hadConsent) || Boolean(props.consentAccepted) || Boolean(scope);
+  const reconsent = !consentStepDone({ consentAccepted: hadConsent, scope }, staleResults);
+  const renewing = reconsentNeeded({ consentAccepted: hadConsent, scope }, staleResults);
+  const current = currentReadonlyStep({ scope, stored, login, reconsent });
   React.useEffect(() => {
     if (consentResult?.ok) {
       setEditing(null);
@@ -413,7 +421,7 @@ export function ReadOnlyAccountStepper(props: ReadOnlyAccountCredentialFormProps
   React.useEffect(() => {
     if (isLoginFailure(observationResult)) setAdvancedOpen(true);
   }, [observationResult]);
-  const open: StepNo = editing ?? current;
+  const open: StepNo = current === 1 ? 1 : editing ?? current;
   const state = (n: StepNo): 'done' | 'current' | 'locked' => (n === open ? 'current' : n < current ? 'done' : 'locked');
   const consentError = consentResult && !consentResult.ok ? readonlyAccountReasonText(consentResult.reason) : null;
   const credentialError = credentialResult && !credentialResult.ok ? readonlyAccountReasonText(credentialResult.reason) : null;
@@ -444,7 +452,13 @@ export function ReadOnlyAccountStepper(props: ReadOnlyAccountCredentialFormProps
         {open === 1 ? (
           <form autoComplete="off" action={consentFormAction}>
             <input type="hidden" name="connectionId" value={props.connectionId} />
-            {scope ? <p className={c.help}>범위를 바꾸면 다시 동의해야 해요. 저장된 계정은 그대로 써요.</p> : null}
+            {renewing ? (
+              <p className={c.notice} role="alert">
+                동의 내용이 바뀌었거나 저장된 범위가 없어 다시 동의가 필요해요. 범위를 확인하고 동의를 저장하세요. 저장된 계정은 그대로 써요.
+              </p>
+            ) : scope ? (
+              <p className={c.help}>범위를 바꾸면 다시 동의해야 해요. 저장된 계정은 그대로 써요.</p>
+            ) : null}
             <Field c={c} id={`${id}-origins`} label="허용 도메인" required help="관찰할 서비스 주소. 한 줄에 하나, https만 (최대 10개)">
               <textarea name="allowedOrigins" rows={2} placeholder="https://app.example.com" className={c.input} disabled={!enabled} defaultValue={scope?.allowedOrigins.join('\n')} />
             </Field>
@@ -468,7 +482,7 @@ export function ReadOnlyAccountStepper(props: ReadOnlyAccountCredentialFormProps
             </label>
             <div>
               <button type="submit" className={c.primary ?? c.button} disabled={!enabled || !consented || consentPending}>
-                {consentPending ? '저장 중…' : '동의하고 다음'}
+                {consentPending ? '저장 중…' : '동의 저장'}
               </button>
               {editing === 1 ? (
                 <button type="button" className={c.button} onClick={() => setEditing(null)}>
@@ -478,7 +492,7 @@ export function ReadOnlyAccountStepper(props: ReadOnlyAccountCredentialFormProps
             </div>
             {consentError ? <p role="alert">{consentError}</p> : null}
           </form>
-        ) : scope ? (
+        ) : scope && !reconsent ? (
           <p className={c.summary}>
             ✓ {scopeSummaryText(scope)} {editButton(1, '수정')}
           </p>
