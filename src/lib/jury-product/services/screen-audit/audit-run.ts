@@ -14,6 +14,7 @@ import { createAuditHook, type AuditPageResult } from './audit-hook';
 import { summarizeAudit, type AreaSummary, type AuditStatus, type Finding } from './rules';
 import { createMaskedCapture, screenshotExpiry, type ScreenshotSink } from './screenshot-store';
 import { AUDIT_LIMITS, DEFAULT_AUDIT_VIEWPORTS } from './viewports';
+import { evaluateVisual, SCREEN_AUDIT_AI_ENABLED, type AiVisualEvaluator } from './ai-visual';
 
 /** Screen audit switch (the browser executor keeps its own READONLY_ACCOUNT_EXECUTOR_ENABLED gate). */
 export const SCREEN_AUDIT_ENABLED = true as boolean;
@@ -82,6 +83,8 @@ export async function runScreenAudit(input: {
   enabled?: boolean;
   now?: () => Date;
   clock?: () => number;
+  /** I-066: AI visual evaluation, OFF unless enabled AND an evaluator is passed. Advisory only. */
+  ai?: { enabled?: boolean; evaluator?: AiVisualEvaluator | null };
 }): Promise<ScreenAuditResult> {
   if (!(input.enabled ?? SCREEN_AUDIT_ENABLED)) return { ok: false, reason: 'NOT_IMPLEMENTED' };
   const now = input.now ?? (() => new Date());
@@ -98,7 +101,7 @@ export async function runScreenAudit(input: {
   const startedAt = now();
   await input.auditStore.createAudit({
     id: auditId, tenantId: auth.connection.tenantId, connectionId: auth.connection.id, actorUserId: auth.actor.userId, parentAuditId,
-    consentVersion: READONLY_ACCOUNT_CONSENT_VERSION, viewports: DEFAULT_AUDIT_VIEWPORTS.map((v) => v.name), aiEnabled: false, startedAt,
+    consentVersion: READONLY_ACCOUNT_CONSENT_VERSION, viewports: DEFAULT_AUDIT_VIEWPORTS.map((v) => v.name), aiEnabled: Boolean((input.ai?.enabled ?? SCREEN_AUDIT_AI_ENABLED) && input.ai?.evaluator), startedAt,
   });
   const driver = input.createDriver();
   let sink: ScreenshotSink | null = null;
@@ -136,10 +139,20 @@ export async function runScreenAudit(input: {
     failed = true;
   }
   const { summary, rows } = buildAuditRows(hook.results, startedAt);
+  const ai = await evaluateVisual(
+    {
+      shots: rows.evidence.map((e) => {
+        const page = rows.pages.find((p) => p.id === e.pageId);
+        return { storageKey: e.storageKey, viewport: page?.viewport ?? '', path: page?.path ?? '' };
+      }),
+      metrics: rows.pages.filter((p) => p.status === 'PASS').map((p) => ({ viewport: p.viewport, path: p.path, metrics: p.metrics })),
+    },
+    { enabled: input.ai?.enabled, evaluator: input.ai?.evaluator },
+  );
   const status: AuditStatus = failed ? 'ERROR' : hook.results.length === 0 ? (stop ? 'BLOCKED' : 'NOT_TESTED') : stop && summary.status === 'PASS' ? 'PARTIAL' : summary.status;
   await input.auditStore.finishAudit({
     id: auditId, tenantId: auth.connection.tenantId, state: failed ? 'FAILED' : 'DONE', status,
-    summary: { areas: summary.areas, findings: summary.findings.length, stop, pages: new Set(hook.results.map((r) => r.path)).size, elapsedMs: hook.elapsedMs() },
+    summary: { areas: summary.areas, findings: summary.findings.length, stop, ai, pages: new Set(hook.results.map((r) => r.path)).size, elapsedMs: hook.elapsedMs() },
     finishedAt: now(), rows,
   });
   return { ok: true, auditId, status, areas: summary.areas, findings: summary.findings.length, stop };
