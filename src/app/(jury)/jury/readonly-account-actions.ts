@@ -81,5 +81,7 @@ export async function runReadonlyAccountObservationAction(formData: FormData): P
     keys: resolveEnvKeyProvider(),
     createDriver: createServerlessObservationDriver,
   });
+  // I-047: the summary is persisted, so re-render the detail page ("최근 관찰 결과", activity log).
+  revalidatePath('/jury/services/[connectionId]', 'page');
   return result.ok ? { ok: true, summary: result.summary } : result;
 }

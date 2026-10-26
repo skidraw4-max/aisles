@@ -14,6 +14,8 @@ export const AISLE_ADAPTER_KEY = 'aisle-self';
 export const AISLE_ADAPTER_VERSION = 'aisle-self-v1';
 export const DB_RULE_ID = 'normalize.evidence-pack.aggregate.v1';
 export const GA4_RULE_ID = 'normalize.evidence-pack.ga4.v1';
+export const READONLY_OBSERVATION_RULE_ID = 'normalize.readonly-observation.v1';
+export const READONLY_OBSERVATION_METRICS = ['readonly.pagesObserved', 'readonly.pagesVisible', 'readonly.blockedRequests'] as const;
 
 export function applyAvailability(
   availability: JuryAvailability,
@@ -162,5 +164,22 @@ export function draftNormalizedMetrics(input: {
           });
         })
     : [];
-  return [...db, ...ga4, ...events];
+  const ro = input.pack.readonlyObservation;
+  const screen = ro
+    ? READONLY_OBSERVATION_METRICS.map((metric) => {
+        const raw = metric === 'readonly.pagesObserved' ? ro.pagesObserved : metric === 'readonly.pagesVisible' ? ro.pagesVisible : ro.blockedRequestCount;
+        return draft({
+          ...common,
+          metric,
+          raw,
+          availability: 'AVAILABLE',
+          unit: 'COUNT',
+          sourceSystem: 'SCREEN',
+          sourceRef: `readonlyObservation.${metric.slice('readonly.'.length)}`,
+          collectedAt: ro.observedAt,
+          ruleId: READONLY_OBSERVATION_RULE_ID,
+        });
+      })
+    : [];
+  return [...db, ...ga4, ...events, ...screen];
 }

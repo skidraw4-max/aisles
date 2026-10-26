@@ -76,3 +76,22 @@ test('login plan and action helpers', () => {
   assert.equal(normalizeLoginPlan({ ...login, usernameSelector: '' }), null);
   assert.deepEqual(actionsForPaths(['/a']), [{ type: 'goto', path: '/a' }, { type: 'snapshot', label: '/a' }]);
 });
+
+test('I-047: persists a PII-free run summary via recordRun', async () => {
+  const { provider, store } = await setup();
+  const runs: unknown[] = [];
+  store.recordRun = async (r) => { runs.push(r); };
+  const { d } = driver();
+  const r = await runStoredCredentialObservation({ actor: owner, connectionId: 'c1', scope, login, store, keys: { ok: true, provider }, createDriver: () => d });
+  assert.equal(r.ok, true);
+  assert.equal(runs.length, 1);
+  assert.doesNotMatch(JSON.stringify(runs[0]), /admin|"pw"|dashboard text/);
+});
+
+test('I-047: a recordRun failure does not fail the observation', async () => {
+  const { provider, store } = await setup();
+  store.recordRun = async () => { throw new Error('db down'); };
+  const { d } = driver();
+  const r = await runStoredCredentialObservation({ actor: owner, connectionId: 'c1', scope, login, store, keys: { ok: true, provider }, createDriver: () => d });
+  assert.equal(r.ok, true);
+});

@@ -5,6 +5,9 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { Prisma } from '@prisma/client';
 import type { EvidenceDb } from '@/lib/ai-review-board/evidence-pack';
+import type { EvidencePack } from '@/lib/ai-review-board/types';
+import { loadLatestObservationRun, type LatestObservationRun } from './services/readonly-account/latest-observation';
+import { attachObservationToPack } from './services/readonly-account/observation-evidence';
 import { decideJuryMutation, type JuryActor } from './access';
 import type { AccessFailure } from './access-layer';
 import type { JuryConsoleView } from './console-view';
@@ -42,6 +45,7 @@ export type ConnectedCollectionFailure =
   | 'INVALID_VALUE'
   | 'COLLECTION_FAILED'
   | 'PACK_NOT_READ_ONLY'
+  | 'OBSERVATION_REQUIRED'
   | 'PERSISTENCE_FAILED';
 
 export type ConnectedReviewFailure =
@@ -139,6 +143,29 @@ function periodOk(value: string): boolean {
   return /^\d{4}-\d{2}-\d{2}$/.test(value);
 }
 
+/**
+ * I-047: READ_ONLY_ACCOUNT packs record only what the screen observation saw.
+ * DB aggregates from the placeholder DB are not measurements, so they become null (NOT_MEASURED).
+ */
+export function readonlyObservationPack(pack: EvidencePack, run: LatestObservationRun, clearPlaceholderAggregates: boolean): EvidencePack {
+  const aggregates = clearPlaceholderAggregates
+    ? (Object.fromEntries(
+        Object.entries(pack.aggregates).map(([k, v]) => [k, typeof v === 'number' || v === null ? null : {}]),
+      ) as unknown as EvidencePack['aggregates'])
+    : pack.aggregates;
+  return {
+    ...attachObservationToPack({ ...pack, aggregates }, run),
+    readonlyObservation: {
+      runId: run.id,
+      observedAt: run.observedAt,
+      pagesObserved: run.pagesObserved,
+      pagesVisible: run.pagesVisible,
+      blockedRequestCount: run.blockedRequestCount,
+      finalPath: run.finalPath,
+    },
+  };
+}
+
 function mockObservationDb(): EvidenceDb {
   return {
     user: {
@@ -197,7 +224,11 @@ async function loadPrisma() {
 
 export async function runConnectedServiceEvidenceCollection(
   command: CollectionCommand,
-  deps?: { evidenceDb?: EvidenceDb; persist?: (input: PersistCommand) => Promise<PersistResult> },
+  deps?: {
+    evidenceDb?: EvidenceDb;
+    persist?: (input: PersistCommand) => Promise<PersistResult>;
+    latestObservation?: (tenantId: string, connectionId: string) => Promise<LatestObservationRun | null>;
+  },
 ): Promise<
   | { ok: true; created: boolean; evidenceId: string; contentHash: string; connectionId: string }
   | { ok: false; reason: ConnectedCollectionFailure }
@@ -223,6 +254,14 @@ export async function runConnectedServiceEvidenceCollection(
   });
   if (!connection || connection.tenantId !== actor.tenantId) return { ok: false, reason: 'NOT_FOUND' };
   if (isGithubInstallationConnection(connection)) return { ok: false, reason: 'SCOPE_NOT_APPROVED' };
+  // I-047: READ_ONLY_ACCOUNT evidence comes only from a persisted, successful screen observation.
+  let readonlyRun: LatestObservationRun | null = null;
+  if (connection.accessMethod === 'READ_ONLY_ACCOUNT') {
+    readonlyRun = deps?.latestObservation
+      ? await deps.latestObservation(actor.tenantId, connection.id)
+      : await loadLatestObservationRun(prisma, actor.tenantId, connection.id, { okOnly: true });
+    if (!readonlyRun || !readonlyRun.ok) return { ok: false, reason: 'OBSERVATION_REQUIRED' };
+  }
   const scopeRows = await prisma.juryAccessScope.findMany({
     where: { tenantId: actor.tenantId, connectionId: connection.id },
   });
@@ -253,12 +292,13 @@ export async function runConnectedServiceEvidenceCollection(
     }),
   );
   if (!observed.ok) return { ok: false, reason: observed.reason === 'CONTEXT_NOT_ISSUED' ? 'COLLECTION_FAILED' : observed.reason };
+  const basePack = readonlyRun ? readonlyObservationPack(observed.pack, readonlyRun, !deps?.evidenceDb) : observed.pack;
   const built = buildProductEvidence({
     actorTenantId: actor.tenantId,
     connection: { id: connection.id, tenantId: connection.tenantId },
     clientTenantId: null,
     pack: {
-      ...observed.pack,
+      ...basePack,
       analysisPeriod: {
         start: command.periodStart,
         end: command.periodEnd,

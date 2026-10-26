@@ -190,6 +190,7 @@ function noticeText(code: string): string {
   if (code === 'TIMEZONE_UNSUPPORTED') return '시간대는 Asia/Seoul만 사용할 수 있습니다.';
   if (code === 'DECISION_NOT_IN_CONTRACT') return 'Core decision이 기존 contract 밖에 있어 성공 결과로 저장하지 않았습니다.';
   if (code === 'CORE_READING_REJECTED') return 'Core 결과를 저장하지 않았습니다.';
+  if (code === 'OBSERVATION_REQUIRED') return '읽기 전용 계정 관찰을 먼저 성공적으로 실행해야 검증 근거를 수집할 수 있습니다.';
   if (code === 'PACK_NOT_READ_ONLY') return 'read-only Evidence만 Review할 수 있습니다.';
   if (code === 'NOT_FOUND') return '현재 tenant에서 대상을 찾을 수 없습니다.';
   if (code === 'KEY_REQUIRED') return '서비스 키와 이름이 필요합니다.';

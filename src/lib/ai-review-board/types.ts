@@ -693,6 +693,18 @@ export type EvidencePack = {
   ga4?: import('./ga4-evidence').Ga4EvidenceBlock;
   /** Explicit catalog for claim evidenceRefs (GA4 vs DATABASE). */
   evidenceItems?: import('./ga4-evidence').Ga4CatalogEvidenceItem[];
+  /**
+   * I-047: counts from the latest successful READ_ONLY_ACCOUNT screen observation (PII-free).
+   * These are screen observations, not DB or GA4 metrics.
+   */
+  readonlyObservation?: {
+    runId: string;
+    observedAt: string;
+    pagesObserved: number;
+    pagesVisible: number;
+    blockedRequestCount: number;
+    finalPath: string | null;
+  };
   /** PII 미포함 보장용 메타 */
   piiExcluded: true;
   readOnly: true;

@@ -5,9 +5,11 @@ import { READONLY_ACCOUNT_CONSENT_TEXT } from '@/lib/jury-product/services/reado
 import {
   readonlyAccountReasonText,
   readonlyAccountStopText,
+  withClientDeadline,
   type ReadonlyAccountFormAction,
   type ReadonlyAccountFormResult,
 } from '@/lib/jury-product/services/readonly-account/result-text';
+import type { LatestObservationRun } from '@/lib/jury-product/services/readonly-account/latest-observation';
 
 export type { ReadonlyAccountFormAction, ReadonlyAccountFormResult };
 
@@ -19,6 +21,8 @@ export type ReadOnlyAccountCredentialFormProps = {
   consentAction?: ReadonlyAccountFormAction;
   credentialAction?: ReadonlyAccountFormAction;
   observationAction?: ReadonlyAccountFormAction;
+  /** I-047: most recent persisted observation summary. */
+  latestRun?: LatestObservationRun | null;
   classes?: { root?: string; notice?: string; input?: string; button?: string };
 };
 
@@ -29,6 +33,43 @@ export function formatKst(iso: string): string {
 }
 
 const noop: ReadonlyAccountFormAction = () => null;
+
+export function LatestObservationResult(props: { run: LatestObservationRun | null | undefined }) {
+  const run = props.run;
+  return (
+    <div>
+      <h4>최근 관찰 결과</h4>
+      {!run ? (
+        <p>아직 저장된 관찰 결과가 없습니다.</p>
+      ) : (
+        <>
+          <p>
+            {formatKst(run.observedAt)} · {run.ok ? '성공' : '중단'} · {readonlyAccountStopText(run.stop)}
+          </p>
+          <p>
+            관찰 페이지 {run.pagesObserved}개 (내용 확인 {run.pagesVisible}개) · 차단된 요청 {run.blockedRequestCount}건 (도메인 {run.blockedByReason.ORIGIN}, 메서드{' '}
+            {run.blockedByReason.METHOD}, 폼 제출 {run.blockedByReason.FORM_SUBMIT}, 재로그인 {run.blockedByReason.LOGIN_ALREADY_USED})
+          </p>
+          {run.finalOrigin ? (
+            <p>
+              마지막 위치: {run.finalOrigin}
+              {run.finalPath ?? ''}
+            </p>
+          ) : null}
+          {run.pages.length > 0 ? (
+            <ul>
+              {run.pages.map((p, i) => (
+                <li key={`${p.path}-${i}`}>
+                  {p.label} ({p.path}) · {p.visible ? '내용 있음' : '내용 없음'} · 글자 수 {p.textLength}
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </>
+      )}
+    </div>
+  );
+}
 
 export function resultText(result: ReadonlyAccountFormResult | null, okText: string): string | null {
   if (!result) return null;
@@ -56,7 +97,8 @@ export function ReadOnlyAccountCredentialForm(props: ReadOnlyAccountCredentialFo
   const [consented, setConsented] = React.useState(Boolean(props.consentAccepted));
   const [consentResult, consentFormAction, consentPending] = React.useActionState(props.consentAction ?? noop, null);
   const [credentialResult, credentialFormAction, credentialPending] = React.useActionState(props.credentialAction ?? noop, null);
-  const [observationResult, observationFormAction, observationPending] = React.useActionState(props.observationAction ?? noop, null);
+  const observationWithDeadline = React.useMemo(() => withClientDeadline(props.observationAction ?? noop), [props.observationAction]);
+  const [observationResult, observationFormAction, observationPending] = React.useActionState(observationWithDeadline, null);
   const classes = props.classes ?? {};
   const inputsDisabled = !props.enabled || !consented;
   const consentMessage = resultText(consentResult, '동의를 저장했습니다.');
@@ -131,6 +173,7 @@ export function ReadOnlyAccountCredentialForm(props: ReadOnlyAccountCredentialFo
           {observationMessage ? <p role="status">{observationMessage}</p> : null}
         </form>
       ) : null}
+      {props.stored || props.latestRun ? <LatestObservationResult run={props.latestRun} /> : null}
     </section>
   );
 }

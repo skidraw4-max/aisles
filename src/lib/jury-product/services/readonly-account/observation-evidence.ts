@@ -17,9 +17,22 @@ export type ObservationSummary = {
   pages: { label: string; path: string; visible: boolean; textLength: number }[];
   blockedRequestCount: number;
   blockedByReason: Record<'ORIGIN' | 'METHOD' | 'FORM_SUBMIT' | 'LOGIN_ALREADY_USED', number>;
+  /** I-047: origin + path of the last page (no query string). */
+  finalOrigin: string | null;
+  finalPath: string | null;
   piiExcluded: true;
   readOnly: true;
 };
+
+function finalOf(url: string | undefined): { finalOrigin: string | null; finalPath: string | null } {
+  if (!url) return { finalOrigin: null, finalPath: null };
+  try {
+    const u = new URL(url);
+    return { finalOrigin: u.origin, finalPath: u.pathname };
+  } catch {
+    return { finalOrigin: null, finalPath: null };
+  }
+}
 
 function pathOf(url: string): string {
   try {
@@ -51,6 +64,9 @@ export function logBlockedRequests(report: ExecutorReport, connectionId: string,
       loginAttempts: report.loginAttempts,
       loginRequestUsed: report.loginRequestUsed ?? null,
       finalUrl: report.finalUrl ?? null,
+      // I-047: per-page counts only; page text is never logged.
+      pagesObserved: report.snapshots.length,
+      pages: report.snapshots.map((s) => ({ label: s.label.slice(0, 64), visible: s.text.trim().length > 0, textLength: s.text.length })),
       blocked: describeBlockedRequests(report),
     }),
   );
@@ -70,13 +86,17 @@ export function summarizeObservation(report: ExecutorReport): ObservationSummary
     pages,
     blockedRequestCount: report.blockedRequests.length,
     blockedByReason,
+    ...finalOf(report.finalUrl),
     piiExcluded: true,
     readOnly: true,
   };
 }
 
 /** Feeds the summary into an existing EvidencePack as reviewer hints (aggregates are never overwritten). */
-export function attachObservationToPack(pack: EvidencePack, summary: ObservationSummary): EvidencePack {
+export function attachObservationToPack(
+  pack: EvidencePack,
+  summary: Pick<ObservationSummary, 'ok' | 'pagesObserved' | 'pages' | 'blockedRequestCount' | 'blockedByReason'> & { stop?: string | null; challenge?: string | null },
+): EvidencePack {
   const visible = summary.pages.filter((p) => p.visible).length;
   const hints = [
     `READ_ONLY_ACCOUNT observation: ok=${summary.ok}${summary.stop ? ` stop=${summary.stop}` : ''}${summary.challenge ? ` challenge=${summary.challenge}` : ''}`,

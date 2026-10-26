@@ -5,7 +5,37 @@ export type ReadonlyAccountFormResult =
 
 export type ReadonlyAccountFormAction = (prev: ReadonlyAccountFormResult | null, formData: FormData) => ReadonlyAccountFormResult | null | Promise<ReadonlyAccountFormResult | null>;
 
+/** I-047: client wait limit for the observation action (server maxDuration is 60s). */
+export const OBSERVATION_CLIENT_TIMEOUT_MS = 70_000;
+
+/**
+ * I-047: wraps a form action so the UI never hangs: resolves CLIENT_TIMEOUT after `ms`,
+ * and turns thrown errors into CLIENT_ERROR. The server call itself is not cancelled.
+ */
+export function withClientDeadline(
+  action: ReadonlyAccountFormAction,
+  ms: number = OBSERVATION_CLIENT_TIMEOUT_MS,
+  setTimer: (fn: () => void, ms: number) => unknown = setTimeout,
+  clearTimer: (h: unknown) => void = (h) => clearTimeout(h as ReturnType<typeof setTimeout>),
+): ReadonlyAccountFormAction {
+  return async (prev, formData) => {
+    let handle: unknown;
+    const timeout = new Promise<ReadonlyAccountFormResult>((resolve) => {
+      handle = setTimer(() => resolve({ ok: false, reason: 'CLIENT_TIMEOUT' }), ms);
+    });
+    try {
+      return await Promise.race([Promise.resolve(action(prev, formData)), timeout]);
+    } catch {
+      return { ok: false, reason: 'CLIENT_ERROR' };
+    } finally {
+      clearTimer(handle);
+    }
+  };
+}
+
 const REASON_TEXT: Record<string, string> = {
+  CLIENT_TIMEOUT: '응답이 지연되고 있습니다. 잠시 후 새로고침해 최근 관찰 결과를 확인해 주세요.',
+  CLIENT_ERROR: '요청 중 오류가 발생했습니다. 새로고침 후 다시 시도해 주세요.',
   UNAUTHENTICATED: '로그인이 필요합니다.',
   FORBIDDEN: '이 연결을 변경할 권한이 없습니다.',
   TENANT_MISMATCH: '다른 조직의 연결입니다.',
