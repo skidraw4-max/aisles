@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { formatKstFull } from './review-summary-format';
-import { discoveryMenuText, displayText } from '@/lib/jury-product/ui-labels';
+import { dataSourceLabels, discoveryMenuText, displayText, metricLabel, scopeResourceLabel, surfaceLabels } from '@/lib/jury-product/ui-labels';
 import { CollectPeriodFields } from './collect-period-fields';
 import { summarizeProblems } from '@/lib/jury-product/review-display-model';
 import { juryHref } from '@/lib/jury-product/jury-url';
@@ -156,12 +156,18 @@ export function ServiceDetailBody({
           {connection.accessMethod === 'READ_ONLY_ACCOUNT' ? null : <p>어댑터 {github && !synthetic ? 'GitHubRepositoryDiscovery' : 'MockDiscoveryAdapter'}</p>}
           {github && synthetic ? <p>This discovery is a mock placeholder. It is not a GitHub repository list.</p> : null}
           <p>탐색 시각 {formatKstFull(discovery.exploredAt)}</p>
-          <p className={styles.wrapText}>자원 {discovery.surfaces.join(', ')} · {discovery.menus.map(discoveryMenuText).join(', ')}</p>
-          <p>데이터 원천 {discovery.dataSources.join(', ')}</p>
+          <p className={styles.wrapText}>자원 {surfaceLabels(discovery.surfaces)} · {discovery.menus.map(discoveryMenuText).join(', ')}</p>
+          <p>데이터 원천 {dataSourceLabels(discovery.dataSources)}</p>
           <p>수집 가능성 {displayText(discovery.feasibility)}</p>
           {discovery.proposedMetrics.map((item) => (
-            <p key={item.metric}>{item.metric}: {item.reason}</p>
+            <p key={item.metric} title={item.metric}>{metricLabel(item.metric)}: {item.reason}</p>
           ))}
+          <details className={styles.technicalDetails}>
+            <summary>기술 정보</summary>
+            <p>자원 {discovery.surfaces.join(', ')}</p>
+            <p>데이터 원천 {discovery.dataSources.join(', ')}</p>
+            {discovery.proposedMetrics.map((item) => <p key={item.metric} className={styles.wrapText}>지표 키 {item.metric}</p>)}
+          </details>
           {github && synthetic && canShowWrite(actor, 'discovery.approve') ? (
             <form action={runOnboardingDiscovery}>
               <input type="hidden" name="connectionId" value={connection.id} />
@@ -196,7 +202,7 @@ export function ServiceDetailBody({
           <tbody>
             {scopes.map((scope) => (
               <tr key={scope.id}>
-                <td className={styles.wrapText}>{scope.grants.map((grant) => discoveryMenuText(grant.resource)).join(', ') || displayText('Not available')}</td>
+                <td className={styles.wrapText} title={scope.grants.map((grant) => grant.resource).join(', ')}>{scope.grants.map((grant) => scopeResourceLabel(grant.resource)).join(', ') || displayText('Not available')}</td>
                 <td>{scope.grants.map((grant) => scopePurpose(grant.resource, discovery)).join(', ')}</td>
                 <td>{scope.grants.map((grant) => displayText(grant.mode)).join(', ') || displayText('Not available')}</td>
                 <td>{scope.grants.some((grant) => grant.mode === 'READ') ? displayText('READ') : displayText('Not available')}</td>
@@ -207,6 +213,14 @@ export function ServiceDetailBody({
         </table>
         </div>
       )}
+      {scopes.length > 0 ? (
+        <details className={styles.technicalDetails}>
+          <summary>기술 정보</summary>
+          {scopes.map((scope) => (
+            <p key={scope.id} className={styles.wrapText}>접근 범위 원문 {scope.grants.map((grant) => `${grant.resource} (${grant.mode})`).join(', ')}</p>
+          ))}
+        </details>
+      ) : null}
       {scopes.filter((scope) => scope.status === 'PROPOSED' && !github).map((scope) => (
         canShowWrite(actor, 'scope.write') ? (
           <form action={decideOnboardingScope} key={scope.id}>
@@ -254,12 +268,13 @@ export function ServiceDetailBody({
           <p>수집 기간 {row.periodStart} – {row.periodEnd} · {row.timezone === 'Asia/Seoul' ? '한국 시간' : row.timezone}</p>
           <p>수집 상태 <span className={styles.badge}>{displayText(row.collectionStatus)}</span></p>
           {row.metrics.map((metric) => (
-            <p key={metric.id}>{displayText(metric.metric)} {connectedMetricText(metric.value, metric.availability, formatMeasuredValue)}</p>
+            <p key={metric.id} title={metric.metric}>{metricLabel(metric.metric)} {connectedMetricText(metric.value, metric.availability, formatMeasuredValue)}</p>
           ))}
           <details className={styles.technicalDetails}>
             <summary>기술 정보</summary>
             <p>수집 목적 {row.purpose === 'aisle-self-observation' ? '서비스 자체 관찰' : row.purpose} ({row.purpose})</p>
             <p>수집 어댑터 {row.adapterKey}</p>
+            <p className={styles.wrapText}>지표 키 {row.metrics.map((metric) => metric.metric).join(', ')}</p>
             <p className={styles.wrapText}>내용 해시 {row.contentHash ?? '기록 없음'}</p>
             <p>읽기 전용 {row.readOnly ? '예' : '아니요'} · 개인정보 제외 {row.piiExcluded ? '예' : '아니요'}</p>
           </details>
