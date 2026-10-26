@@ -572,15 +572,19 @@ model JuryAccountCredential {
 
 /// I-040: customer consent to observation scope and credential storage.
 model JuryConnectionConsent {
-  id           String                @id
-  tenantId     String
-  tenant       JuryTenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  connectionId String
-  connection   JuryServiceConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
-  userId       String
-  version      String
-  scopeHash    String
-  acceptedAt   DateTime
+  id            String                @id
+  tenantId      String
+  tenant        JuryTenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  connectionId  String
+  connection    JuryServiceConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  userId        String
+  version       String
+  scopeHash     String
+  acceptedAt    DateTime
+  /// I-054: normalized ObservationScope saved at consent; must hash-match scopeHash. Null for older consents.
+  scope         Json?
+  /// I-054: login plan (loginUrl, selectors, successPathPrefix). No secrets.
+  loginSettings Json?
 
   @@index([tenantId])
   @@index([connectionId])

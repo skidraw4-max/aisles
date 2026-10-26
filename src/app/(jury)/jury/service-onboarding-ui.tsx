@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { formatKstFull } from './review-summary-format';
+import { reasonDisplay, WARN_BADGES } from '@/lib/jury-product/services/readonly-account/flow';
 import { dataSourceLabels, discoveryMenuText, displayText, metricLabel, scopeResourceLabel, surfaceLabels } from '@/lib/jury-product/ui-labels';
 import { CollectPeriodFields } from './collect-period-fields';
 import { summarizeProblems } from '@/lib/jury-product/review-display-model';
@@ -39,6 +40,11 @@ import {
 import { canShowWrite } from './ui';
 import type { ServiceTab } from './service-detail-tabs-model';
 import styles from './jury.module.css';
+
+
+function warnBadge(value: string | null | undefined): string {
+  return value && WARN_BADGES.has(value) ? `${styles.badge} ${styles.badgeWarn}` : styles.badge;
+}
 
 export function AddServiceBody({ actor }: { actor: Extract<JuryActor, { ok: true }> }) {
   if (!canShowWrite(actor, 'connection.write')) {
@@ -132,7 +138,7 @@ export function ServiceDetailBody({
         <>
       <h3>연결 상태</h3>
       <p>연결 방식 <span className={styles.badge}>{displayText(connection.accessMethod)}</span></p>
-      <p>상태 <span className={styles.badge}>{displayText(connection.status)}</span></p>
+      <p>상태 <span className={warnBadge(connection.status)}>{displayText(connection.status)}</span></p>
       <details className={styles.technicalDetails}>
         <summary>관리자용 기술 정보</summary>
         <p>연결 어댑터 {github ? 'github' : MOCK_ONBOARDING_SERVICE.adapterKey}</p>
@@ -141,7 +147,7 @@ export function ServiceDetailBody({
         <p>수정일 {formatKstFull(connection.updatedAt)}</p>
       </details>
       <h3>활성화</h3>
-      <p>상태 <span className={styles.badge}>{displayText(connection.status)}</span></p>
+      <p>상태 <span className={warnBadge(connection.status)}>{displayText(connection.status)}</span></p>
       {connection.status === 'CONNECTED' ? <p>연결됨</p> : <p>연결되지 않음</p>}
         </>
       ) : null}
@@ -149,7 +155,7 @@ export function ServiceDetailBody({
       {show('connect') ? (
         <>
       <h3>서비스 확인</h3>
-      <p>상태 <span className={styles.badge}>{displayText(detail.discoveryStatus)}</span></p>
+      <p>상태 <span className={warnBadge(detail.discoveryStatus)}>{displayText(detail.discoveryStatus)}</span></p>
       {discovery ? (
         <>
           {/* I-049: READ_ONLY_ACCOUNT does not use the mock discovery adapter; hide the misleading name. */}
@@ -160,7 +166,7 @@ export function ServiceDetailBody({
           <p>데이터 원천 {dataSourceLabels(discovery.dataSources)}</p>
           <p>수집 가능성 {displayText(discovery.feasibility)}</p>
           {discovery.proposedMetrics.map((item) => (
-            <p key={item.metric} title={item.metric}>{metricLabel(item.metric)}: {item.reason}</p>
+            <p key={item.metric} title={item.metric}>{metricLabel(item.metric)}: {reasonDisplay(item.reason)}</p>
           ))}
           <details className={styles.technicalDetails}>
             <summary>기술 정보</summary>
@@ -266,7 +272,7 @@ export function ServiceDetailBody({
       {projectConnectedServiceFlow(view, connection.id).map((row) => (
         <article key={row.id}>
           <p>수집 기간 {row.periodStart} – {row.periodEnd} · {row.timezone === 'Asia/Seoul' ? '한국 시간' : row.timezone}</p>
-          <p>수집 상태 <span className={styles.badge}>{displayText(row.collectionStatus)}</span></p>
+          <p>수집 상태 <span className={warnBadge(row.collectionStatus)}>{displayText(row.collectionStatus)}</span></p>
           {row.metrics.map((metric) => (
             <p key={metric.id} title={metric.metric}>{metricLabel(metric.metric)} {connectedMetricText(metric.value, metric.availability, formatMeasuredValue)}</p>
           ))}

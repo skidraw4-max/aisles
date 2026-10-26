@@ -7,7 +7,12 @@
  */
 import { revalidatePath } from 'next/cache';
 import { getJuryActor } from '@/lib/jury-product/session';
-import { createPrismaReadonlyAccountStore, persistReadonlyAccountConsent, persistReadonlyAccountCredential } from '@/lib/jury-product/services/readonly-account/store';
+import {
+  createPrismaReadonlyAccountStore,
+  persistReadonlyAccountConsent,
+  persistReadonlyAccountCredential,
+  persistReadonlyAccountLoginSettings,
+} from '@/lib/jury-product/services/readonly-account/store';
 import { READONLY_ACCOUNT_PHASE1_ENABLED } from '@/lib/jury-product/services/readonly-account/flags';
 import { normalizeObservationScope } from '@/lib/jury-product/services/readonly-account/consent';
 import { resolveEnvKeyProvider } from '@/lib/jury-product/services/readonly-account/key-provider';
@@ -26,6 +31,18 @@ function scopeOf(formData: FormData) {
   return { allowedOrigins: lines(formData.get('allowedOrigins')), authOrigins: lines(formData.get('authOrigins')), paths: lines(formData.get('paths')) };
 }
 
+function loginOf(formData: FormData) {
+  return {
+    loginUrl: formData.get('loginUrl'),
+    usernameSelector: formData.get('usernameSelector'),
+    passwordSelector: formData.get('passwordSelector'),
+    submitSelector: formData.get('submitSelector'),
+    successPathPrefix: formData.get('successPathPrefix'),
+  };
+}
+
+const blank = (v: FormDataEntryValue | null) => typeof v !== 'string' || v.trim() === '';
+
 export async function acceptReadonlyAccountConsentAction(formData: FormData): Promise<ReadonlyAccountActionResult> {
   if (!READONLY_ACCOUNT_PHASE1_ENABLED) return { ok: false, reason: 'NOT_IMPLEMENTED' };
   const result = await persistReadonlyAccountConsent({
@@ -42,16 +59,28 @@ export async function acceptReadonlyAccountConsentAction(formData: FormData): Pr
 
 export async function storeReadonlyAccountCredentialAction(formData: FormData): Promise<ReadonlyAccountActionResult> {
   if (!READONLY_ACCOUNT_PHASE1_ENABLED) return { ok: false, reason: 'NOT_IMPLEMENTED' };
+  const connectionId = String(formData.get('connectionId') ?? '');
+  const login = blank(formData.get('loginUrl')) ? null : loginOf(formData);
+  // I-054: 로그인 설정만 수정 (아이디·비밀번호 비움) → only the login plan is updated; the stored credential stays.
+  if (login && blank(formData.get('username')) && blank(formData.get('password')) && formData.get('loginOnly') === '1') {
+    const saved = await persistReadonlyAccountLoginSettings({ actor: await getJuryActor(), connectionId, login, store: await createPrismaReadonlyAccountStore() });
+    if (saved.ok) revalidatePath('/jury/services/[connectionId]', 'page');
+    return saved.ok ? { ok: true } : saved;
+  }
   const keys = resolveEnvKeyProvider();
   if (!keys.ok) return { ok: false, reason: 'KEY_NOT_CONFIGURED' };
-  const scope = normalizeObservationScope(scopeOf(formData));
-  if (!scope.ok) return scope;
+  // I-054: no scope typed → the scope stored with the consent is used (hash-verified server-side).
+  const raw = scopeOf(formData);
+  const typed = raw.allowedOrigins.length + raw.authOrigins.length + raw.paths.length > 0;
+  const scope = typed ? normalizeObservationScope(raw) : null;
+  if (scope && !scope.ok) return scope;
   const result = await persistReadonlyAccountCredential({
     actor: await getJuryActor(),
-    connectionId: String(formData.get('connectionId') ?? ''),
-    scope: scope.scope,
+    connectionId,
+    scope: scope ? scope.scope : null,
     username: formData.get('username'),
     password: formData.get('password'),
+    login,
     now: new Date().toISOString(),
     keyProvider: keys.provider,
     store: await createPrismaReadonlyAccountStore(),
@@ -70,13 +99,7 @@ export async function runReadonlyAccountObservationAction(formData: FormData): P
     actor: await getJuryActor(),
     connectionId: String(formData.get('connectionId') ?? ''),
     scope: scopeOf(formData),
-    login: {
-      loginUrl: formData.get('loginUrl'),
-      usernameSelector: formData.get('usernameSelector'),
-      passwordSelector: formData.get('passwordSelector'),
-      submitSelector: formData.get('submitSelector'),
-      successPathPrefix: formData.get('successPathPrefix'),
-    },
+    login: loginOf(formData),
     store: await createPrismaObservationRunStore(),
     keys: resolveEnvKeyProvider(),
     createDriver: createServerlessObservationDriver,

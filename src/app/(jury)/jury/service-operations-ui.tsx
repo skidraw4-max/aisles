@@ -13,6 +13,7 @@ import {
   runOnboardingDiscovery,
 } from './actions';
 import { displayText, userLabel, userLabels } from '@/lib/jury-product/ui-labels';
+import { observationTakesPriority, WARN_BADGES } from '@/lib/jury-product/services/readonly-account/flow';
 import { TranslationHint } from './ui-primitives';
 import { ReviewSubmitButton } from './review-submit-button';
 import { CONNECTED_REVIEW_PENDING_NOTE } from '@/lib/jury-product/connected-service-copy';
@@ -23,9 +24,31 @@ function mark(value: boolean): string {
   return value ? '✓' : '—';
 }
 
-function NextAction({ model }: { model: ServiceOperationModel }) {
+
+export function badgeClass(value: string | null | undefined): string {
+  return value && WARN_BADGES.has(value) ? `${styles.badge} ${styles.badgeWarn}` : styles.badge;
+}
+
+
+function NextAction({ model, observationNeeded }: { model: ServiceOperationModel; observationNeeded?: boolean }) {
   const action = model.next;
   if (!action) return null;
+  if (observationTakesPriority(model, observationNeeded)) {
+    return (
+      <section className={styles.serviceNextAction}>
+        <h3>다음 할 일</h3>
+        <p>관찰 실행</p>
+        <p>
+          <a className={`${styles.button} ${styles.primaryButton}`} href={`/jury/services/${model.connectionId}?tab=connect#observe`}>
+            ▶ 관찰 실행
+          </a>
+        </p>
+        <p className={styles.secondaryHint}>
+          읽기 전용 계정으로 관찰을 먼저 성공시킨 뒤 {displayText(action.label)}을(를) 진행하세요.
+        </p>
+      </section>
+    );
+  }
   return (
     <section className={styles.serviceNextAction}>
       <h3>다음 할 일</h3>
@@ -112,7 +135,7 @@ export function ServiceOperationsList({
               <tr key={row.connectionId}>
                 <td><Link className={`${styles.inline} ${styles.ellipsisText}`} href={juryHref(`/services/${row.connectionId}`)} title={row.name}>{row.name}</Link></td>
                 <td>{providers[row.connectionId]?.displayName ?? displayText('Unknown')}</td>
-                <td><span className={styles.badge} title={row.connectionStatus}>{userLabel(row.connectionStatus)}</span></td>
+                <td><span className={badgeClass(row.connectionStatus)} title={row.connectionStatus}>{userLabel(row.connectionStatus)}</span></td>
                 <td title={row.phase ?? undefined}>{row.phase ? userLabel(row.phase) : '—'}</td>
                 <td>{row.parts.evidence === 'READY' ? userLabel('READY') : displayText('No evidence collected yet')}</td>
                 <td>{hasReviewAccess(row) ? displayText(row.lastReview) : '—'}</td>
@@ -131,16 +154,16 @@ export function ServiceOperationsList({
 }
 
 /** I-051: always-visible summary header (name once, status badges, next action). */
-export function ServiceSummaryHeader({ model, children }: { model: ServiceOperationModel; children?: React.ReactNode }) {
+export function ServiceSummaryHeader({ model, children, observationNeeded }: { model: ServiceOperationModel; children?: React.ReactNode; observationNeeded?: boolean }) {
   return (
     <section className={styles.panel}>
       <h2 className={styles.pageTitle}>{model.name}</h2>
       <div className={styles.summaryHeader}>
-        <p>연결 <span className={styles.badge} title={model.connectionStatus}>{userLabel(model.connectionStatus)}</span></p>
-        {model.phase ? <p>운영 상태 <span className={styles.badge} title={model.phase}>{userLabel(model.phase)}</span></p> : null}
-        {model.health ? <p>서비스 상태 <span className={styles.badge} title={model.health}>{userLabel(model.health)}</span></p> : null}
+        <p>연결 <span className={badgeClass(model.connectionStatus)} title={model.connectionStatus}>{userLabel(model.connectionStatus)}</span></p>
+        {model.phase ? <p>운영 상태 <span className={badgeClass(model.phase)} title={model.phase}>{userLabel(model.phase)}</span></p> : null}
+        {model.health ? <p>서비스 상태 <span className={badgeClass(model.health)} title={model.health}>{userLabel(model.health)}</span></p> : null}
       </div>
-      <NextAction model={model} />
+      <NextAction model={model} observationNeeded={observationNeeded} />
       {children}
     </section>
   );
@@ -163,9 +186,9 @@ export function ServiceOperationDetail({
       {all ? (
         <>
           <h2 className={styles.pageTitle}>{model.name}</h2>
-          <p>연결 <span className={styles.badge} title={model.connectionStatus}>{userLabel(model.connectionStatus)}</span></p>
-          {model.phase ? <p>운영 상태 <span className={styles.badge} title={model.phase}>{userLabel(model.phase)}</span></p> : null}
-          {model.health ? <p>서비스 상태 <span className={styles.badge} title={model.health}>{userLabel(model.health)}</span></p> : null}
+          <p>연결 <span className={badgeClass(model.connectionStatus)} title={model.connectionStatus}>{userLabel(model.connectionStatus)}</span></p>
+          {model.phase ? <p>운영 상태 <span className={badgeClass(model.phase)} title={model.phase}>{userLabel(model.phase)}</span></p> : null}
+          {model.health ? <p>서비스 상태 <span className={badgeClass(model.health)} title={model.health}>{userLabel(model.health)}</span></p> : null}
         </>
       ) : null}
       {show('connect') && provider ? (
@@ -174,11 +197,11 @@ export function ServiceOperationDetail({
           <p>제공자 {provider.displayName}</p>
           <p>연결 방식 <span title={provider.configuration.connectionMethod}>{displayText(provider.configuration.connectionMethod)}</span></p>
           <p>접근 방식 <span title={provider.configuration.accessMode}>{displayText(provider.configuration.accessMode)}</span></p>
-          <p>자격 증명 상태 <span className={styles.badge} title={provider.configuration.credentialStatus}>{userLabel(provider.configuration.credentialStatus)}</span></p>
-          <p>연결 상태 <span className={styles.badge} title={provider.configuration.connectionStatus}>{userLabel(provider.configuration.connectionStatus)}</span></p>
-          <p>수명 주기 <span className={styles.badge} title={provider.configuration.lifecycle}>{userLabel(provider.configuration.lifecycle)}</span></p>
-          <p>준비 상태 <span className={styles.badge} title={provider.configuration.readiness}>{userLabel(provider.configuration.readiness)}</span></p>
-          <p>연결 상태 점검 <span className={styles.badge} title={provider.health}>{userLabel(provider.health)}</span></p>
+          <p>자격 증명 상태 <span className={badgeClass(provider.configuration.credentialStatus)} title={provider.configuration.credentialStatus}>{userLabel(provider.configuration.credentialStatus)}</span></p>
+          <p>연결 상태 <span className={badgeClass(provider.configuration.connectionStatus)} title={provider.configuration.connectionStatus}>{userLabel(provider.configuration.connectionStatus)}</span></p>
+          <p>수명 주기 <span className={badgeClass(provider.configuration.lifecycle)} title={provider.configuration.lifecycle}>{userLabel(provider.configuration.lifecycle)}</span></p>
+          <p>준비 상태 <span className={badgeClass(provider.configuration.readiness)} title={provider.configuration.readiness}>{userLabel(provider.configuration.readiness)}</span></p>
+          <p>연결 상태 점검 <span className={badgeClass(provider.health)} title={provider.health}>{userLabel(provider.health)}</span></p>
           <p>기능 {userLabels(provider.configuration.capabilities)}</p>
           <p>{provider.configuration.notice}</p>
           {provider.provider === 'GITHUB' ? <p><Link className={styles.inline} href={juryHref('/services/github')}>GitHub 저장소</Link></p> : null}
