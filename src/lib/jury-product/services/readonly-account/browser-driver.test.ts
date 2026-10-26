@@ -11,6 +11,7 @@ function fakeContext(script: { onGoto?: (url: string, fire: (r: PwRequest) => Pr
   let handler: ((route: PwRoute) => Promise<void> | void) | null = null;
   const log = { init: [] as string[], outcomes: [] as { url: string; method: string; type: string; result: string }[], closed: false, evaluates: 0 };
   let current = 'about:blank';
+  const values = new Map<string, string>();
   const fire = async (r: PwRequest) => {
     let result = 'pending';
     await handler!({ request: () => r, abort: async () => { result = 'abort'; }, continue: async () => { result = 'continue'; } });
@@ -23,7 +24,10 @@ function fakeContext(script: { onGoto?: (url: string, fire: (r: PwRequest) => Pr
       current = (await script.onGoto?.(url, fire)) || url;
       return null;
     },
-    async fill() {},
+    async fill(sel: string, v: string) { values.set(sel, v); },
+    async inputValue(sel: string) { return values.get(sel) ?? ''; },
+    async waitForSelector() { return null; },
+    async waitForTimeout() {},
     async click() {
       const to = await script.onClick?.(fire);
       if (to) current = to;

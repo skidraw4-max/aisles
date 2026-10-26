@@ -28,6 +28,9 @@ export interface PwPage {
   goto(url: string, options?: { waitUntil?: 'load' | 'domcontentloaded' | 'networkidle'; timeout?: number }): Promise<unknown>;
   fill(selector: string, value: string, options?: { timeout?: number }): Promise<void>;
   click(selector: string, options?: { timeout?: number }): Promise<void>;
+  inputValue(selector: string, options?: { timeout?: number }): Promise<string>;
+  waitForSelector(selector: string, options?: { state?: 'attached' | 'visible'; timeout?: number }): Promise<unknown>;
+  waitForTimeout(ms: number): Promise<void>;
   waitForURL(url: (url: URL) => boolean, options?: { timeout?: number; waitUntil?: 'load' | 'domcontentloaded' | 'networkidle' | 'commit' }): Promise<void>;
   waitForLoadState(state?: 'load' | 'domcontentloaded' | 'networkidle', options?: { timeout?: number }): Promise<void>;
   url(): string;
@@ -46,6 +49,8 @@ export type PwContextLauncher = () => Promise<PwContext>;
 export const BLOCKED_RESOURCE_TYPES = new Set(['websocket', 'eventsource', 'ping', 'manifest']);
 export const MAX_SNAPSHOT_CHARS = 20_000;
 const TIMEOUT_MS = 15_000;
+const LOGIN_IDLE_MS = 10_000;
+const REFILL_DELAY_MS = 500;
 
 /** Runs in the page. Kept as a string so it is not transpiled with Node globals. */
 export const INIT_SCRIPT = `(() => {
@@ -93,6 +98,21 @@ export async function waitAfterLoginClick(p: PwPage, waitFor?: { successPathPref
   if (left() > 0) await p.waitForLoadState('networkidle', { timeout: left() }).catch(() => undefined);
 }
 
+/**
+ * I-046: wait for the field to be visible (Playwright fill also waits for enabled/editable), fill, then read the
+ * value back. Hydration can reset a controlled input, so re-fill once after a short delay. Values are never logged.
+ */
+export async function fillVerified(p: PwPage, selector: string, value: string): Promise<boolean> {
+  await p.waitForSelector(selector, { state: 'visible', timeout: TIMEOUT_MS });
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    if (attempt > 0) await p.waitForTimeout(REFILL_DELAY_MS);
+    await p.fill(selector, value, { timeout: TIMEOUT_MS });
+    const actual = await p.inputValue(selector, { timeout: TIMEOUT_MS }).catch(() => null);
+    if (actual === value) return true;
+  }
+  return false;
+}
+
 export function createBrowserObservationDriver(launch: PwContextLauncher): ObservationDriver {
   let context: PwContext | null = null;
   let page: PwPage | null = null;
@@ -116,12 +136,14 @@ export function createBrowserObservationDriver(launch: PwContextLauncher): Obser
       guard = g;
       await ensure();
     },
-    async goto(url) {
+    async goto(url, opts) {
       const p = await ensure();
       await p.goto(url, { waitUntil: 'domcontentloaded', timeout: TIMEOUT_MS }).catch(() => undefined);
+      // I-046: let client JS hydrate the login form before typing (bounded; long-polling pages never go idle).
+      if (opts?.login) await p.waitForLoadState('networkidle', { timeout: LOGIN_IDLE_MS }).catch(() => undefined);
     },
     async fill(selector, value) {
-      await (await ensure()).fill(selector, value, { timeout: TIMEOUT_MS });
+      return fillVerified(await ensure(), selector, value);
     },
     async click(selector, waitFor) {
       const p = await ensure();
