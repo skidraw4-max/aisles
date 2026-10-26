@@ -45,7 +45,8 @@ const nextConfig: NextConfig = {
     /** Preview DB TLS: pinned Supabase CA read via fs (preview-db-tls.ts). prisma is imported transitively by most server entries, so apply to all. */
     '/**': ['./certs/supabase/prod-ca-2021.crt'],
     /** READ_ONLY_ACCOUNT observation (I-044): @sparticuz/chromium reads its brotli binaries via fs at runtime. */
-    '/jury/services/[connectionId]': ['./node_modules/@sparticuz/chromium/bin/**'],
+    /** I-068: + Korean font for serverless Chromium (copied to /tmp/fonts at launch, browser-runtime.ts). */
+    '/jury/services/[connectionId]': ['./node_modules/@sparticuz/chromium/bin/**', './assets/fonts/NotoSansKR-Regular.otf'],
   },
   async headers() {
     return [

@@ -17,6 +17,7 @@ export const SCREEN_AUDIT_NOTES = [
   '로그인 후 읽기만 합니다. 클릭·입력·저장·결제·삭제는 하지 않습니다.',
   '/mypage 등 개인정보 화면은 기본 차단되고, 스크린샷은 찍기 전에 입력칸·개인정보로 보이는 글자를 가립니다.',
   '스크린샷은 비공개 저장소에 14일 보관 후 자동 삭제됩니다.',
+  '모바일은 실제 휴대폰처럼(모바일 브라우저·터치) 로그인 상태 그대로 확인합니다. 모바일 전용 주소로 이동하는 사이트는 그 주소가 허용 출처에 있어야 합니다.',
   '한 번에 최대 8개 화면을 확인하고, 나머지는 “확인 못 함”으로 남겨 재심사에서 이어서 확인합니다.',
 ];
 
@@ -53,6 +54,19 @@ export function stopText(summary: unknown): string | null {
     LOGIN_PLAN_INVALID: '로그인 설정이 없습니다. 연결 설정에서 먼저 관찰을 한 번 성공시켜 주세요.',
   };
   return map[stop] ?? `중간에 멈췄습니다 (${stop}).`;
+}
+
+/** I-068: guidance lines from the audit summary (mobile host outside scope, environment-limited findings). */
+export function guidanceText(summary: unknown): string[] {
+  const s = summary && typeof summary === 'object' ? (summary as { mobileOriginsNotAllowed?: unknown; envLimitedFindings?: unknown }) : {};
+  const out: string[] = [];
+  const origins = Array.isArray(s.mobileOriginsNotAllowed) ? s.mobileOriginsNotAllowed.filter((o): o is string => typeof o === 'string') : [];
+  if (origins.length > 0) {
+    out.push(`모바일 화면이 ${origins.join(', ')} 로 이동해 확인하지 못했습니다. 연결 설정의 “허용 출처”에 이 주소를 추가하고 다시 동의한 뒤 새로 심사해 주세요. (자동으로 추가하지 않습니다)`);
+  }
+  const env = Number(s.envLimitedFindings) || 0;
+  if (env > 0) out.push(`${env}건은 스타일·글꼴이 일부 불러와지지 않은 상태에서 측정되어 심각도를 한 단계 낮췄습니다(환경 제약).`);
+  return out;
 }
 
 export const SEVERITY_ORDER: Record<string, number> = { HIGH: 0, MEDIUM: 1, LOW: 2 };

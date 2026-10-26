@@ -10,7 +10,7 @@ import { READONLY_ACCOUNT_CONSENT_VERSION } from '../readonly-account/consent-te
 import type { ObservationDriver } from '../readonly-account/executor';
 import type { KeyProviderResolution } from '../readonly-account/key-provider';
 import { runStoredCredentialObservation, type ObservationRunStore } from '../readonly-account/observation-run';
-import { createAuditHook, type AuditPageResult } from './audit-hook';
+import { createAuditHook, mobileOriginsNotAllowed, type AuditPageResult } from './audit-hook';
 import { summarizeAudit, type AreaSummary, type AuditStatus, type Finding } from './rules';
 import { createMaskedCapture, screenshotExpiry, type ScreenshotSink } from './screenshot-store';
 import { AUDIT_LIMITS, DEFAULT_AUDIT_VIEWPORTS } from './viewports';
@@ -28,11 +28,18 @@ export const AREA_TITLES: Record<string, string> = {
 };
 
 export type AuditRows = {
-  pages: { id: string; path: string; label: string; viewport: string; status: AuditStatus; metrics: unknown | null }[];
+  pages: { id: string; path: string; label: string; viewport: string; status: AuditStatus; metrics: unknown | null; capturedAt?: Date }[];
   evidence: { id: string; pageId: string; kind: 'SCREENSHOT'; storageKey: string; sha256: string; byteSize: number; width: number; height: number; data: { maskedCount: number }; expiresAt: Date }[];
   testCases: { id: string; key: string; area: string; viewport: string; title: string; result: { id: string; status: AuditStatus; detail: AreaSummary } }[];
-  findings: { id: string; pageId: string | null; area: string; rule: string; severity: string; status: AuditStatus; viewport: string; message: string; evidenceIds: string[]; boxes: Finding['boxes'] }[];
+  findings: { id: string; pageId: string | null; area: string; rule: string; severity: string; status: AuditStatus; viewport: string; message: string; evidenceIds: string[]; boxes: Finding['boxes']; envLimited?: boolean }[];
 };
+
+/** I-068: page metrics JSON keeps the old shape; env / reason / mobileOrigin are added only when present. */
+function pageMetricsJson(r: AuditPageResult): Record<string, unknown> | null {
+  const extra = { ...(r.env ? { env: r.env } : {}), ...(r.mobileOrigin ? { mobileOrigin: r.mobileOrigin } : {}) };
+  if (r.metrics) return Object.keys(extra).length ? { ...r.metrics, ...extra } : (r.metrics as unknown as Record<string, unknown>);
+  return r.reason ? { reason: r.reason, ...extra } : null;
+}
 
 export function buildAuditRows(results: readonly AuditPageResult[], now: Date, id: () => string = randomUUID) {
   const summary = summarizeAudit(results);
@@ -42,7 +49,7 @@ export function buildAuditRows(results: readonly AuditPageResult[], now: Date, i
   for (const r of results) {
     const pid = id();
     pageIds.set(`${r.path}|${r.viewport}`, pid);
-    rows.pages.push({ id: pid, path: r.path, label: r.label, viewport: r.viewport, status: r.status, metrics: r.metrics ?? (r.reason ? { reason: r.reason } : null) });
+    rows.pages.push({ id: pid, path: r.path, label: r.label, viewport: r.viewport, status: r.status, metrics: pageMetricsJson(r), ...(r.capturedAt ? { capturedAt: new Date(r.capturedAt) } : {}) });
     if (r.capture) {
       const eid = id();
       shotIds.set(`${r.path}|${r.viewport}`, eid);
@@ -55,7 +62,7 @@ export function buildAuditRows(results: readonly AuditPageResult[], now: Date, i
   for (const f of summary.findings) {
     const k = `${f.path}|${f.viewport}`;
     const shot = shotIds.get(k);
-    rows.findings.push({ id: id(), pageId: pageIds.get(k) ?? null, area: f.area, rule: f.rule, severity: f.severity, status: f.status === 'FAIL' ? 'FAIL' : 'PARTIAL', viewport: f.viewport, message: f.message, evidenceIds: shot ? [shot] : [], boxes: f.boxes });
+    rows.findings.push({ id: id(), pageId: pageIds.get(k) ?? null, area: f.area, rule: f.rule, severity: f.severity, status: f.status === 'FAIL' ? 'FAIL' : 'PARTIAL', viewport: f.viewport, message: f.message, evidenceIds: shot ? [shot] : [], boxes: f.boxes, ...(f.envLimited ? { envLimited: true } : {}) });
   }
   return { summary, rows };
 }
@@ -152,7 +159,7 @@ export async function runScreenAudit(input: {
   const status: AuditStatus = failed ? 'ERROR' : hook.results.length === 0 ? (stop ? 'BLOCKED' : 'NOT_TESTED') : stop && summary.status === 'PASS' ? 'PARTIAL' : summary.status;
   await input.auditStore.finishAudit({
     id: auditId, tenantId: auth.connection.tenantId, state: failed ? 'FAILED' : 'DONE', status,
-    summary: { areas: summary.areas, findings: summary.findings.length, stop, ai, pages: new Set(hook.results.map((r) => r.path)).size, elapsedMs: hook.elapsedMs() },
+    summary: { areas: summary.areas, findings: summary.findings.length, stop, ai, mobileOriginsNotAllowed: mobileOriginsNotAllowed(hook.results), envLimitedFindings: summary.findings.filter((f) => f.envLimited).length, pages: new Set(hook.results.map((r) => r.path)).size, elapsedMs: hook.elapsedMs() },
     finishedAt: now(), rows,
   });
   return { ok: true, auditId, status, areas: summary.areas, findings: summary.findings.length, stop };
@@ -172,11 +179,11 @@ export async function createPrismaScreenAuditStore(): Promise<ScreenAuditStore> 
       const t = a.tenantId;
       const r = a.rows;
       await prisma.$transaction([
-        prisma.juryAuditPage.createMany({ data: r.pages.map((p) => ({ id: p.id, auditId: a.id, tenantId: t, path: p.path, label: p.label, viewport: p.viewport, status: p.status, metrics: json(p.metrics), capturedAt: a.finishedAt })) }),
+        prisma.juryAuditPage.createMany({ data: r.pages.map((p) => ({ id: p.id, auditId: a.id, tenantId: t, path: p.path, label: p.label, viewport: p.viewport, status: p.status, metrics: json(p.metrics), capturedAt: p.capturedAt ?? a.finishedAt })) }),
         prisma.juryAuditEvidence.createMany({ data: r.evidence.map((e) => ({ id: e.id, auditId: a.id, pageId: e.pageId, tenantId: t, kind: e.kind, storageKey: e.storageKey, sha256: e.sha256, masked: true, byteSize: e.byteSize, width: e.width, height: e.height, data: json(e.data), expiresAt: e.expiresAt })) }),
         prisma.juryAuditTestCase.createMany({ data: r.testCases.map((c) => ({ id: c.id, auditId: a.id, tenantId: t, key: c.key, area: c.area, viewport: c.viewport, title: c.title })) }),
         prisma.juryAuditTestResult.createMany({ data: r.testCases.map((c) => ({ id: c.result.id, testCaseId: c.id, auditId: a.id, tenantId: t, status: c.result.status, detail: json(c.result.detail) })) }),
-        prisma.juryAuditFinding.createMany({ data: r.findings.map((f) => ({ id: f.id, auditId: a.id, pageId: f.pageId, tenantId: t, area: f.area, rule: f.rule, source: 'RULE', severity: f.severity, status: f.status, viewport: f.viewport, message: f.message, evidenceIds: json({ ids: f.evidenceIds, boxes: f.boxes }) })) }),
+        prisma.juryAuditFinding.createMany({ data: r.findings.map((f) => ({ id: f.id, auditId: a.id, pageId: f.pageId, tenantId: t, area: f.area, rule: f.rule, source: 'RULE', severity: f.severity, status: f.status, viewport: f.viewport, message: f.message, evidenceIds: json({ ids: f.evidenceIds, boxes: f.boxes, ...(f.envLimited ? { envLimited: true } : {}) }) })) }),
         prisma.juryVisualAudit.updateMany({ where: { id: a.id, tenantId: t }, data: { state: a.state, status: a.status, summary: json(a.summary), finishedAt: a.finishedAt } }),
       ]);
     },

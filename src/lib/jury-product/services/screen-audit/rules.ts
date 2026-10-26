@@ -3,7 +3,7 @@
  * page and element boxes. Thresholds follow WCAG 2.2 (contrast 1.4.3: 4.5:1 / 3:1 large; target size 2.5.8: 24px).
  * Area status never turns PASS without measurement: missing pages are NOT_TESTED, /mypage is BLOCKED.
  */
-import type { AuditPageResult } from './audit-hook';
+import { isEnvLimited, type AuditEnv, type AuditPageResult } from './audit-hook';
 import type { Box, LayoutMetrics } from './layout-probe';
 import type { AuditViewportName } from './viewports';
 
@@ -20,6 +20,8 @@ export type Finding = {
   message: string;
   boxes: Box[];
   source: 'RULE';
+  /** I-068: measured with blocked CSS/fonts or unloaded fonts — severity lowered one step, FAIL → WARN. */
+  envLimited?: boolean;
 };
 
 export const AUDIT_AREAS: readonly AuditArea[] = ['LAYOUT', 'MOBILE', 'A11Y', 'NAVIGATION'];
@@ -28,7 +30,26 @@ export const MIN_TARGET_PX = 24;
 const overlaps = (a: Box, b: Box) => a.x < b.x + b.w - 1 && b.x < a.x + a.w - 1 && a.y < b.y + b.h - 1 && b.y < a.y + a.h - 1;
 const contains = (a: Box, b: Box) => a.x <= b.x && a.y <= b.y && a.x + a.w >= b.x + b.w && a.y + a.h >= b.y + b.h;
 
-export function analyzePage(path: string, viewport: AuditViewportName, m: LayoutMetrics): Finding[] {
+const DOWN: Record<Severity, Severity> = { HIGH: 'MEDIUM', MEDIUM: 'LOW', LOW: 'LOW' };
+/** I-068: rules that do not depend on rendering (structure only) keep their severity. */
+const ENV_INDEPENDENT = new Set(['HEADINGS_MISSING']);
+
+export function envLimitText(env: AuditEnv): string {
+  const parts: string[] = [];
+  if (env.blocked.stylesheet > 0) parts.push(`스타일 ${env.blocked.stylesheet}개 차단`);
+  if (env.blocked.font > 0) parts.push(`글꼴 ${env.blocked.font}개 차단`);
+  if (!env.fontsReady) parts.push('글꼴 로딩 미완료');
+  return parts.join(', ');
+}
+
+export function analyzePage(path: string, viewport: AuditViewportName, m: LayoutMetrics, env?: AuditEnv): Finding[] {
+  const out = analyzeRaw(path, viewport, m);
+  if (!env || !isEnvLimited(env)) return out;
+  const note = ` (환경 제약: ${envLimitText(env)} — 실제 화면과 다를 수 있음)`;
+  return out.map((x) => (ENV_INDEPENDENT.has(x.rule) ? x : { ...x, severity: DOWN[x.severity], status: 'WARN' as const, message: x.message + note, envLimited: true }));
+}
+
+function analyzeRaw(path: string, viewport: AuditViewportName, m: LayoutMetrics): Finding[] {
   const out: Finding[] = [];
   const f = (area: AuditArea, rule: string, severity: Severity, status: 'FAIL' | 'WARN', message: string, boxes: Box[] = []) =>
     out.push({ area, rule, severity, status, viewport, path, message, boxes: boxes.slice(0, 10), source: 'RULE' });
@@ -69,7 +90,7 @@ export type AreaSummary = { area: AuditArea; viewport: AuditViewportName; status
 
 export function summarizeAudit(pages: readonly AuditPageResult[]): { findings: Finding[]; areas: AreaSummary[]; status: AuditStatus } {
   const findings: Finding[] = [];
-  for (const p of pages) if (p.status === 'PASS' && p.metrics) findings.push(...analyzePage(p.path, p.viewport, p.metrics));
+  for (const p of pages) if (p.status === 'PASS' && p.metrics) findings.push(...analyzePage(p.path, p.viewport, p.metrics, p.env));
   const viewports = [...new Set(pages.map((p) => p.viewport))];
   const areas: AreaSummary[] = [];
   for (const viewport of viewports) {

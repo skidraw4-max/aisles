@@ -14,6 +14,7 @@ import {
   SEVERITY_ORDER,
   STATUS_LABEL,
   stopText,
+  guidanceText,
   VIEWPORT_LABEL,
 } from '@/lib/jury-product/services/screen-audit/view-model';
 import styles from './jury.module.css';
@@ -33,6 +34,7 @@ export async function ScreenAuditSection(props: { tenantId: string; connectionId
   const latest = view.latest;
   const rows = latest ? areaRows(latest.summary) : [];
   const stop = latest ? stopText(latest.summary) : null;
+  const guidance = latest ? guidanceText(latest.summary) : [];
   const findings = latest ? [...latest.findings].sort((a, b) => (SEVERITY_ORDER[a.severity] ?? 9) - (SEVERITY_ORDER[b.severity] ?? 9)) : [];
   return (
     <section className={styles.panel} aria-labelledby="screen-audit-title">
@@ -73,6 +75,11 @@ export async function ScreenAuditSection(props: { tenantId: string; connectionId
             </div>
           ) : null}
           {stop ? <p role="note">{stop}</p> : null}
+          {guidance.map((g) => (
+            <p key={g} role="note">
+              {g}
+            </p>
+          ))}
           {rows.length > 0 ? (
             <table>
               <thead>
