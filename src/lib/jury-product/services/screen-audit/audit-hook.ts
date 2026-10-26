@@ -3,10 +3,10 @@
  * navigation only). For every viewport: resize → settle → measure (→ capture, I-060). Never clicks, types or submits.
  * Sensitive paths (/mypage, I-057) are BLOCKED without measuring. Pages beyond the budget are NOT_TESTED, never PASS.
  */
-import type { ObservationDriver } from '../readonly-account/executor';
+import type { ObservationDriver, ResourceStats } from '../readonly-account/executor';
 import { isSensitivePath } from '../readonly-account/sensitive-paths';
 import type { LayoutMetrics } from './layout-probe';
-import { AUDIT_LIMITS, DEFAULT_AUDIT_VIEWPORTS, type AuditViewport, type AuditViewportName } from './viewports';
+import { AUDIT_LIMITS, DEFAULT_AUDIT_VIEWPORTS, DESKTOP_ONLY_MIN_WIDTH, type AuditViewport, type AuditViewportName } from './viewports';
 
 export type AuditPageStatus = 'PASS' | 'NOT_TESTED' | 'BLOCKED' | 'ERROR';
 export type AuditPageResult = {
@@ -15,10 +15,24 @@ export type AuditPageResult = {
   viewport: AuditViewportName;
   /** PASS here only means "measured"; findings decide the area status (I-061/I-063). */
   status: AuditPageStatus;
-  reason?: 'SENSITIVE_PATH' | 'BUDGET' | 'MAX_PAGES' | 'UNSUPPORTED' | 'MEASURE_FAILED';
+  reason?: 'SENSITIVE_PATH' | 'BUDGET' | 'MAX_PAGES' | 'UNSUPPORTED' | 'MEASURE_FAILED' | 'MOBILE_HOST_NOT_ALLOWED' | 'DESKTOP_ONLY_LAYOUT';
   metrics?: LayoutMetrics;
   capture?: CaptureRef;
+  /** I-068: when this page×viewport was measured (epoch ms). */
+  capturedAt?: number;
+  /** I-068: measurement environment (counts/origins only). */
+  env?: AuditEnv;
+  /** I-068: origin the mobile page redirected to but that is outside the consented scope (never auto-added). */
+  mobileOrigin?: string;
 };
+export type AuditEnv = {
+  emulated: boolean;
+  blocked: ResourceStats['blocked'];
+  fontsReady: boolean;
+  /** origin actually measured when it differs from the requested page (e.g. an allowed mobile host). */
+  finalOrigin?: string;
+};
+const NO_BLOCKED: ResourceStats['blocked'] = { stylesheet: 0, font: 0, script: 0, xhr: 0, other: 0 };
 export type CaptureRef = { storageKey: string; sha256: string; byteSize: number; width: number; height: number; masked: true; maskedCount: number };
 
 export type AuditCapture = (input: { path: string; viewport: AuditViewport }) => Promise<CaptureRef | null>;
@@ -29,6 +43,24 @@ export function pathOf(url: string): string {
   } catch {
     return '/';
   }
+}
+
+function originOf(url: string): string | null {
+  try {
+    return new URL(url).origin;
+  } catch {
+    return null;
+  }
+}
+
+/** I-068: mobile hosts that pages redirected to but which are outside the consented scope (for guidance only). */
+export function mobileOriginsNotAllowed(pages: readonly Pick<AuditPageResult, 'mobileOrigin'>[]): string[] {
+  return [...new Set(pages.map((p) => p.mobileOrigin).filter((o): o is string => Boolean(o)))].sort();
+}
+
+/** I-068: true when the page was measured with blocked CSS/fonts or unloaded fonts — visual findings may be artefacts. */
+export function isEnvLimited(env: AuditEnv | undefined): boolean {
+  return Boolean(env && (env.blocked.stylesheet > 0 || env.blocked.font > 0 || !env.fontsReady));
 }
 
 export function createAuditHook(input: {
@@ -64,16 +96,46 @@ export function createAuditHook(input: {
     if (audited >= maxPages) return mark(path, page.label, 'NOT_TESTED', 'MAX_PAGES');
     if (clock() - startedAt >= budgetMs) return mark(path, page.label, 'NOT_TESTED', 'BUDGET');
     audited += 1;
+    const origin = originOf(page.url);
+    let mobileOpened = false;
     for (const vp of viewports) {
+      const base = { path, label: page.label, viewport: vp.name };
       try {
-        await driver.setViewport!(vp);
+        const emulate = vp.name === 'MOBILE' && Boolean(driver.openMobile);
+        let finalOrigin: string | undefined;
+        if (emulate) {
+          mobileOpened = true;
+          const nav = await driver.openMobile!(page.url);
+          const navOrigin = originOf(nav.finalUrl);
+          const redirectedOff = nav.blockedNavigationOrigin && nav.blockedNavigationOrigin !== origin ? nav.blockedNavigationOrigin : null;
+          if (redirectedOff) {
+            results.push({ ...base, status: 'NOT_TESTED', reason: 'MOBILE_HOST_NOT_ALLOWED', mobileOrigin: redirectedOff, capturedAt: clock() });
+            continue;
+          }
+          if (navOrigin && navOrigin !== origin) finalOrigin = navOrigin;
+          if (isSensitivePath(pathOf(nav.finalUrl), input.sensitivePrefixes)) {
+            results.push({ ...base, status: 'BLOCKED', reason: 'SENSITIVE_PATH' });
+            continue;
+          }
+        } else {
+          await driver.setViewport!(vp);
+        }
+        const stats = driver.resourceStats ? await driver.resourceStats().catch(() => null) : null;
         const metrics = await driver.layoutMetrics!();
+        const capturedAt = clock();
+        const env: AuditEnv = { emulated: emulate, blocked: stats?.blocked ?? NO_BLOCKED, fontsReady: stats?.fontsReady ?? true, ...(finalOrigin ? { finalOrigin } : {}) };
+        // I-068: a resize-only "mobile" of a fixed-min-width PC site is not a mobile measurement.
+        if (vp.name === 'MOBILE' && !emulate && vp.width < DESKTOP_ONLY_MIN_WIDTH && metrics.docWidth >= DESKTOP_ONLY_MIN_WIDTH) {
+          results.push({ ...base, status: 'NOT_TESTED', reason: 'DESKTOP_ONLY_LAYOUT', capturedAt, env });
+          continue;
+        }
         const capture = input.capture ? await input.capture({ path, viewport: vp }).catch(() => null) : null;
-        results.push({ path, label: page.label, viewport: vp.name, status: 'PASS', metrics, ...(capture ? { capture } : {}) });
+        results.push({ ...base, status: 'PASS', metrics, capturedAt, env, ...(capture ? { capture } : {}) });
       } catch {
-        results.push({ path, label: page.label, viewport: vp.name, status: 'ERROR', reason: 'MEASURE_FAILED' });
+        results.push({ ...base, status: 'ERROR', reason: 'MEASURE_FAILED' });
       }
     }
+    if (mobileOpened) await driver.closeMobile?.().catch(() => undefined);
     // leave the session on desktop so link discovery behaves as before
     await driver.setViewport!(viewports[0]).catch(() => undefined);
   }

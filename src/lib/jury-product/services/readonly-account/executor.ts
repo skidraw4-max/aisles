@@ -10,7 +10,7 @@
  */
 import type { AccountCredentialSecret } from './credential-crypto';
 import type { ObservationScope } from './consent';
-import { allowedSitesOf, isSameSiteSubresource } from './same-site';
+import { allowedSitesOf, isFontHostRequest, isSameSiteSubresource } from './same-site';
 import type { LayoutMetrics } from '../screen-audit/layout-probe';
 import { DEFAULT_DISCOVERY, normalizeLinkKey, normalizeStats, pickLinks, type DiscoveredLink, type DiscoveryOptions, type PageStats } from './discovery';
 
@@ -19,6 +19,8 @@ export const READONLY_ACCOUNT_EXECUTOR_ENABLED = true as boolean;
 /** resourceType (I-055): Playwright resource type when known (script, stylesheet, image, font, xhr, fetch, document, ...). */
 export type ObservedRequest = { method: string; url: string; isFormSubmit: boolean; isNavigation: boolean; resourceType?: string };
 export type RequestVerdict = 'allow' | 'block';
+/** I-068: per-page environment facts (counts only). */
+export type ResourceStats = { blocked: { stylesheet: number; font: number; script: number; xhr: number; other: number }; fontsReady: boolean };
 
 export interface ObservationDriver {
   /** Install a guard consulted for every outgoing request (including subresources). Blocked requests must be aborted. */
@@ -46,6 +48,16 @@ export interface ObservationDriver {
   layoutMetrics?(): Promise<LayoutMetrics>;
   /** I-060: mask (verified) → viewport JPEG → unmask. Returns null when masking could not be verified. Optional. */
   captureMasked?(): Promise<{ bytes: Uint8Array; masked: true; maskedCount: number } | null>;
+  /**
+   * I-068: open `url` in a separate mobile-emulated context (UA, touch, isMobile, deviceScaleFactor) that carries the
+   * logged-in session (cookies/localStorage). Same request guard. Subsequent layoutMetrics/captureMasked/resourceStats
+   * read the mobile page until closeMobile(). blockedNavigationOrigin = a document navigation (e.g. a redirect to a
+   * mobile host) blocked because its origin is not in scope. Optional.
+   */
+  openMobile?(url: string): Promise<{ finalUrl: string; blockedNavigationOrigin: string | null }>;
+  closeMobile?(): Promise<void>;
+  /** I-068: subresources blocked on the current page since its last navigation (counts only), and document.fonts state. */
+  resourceStats?(): Promise<ResourceStats>;
   close(): Promise<void>;
 }
 
@@ -176,6 +188,8 @@ export function createRequestGuard(input: { scope: ObservationScope; loginOrigin
     }
     if (!origin || !allowedOrigins.has(origin)) {
       if (origin && isSameSiteSubresource(req, allowedSites)) return 'allow';
+      // I-068: web font CSS/files (fonts.googleapis.com / fonts.gstatic.com) so text is measured with the real font.
+      if (origin && isFontHostRequest(req)) return 'allow';
       blocked.push({ method, url: req.url, reason: 'ORIGIN' });
       return 'block';
     }

@@ -81,3 +81,20 @@ export function blockedHostCounts(blocked: readonly { url: string }[], limit = 2
   }
   return Object.fromEntries([...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).slice(0, limit));
 }
+
+/**
+ * I-068: web font hosts. Only GET stylesheet from fonts.googleapis.com and GET font from fonts.gstatic.com are allowed
+ * (exact hostnames). Every other google.com / gstatic.com host (reCAPTCHA: www.google.com, www.gstatic.com) stays blocked.
+ */
+export const FONT_HOST_TYPES: Readonly<Record<string, string>> = { 'fonts.googleapis.com': 'stylesheet', 'fonts.gstatic.com': 'font' };
+export function isFontHostRequest(req: { method: string; url: string; isNavigation: boolean; isFormSubmit: boolean; resourceType?: string }): boolean {
+  if (req.isNavigation || req.isFormSubmit || req.method.toUpperCase() !== 'GET') return false;
+  try {
+    const u = new URL(req.url);
+    if (u.protocol !== 'https:' || u.port) return false;
+    const type = FONT_HOST_TYPES[u.hostname.toLowerCase()];
+    return Boolean(type && req.resourceType === type && !/recaptcha/i.test(u.pathname));
+  } catch {
+    return false;
+  }
+}

@@ -11,7 +11,8 @@
  * 2. The launcher must create the context with serviceWorkers: 'block' (service workers would bypass routing).
  * 3. Init script disables WebSocket, EventSource, sendBeacon, RTCPeerConnection and blocks form submit after login.
  */
-import type { ObservationDriver, ObservedRequest, RequestVerdict } from './executor';
+import type { ObservationDriver, ObservedRequest, RequestVerdict, ResourceStats } from './executor';
+import { MOBILE_DEVICE, type MobileDevice } from '../screen-audit/viewports';
 import { LAYOUT_PROBE } from '../screen-audit/layout-probe';
 import { MASK_ATTR, MASK_PROBE, UNMASK_PROBE } from '../screen-audit/mask-probe';
 
@@ -39,7 +40,7 @@ export interface PwPage {
   /** I-059: optional in fakes. */
   setViewportSize?(size: { width: number; height: number }): Promise<void>;
   /** I-060: optional in fakes. */
-  screenshot?(options: { type: 'jpeg'; quality: number; fullPage: false; animations?: 'disabled' }): Promise<Uint8Array>;
+  screenshot?(options: { type: 'jpeg'; quality: number; fullPage: false; animations?: 'disabled'; scale?: 'css' }): Promise<Uint8Array>;
   evaluate<R>(fn: () => R): Promise<R>;
   evaluate<R, A>(fn: (arg: A) => R, arg: A): Promise<R>;
 }
@@ -48,6 +49,11 @@ export interface PwContext {
   addInitScript(script: { content: string }): Promise<void>;
   newPage(): Promise<PwPage>;
   close(): Promise<void>;
+  /**
+   * I-068: a second context on the same browser with mobile emulation and this context's storage state (cookies,
+   * localStorage) — same launch flags (service workers blocked, no downloads). Closing it leaves this context open.
+   */
+  forkMobile?(device: MobileDevice): Promise<PwContext>;
 }
 /** Must return a context created with { serviceWorkers: 'block', acceptDownloads: false, javaScriptEnabled: true }. */
 export type PwContextLauncher = () => Promise<PwContext>;
@@ -219,6 +225,33 @@ export async function waitForSettle(p: PwPage, opts: { maxMs?: number; pollMs?: 
   return polls;
 }
 
+/** I-068: bounded wait for web fonts (document.fonts.ready, max 2s). true = all fonts loaded. Runs in the page. */
+export const FONTS_READY_PROBE = (): Promise<boolean> | boolean => {
+  const fonts = (globalThis as unknown as { document: { fonts?: { ready: Promise<unknown>; status: string } } }).document.fonts;
+  if (!fonts) return true;
+  return Promise.race([
+    fonts.ready.then(() => fonts.status === 'loaded'),
+    new Promise<boolean>((r) => setTimeout(() => r(false), 2000)),
+  ]);
+};
+
+/** I-068: blocked subresources by type and blocked document navigations (origin only) for the current page. */
+type PageTracker = { blocked: ResourceStats['blocked']; blockedNavigationOrigin: string | null };
+const newTracker = (): PageTracker => ({ blocked: { stylesheet: 0, font: 0, script: 0, xhr: 0, other: 0 }, blockedNavigationOrigin: null });
+function recordBlocked(t: PageTracker, req: PwRequest) {
+  const type = req.resourceType();
+  if (req.isNavigationRequest() && type === 'document') {
+    try {
+      t.blockedNavigationOrigin = new URL(req.url()).origin;
+    } catch {
+      /* ignore */
+    }
+    return;
+  }
+  const key = type === 'stylesheet' || type === 'font' || type === 'script' ? type : type === 'xhr' || type === 'fetch' ? 'xhr' : 'other';
+  t.blocked[key] += 1;
+}
+
 /** I-057: optional per-host network check (private IP / metadata). Returning false aborts the request. */
 export type BrowserDriverOptions = { hostCheck?: (hostname: string) => Promise<boolean> };
 
@@ -238,16 +271,30 @@ export function createBrowserObservationDriver(launch: PwContextLauncher, option
   let page: PwPage | null = null;
   let guard: ((r: ObservedRequest) => RequestVerdict) | null = null;
   let loginClicked = false;
+  let desktopTracker = newTracker();
+  let mobileTracker = newTracker();
+  let mobileContext: PwContext | null = null;
+  let mobilePage: PwPage | null = null;
+  let mobileActive = false;
+  const installGuard = async (ctx: PwContext, tracker: () => PageTracker) => {
+    await ctx.route('**/*', async (route) => {
+      const req = route.request();
+      const block = () => {
+        recordBlocked(tracker(), req);
+        return route.abort('blockedbyclient');
+      };
+      if (BLOCKED_RESOURCE_TYPES.has(req.resourceType()) || !guard) return block();
+      if (guard(toObservedRequest(req)) !== 'allow') return block();
+      return (await hostAllowed(req.url(), options.hostCheck)) ? route.continue() : block();
+    });
+  };
+  /** page read by the audit probes: the mobile page while openMobile is active, else the session page. */
+  const auditPage = async () => (mobileActive && mobilePage ? mobilePage : ensure());
   const ensure = async () => {
     if (!context) {
       context = await launch();
       await context.addInitScript({ content: INIT_SCRIPT });
-      await context.route('**/*', async (route) => {
-        const req = route.request();
-        if (BLOCKED_RESOURCE_TYPES.has(req.resourceType()) || !guard) return route.abort('blockedbyclient');
-        if (guard(toObservedRequest(req)) !== 'allow') return route.abort('blockedbyclient');
-        return (await hostAllowed(req.url(), options.hostCheck)) ? route.continue() : route.abort('blockedbyclient');
-      });
+      await installGuard(context, () => desktopTracker);
       page = await context.newPage();
     }
     return page as PwPage;
@@ -259,6 +306,7 @@ export function createBrowserObservationDriver(launch: PwContextLauncher, option
     },
     async goto(url, opts) {
       const p = await ensure();
+      desktopTracker = newTracker();
       await p.goto(url, { waitUntil: 'domcontentloaded', timeout: TIMEOUT_MS }).catch(() => undefined);
       // I-046: let client JS hydrate the login form before typing (bounded; long-polling pages never go idle).
       if (opts?.login) await p.waitForLoadState('networkidle', { timeout: LOGIN_IDLE_MS }).catch(() => undefined);
@@ -319,15 +367,42 @@ export function createBrowserObservationDriver(launch: PwContextLauncher, option
       await waitForSettle(p);
     },
     async layoutMetrics() {
-      return (await ensure()).evaluate(LAYOUT_PROBE);
+      return (await auditPage()).evaluate(LAYOUT_PROBE);
+    },
+    async resourceStats() {
+      const p = await auditPage();
+      const fontsReady = (await p.evaluate(FONTS_READY_PROBE).catch(() => false)) === true;
+      const t = mobileActive ? mobileTracker : desktopTracker;
+      return { blocked: { ...t.blocked }, fontsReady };
+    },
+    async openMobile(url) {
+      const base = await ensure();
+      if (!context?.forkMobile) throw new Error('mobile emulation not supported');
+      if (!mobileContext) {
+        mobileContext = await context.forkMobile(MOBILE_DEVICE);
+        // sessionStorage is not part of the storage state: keep form submits blocked from the first document.
+        await mobileContext.addInitScript({ content: `(() => { try { window.sessionStorage.setItem('__jury_block_submit', '1'); } catch (e) {} })();${INIT_SCRIPT}` });
+        await installGuard(mobileContext, () => mobileTracker);
+        mobilePage = await mobileContext.newPage();
+      }
+      void base;
+      mobileTracker = newTracker();
+      mobileActive = true;
+      const mp = mobilePage as PwPage;
+      await mp.goto(url, { waitUntil: 'domcontentloaded', timeout: TIMEOUT_MS }).catch(() => undefined);
+      await waitForSettle(mp);
+      return { finalUrl: mp.url(), blockedNavigationOrigin: mobileTracker.blockedNavigationOrigin };
+    },
+    async closeMobile() {
+      mobileActive = false;
     },
     async captureMasked() {
-      const p = await ensure();
+      const p = await auditPage();
       if (!p.screenshot) return null;
       try {
         const mask = await p.evaluate(MASK_PROBE, MASK_ATTR);
         if (!mask.ok) return null;
-        const bytes = await p.screenshot({ type: 'jpeg', quality: 60, fullPage: false, animations: 'disabled' });
+        const bytes = await p.screenshot({ type: 'jpeg', quality: 60, fullPage: false, animations: 'disabled', scale: 'css' });
         return { bytes, masked: true as const, maskedCount: mask.masked };
       } catch {
         return null;
@@ -337,8 +412,13 @@ export function createBrowserObservationDriver(launch: PwContextLauncher, option
     },
     async close() {
       const c = context;
+      const m = mobileContext;
       context = null;
       page = null;
+      mobileContext = null;
+      mobilePage = null;
+      mobileActive = false;
+      if (m) await m.close().catch(() => undefined);
       if (c) await c.close();
     },
   };
