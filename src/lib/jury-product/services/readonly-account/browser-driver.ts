@@ -213,7 +213,21 @@ export async function waitForSettle(p: PwPage, opts: { maxMs?: number; pollMs?: 
   return polls;
 }
 
-export function createBrowserObservationDriver(launch: PwContextLauncher): ObservationDriver {
+/** I-057: optional per-host network check (private IP / metadata). Returning false aborts the request. */
+export type BrowserDriverOptions = { hostCheck?: (hostname: string) => Promise<boolean> };
+
+async function hostAllowed(url: string, hostCheck: BrowserDriverOptions['hostCheck']): Promise<boolean> {
+  if (!hostCheck) return true;
+  try {
+    const u = new URL(url);
+    if (u.protocol === 'data:' || u.protocol === 'blob:') return true;
+    return await hostCheck(u.hostname);
+  } catch {
+    return false;
+  }
+}
+
+export function createBrowserObservationDriver(launch: PwContextLauncher, options: BrowserDriverOptions = {}): ObservationDriver {
   let context: PwContext | null = null;
   let page: PwPage | null = null;
   let guard: ((r: ObservedRequest) => RequestVerdict) | null = null;
@@ -225,7 +239,8 @@ export function createBrowserObservationDriver(launch: PwContextLauncher): Obser
       await context.route('**/*', async (route) => {
         const req = route.request();
         if (BLOCKED_RESOURCE_TYPES.has(req.resourceType()) || !guard) return route.abort('blockedbyclient');
-        return guard(toObservedRequest(req)) === 'allow' ? route.continue() : route.abort('blockedbyclient');
+        if (guard(toObservedRequest(req)) !== 'allow') return route.abort('blockedbyclient');
+        return (await hostAllowed(req.url(), options.hostCheck)) ? route.continue() : route.abort('blockedbyclient');
       });
       page = await context.newPage();
     }
