@@ -471,9 +471,9 @@ enum JuryChangeRiskLevel {
 }
 
 model JuryTenant {
-  id                    String                     @id
+  id                    String                       @id
   name                  String
-  createdAt             DateTime                   @default(now())
+  createdAt             DateTime                     @default(now())
   memberships           JuryMembership[]
   connections           JuryServiceConnection[]
   scopes                JuryAccessScope[]
@@ -500,6 +500,7 @@ model JuryTenant {
   serviceMembers        JuryServiceMember[]
   accountCredentials    JuryAccountCredential[]
   connectionConsents    JuryConnectionConsent[]
+  readonlyObservations  JuryReadonlyObservationRun[]
   invitations           OrganizationInvitation[]
 }
 
@@ -518,26 +519,27 @@ model JuryMembership {
 }
 
 model JuryServiceConnection {
-  id                 String                  @id
-  tenantId           String
-  tenant             JuryTenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  serviceKey         String
-  displayName        String
-  accessMethod       JuryAccessMethod
-  status             JuryConnectionStatus
+  id                   String                       @id
+  tenantId             String
+  tenant               JuryTenant                   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  serviceKey           String
+  displayName          String
+  accessMethod         JuryAccessMethod
+  status               JuryConnectionStatus
   /// Pointer into a secret store. Not an OAuth token, API key, or password.
-  credentialRef      String?
-  createdByUserId    String?
-  createdAt          DateTime                @default(now())
-  updatedAt          DateTime                @updatedAt
-  scopes             JuryAccessScope[]
-  discoveries        JuryDiscoveryResult[]
-  metrics            JuryNormalizedMetric[]
-  evidence           JuryEvidence[]
-  requests           JuryReviewRequest[]
-  serviceMembers     JuryServiceMember[]
-  accountCredentials JuryAccountCredential[]
-  consents           JuryConnectionConsent[]
+  credentialRef        String?
+  createdByUserId      String?
+  createdAt            DateTime                     @default(now())
+  updatedAt            DateTime                     @updatedAt
+  scopes               JuryAccessScope[]
+  discoveries          JuryDiscoveryResult[]
+  metrics              JuryNormalizedMetric[]
+  evidence             JuryEvidence[]
+  requests             JuryReviewRequest[]
+  serviceMembers       JuryServiceMember[]
+  accountCredentials   JuryAccountCredential[]
+  consents             JuryConnectionConsent[]
+  readonlyObservations JuryReadonlyObservationRun[]
 
   @@index([tenantId])
 }
@@ -582,6 +584,33 @@ model JuryConnectionConsent {
 
   @@index([tenantId])
   @@index([connectionId])
+}
+
+/// I-047: PII-free summary of one READ_ONLY_ACCOUNT observation run (counts, paths, flags only; no page text, no credentials).
+model JuryReadonlyObservationRun {
+  id                  String                @id
+  tenantId            String
+  tenant              JuryTenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  connectionId        String
+  connection          JuryServiceConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  actorUserId         String
+  ok                  Boolean
+  stop                String?
+  challenge           String?
+  loginAttempts       Int
+  pagesObserved       Int
+  pagesVisible        Int
+  /// [{ label, path, visible, textLength }]
+  pages               Json
+  blockedRequestCount Int
+  /// { ORIGIN, METHOD, FORM_SUBMIT, LOGIN_ALREADY_USED }
+  blockedByReason     Json
+  finalOrigin         String?
+  finalPath           String?
+  observedAt          DateTime
+
+  @@index([tenantId])
+  @@index([connectionId, observedAt])
 }
 
 model JuryServiceMember {

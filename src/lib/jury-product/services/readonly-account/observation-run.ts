@@ -27,7 +27,17 @@ export interface ObservationRunStore {
   findLatestConsent(tenantId: string, connectionId: string): Promise<{ connectionId: string; tenantId: string; version: string; scopeHash: string } | null>;
   findActiveCredential(tenantId: string, connectionId: string): Promise<StoredCredentialRecord | null>;
   audit(event: { tenantId: string; actor: string; action: string; serviceKey: string; timestamp: string }): Promise<void>;
+  /** I-047: persists the PII-free summary. Optional so older fakes keep working. */
+  recordRun?(run: ObservationRunRecord): Promise<void>;
 }
+
+export type ObservationRunRecord = {
+  tenantId: string;
+  connectionId: string;
+  actorUserId: string;
+  observedAt: string;
+  summary: ObservationSummary;
+};
 
 export type ObservationRunFailure =
   | ReadonlyAccountFailure
@@ -104,6 +114,19 @@ export async function runStoredCredentialObservation(input: {
     now,
     executorEnabled: input.executorEnabled,
   });
+  if (result.ok && input.store.recordRun) {
+    try {
+      await input.store.recordRun({
+        tenantId: auth.connection.tenantId,
+        connectionId: auth.connection.id,
+        actorUserId: auth.actor.userId,
+        observedAt: now.toISOString(),
+        summary: result.summary,
+      });
+    } catch (error) {
+      console.warn(JSON.stringify({ event: 'readonly_account_observation_persist_failed', connectionId: auth.connection.id, error: error instanceof Error ? error.name : 'unknown' }));
+    }
+  }
   await input.store.audit({
     tenantId: auth.connection.tenantId,
     actor: auth.actor.userId,
@@ -121,6 +144,30 @@ export async function createPrismaObservationRunStore(): Promise<ObservationRunS
     findConnection: base.findConnection,
     findLatestConsent: base.findLatestConsent,
     audit: base.audit,
+    async recordRun(run) {
+      const { randomUUID } = await import('node:crypto');
+      const s = run.summary;
+      await prisma.juryReadonlyObservationRun.create({
+        data: {
+          id: randomUUID(),
+          tenantId: run.tenantId,
+          connectionId: run.connectionId,
+          actorUserId: run.actorUserId,
+          ok: s.ok,
+          stop: s.stop,
+          challenge: s.challenge,
+          loginAttempts: s.loginAttempts,
+          pagesObserved: s.pagesObserved,
+          pagesVisible: s.pages.filter((p) => p.visible).length,
+          pages: s.pages,
+          blockedRequestCount: s.blockedRequestCount,
+          blockedByReason: s.blockedByReason,
+          finalOrigin: s.finalOrigin,
+          finalPath: s.finalPath,
+          observedAt: new Date(run.observedAt),
+        },
+      });
+    },
     async findActiveCredential(tenantId, connectionId) {
       const row = await prisma.juryAccountCredential.findFirst({
         where: { tenantId, connectionId, destroyedAt: null },
