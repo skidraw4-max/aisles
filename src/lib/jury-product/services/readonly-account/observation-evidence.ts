@@ -93,7 +93,10 @@ export function summarizeObservation(report: ExecutorReport): ObservationSummary
 }
 
 /** Feeds the summary into an existing EvidencePack as reviewer hints (aggregates are never overwritten). */
-export function attachObservationToPack(pack: EvidencePack, summary: ObservationSummary): EvidencePack {
+export function attachObservationToPack(
+  pack: EvidencePack,
+  summary: Pick<ObservationSummary, 'ok' | 'pagesObserved' | 'pages' | 'blockedRequestCount' | 'blockedByReason'> & { stop?: string | null; challenge?: string | null },
+): EvidencePack {
   const visible = summary.pages.filter((p) => p.visible).length;
   const hints = [
     `READ_ONLY_ACCOUNT observation: ok=${summary.ok}${summary.stop ? ` stop=${summary.stop}` : ''}${summary.challenge ? ` challenge=${summary.challenge}` : ''}`,
