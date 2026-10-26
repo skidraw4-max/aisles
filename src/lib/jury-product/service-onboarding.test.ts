@@ -77,8 +77,8 @@ test('onboarding source reuses mock discovery and does not call the network', ()
   assert.equal(ui.includes('서비스 추가') || readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/ui.tsx'), 'utf8').includes('서비스 추가'), true);
   assert.equal(ui.includes('No access scopes proposed.'), false);
   assert.equal(ui.includes('ONBOARDING_EMPTY_SCOPES'), true);
-  assert.equal(ui.includes('Approve'), true);
-  assert.equal(ui.includes('Reject'), true);
+  assert.equal(ui.includes('label="승인"'), true);
+  assert.equal(ui.includes('label="거절"'), true);
   for (const label of ['에이전트 실행', '변경 검사 실행', '재심사 실행', '자동 수정', '루프 실행']) {
     assert.equal(ui.includes(label), false, label);
   }

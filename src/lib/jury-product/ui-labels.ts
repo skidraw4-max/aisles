@@ -7,6 +7,27 @@
 export const STATUS_LABELS: Readonly<Record<string, string>> = {
   // 공통 상태
   AVAILABLE: '사용 가능',
+  // I-052: provider/connection enums that reached the service detail page raw
+  READ_ONLY: '읽기 전용',
+  READ: '읽기',
+  WRITE: '쓰기',
+  DISCOVERY: '서비스 확인',
+  EVIDENCE: '검증 근거',
+  HEALTH: '상태 점검',
+  DISCONNECT: '연결 해제',
+  REVOKE: '권한 회수',
+  REVIEW: '심사',
+  ACTIVE: '사용 중',
+  IDLE: '대기',
+  UNCONFIGURED: '미설정',
+  CONFIGURING: '설정 중',
+  CONNECTING: '연결 중',
+  DEGRADED: '성능 저하',
+  READY_TO_CONNECT: '연결 준비됨',
+  ACTION_REQUIRED: '조치 필요',
+  TOKEN: '토큰',
+  FILE_IMPORT: '파일 가져오기',
+  PARTIAL: '일부 가능',
   CONNECTED: '연결됨',
   DISCOVERY_PENDING: '서비스 확인 중',
   PROPOSED: '승인 대기',
@@ -141,7 +162,20 @@ export const AUDIT_ACTION_LABELS: Readonly<Record<string, string>> = {
 /** Fallback keeps the old behavior: `SOME_VALUE` → `some value`. */
 export function userLabel(value: string | null | undefined): string {
   if (!value) return '확인 필요';
-  return STATUS_LABELS[value] ?? AUDIT_ACTION_LABELS[value] ?? value.replaceAll('_', ' ').toLowerCase();
+  return STATUS_LABELS[value] ?? AUDIT_ACTION_LABELS[value] ?? STATUS_LABELS[value.toUpperCase()] ?? value.replaceAll('_', ' ').toLowerCase();
+}
+
+/** I-052: enum lists such as capabilities (DISCOVERY, READ, …) in Korean. */
+export function userLabels(values: readonly string[] | null | undefined): string {
+  return values && values.length > 0 ? values.map(userLabel).join(', ') : '확인 필요';
+}
+
+/**
+ * I-052: discovery menus were built as `/${serviceKey}`; when serviceKey is a URL that rendered as
+ * "/https://…". Display only: drop the stray leading slash before an absolute URL.
+ */
+export function discoveryMenuText(menu: string): string {
+  return /^\/https?:\/\//i.test(menu) ? menu.slice(1) : menu;
 }
 
 export function auditActionLabel(value: string | null | undefined): string {
@@ -152,21 +186,24 @@ export function auditActionLabel(value: string | null | undefined): string {
 /** Fixed English display strings produced by read-only projections. */
 export const TEXT_LABELS: Readonly<Record<string, string>> = {
   'Not available': '확인할 수 없음',
+  'readonly.pagesObserved': '관찰 페이지 수',
+  'readonly.pagesVisible': '내용 확인 페이지 수',
+  'readonly.blockedRequests': '차단된 요청 수',
   'Not available yet': '아직 확인할 수 없음',
   'Not measured': '측정되지 않음',
   'Permission denied': '권한 없음',
   'Collection failed': '수집 실패',
   'Unsupported': '지원하지 않음',
   'REDACTED': '가려짐',
-  'No services connected yet': '아직 연결된 서비스가 없습니다',
-  'No evidence yet': '아직 검증 근거가 없습니다',
-  'No reviews yet': '아직 심사 결과가 없습니다',
-  'No improvement tasks yet': '아직 개선 작업이 없습니다',
-  'No audit events yet': '아직 감사 이력이 없습니다',
+  'No services connected yet': '아직 연결된 서비스가 없어요',
+  'No evidence yet': '아직 검증 근거가 없어요',
+  'No reviews yet': '아직 심사 결과가 없어요',
+  'No improvement tasks yet': '아직 개선 작업이 없어요',
+  'No audit events yet': '아직 감사 이력이 없어요',
   'No review': '심사 없음',
   'No activity': '활동 없음',
   'No execution': '실행 없음',
-  'No evidence collected yet': '아직 수집된 검증 근거가 없습니다',
+  'No evidence collected yet': '아직 수집된 검증 근거가 없어요',
   'Not started': '시작 전',
   'Not run': '실행 전',
   'Not reviewed yet': '아직 재심사 전',
@@ -201,7 +238,7 @@ export function displayText(value: string | null | undefined): string {
   if (value === '0 · measured zero') return '0 · 측정값 0';
   const age = /^(\d+) (min|h|d) ago$/.exec(value);
   if (age) return `${age[1]}${age[2] === 'min' ? '분' : age[2] === 'h' ? '시간' : '일'} 전`;
-  return TEXT_LABELS[value] ?? STATUS_LABELS[value] ?? value;
+  return TEXT_LABELS[value] ?? STATUS_LABELS[value] ?? STATUS_LABELS[value.toUpperCase()] ?? value;
 }
 
 /** Improvement trace titles and line keys from read-only projections (display only). */
@@ -285,9 +322,9 @@ export function confidenceLabel(value: number | null | undefined): string {
 
 /** Notices for the 위원 의견 tab. */
 export const MEMBER_OPINION_NOTICE = {
-  LEGACY: '이 심사는 위원 의견 저장 기능 이전에 실행되어 위원별 의견이 없습니다. 재심사 시 표시됩니다.',
-  SECRET: '보안상 위원 의견을 표시하지 않습니다.',
-  EMPTY: '표시할 위원 의견이 없습니다.',
+  LEGACY: '이 심사는 위원 의견 저장 기능 이전에 실행되어 위원별 의견이 없어요. 재심사 시 표시돼요.',
+  SECRET: '보안상 위원 의견을 표시하지 않아요.',
+  EMPTY: '표시할 위원 의견이 없어요.',
 } as const;
 
 /**
@@ -295,7 +332,7 @@ export const MEMBER_OPINION_NOTICE = {
  * Keys are the stored decision codes; codes themselves are unchanged.
  */
 export const DECISION_GUIDANCE: Readonly<Record<string, string>> = {
-  ACCEPT: '추가 조치 없이 결과를 확인하면 됩니다.',
-  VERIFY: '근거가 부족한 주장이 있습니다. 검증 근거 탭에서 부족한 근거를 확인한 뒤 자료를 보완해 다시 요청하세요.',
-  REWORD: '표현이 근거보다 강합니다. 검증 근거 탭에서 근거를 확인하고 표현을 수정한 뒤 다시 요청하세요.',
+  ACCEPT: '추가 조치 없이 결과를 확인하면 돼요.',
+  VERIFY: '근거가 부족한 주장이 있어요. 검증 근거 탭에서 부족한 근거를 확인한 뒤 자료를 보완해 다시 요청하세요.',
+  REWORD: '표현이 근거보다 강해요. 검증 근거 탭에서 근거를 확인하고 표현을 수정한 뒤 다시 요청하세요.',
 };

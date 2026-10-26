@@ -78,7 +78,8 @@ test('I-051: every field has a label with a 필수/선택 badge, helper line and
   const badge = (label: string) => html.match(new RegExp(`${label}<span class="(req|opt)">(필수|선택)</span>`))?.[2];
   assert.equal(badge('허용 도메인'), '필수');
   assert.equal(badge('인증 서버 도메인'), '선택');
-  assert.equal(badge('관찰 경로 \\(선택\\)'), '선택');
+  assert.equal(badge('관찰 경로'), '선택');
+  assert.doesNotMatch(html, /관찰 경로 \(선택\)/);
   assert.equal(badge('로그인 주소'), '필수');
   assert.equal(badge('아이디 입력란 선택자'), '필수');
   assert.equal(badge('비밀번호 입력란 선택자'), '필수');
@@ -108,4 +109,11 @@ test('I-051: login failures open the advanced login settings', () => {
   assert.equal(isLoginFailure({ ok: false, reason: 'SCOPE_INVALID' }), false);
   assert.equal(isLoginFailure({ ok: true, summary: { ok: false, stop: 'LOGIN_NO_REDIRECT', pagesObserved: 0, blockedRequestCount: 0 } }), true);
   assert.equal(isLoginFailure({ ok: true, summary: { ok: true, stop: null, pagesObserved: 3, blockedRequestCount: 0 } }), false);
+});
+
+test('I-052: after consent the scope note explains when re-entry is needed', () => {
+  const html = render(storedProps);
+  assert.match(html, /계정을 교체하거나 관찰을 실행할 때만/);
+  assert.doesNotMatch(html, /동의할 때 입력한 범위를 그대로 입력하세요/);
+  assert.match(render(), /먼저 관찰할 범위를 입력하고/);
 });

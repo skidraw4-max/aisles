@@ -141,9 +141,9 @@ test('I-049 persisted pages keep discovered flag and stats; client wait covers t
 test('I-049 UI: optional paths help, MockDiscoveryAdapter hidden for READ_ONLY_ACCOUNT, stale text hidden while submitting', () => {
   const root = new URL('../../../../app/(jury)/jury/', import.meta.url);
   const form = readFileSync(new URL('ReadOnlyAccountCredentialForm.tsx', root), 'utf8');
-  assert.ok(form.includes('OBSERVATION_PATHS_HELP') && form.includes('관찰 경로 (선택'));
+  assert.ok(form.includes('OBSERVATION_PATHS_HELP') && form.includes('label="관찰 경로" required={false}'));
   const copy = readFileSync(new URL('../../../lib/jury-product/connected-service-copy.ts', root), 'utf8');
-  assert.ok(copy.includes('비워두면 로그인 후 접근 가능한 메뉴를 자동으로 찾아 관찰합니다'));
+  assert.ok(copy.includes('비워두면 로그인 후 접근 가능한 메뉴를 자동으로 찾아 관찰해요'));
   const onboarding = readFileSync(new URL('service-onboarding-ui.tsx', root), 'utf8');
   assert.match(onboarding, /accessMethod === 'READ_ONLY_ACCOUNT' \? null : <p>어댑터/);
   const status = readFileSync(new URL('connected-review-status.tsx', root), 'utf8');

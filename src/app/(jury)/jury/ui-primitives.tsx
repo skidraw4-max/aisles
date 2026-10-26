@@ -29,7 +29,7 @@ export function TranslationHint() {
     <details className={styles.technicalDetails}>
       <summary>한글 번역 보기</summary>
       <p className={styles.muted}>
-        AI 심사 원문은 영어로 제공됩니다. 브라우저의 번역 기능(Chrome: 마우스 오른쪽 클릭 → 한국어로 번역)을 사용하세요.
+        AI 심사 원문은 영어로 제공돼요. 브라우저의 번역 기능(Chrome: 마우스 오른쪽 클릭 → 한국어로 번역)을 사용하세요.
       </p>
     </details>
   );

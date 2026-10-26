@@ -62,7 +62,7 @@ export function LatestObservationResult(props: { run: LatestObservationRun | nul
     <div>
       <h4>최근 관찰 결과</h4>
       {!run ? (
-        <p>아직 저장된 관찰 결과가 없습니다.</p>
+        <p>아직 저장된 관찰 결과가 없어요.</p>
       ) : (
         <>
           <p>
@@ -73,6 +73,7 @@ export function LatestObservationResult(props: { run: LatestObservationRun | nul
             {run.blockedByReason.METHOD}, 폼 제출 {run.blockedByReason.FORM_SUBMIT}, 재로그인 {run.blockedByReason.LOGIN_ALREADY_USED})
           </p>
           <p>{BLOCKED_REQUESTS_NOTE}</p>
+          <p>이 결과는 [자료 수집]을 다시 실행해야 검증 근거에 반영돼요.</p>
           {run.finalOrigin ? (
             <p>
               마지막 위치: {run.finalOrigin}
@@ -170,14 +171,14 @@ export function ReadOnlyAccountCredentialForm(props: ReadOnlyAccountCredentialFo
   const stored = props.stored ?? null;
   const credentialOpen = !stored || editingCredential;
   const credentialInputsDisabled = !enabled || !consented;
-  const consentMessage = resultText(consentResult, '동의를 저장했습니다.');
-  const credentialMessage = resultText(credentialResult, '계정 정보를 암호화해 저장했습니다.');
-  const observationMessage = resultText(observationResult, '관찰을 완료했습니다.');
+  const consentMessage = resultText(consentResult, '동의를 저장했어요.');
+  const credentialMessage = resultText(credentialResult, '계정 정보를 암호화해 저장했어요.');
+  const observationMessage = resultText(observationResult, '관찰을 완료했어요.');
   const input = classes.input;
   return (
     <section className={classes.root} aria-labelledby={`${id}-title`}>
       <h3 id={`${id}-title`}>읽기 전용 계정 연결</h3>
-      {!enabled ? <p className={classes.notice} role="status">준비 중인 기능입니다. 아직 계정 정보를 저장할 수 없습니다.</p> : null}
+      {!enabled ? <p className={classes.notice} role="status">준비 중인 기능이에요. 아직 계정 정보를 저장할 수 없어요.</p> : null}
       <ol className={classes.steps} aria-label="진행 단계">
         <li>① 범위 동의 <StepState className={classes.badge} done={consentDone} active={!consentDone} /></li>
         <li>② 계정 저장 <StepState className={classes.badge} done={Boolean(stored)} active={consentDone && !stored} /></li>
@@ -188,14 +189,20 @@ export function ReadOnlyAccountCredentialForm(props: ReadOnlyAccountCredentialFo
 
         <fieldset className={classes.step}>
           <legend>관찰 범위</legend>
-          {consentDone ? <p className={classes.help}>동의할 때 입력한 범위를 그대로 입력하세요. 범위는 저장되지 않고 동의 내용과 같은지만 확인합니다.</p> : null}
+          {consentDone ? (
+            <p className={classes.help}>
+              동의는 이미 저장됐어요. 계정을 교체하거나 관찰을 실행할 때만 동의한 범위를 다시 입력하면 돼요. 범위 자체는 저장하지 않고, 동의한 내용과 같은지만 확인해요.
+            </p>
+          ) : (
+            <p className={classes.help}>먼저 관찰할 범위를 입력하고 ① 범위 동의를 저장하세요.</p>
+          )}
           <Field c={classes} id={`${id}-origins`} label="허용 도메인" required help="관찰할 서비스 주소. 한 줄에 하나, https만 (최대 10개)">
             <textarea name="allowedOrigins" rows={2} placeholder="https://app.example.com" className={input} disabled={!enabled} />
           </Field>
           <Field c={classes} id={`${id}-auth`} label="인증 서버 도메인" required={false} help={`로그인을 외부 인증 서버에서 처리할 때만 (최대 5개). ${AUTH_ORIGIN_HELP}`}>
             <textarea name="authOrigins" rows={1} placeholder="https://abcd.supabase.co" className={input} disabled={!enabled} />
           </Field>
-          <Field c={classes} id={`${id}-paths`} label="관찰 경로 (선택)" required={false} help={`/로 시작, 한 줄에 하나 (최대 20개). ${OBSERVATION_PATHS_HELP}`}>
+          <Field c={classes} id={`${id}-paths`} label="관찰 경로" required={false} help={`/로 시작, 한 줄에 하나 (최대 20개). ${OBSERVATION_PATHS_HELP}`}>
             <textarea name="paths" rows={2} placeholder="/dashboard" className={input} disabled={!enabled} />
           </Field>
         </fieldset>
@@ -216,7 +223,7 @@ export function ReadOnlyAccountCredentialForm(props: ReadOnlyAccountCredentialFo
               </details>
               <label>
                 <input type="checkbox" name="consent" checked={consented} disabled={!enabled} onChange={(event) => setConsented(event.target.checked)} />
-                위 내용을 확인했으며 동의합니다 <span className={classes.required}>필수</span>
+                위 내용을 확인했고 동의해요 <span className={classes.required}>필수</span>
               </label>
               <button type="submit" formAction={consentFormAction} className={classes.button} disabled={!enabled || !consented || consentPending}>
                 동의 저장
@@ -243,7 +250,7 @@ export function ReadOnlyAccountCredentialForm(props: ReadOnlyAccountCredentialFo
               <Field c={classes} id={`${id}-user`} label="아이디" required help="읽기 전용으로 만든 계정의 아이디">
                 <input name="username" type="text" autoComplete="off" placeholder="viewer@example.com" className={input} disabled={credentialInputsDisabled} />
               </Field>
-              <Field c={classes} id={`${id}-pass`} label="비밀번호" required help="암호화해 저장하고 만료되면 폐기합니다">
+              <Field c={classes} id={`${id}-pass`} label="비밀번호" required help="암호화해 저장하고 만료되면 폐기해요">
                 <input name="password" type="password" autoComplete="new-password" className={input} disabled={credentialInputsDisabled} />
               </Field>
               <button type="submit" formAction={credentialFormAction} className={classes.button} disabled={credentialInputsDisabled || !consentDone || credentialPending}>
@@ -286,14 +293,14 @@ export function ReadOnlyAccountCredentialForm(props: ReadOnlyAccountCredentialFo
             </details>
             <details>
               <summary>관찰 방식 자세히</summary>
-              <p>저장된 계정으로 한 번 로그인한 뒤 관찰 경로와 자동으로 찾은 메뉴를 조회만 합니다. 입력·수정·삭제 요청은 차단됩니다.</p>
+              <p>저장된 계정으로 한 번 로그인한 뒤 관찰 경로와 자동으로 찾은 메뉴를 조회만 해요. 입력·수정·삭제 요청은 차단돼요.</p>
               <p>{AUTO_DISCOVERY_NOTE}</p>
             </details>
             <button type="submit" formAction={observationFormAction} className={classes.button} disabled={!enabled || observationPending}>
               관찰 실행
             </button>
             {observationMessage ? <p role="status">{observationMessage}</p> : null}
-            <p className={classes.help}>결과는 [관찰 결과] 탭에서 볼 수 있습니다.</p>
+            <p className={classes.help}>결과는 [관찰 결과] 탭에서 볼 수 있어요.</p>
           </fieldset>
         ) : null}
       </form>
