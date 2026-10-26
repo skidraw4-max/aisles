@@ -498,6 +498,8 @@ model JuryTenant {
   autoLoopActivation    JuryAutoLoopActivation?
   humanDecisions        JuryHumanDecision[]
   serviceMembers        JuryServiceMember[]
+  accountCredentials    JuryAccountCredential[]
+  connectionConsents    JuryConnectionConsent[]
   invitations           OrganizationInvitation[]
 }
 
@@ -516,26 +518,70 @@ model JuryMembership {
 }
 
 model JuryServiceConnection {
-  id              String                 @id
-  tenantId        String
-  tenant          JuryTenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  serviceKey      String
-  displayName     String
-  accessMethod    JuryAccessMethod
-  status          JuryConnectionStatus
+  id                 String                  @id
+  tenantId           String
+  tenant             JuryTenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  serviceKey         String
+  displayName        String
+  accessMethod       JuryAccessMethod
+  status             JuryConnectionStatus
   /// Pointer into a secret store. Not an OAuth token, API key, or password.
-  credentialRef   String?
-  createdByUserId String?
-  createdAt       DateTime               @default(now())
-  updatedAt       DateTime               @updatedAt
-  scopes          JuryAccessScope[]
-  discoveries     JuryDiscoveryResult[]
-  metrics         JuryNormalizedMetric[]
-  evidence        JuryEvidence[]
-  requests        JuryReviewRequest[]
-  serviceMembers  JuryServiceMember[]
+  credentialRef      String?
+  createdByUserId    String?
+  createdAt          DateTime                @default(now())
+  updatedAt          DateTime                @updatedAt
+  scopes             JuryAccessScope[]
+  discoveries        JuryDiscoveryResult[]
+  metrics            JuryNormalizedMetric[]
+  evidence           JuryEvidence[]
+  requests           JuryReviewRequest[]
+  serviceMembers     JuryServiceMember[]
+  accountCredentials JuryAccountCredential[]
+  consents           JuryConnectionConsent[]
 
   @@index([tenantId])
+}
+
+/// I-039: READ_ONLY_ACCOUNT credential, envelope-encrypted. No plaintext column.
+/// JuryServiceConnection.credentialRef points here as `secret-store/account/<id>`.
+model JuryAccountCredential {
+  id              String                @id
+  tenantId        String
+  tenant          JuryTenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  connectionId    String
+  connection      JuryServiceConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  algorithm       String
+  ciphertext      String?
+  iv              String?
+  authTag         String?
+  wrappedDek      String?
+  kekId           String
+  usernameHint    String?
+  expiresAt       DateTime
+  destroyedAt     DateTime?
+  destroyReason   String?
+  createdByUserId String?
+  createdAt       DateTime              @default(now())
+
+  @@index([tenantId])
+  @@index([connectionId])
+  @@index([expiresAt])
+}
+
+/// I-040: customer consent to observation scope and credential storage.
+model JuryConnectionConsent {
+  id           String                @id
+  tenantId     String
+  tenant       JuryTenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  connectionId String
+  connection   JuryServiceConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  userId       String
+  version      String
+  scopeHash    String
+  acceptedAt   DateTime
+
+  @@index([tenantId])
+  @@index([connectionId])
 }
 
 model JuryServiceMember {
