@@ -7,8 +7,8 @@ import { randomUUID } from 'node:crypto';
 import { decideJuryMutation, type JuryActor } from '../../access';
 import { accountCredentialRef } from './credential-crypto';
 
-/** Purge job switch. Kept off until the migration is applied in the target environment. */
-export const READONLY_ACCOUNT_RETENTION_JOB_ENABLED = false as boolean;
+/** Purge job switch. On since I-044 (migration applied in Preview and Production). */
+export const READONLY_ACCOUNT_RETENTION_JOB_ENABLED = true as boolean;
 export const PURGE_BATCH_LIMIT = 200;
 
 export const READONLY_ACCOUNT_RETENTION_AUDIT = {

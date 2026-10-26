@@ -55,13 +55,13 @@ function closingDriver() {
   return { d, closed: () => closed };
 }
 
-test('stored credential is decrypted through the provider; flag off → NOT_IMPLEMENTED summary', async () => {
+test('stored credential is decrypted through the provider; executor disabled → NOT_IMPLEMENTED summary', async () => {
   const provider = createTestKeyProvider();
   const enc = await encryptAccountCredential({ username: 'admin', password: 'pw' }, ctx, provider);
   const base = { context: ctx, provider, scope: { allowedOrigins: ['https://app.example.com'], paths: ['/'] }, login: { loginUrl: 'https://app.example.com/login', usernameSelector: '#u', passwordSelector: '#p', submitSelector: '#s', successPathPrefix: '/' }, actions: [] };
   const live = { ...enc, expiresAt: new Date(Date.now() + 60_000), destroyedAt: null };
   const a = closingDriver();
-  const r = await observeWithStoredCredential({ ...base, record: live, driver: a.d });
+  const r = await observeWithStoredCredential({ ...base, record: live, driver: a.d, executorEnabled: false });
   assert.equal(r.ok && r.summary.stop, 'NOT_IMPLEMENTED');
   const b = closingDriver();
   assert.deepEqual(await observeWithStoredCredential({ ...base, record: { ...live, expiresAt: new Date(0) }, driver: b.d }), { ok: false, reason: 'CREDENTIAL_EXPIRED' });

@@ -85,7 +85,7 @@ const METHOD_METADATA: Record<ConnectionMethod, ConnectionMethodMetadata> = {
   OAUTH: { method: 'OAUTH', requiresCredential: true, supportsReadOnly: true, supportsWrite: false, supportsRefresh: true, requiresExternalRedirect: true, implemented: false },
   API_KEY: { method: 'API_KEY', requiresCredential: true, supportsReadOnly: true, supportsWrite: false, supportsRefresh: false, requiresExternalRedirect: false, implemented: false },
   TOKEN: { method: 'TOKEN', requiresCredential: true, supportsReadOnly: true, supportsWrite: false, supportsRefresh: true, requiresExternalRedirect: false, implemented: false },
-  READ_ONLY_ACCOUNT: { method: 'READ_ONLY_ACCOUNT', requiresCredential: true, supportsReadOnly: true, supportsWrite: false, supportsRefresh: false, requiresExternalRedirect: false, implemented: false },
+  READ_ONLY_ACCOUNT: { method: 'READ_ONLY_ACCOUNT', requiresCredential: true, supportsReadOnly: true, supportsWrite: false, supportsRefresh: false, requiresExternalRedirect: false, implemented: true },
   BROWSER_SESSION: { method: 'BROWSER_SESSION', requiresCredential: true, supportsReadOnly: true, supportsWrite: false, supportsRefresh: false, requiresExternalRedirect: false, implemented: false },
   FILE_IMPORT: { method: 'FILE_IMPORT', requiresCredential: false, supportsReadOnly: true, supportsWrite: false, supportsRefresh: false, requiresExternalRedirect: false, implemented: false },
 };

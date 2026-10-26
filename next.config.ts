@@ -44,6 +44,8 @@ const nextConfig: NextConfig = {
     '/admin/ai-review-board/[runId]': ['./data/ai-review-board/**/*'],
     /** Preview DB TLS: pinned Supabase CA read via fs (preview-db-tls.ts). prisma is imported transitively by most server entries, so apply to all. */
     '/**': ['./certs/supabase/prod-ca-2021.crt'],
+    /** READ_ONLY_ACCOUNT observation (I-044): @sparticuz/chromium reads its brotli binaries via fs at runtime. */
+    '/jury/services/[connectionId]': ['./node_modules/@sparticuz/chromium/bin/**'],
   },
   async headers() {
     return [

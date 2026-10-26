@@ -64,13 +64,6 @@
       "followUp": "RM-00c"
     },
     {
-      "file": "src/lib/jury-product/product-execution.test.ts",
-      "name": "a product pending execution completes once through the fake adapter",
-      "class": "TF-E",
-      "followUp": "RM-00d",
-      "note": "assertion 2!==1 against shared isolated DB state; needs per-test isolation"
-    },
-    {
       "file": "src/lib/jury-product/service-onboarding.test.ts",
       "name": "owner onboarding connects only after scope approval",
       "class": "TF-B",
@@ -93,6 +86,6 @@
   ],
   "rm00b": {
     "removed": 36,
-    "remaining": 13
+    "remaining": 12
   }
 }

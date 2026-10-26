@@ -65,7 +65,7 @@ export function observationScopeHash(scope: ObservationScope, version = READONLY
 type ConnectionView = { id: string; tenantId: string; serviceKey: string; accessMethod: string };
 type ConsentView = { connectionId: string; tenantId: string; version: string; scopeHash: string };
 
-function authorize(actor: JuryActor, connection: ConnectionView | null):
+export function authorizeReadonlyAccountConnection(actor: JuryActor, connection: ConnectionView | null):
   | { ok: true; actor: Extract<JuryActor, { ok: true }>; connection: ConnectionView }
   | { ok: false; reason: ReadonlyAccountFailure } {
   if (!actor.ok) return { ok: false, reason: actor.reason === 'UNAUTHENTICATED' ? 'UNAUTHENTICATED' : 'FORBIDDEN' };
@@ -86,7 +86,7 @@ export function planConsent(input: {
 }):
   | { ok: true; consent: ConsentView & { id: string; userId: string; acceptedAt: string }; scope: ObservationScope }
   | { ok: false; reason: ReadonlyAccountFailure } {
-  const auth = authorize(input.actor, input.connection);
+  const auth = authorizeReadonlyAccountConnection(input.actor, input.connection);
   if (!auth.ok) return auth;
   if (!input.accepted) return { ok: false, reason: 'CONSENT_REQUIRED' };
   const scope = normalizeObservationScope(input.scope);
@@ -125,7 +125,7 @@ export async function planCredentialStore(input: {
     }
   | { ok: false; reason: ReadonlyAccountFailure }
 > {
-  const auth = authorize(input.actor, input.connection);
+  const auth = authorizeReadonlyAccountConnection(input.actor, input.connection);
   if (!auth.ok) return auth;
   const consent = input.consent;
   if (!consent || consent.connectionId !== auth.connection.id || consent.tenantId !== auth.connection.tenantId) {
