@@ -22,6 +22,7 @@ import {
   type ReviewSubmitEvent,
   type ReviewSubmitProgress,
 } from '@/lib/jury-product/review-submit-progress';
+import { REVIEW_SUBMITTING_EVENT } from '@/lib/jury-product/connected-service-copy';
 import styles from './jury.module.css';
 
 /** Matches `maxDuration` in the (jury) layout. */
@@ -66,6 +67,7 @@ export function ReviewSubmitButton({
         return;
       }
       dispatch({ type: 'SUBMIT', now: Date.now(), href: window.location.href });
+      window.dispatchEvent(new Event(REVIEW_SUBMITTING_EVENT));
     };
     // React resets the form once the action function has resolved (not on redirect/throw).
     const onReset = () => dispatch({ type: 'RESOLVED', now: Date.now() });

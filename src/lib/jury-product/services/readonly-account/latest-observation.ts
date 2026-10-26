@@ -2,6 +2,8 @@
  * I-047: read model for the most recent READ_ONLY_ACCOUNT observation run (PII-free counts and paths only).
  * Shared by the service detail page ("최근 관찰 결과") and evidence collection.
  */
+import { normalizeStats, type PageStats } from './discovery';
+
 export type LatestObservationRun = {
   id: string;
   ok: boolean;
@@ -10,7 +12,7 @@ export type LatestObservationRun = {
   loginAttempts: number;
   pagesObserved: number;
   pagesVisible: number;
-  pages: { label: string; path: string; visible: boolean; textLength: number }[];
+  pages: { label: string; path: string; visible: boolean; textLength: number; discovered?: boolean; stats?: PageStats }[];
   blockedRequestCount: number;
   blockedByReason: { ORIGIN: number; METHOD: number; FORM_SUBMIT: number; LOGIN_ALREADY_USED: number };
   finalOrigin: string | null;
@@ -47,7 +49,17 @@ export function toLatestObservationRun(row: Row): LatestObservationRun {
     ? row.pages.flatMap((p) => {
         if (!p || typeof p !== 'object') return [];
         const r = p as Record<string, unknown>;
-        return [{ label: String(r.label ?? '').slice(0, 64), path: String(r.path ?? ''), visible: r.visible === true, textLength: num(r.textLength) }];
+        const stats = normalizeStats(r.stats);
+        return [
+          {
+            label: String(r.label ?? '').slice(0, 64),
+            path: String(r.path ?? ''),
+            visible: r.visible === true,
+            textLength: num(r.textLength),
+            ...(r.discovered === true ? { discovered: true } : {}),
+            ...(stats ? { stats } : {}),
+          },
+        ];
       })
     : [];
   const b = (row.blockedByReason && typeof row.blockedByReason === 'object' ? row.blockedByReason : {}) as Record<string, unknown>;

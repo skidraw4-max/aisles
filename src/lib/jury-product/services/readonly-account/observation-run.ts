@@ -16,6 +16,7 @@ import { READONLY_ACCOUNT_CONSENT_VERSION } from './consent-text';
 import type { EncryptedAccountCredential } from './credential-crypto';
 import type { LoginPlan, ObservationAction, ObservationDriver } from './executor';
 import type { KeyProviderResolution } from './key-provider';
+import { DEFAULT_DISCOVERY, type DiscoveryOptions } from './discovery';
 import { observeWithStoredCredential, type ObservationSummary } from './observation-evidence';
 
 export const READONLY_ACCOUNT_OBSERVATION_AUDIT = 'READONLY_ACCOUNT_OBSERVATION_RUN';
@@ -85,6 +86,7 @@ export async function runStoredCredentialObservation(input: {
   createDriver: () => ObservationDriver;
   now?: Date;
   executorEnabled?: boolean;
+  discover?: Partial<DiscoveryOptions> | false;
 }): Promise<{ ok: true; summary: ObservationSummary } | { ok: false; reason: ObservationRunFailure }> {
   const now = input.now ?? new Date();
   const tenantId = input.actor.ok ? input.actor.tenantId : null;
@@ -111,6 +113,8 @@ export async function runStoredCredentialObservation(input: {
     scope: scope.scope,
     login,
     actions: actionsForPaths(scope.scope.paths),
+    // I-049: consent v3 allows visiting every menu reachable within the allowed origins (GET navigation only).
+    discover: input.discover ?? DEFAULT_DISCOVERY,
     now,
     executorEnabled: input.executorEnabled,
   });
