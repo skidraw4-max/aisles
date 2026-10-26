@@ -58,7 +58,7 @@ export function buildMockDiscovery(input: {
   const now = input.now ?? '2026-10-01T00:00:00.000Z';
   const nextId = input.allocateId ?? randomUUID;
   const proposedMetrics = [
-    { metric: `${input.connection.serviceKey}.routes`, reason: '화면 route 후보. 측정하지 않음.' },
+    { metric: `${input.connection.serviceKey}.routes`, reason: '화면 경로 후보. 측정하지 않음.' },
     { metric: `${input.connection.serviceKey}.api`, reason: 'API 자원 후보. 측정하지 않음.' },
   ];
   const discovery: JuryDiscoveryResult = {

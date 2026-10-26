@@ -176,3 +176,22 @@ export const READONLY_ACCOUNT_AUDIT = {
   CONSENT_ACCEPTED: 'READONLY_ACCOUNT_CONSENT_ACCEPTED',
   CREDENTIAL_STORED: 'READONLY_ACCOUNT_CREDENTIAL_STORED',
 } as const;
+
+/**
+ * I-054: scope saved with the consent row. Re-normalized (JSONB does not keep key order) and accepted only when
+ * it hashes to the consented scopeHash under the current consent version; otherwise null (re-entry or re-consent).
+ */
+export function storedConsentScope(consent: { version: string; scopeHash: string; scope?: unknown } | null | undefined): ObservationScope | null {
+  if (!consent || consent.version !== READONLY_ACCOUNT_CONSENT_VERSION) return null;
+  const raw = consent.scope;
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+  const r = raw as Record<string, unknown>;
+  const list = (v: unknown): string[] | null => (Array.isArray(v) && v.every((x) => typeof x === 'string') ? (v as string[]) : null);
+  const allowedOrigins = list(r.allowedOrigins);
+  const paths = list(r.paths ?? []);
+  const authOrigins = r.authOrigins === undefined ? [] : list(r.authOrigins);
+  if (!allowedOrigins || !paths || !authOrigins) return null;
+  const normalized = normalizeObservationScope({ allowedOrigins, paths, authOrigins });
+  if (!normalized.ok) return null;
+  return observationScopeHash(normalized.scope) === consent.scopeHash ? normalized.scope : null;
+}

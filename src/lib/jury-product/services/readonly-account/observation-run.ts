@@ -10,6 +10,7 @@ import {
   normalizeObservationScope,
   type ObservationScopeInput,
   observationScopeHash,
+  storedConsentScope,
   type ReadonlyAccountFailure,
 } from './consent';
 import { READONLY_ACCOUNT_CONSENT_VERSION } from './consent-text';
@@ -25,7 +26,10 @@ export type StoredCredentialRecord = Omit<EncryptedAccountCredential, 'usernameH
 
 export interface ObservationRunStore {
   findConnection(tenantId: string, connectionId: string): Promise<{ id: string; tenantId: string; serviceKey: string; accessMethod: string } | null>;
-  findLatestConsent(tenantId: string, connectionId: string): Promise<{ connectionId: string; tenantId: string; version: string; scopeHash: string } | null>;
+  findLatestConsent(
+    tenantId: string,
+    connectionId: string,
+  ): Promise<{ connectionId: string; tenantId: string; version: string; scopeHash: string; scope?: unknown; loginSettings?: unknown } | null>;
   findActiveCredential(tenantId: string, connectionId: string): Promise<StoredCredentialRecord | null>;
   audit(event: { tenantId: string; actor: string; action: string; serviceKey: string; timestamp: string }): Promise<void>;
   /** I-047: persists the PII-free summary. Optional so older fakes keep working. */
@@ -71,6 +75,26 @@ export function normalizeLoginPlan(input: Record<keyof LoginPlan, unknown>): Log
   return plan;
 }
 
+/** I-054: login plan saved with the consent (null when absent or no longer valid). */
+export function storedLoginPlan(settings: unknown): LoginPlan | null {
+  if (!settings || typeof settings !== 'object' || Array.isArray(settings)) return null;
+  const r = settings as Record<string, unknown>;
+  return normalizeLoginPlan({
+    loginUrl: r.loginUrl,
+    usernameSelector: r.usernameSelector,
+    passwordSelector: r.passwordSelector,
+    submitSelector: r.submitSelector,
+    successPathPrefix: r.successPathPrefix,
+  });
+}
+
+const isBlank = (v: unknown) => typeof v !== 'string' || v.trim() === '';
+
+/** I-054: the form left scope / login empty, so the stored (hash-verified) values are used. */
+export function usesStoredScope(scope: ObservationScopeInput): boolean {
+  return scope.allowedOrigins.every(isBlank) && scope.paths.every(isBlank) && (scope.authOrigins ?? []).every(isBlank);
+}
+
 /** One goto + snapshot per consented path. */
 export function actionsForPaths(paths: readonly string[]): ObservationAction[] {
   return paths.flatMap((path) => [{ type: 'goto', path } as const, { type: 'snapshot', label: path } as const]);
@@ -93,11 +117,18 @@ export async function runStoredCredentialObservation(input: {
   const connection = tenantId ? await input.store.findConnection(tenantId, input.connectionId) : null;
   const auth = authorizeReadonlyAccountConnection(input.actor, connection);
   if (!auth.ok) return auth;
-  const scope = normalizeObservationScope(input.scope);
+  // I-054: an empty scope / login URL means "use what was saved with the consent". The stored scope must still
+  // hash-match the consent; typed values keep the original re-entry path unchanged.
+  const fromStore = usesStoredScope(input.scope);
+  const consentFirst = fromStore ? await input.store.findLatestConsent(auth.connection.tenantId, auth.connection.id) : undefined;
+  if (fromStore && !consentFirst) return { ok: false, reason: 'CONSENT_REQUIRED' };
+  const stored = fromStore ? storedConsentScope(consentFirst) : null;
+  if (fromStore && !stored) return { ok: false, reason: 'CONSENT_STALE' };
+  const scope = stored ? ({ ok: true, scope: stored } as const) : normalizeObservationScope(input.scope);
   if (!scope.ok) return scope;
-  const login = normalizeLoginPlan(input.login);
+  const login = isBlank(input.login.loginUrl) && consentFirst ? storedLoginPlan(consentFirst.loginSettings) : normalizeLoginPlan(input.login);
   if (!login) return { ok: false, reason: 'LOGIN_PLAN_INVALID' };
-  const consent = await input.store.findLatestConsent(auth.connection.tenantId, auth.connection.id);
+  const consent = consentFirst ?? (await input.store.findLatestConsent(auth.connection.tenantId, auth.connection.id));
   if (!consent) return { ok: false, reason: 'CONSENT_REQUIRED' };
   if (consent.version !== READONLY_ACCOUNT_CONSENT_VERSION || consent.scopeHash !== observationScopeHash(scope.scope)) {
     return { ok: false, reason: 'CONSENT_STALE' };

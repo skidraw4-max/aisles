@@ -11,7 +11,7 @@ import { QualityTrendPanel, ServiceOperationDetail, ServiceOperationState, Servi
 import { parseServiceTab, ServiceTabNav } from '../../service-detail-tabs';
 import { ServiceTabMemory } from '../../service-tab-memory';
 import { JuryChrome } from '../../ui';
-import { ReadonlyAccountSection } from '../../readonly-account-section';
+import { ReadonlyAccountSection, readonlyObservationNeeded } from '../../readonly-account-section';
 import { loadJuryShell, readJurySessionEmail } from '../../load';
 
 /**
@@ -62,9 +62,11 @@ export default async function ServiceDetailPage({
   }
   const ready = actor.ok && view;
   const accessMethod = ready ? view.connections.find((row) => row.id === connectionId && row.tenantId === actor.tenantId)?.accessMethod : undefined;
+  // I-054: header 다음 할 일 points at 관찰 실행 until one read-only observation succeeds.
+  const observationNeeded = ready ? await readonlyObservationNeeded({ tenantId: actor.tenantId, connectionId, accessMethod }) : false;
   return (
     <JuryChrome actor={actor} notice={notice}>
-      <ServiceSummaryHeader model={operation.model}>
+      <ServiceSummaryHeader model={operation.model} observationNeeded={observationNeeded}>
         <ServiceTabNav connectionId={connectionId} active={tab} />
       </ServiceSummaryHeader>
       <ServiceTabMemory connectionId={connectionId} tab={tab} />

@@ -1686,3 +1686,70 @@ a.inline {
   white-space: normal;
   overflow-wrap: anywhere;
 }
+
+/* I-054: read-only account stepper pills (done = gray ✓, current = blue, locked = dim) */
+.stepPill {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.2rem 0.75rem;
+  font-size: 0.85rem;
+  border: 1px solid var(--jury-c-148-163-184-0_16, rgba(148, 163, 184, 0.3));
+}
+
+.stepPillDone {
+  color: var(--jury-c-cbd5e1, #cbd5e1);
+  background: var(--jury-c-148-163-184-0_16, rgba(148, 163, 184, 0.16));
+}
+
+.stepPillCurrent {
+  color: #ffffff;
+  background: #2563eb;
+  border-color: #3b82f6;
+  font-weight: 600;
+}
+
+.stepPillLocked {
+  opacity: 0.45;
+}
+
+.stepCard[data-state='locked'] {
+  opacity: 0.55;
+}
+
+.stepSummary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+}
+
+.successNotice {
+  border: 1px solid rgba(34, 197, 94, 0.45);
+  background: rgba(34, 197, 94, 0.12);
+  color: #86efac;
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+}
+
+.bigButton {
+  display: block;
+  width: 100%;
+  padding: 0.9rem 1rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+/* I-054: warning badge (e.g. 성능 저하) */
+.badgeWarn,
+.badge.badgeWarn {
+  border-color: rgba(245, 158, 11, 0.55);
+  color: #fcd34d;
+  background: rgba(245, 158, 11, 0.16);
+}
+
+.secondaryHint {
+  opacity: 0.7;
+  font-size: 0.85rem;
+}

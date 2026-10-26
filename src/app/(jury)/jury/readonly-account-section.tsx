@@ -7,20 +7,48 @@ import * as React from 'react';
 import { READONLY_ACCOUNT_PHASE1_ENABLED, READONLY_ACCOUNT_UI_ENABLED, shouldShowReadonlyAccountSection } from '@/lib/jury-product/services/readonly-account/flags';
 import { READONLY_ACCOUNT_CONSENT_VERSION } from '@/lib/jury-product/services/readonly-account/consent-text';
 import { loadLatestObservationRun, type LatestObservationRun } from '@/lib/jury-product/services/readonly-account/latest-observation';
+import { readonlySectionMode } from '@/lib/jury-product/services/readonly-account/flow';
+import { storedConsentScope } from '@/lib/jury-product/services/readonly-account/consent';
+import { storedLoginPlan } from '@/lib/jury-product/services/readonly-account/observation-run';
 import styles from './jury.module.css';
-import { LatestObservationResult, ReadOnlyAccountCredentialForm } from './ReadOnlyAccountCredentialForm';
+import { LatestObservationResult, ReadOnlyAccountCredentialForm, type StoredLoginView, type StoredScopeView } from './ReadOnlyAccountCredentialForm';
 import { acceptReadonlyAccountConsentAction, runReadonlyAccountObservationAction, storeReadonlyAccountCredentialAction } from './readonly-account-actions';
 
 export type ReadonlyAccountSectionState = {
   consentAccepted: boolean;
   stored: { usernameHint: string; expiresAt: string } | null;
   latestRun?: LatestObservationRun | null;
+  /** I-054: hash-verified scope / login plan saved with the latest consent (null for older consents). */
+  scope?: StoredScopeView | null;
+  login?: StoredLoginView | null;
 };
+
+
+/** I-054: true when a READ_ONLY_ACCOUNT connection has no successful observation yet (header 다음 할 일 → 관찰 실행). */
+export async function readonlyObservationNeeded(input: { tenantId: string; connectionId: string; accessMethod: string | null | undefined; uiEnabled?: boolean }): Promise<boolean> {
+  if (!shouldShowReadonlyAccountSection({ uiEnabled: input.uiEnabled ?? READONLY_ACCOUNT_UI_ENABLED, accessMethod: input.accessMethod })) return false;
+  try {
+    const { prisma } = await import('@/lib/prisma');
+    const ok = await prisma.juryReadonlyObservationRun.findFirst({ where: { tenantId: input.tenantId, connectionId: input.connectionId, ok: true }, select: { id: true } });
+    return !ok;
+  } catch {
+    return false;
+  }
+}
+
+function scopeView(consent: { version: string; scopeHash: string; scope: unknown } | null): StoredScopeView | null {
+  const scope = storedConsentScope(consent);
+  return scope ? { allowedOrigins: scope.allowedOrigins, authOrigins: scope.authOrigins ?? [], paths: scope.paths } : null;
+}
 
 async function loadState(tenantId: string, connectionId: string) {
   const { prisma } = await import('@/lib/prisma');
   const [consent, credential, latestRun] = await Promise.all([
-    prisma.juryConnectionConsent.findFirst({ where: { tenantId, connectionId, version: READONLY_ACCOUNT_CONSENT_VERSION }, select: { id: true } }),
+    prisma.juryConnectionConsent.findFirst({
+      where: { tenantId, connectionId, version: READONLY_ACCOUNT_CONSENT_VERSION },
+      orderBy: { acceptedAt: 'desc' },
+      select: { id: true, version: true, scopeHash: true, scope: true, loginSettings: true },
+    }),
     prisma.juryAccountCredential.findFirst({ where: { tenantId, connectionId, destroyedAt: null }, orderBy: { createdAt: 'desc' }, select: { usernameHint: true, expiresAt: true } }),
     loadLatestObservationRun(prisma, tenantId, connectionId).catch(() => null),
   ]);
@@ -28,6 +56,8 @@ async function loadState(tenantId: string, connectionId: string) {
     consentAccepted: Boolean(consent),
     stored: credential ? { usernameHint: credential.usernameHint ?? '', expiresAt: credential.expiresAt.toISOString() } : null,
     latestRun,
+    scope: scopeView(consent),
+    login: consent ? storedLoginPlan(consent.loginSettings) : null,
   };
   return state;
 }
@@ -70,6 +100,9 @@ export async function ReadonlyAccountSection(props: {
     <ReadOnlyAccountCredentialForm
       connectionId={props.connectionId}
       enabled={READONLY_ACCOUNT_PHASE1_ENABLED}
+      mode={readonlySectionMode(state)}
+      scope={state.scope ?? null}
+      login={state.login ?? null}
       consentAccepted={state.consentAccepted}
       stored={state.stored ?? undefined}
       latestRun={state.latestRun ?? null}
@@ -85,6 +118,16 @@ export async function ReadonlyAccountSection(props: {
         step: styles.stepCard,
         steps: styles.stepList,
         badge: styles.badge,
+        button: styles.button,
+        notice: styles.notice,
+        pill: styles.stepPill,
+        pillDone: styles.stepPillDone,
+        pillCurrent: styles.stepPillCurrent,
+        pillLocked: styles.stepPillLocked,
+        success: styles.successNotice,
+        primary: styles.primaryButton,
+        big: styles.bigButton,
+        summary: styles.stepSummary,
       }}
     />
   );
