@@ -164,10 +164,17 @@ test('a product pending execution completes once through the fake adapter', { ti
         adapter: shared,
       }),
     ]);
-    const completed = raced.filter((item) => item.ok && item.status === 'COMPLETED');
-    const busy = raced.filter((item) => !item.ok && item.reason === 'ALREADY_RUNNING');
+    // Order-independent: the second request may arrive while the first is RUNNING
+    // (ALREADY_RUNNING) or after it already COMPLETED (ok, adapterCalled:false).
+    const completed = raced.filter((item) => item.ok && item.status === 'COMPLETED' && item.adapterCalled);
+    const others = raced.filter((item) => !(item.ok && item.status === 'COMPLETED' && item.adapterCalled));
     assert.equal(completed.length, 1);
-    assert.equal(busy.length, 1);
+    assert.equal(others.length, 1);
+    const other = others[0];
+    assert.ok(
+      (!other.ok && other.reason === 'ALREADY_RUNNING') ||
+        (other.ok && other.status === 'COMPLETED' && other.adapterCalled === false),
+    );
     const ownerRun = completed[0];
     if (ownerRun?.ok) {
       assert.equal(ownerRun.adapterCalled, true);
