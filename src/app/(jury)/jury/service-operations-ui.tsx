@@ -228,7 +228,7 @@ export function ServiceOperationDetail({
   const all = !section;
   const show = (tab: ServiceTab) => all || section === tab;
   return (
-    <section className={styles.panel}>
+    <section className={styles.resultCard}>
       {all ? (
         <>
           <h2 className={styles.pageTitle}>{model.name}</h2>

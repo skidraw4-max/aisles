@@ -25,7 +25,7 @@ import { ScreenAuditRunButton } from './ScreenAuditRunButton';
 export async function ScreenAuditSection(props: { tenantId: string; connectionId: string; accessMethod: string | null | undefined }) {
   if (!shouldShowReadonlyAccountSection({ uiEnabled: READONLY_ACCOUNT_UI_ENABLED, accessMethod: props.accessMethod })) {
     return (
-      <section className={styles.panel}>
+      <section className={styles.resultCard}>
         <h2>화면 심사</h2>
         <p>화면 심사는 “읽기 전용 계정” 방식으로 연결된 서비스에서 쓸 수 있습니다.</p>
       </section>
@@ -38,18 +38,24 @@ export async function ScreenAuditSection(props: { tenantId: string; connectionId
   const guidance = latest ? guidanceText(latest.summary) : [];
   const findings = latest ? [...latest.findings].sort((a, b) => (SEVERITY_ORDER[a.severity] ?? 9) - (SEVERITY_ORDER[b.severity] ?? 9)) : [];
   return (
-    <section className={styles.panel} aria-labelledby="screen-audit-title">
-      <h2 id="screen-audit-title">화면 심사</h2>
-      <ul>
+    <section className={styles.resultCard} aria-labelledby="screen-audit-title">
+      <div className={styles.resultCardHeader}>
+        <h2 id="screen-audit-title">화면 심사</h2>
+        <ScreenAuditRunButton connectionId={props.connectionId} label={latest ? '새로 심사' : '화면 심사 시작'} variant="primary" icon={latest ? 'refresh' : 'play'} action={runScreenAuditAction} />
+      </div>
+      <ul className={styles.resultList}>
         {SCREEN_AUDIT_NOTES.map((n) => (
           <li key={n}>{n}</li>
         ))}
       </ul>
-      <ScreenAuditRunButton connectionId={props.connectionId} label={latest ? '새로 심사' : '화면 심사 시작'} action={runScreenAuditAction} />
       {latest ? (
         <>
-          <h3>
-            최근 심사 · {formatKst(latest.createdAt)} · {latest.status ? STATUS_LABEL[latest.status] ?? latest.status : latest.state === 'RUNNING' ? '진행 중' : '결과 없음'}
+          <h3 className={styles.resultSubhead}>
+            최근 심사
+            <span className={styles.resultMeta}>{formatKst(latest.createdAt)}</span>
+            <StatusBadge status={latest.status ?? (latest.state === 'RUNNING' ? 'RUNNING' : null)} tone={latest.status ? undefined : latest.state === 'RUNNING' ? 'running' : 'neutral'} title={latest.status ?? latest.state}>
+              {latest.status ? STATUS_LABEL[latest.status] ?? latest.status : latest.state === 'RUNNING' ? '진행 중' : '결과 없음'}
+            </StatusBadge>
           </h3>
           {latest.parentAuditId ? <p>이전 심사를 다시 확인한 재심사입니다.</p> : null}
           {view.diff ? (
@@ -62,7 +68,7 @@ export async function ScreenAuditSection(props: { tenantId: string; connectionId
                 view.diff![k].length > 0 ? (
                   <details key={k}>
                     <summary>{k === 'fixed' ? '고쳐짐' : k === 'remaining' ? '그대로' : '새로 발견'}</summary>
-                    <ul>
+                    <ul className={styles.resultList}>
                       {view.diff![k].map((d) => (
                         <li key={`${d.rule}|${d.viewport}|${d.path}`}>
                           {VIEWPORT_LABEL[d.viewport] ?? d.viewport} · {d.path ?? '-'} · {d.message}
@@ -82,13 +88,14 @@ export async function ScreenAuditSection(props: { tenantId: string; connectionId
             </p>
           ))}
           {rows.length > 0 ? (
-            <table>
+            <div className={styles.resultTableWrap}>
+            <table className={styles.resultTable}>
               <thead>
                 <tr>
                   <th scope="col">화면</th>
                   <th scope="col">영역</th>
                   <th scope="col">결과</th>
-                  <th scope="col">발견</th>
+                  <th scope="col" className={styles.num}>발견</th>
                 </tr>
               </thead>
               <tbody>
@@ -97,19 +104,21 @@ export async function ScreenAuditSection(props: { tenantId: string; connectionId
                     <td>{VIEWPORT_LABEL[r.viewport] ?? r.viewport}</td>
                     <td>{AREA_LABEL[r.area] ?? r.area}</td>
                     <td><StatusBadge status={r.status} title={r.status}>{STATUS_LABEL[r.status] ?? r.status}</StatusBadge></td>
-                    <td>{r.findings}</td>
+                    <td className={styles.num}>{r.findings}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
+            </div>
           ) : null}
           {findings.length > 0 ? (
             <>
               <h3>발견한 문제</h3>
-              <ul>
+              <ul className={styles.findingList}>
                 {findings.map((f) => (
                   <li key={f.id}>
-                    [{SEVERITY_LABEL[f.severity] ?? f.severity}] {VIEWPORT_LABEL[f.viewport] ?? f.viewport} · {f.path ?? '-'} · {f.message}
+                    <StatusBadge tone={f.severity === 'HIGH' ? 'fail' : f.severity === 'MEDIUM' ? 'partial' : 'neutral'} title={f.severity}>{SEVERITY_LABEL[f.severity] ?? f.severity}</StatusBadge>
+                    {VIEWPORT_LABEL[f.viewport] ?? f.viewport} · {f.path ?? '-'} · {f.message}
                   </li>
                 ))}
               </ul>
@@ -118,13 +127,13 @@ export async function ScreenAuditSection(props: { tenantId: string; connectionId
           {latest.shots.some((s) => s.url) ? (
             <>
               <h3>가린 스크린샷 (5분 동안 열림)</h3>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
+              <div className={styles.shotGrid}>
                 {latest.shots
                   .filter((s) => s.url)
                   .map((s) => (
-                    <figure key={s.id} style={{ margin: 0, maxWidth: s.viewport === 'MOBILE' ? 195 : 340 }}>
+                    <figure key={s.id} style={{ maxWidth: s.viewport === 'MOBILE' ? 195 : 340 }}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={s.url!} alt={`${s.path} ${VIEWPORT_LABEL[s.viewport] ?? s.viewport} 화면 (개인정보 가림)`} style={{ width: '100%', border: '1px solid #ddd' }} />
+                      <img src={s.url!} alt={`${s.path} ${VIEWPORT_LABEL[s.viewport] ?? s.viewport} 화면 (개인정보 가림)`} />
                       <figcaption>
                         {s.path} · {VIEWPORT_LABEL[s.viewport] ?? s.viewport}
                       </figcaption>
@@ -134,16 +143,16 @@ export async function ScreenAuditSection(props: { tenantId: string; connectionId
             </>
           ) : null}
           {latest.state !== 'RUNNING' ? (
-            <ScreenAuditRunButton connectionId={props.connectionId} parentAuditId={latest.id} label="재심사 (같은 화면 다시 확인)" action={runScreenAuditAction} />
+            <ScreenAuditRunButton connectionId={props.connectionId} parentAuditId={latest.id} label="재심사 (같은 화면 다시 확인)" variant="secondary" icon="recheck" action={runScreenAuditAction} />
           ) : null}
         </>
       ) : (
-        <p>아직 화면 심사 기록이 없습니다.</p>
+        <p className={styles.muted}>아직 화면 심사 기록이 없습니다.</p>
       )}
       {view.history.length > 0 ? (
         <>
           <h3>이전 심사</h3>
-          <ul>
+          <ul className={styles.resultList}>
             {view.history.map((h) => (
               <li key={h.id}>
                 {formatKst(h.createdAt)} · {h.status ? STATUS_LABEL[h.status] ?? h.status : h.state}

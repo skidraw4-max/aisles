@@ -6,6 +6,7 @@ import { juryHref, juryLoginHref } from '@/lib/jury-product/jury-url';
 import { organizationSecurityOverview } from '@/lib/jury-product/organization-security';
 import { getJuryEntry } from '@/lib/jury-product/session';
 import { JuryChrome } from '../../ui';
+import { PageHeader } from '../../page-layout';
 import { readJurySessionEmail } from '../../load';
 
 export const metadata: Metadata = {
@@ -30,7 +31,7 @@ export default async function JuryOrganizationSecurityPage() {
   const overview = organizationSecurityOverview();
   return (
     <JuryChrome actor={entry}>
-      <h2>조직 보안</h2>
+      <PageHeader crumbs={[{ label: '홈', href: juryHref('/') }, { label: '관리' }, { label: '조직 보안' }]} title="조직 보안" />
       <p className={listStyles.empty}>현재 정책을 보여 주는 화면입니다. 이 설정은 여기서 변경할 수 없습니다.</p>
       {SECTIONS.map(([key, title]) => (
         <section key={key}>

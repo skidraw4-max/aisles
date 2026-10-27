@@ -20,21 +20,25 @@
 
 .table th,
 .table td {
-  padding: 0.55rem 0.7rem;
-  border-bottom: 1px solid rgba(158, 182, 222, 0.2);
+  height: 44px;
+  padding: 0.5rem 14px;
+  border-bottom: 1px solid var(--jury-border, #24364f);
   text-align: left;
-  vertical-align: top;
+  vertical-align: middle;
   overflow-wrap: anywhere;
 }
 
+/* I-087: unified table header (surface-2, 12px muted, AA). */
 .table th {
-  color: #8ea0b8;
-  font-weight: 560;
+  color: var(--jury-text-muted, #a8b5c9);
+  background: var(--jury-surface-2, #132238);
+  font-size: 12px;
+  font-weight: 700;
 }
 
 .empty {
-  margin-top: 1.5rem;
-  color: #8ea0b8;
+  margin-top: 1rem;
+  color: var(--jury-text-muted, #a8b5c9);
 }
 
 .controls {
@@ -76,10 +80,13 @@
 /* I-036: organization tables. Scroll inside a wrapper instead of breaking values mid-word;
    date/role/status cells stay on one line; the member action cell lays out horizontally. */
 .tableWrap {
-  width: min(100%, 64rem);
+  width: 100%;
   max-width: 100%;
-  margin: 2rem auto 0;
+  margin: 1rem 0 0;
   overflow-x: auto;
+  border: 1px solid var(--jury-border, #24364f);
+  border-radius: 12px;
+  background: var(--jury-surface-1, #0e1a2c);
 }
 
 .tableWrap > .table {

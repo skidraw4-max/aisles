@@ -1404,3 +1404,28 @@ a.inline {
 .emptyState { display: grid; justify-items: center; gap: 0.75rem; padding: 2rem 1rem; text-align: center; border: 1px dashed var(--jury-border); border-radius: 12px; background: var(--jury-surface-1); color: var(--jury-text-muted); }
 .emptyState p { margin: 0; color: var(--jury-text-muted); }
 .emptyStateIcon { color: var(--jury-text-muted); }
+
+/* I-087 (UI plan P5): result/admin cards on the spacing scale (8/12/16/24). */
+.resultCard { display: grid; gap: 16px; min-width: 0; margin: 0 0 16px; padding: 24px; border: 1px solid var(--jury-border, #24364f); border-radius: 12px; background: var(--jury-surface-1, #0e1a2c); }
+.resultCard > * { margin-top: 0; margin-bottom: 0; }
+.resultCard p { line-height: 1.6; }
+.resultCard h3 { margin: 8px 0 0; padding-top: 16px; border-top: 1px solid var(--jury-border, #24364f); font-size: 15px; color: var(--jury-text-bright, #f5f7ff); }
+.resultCard > h3:first-child, .resultCardHeader + h3 { padding-top: 0; border-top: 0; margin-top: 0; }
+.resultCardHeader { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+.resultCardHeader h2 { margin: 0; font-size: 1.25rem; }
+.resultCardHeader form { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0; }
+.resultSubhead { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.resultMeta { color: var(--jury-text-muted, #a8b5c9); font-size: 13px; font-weight: 500; }
+.resultList { display: grid; gap: 8px; margin: 0; padding-left: 1.25rem; color: var(--jury-text-soft, #d7dee8); line-height: 1.6; }
+.findingList { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.findingList li { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 12px 16px; border: 1px solid var(--jury-border, #24364f); border-radius: 8px; background: var(--jury-surface-2, #132238); color: var(--jury-text-soft, #d7dee8); }
+.resultTableWrap { max-width: 100%; overflow-x: auto; border: 1px solid var(--jury-border, #24364f); border-radius: 12px; }
+.resultTable { width: 100%; border-collapse: collapse; }
+.resultTable th, .resultTable td { height: 44px; padding: 8px 16px; border-bottom: 1px solid var(--jury-border, #24364f); text-align: left; vertical-align: middle; white-space: nowrap; }
+.resultTable thead th { background: var(--jury-surface-2, #132238); color: var(--jury-text-muted, #a8b5c9); font-size: 12px; font-weight: 700; }
+.resultTable tbody td { color: var(--jury-text-soft, #d7dee8); }
+.resultTable tbody tr:last-child td { border-bottom: 0; }
+.resultTable th.num, .resultTable td.num { text-align: right; font-variant-numeric: tabular-nums; }
+.shotGrid { display: flex; flex-wrap: wrap; gap: 12px; }
+.shotGrid figure { margin: 0; display: grid; gap: 8px; color: var(--jury-text-muted, #a8b5c9); font-size: 13px; }
+.shotGrid img { width: 100%; border: 1px solid var(--jury-border, #24364f); border-radius: 8px; }

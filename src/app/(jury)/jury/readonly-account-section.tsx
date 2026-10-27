@@ -96,7 +96,7 @@ export async function ReadonlyAccountSection(props: {
   const state = await (props.load ?? loadState)(props.tenantId, props.connectionId);
   if (props.view === 'result') {
     return (
-      <section className={props.className ?? styles.panel} aria-label="읽기 전용 관찰 결과">
+      <section className={props.className ?? styles.resultCard} aria-label="읽기 전용 관찰 결과">
         <LatestObservationResult run={state.latestRun ?? null} />
       </section>
     );
