@@ -21,7 +21,7 @@ import type { ObservationRunFailure } from '@/lib/jury-product/services/readonly
 
 export type ReadonlyAccountActionResult =
   | { ok: true; summary?: ObservationSummary }
-  | { ok: false; reason: ObservationRunFailure };
+  | { ok: false; reason: ObservationRunFailure | 'CONNECTION_DELETED' };
 
 function lines(value: FormDataEntryValue | null): string[] {
   return typeof value === 'string' ? value.split(/\r?\n/).map((v) => v.trim()).filter(Boolean) : [];
@@ -45,6 +45,7 @@ const blank = (v: FormDataEntryValue | null) => typeof v !== 'string' || v.trim(
 
 export async function acceptReadonlyAccountConsentAction(formData: FormData): Promise<ReadonlyAccountActionResult> {
   if (!READONLY_ACCOUNT_PHASE1_ENABLED) return { ok: false, reason: 'NOT_IMPLEMENTED' };
+  if (await (await import('@/lib/jury-product/services/connection-delete/active-guard')).isDeletedConnection(await getJuryActor(), String(formData.get('connectionId') ?? ''))) return { ok: false, reason: 'CONNECTION_DELETED' };
   const result = await persistReadonlyAccountConsent({
     actor: await getJuryActor(),
     connectionId: String(formData.get('connectionId') ?? ''),
@@ -59,6 +60,7 @@ export async function acceptReadonlyAccountConsentAction(formData: FormData): Pr
 
 export async function storeReadonlyAccountCredentialAction(formData: FormData): Promise<ReadonlyAccountActionResult> {
   if (!READONLY_ACCOUNT_PHASE1_ENABLED) return { ok: false, reason: 'NOT_IMPLEMENTED' };
+  if (await (await import('@/lib/jury-product/services/connection-delete/active-guard')).isDeletedConnection(await getJuryActor(), String(formData.get('connectionId') ?? ''))) return { ok: false, reason: 'CONNECTION_DELETED' };
   const connectionId = String(formData.get('connectionId') ?? '');
   const login = blank(formData.get('loginUrl')) ? null : loginOf(formData);
   // I-054: 로그인 설정만 수정 (아이디·비밀번호 비움) → only the login plan is updated; the stored credential stays.
@@ -91,6 +93,7 @@ export async function storeReadonlyAccountCredentialAction(formData: FormData): 
 
 export async function runReadonlyAccountObservationAction(formData: FormData): Promise<ReadonlyAccountActionResult> {
   if (!READONLY_ACCOUNT_PHASE1_ENABLED) return { ok: false, reason: 'NOT_IMPLEMENTED' };
+  if (await (await import('@/lib/jury-product/services/connection-delete/active-guard')).isDeletedConnection(await getJuryActor(), String(formData.get('connectionId') ?? ''))) return { ok: false, reason: 'CONNECTION_DELETED' };
   // I-073: ownership gate (only for connections created after JURY_OWNERSHIP_ENFORCE_FROM; off by default).
   const { enforceOwnershipGate } = await import('@/lib/jury-product/services/ownership/enforce');
   const gate = await enforceOwnershipGate({ actor: await getJuryActor(), connectionId: String(formData.get('connectionId') ?? '') });

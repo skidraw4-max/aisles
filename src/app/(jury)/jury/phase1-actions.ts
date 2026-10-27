@@ -17,6 +17,7 @@ function pepper(): string | null {
 
 export async function issueOwnershipTokenAction(_prev: OwnershipIssueResult, formData: FormData): Promise<OwnershipIssueResult> {
   if (!ownershipFlags().ui) return { ok: false, reason: 'NOT_ENABLED' };
+  if (await (await import('@/lib/jury-product/services/connection-delete/active-guard')).isDeletedConnection(await getJuryActor(), String(formData.get('connectionId') ?? ''))) return { ok: false, reason: 'CONNECTION_DELETED' };
   const { issueOwnershipToken, createPrismaOwnershipStore } = await import('@/lib/jury-product/services/ownership/service');
   const connectionId = String(formData.get('connectionId') ?? '');
   const result = await issueOwnershipToken({
@@ -35,6 +36,7 @@ export async function issueOwnershipTokenAction(_prev: OwnershipIssueResult, for
 
 export async function verifyOwnershipAction(_prev: OwnershipVerifyActionResult, formData: FormData): Promise<OwnershipVerifyActionResult> {
   if (!ownershipFlags().ui) return { ok: false, reason: 'NOT_ENABLED' };
+  if (await (await import('@/lib/jury-product/services/connection-delete/active-guard')).isDeletedConnection(await getJuryActor(), String(formData.get('connectionId') ?? ''))) return { ok: false, reason: 'CONNECTION_DELETED' };
   const { verifyOwnershipNow, createPrismaOwnershipStore } = await import('@/lib/jury-product/services/ownership/service');
   const connectionId = String(formData.get('connectionId') ?? '');
   const result = await verifyOwnershipNow({
@@ -51,6 +53,7 @@ export async function verifyOwnershipAction(_prev: OwnershipVerifyActionResult, 
 
 export async function connectGa4ViewerAction(_prev: Ga4ConnectActionResult, formData: FormData): Promise<Ga4ConnectActionResult> {
   if (!ga4ViewerFlags().enabled) return { ok: false, reason: 'NOT_ENABLED' };
+  if (await (await import('@/lib/jury-product/services/connection-delete/active-guard')).isDeletedConnection(await getJuryActor(), String(formData.get('connectionId') ?? ''))) return { ok: false, reason: 'CONNECTION_DELETED' };
   const { connectGa4Viewer, createPrismaGa4ViewerStore } = await import('@/lib/jury-product/services/ga4-viewer/service');
   const connectionId = String(formData.get('connectionId') ?? '');
   const result = await connectGa4Viewer({

@@ -548,6 +548,9 @@ model JuryServiceConnection {
   ownershipVerifications JuryOwnershipVerification[]
   /// I-072: non-secret provider settings (e.g. GA4 property id). Never credentials.
   providerConfig         Json?
+  /// I-079: soft delete. Set when an OWNER/ADMIN deletes the connection (status becomes DISCONNECTED).
+  disconnectedAt         DateTime?
+  disconnectedByUserId   String?
 
   @@index([tenantId])
 }

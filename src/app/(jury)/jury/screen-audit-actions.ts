@@ -15,6 +15,7 @@ export async function runScreenAuditAction(_prev: ScreenAuditActionResult, formD
   ]);
   try {
     const actor = await getJuryActor();
+    if (await (await import('@/lib/jury-product/services/connection-delete/active-guard')).isDeletedConnection(actor, String(formData.get('connectionId') ?? ''))) return { ok: false, reason: 'CONNECTION_DELETED' };
     // I-073: ownership gate (only for connections created after JURY_OWNERSHIP_ENFORCE_FROM; off by default).
     const { enforceOwnershipGate } = await import('@/lib/jury-product/services/ownership/enforce');
     const gate = await enforceOwnershipGate({ actor, connectionId: String(formData.get('connectionId') ?? '') });

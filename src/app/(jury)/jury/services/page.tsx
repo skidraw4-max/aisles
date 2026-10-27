@@ -3,6 +3,7 @@ import { JuryEmailNotice } from '@/components/jury/JuryEmailNotice';
 import { juryHref, juryLoginHref } from '@/lib/jury-product/jury-url';
 import { loadServiceOperations } from '@/lib/jury-product/service-operations';
 import { providerViewsFor } from '@/lib/jury-product/services/provider-boundary';
+import { canDeleteConnection, isGithubConnection } from '@/lib/jury-product/services/connection-delete/delete';
 import { getJuryEntry } from '@/lib/jury-product/session';
 import { ServiceOperationsList } from '../service-operations-ui';
 import { JuryChrome, ServicesBody } from '../ui';
@@ -11,7 +12,7 @@ import { loadJuryShell, readJurySessionEmail } from '../load';
 export default async function JuryServicesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ result?: string | string[] }>;
+  searchParams: Promise<{ result?: string | string[]; filter?: string | string[] }>;
 }) {
   const entry = await getJuryEntry();
   if (!entry.ok && entry.reason === 'EMAIL_UNVERIFIED') {
@@ -20,6 +21,8 @@ export default async function JuryServicesPage({
   if (!entry.ok && entry.reason === 'UNAUTHENTICATED') redirect(juryLoginHref('/jury/services'));
   if (!entry.ok && entry.reason === 'NO_MEMBERSHIP') redirect(juryHref('/organization/create'));
   const { actor, view, notice } = await loadJuryShell(searchParams);
+  const filter = (await searchParams).filter;
+  const showDeleted = (Array.isArray(filter) ? filter[0] : filter) === 'deleted';
   const operations = actor.ok ? await loadServiceOperations(actor) : null;
   const error = !actor.ok
     ? actor.reason === 'STORE_UNAVAILABLE'
@@ -33,6 +36,9 @@ export default async function JuryServicesPage({
       <ServiceOperationsList
         rows={operations?.ok ? operations.rows : null}
         error={error}
+        showDeleted={showDeleted}
+        canDelete={canDeleteConnection(actor)}
+        githubConnectionIds={view ? view.connections.filter(isGithubConnection).map((row) => row.id) : []}
         providers={actor.ok && view ? providerViewsFor({
           actorTenantId: actor.tenantId,
           connections: view.connections,
