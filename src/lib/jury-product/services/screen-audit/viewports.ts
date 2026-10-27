@@ -28,12 +28,16 @@ export const DESKTOP_ONLY_MIN_WIDTH = 1024;
 export const DEFAULT_AUDIT_VIEWPORTS: readonly AuditViewport[] = [AUDIT_VIEWPORTS.DESKTOP, AUDIT_VIEWPORTS.MOBILE];
 
 /**
- * Time plan for one Vercel invocation (maxDuration 300s): login + discovery share the observation budget, the audit
- * stops starting new pages after AUDIT_BUDGET_MS and marks the rest NOT_TESTED (a re-review continues them, I-064).
+ * Time plan for one Vercel invocation (maxDuration 300s): login + discovery share the observation budget (I-069: time
+ * spent measuring inside the audit hook is not counted against it), the audit stops starting new pages after AUDIT_BUDGET_MS and marks the rest NOT_TESTED (a re-review continues them, I-064).
  */
 export const AUDIT_LIMITS = {
   maxPages: 8,
   budgetMs: 150_000,
   discoveryBudgetMs: 60_000,
   discoveryMaxPages: 12,
+  /** I-069: per-type sample caps (main / product detail / info); "other" fills the rest up to maxPages. */
+  sample: { main: 1, product: 3, info: 2 },
+  /** I-069: same-URL tabs clicked per measured page (desktop). */
+  tabsPerPage: 5,
 } as const;

@@ -155,6 +155,8 @@ export async function observeWithStoredCredential(input: {
   executorEnabled?: boolean;
   /** I-059: screen audit hook. */
   onPage?: (page: { label: string; url: string }) => Promise<void>;
+  /** I-069: earlier-observation paths visited first (screen audit). */
+  seedPaths?: readonly string[];
 }): Promise<ObservationRunResult> {
   if (input.record.destroyedAt || !input.record.ciphertext) {
     await input.driver.close().catch(() => undefined);
@@ -169,7 +171,7 @@ export async function observeWithStoredCredential(input: {
     await input.driver.close().catch(() => undefined);
     return { ok: false, reason: 'DECRYPT_FAILED' };
   }
-  const report = await runReadonlyObservation({ driver: input.driver, credential: dec.secret, scope: input.scope, login: input.login, actions: input.actions, discover: input.discover, onPage: input.onPage }, input.executorEnabled);
+  const report = await runReadonlyObservation({ driver: input.driver, credential: dec.secret, scope: input.scope, login: input.login, actions: input.actions, discover: input.discover, onPage: input.onPage, seedPaths: input.seedPaths }, input.executorEnabled);
   logBlockedRequests(report, input.context.connectionId);
   return { ok: true, summary: summarizeObservation(report) };
 }

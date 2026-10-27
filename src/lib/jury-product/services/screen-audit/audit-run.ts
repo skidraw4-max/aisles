@@ -14,6 +14,8 @@ import { createAuditHook, mobileOriginsNotAllowed, type AuditPageResult } from '
 import { summarizeAudit, type AreaSummary, type AuditStatus, type Finding } from './rules';
 import { createMaskedCapture, screenshotExpiry, type ScreenshotSink } from './screenshot-store';
 import { AUDIT_LIMITS, DEFAULT_AUDIT_VIEWPORTS } from './viewports';
+import { selectAuditCandidates } from './page-sampling';
+import { DEFAULT_SENSITIVE_PATH_PREFIXES } from '../readonly-account/sensitive-paths';
 import { evaluateVisual, SCREEN_AUDIT_AI_ENABLED, type AiVisualEvaluator } from './ai-visual';
 
 /** Screen audit switch (the browser executor keeps its own READONLY_ACCOUNT_EXECUTOR_ENABLED gate). */
@@ -65,6 +67,12 @@ export function buildAuditRows(results: readonly AuditPageResult[], now: Date, i
     rows.findings.push({ id: id(), pageId: pageIds.get(k) ?? null, area: f.area, rule: f.rule, severity: f.severity, status: f.status === 'FAIL' ? 'FAIL' : 'PARTIAL', viewport: f.viewport, message: f.message, evidenceIds: shot ? [shot] : [], boxes: f.boxes, ...(f.envLimited ? { envLimited: true } : {}) });
   }
   return { summary, rows };
+}
+
+/** I-069: tab entries are recorded as `${path}#tab-N` (desktop). */
+export function tabCounts(results: readonly AuditPageResult[]) {
+  const tabs = results.filter((r) => r.tab);
+  return { measured: tabs.filter((r) => r.status === 'PASS').length, blocked: tabs.filter((r) => r.status === 'BLOCKED').length, total: tabs.length };
 }
 
 export interface ScreenAuditStore {
@@ -122,6 +130,16 @@ export async function runScreenAudit(input: {
     clock: input.clock,
     capture: sink ? createMaskedCapture({ driver, sink, tenantId: auth.connection.tenantId, auditId }) : undefined,
   });
+  // I-069: reuse candidate paths from this connection's recent successful plain observations (paths only). The
+  // audit still logs in fresh and visits them with GET in that same session; sensitive paths are dropped here and
+  // BLOCKed by the hook, and the executor re-checks every seed against the allowed origins and link safety rules.
+  let seedPaths: string[] = [];
+  try {
+    const recent = input.observationStore.findRecentObservationPaths ? await input.observationStore.findRecentObservationPaths(auth.connection.tenantId, auth.connection.id) : [];
+    seedPaths = selectAuditCandidates(recent, { sensitivePrefixes: DEFAULT_SENSITIVE_PATH_PREFIXES });
+  } catch {
+    seedPaths = [];
+  }
   let stop: string | null = null;
   let failed = false;
   try {
@@ -136,6 +154,8 @@ export async function runScreenAudit(input: {
       executorEnabled: input.executorEnabled,
       discover: { maxPages: AUDIT_LIMITS.discoveryMaxPages, budgetMs: AUDIT_LIMITS.discoveryBudgetMs },
       onPage: hook.onPage,
+      seedPaths,
+      runKind: { kind: 'SCREEN_AUDIT', auditId },
     });
     if (!obs.ok) {
       stop = obs.reason;
@@ -159,7 +179,7 @@ export async function runScreenAudit(input: {
   const status: AuditStatus = failed ? 'ERROR' : hook.results.length === 0 ? (stop ? 'BLOCKED' : 'NOT_TESTED') : stop && summary.status === 'PASS' ? 'PARTIAL' : summary.status;
   await input.auditStore.finishAudit({
     id: auditId, tenantId: auth.connection.tenantId, state: failed ? 'FAILED' : 'DONE', status,
-    summary: { areas: summary.areas, findings: summary.findings.length, stop, ai, mobileOriginsNotAllowed: mobileOriginsNotAllowed(hook.results), envLimitedFindings: summary.findings.filter((f) => f.envLimited).length, pages: new Set(hook.results.map((r) => r.path)).size, elapsedMs: hook.elapsedMs() },
+    summary: { areas: summary.areas, findings: summary.findings.length, stop, ai, mobileOriginsNotAllowed: mobileOriginsNotAllowed(hook.results), envLimitedFindings: summary.findings.filter((f) => f.envLimited).length, pages: new Set(hook.results.map((r) => r.path)).size, elapsedMs: hook.elapsedMs(), candidateSource: seedPaths.length ? 'RECENT_OBSERVATION' : 'DISCOVERY', seededPaths: seedPaths.length, tabs: tabCounts(hook.results) },
     finishedAt: now(), rows,
   });
   return { ok: true, auditId, status, areas: summary.areas, findings: summary.findings.length, stop };

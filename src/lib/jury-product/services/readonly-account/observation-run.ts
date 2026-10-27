@@ -34,6 +34,11 @@ export interface ObservationRunStore {
   saveLoginSettings?(tenantId: string, consentId: string, settings: LoginPlan): Promise<void>;
   findActiveCredential(tenantId: string, connectionId: string): Promise<StoredCredentialRecord | null>;
   audit(event: { tenantId: string; actor: string; action: string; serviceKey: string; timestamp: string }): Promise<void>;
+  /**
+   * I-069: paths seen by the most recent successful plain observations (kind OBSERVATION, not screen-audit runs) of
+   * this connection, newest run first. Paths only. Optional.
+   */
+  findRecentObservationPaths?(tenantId: string, connectionId: string): Promise<string[]>;
   /** I-047: persists the PII-free summary. Optional so older fakes keep working. */
   recordRun?(run: ObservationRunRecord): Promise<void>;
 }
@@ -44,6 +49,9 @@ export type ObservationRunRecord = {
   actorUserId: string;
   observedAt: string;
   summary: ObservationSummary;
+  /** I-069: screen-audit runs are stored as SCREEN_AUDIT (linked to the audit) so they are not reused as candidates. */
+  kind?: 'OBSERVATION' | 'SCREEN_AUDIT';
+  auditId?: string | null;
 };
 
 export type ObservationRunFailure =
@@ -115,6 +123,9 @@ export async function runStoredCredentialObservation(input: {
   discover?: Partial<DiscoveryOptions> | false;
   /** I-059: screen audit hook (see screen-audit/audit-hook.ts). */
   onPage?: (page: { label: string; url: string }) => Promise<void>;
+  /** I-069: earlier-observation paths visited first; recorded run is tagged as a screen-audit run. */
+  seedPaths?: readonly string[];
+  runKind?: { kind: 'SCREEN_AUDIT'; auditId: string };
 }): Promise<{ ok: true; summary: ObservationSummary } | { ok: false; reason: ObservationRunFailure }> {
   const now = input.now ?? new Date();
   const tenantId = input.actor.ok ? input.actor.tenantId : null;
@@ -153,6 +164,7 @@ export async function runStoredCredentialObservation(input: {
     now,
     executorEnabled: input.executorEnabled,
     onPage: input.onPage,
+    seedPaths: input.seedPaths,
   });
   // I-056: a run that logged in with typed settings remembers them on the consent, so the next run can leave them blank.
   if (result.ok && result.summary.ok && !isBlank(input.login.loginUrl) && consent.id && input.store.saveLoginSettings) {
@@ -170,6 +182,7 @@ export async function runStoredCredentialObservation(input: {
         actorUserId: auth.actor.userId,
         observedAt: now.toISOString(),
         summary: result.summary,
+        ...(input.runKind ? { kind: input.runKind.kind, auditId: input.runKind.auditId } : {}),
       });
     } catch (error) {
       console.warn(JSON.stringify({ event: 'readonly_account_observation_persist_failed', connectionId: auth.connection.id, error: error instanceof Error ? error.name : 'unknown' }));
@@ -216,8 +229,19 @@ export async function createPrismaObservationRunStore(): Promise<ObservationRunS
           finalOrigin: s.finalOrigin,
           finalPath: s.finalPath,
           observedAt: new Date(run.observedAt),
+          ...(run.kind ? { kind: run.kind } : {}),
+          ...(run.auditId ? { auditId: run.auditId } : {}),
         },
       });
+    },
+    async findRecentObservationPaths(tenantId, connectionId) {
+      const rows = await prisma.juryReadonlyObservationRun.findMany({
+        where: { tenantId, connectionId, ok: true, kind: 'OBSERVATION', auditId: null },
+        orderBy: { observedAt: 'desc' },
+        take: 5,
+        select: { pages: true },
+      });
+      return rows.flatMap((r) => (Array.isArray(r.pages) ? r.pages : []).flatMap((p) => (p && typeof p === 'object' && typeof (p as { path?: unknown }).path === 'string' ? [(p as { path: string }).path] : [])));
     },
     async findActiveCredential(tenantId, connectionId) {
       const row = await prisma.juryAccountCredential.findFirst({
