@@ -56,6 +56,7 @@ export const STATUS_LABELS: Readonly<Record<string, string>> = {
   API_KEY: 'API 키',
   BROWSER_SESSION: '브라우저 세션',
   FILE_UPLOAD: '파일 업로드',
+  GA4_VIEWER: 'GA4 보기 권한 초대',
   ACCEPTED: '수락됨',
   EXPIRED: '만료됨',
   CANCELLED: '취소됨',

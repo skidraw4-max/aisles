@@ -89,6 +89,8 @@ const METHOD_METADATA: Record<ConnectionMethod, ConnectionMethodMetadata> = {
   READ_ONLY_ACCOUNT: { method: 'READ_ONLY_ACCOUNT', requiresCredential: true, supportsReadOnly: true, supportsWrite: false, supportsRefresh: false, requiresExternalRedirect: false, implemented: true },
   BROWSER_SESSION: { method: 'BROWSER_SESSION', requiresCredential: true, supportsReadOnly: true, supportsWrite: false, supportsRefresh: false, requiresExternalRedirect: false, implemented: false },
   FILE_IMPORT: { method: 'FILE_IMPORT', requiresCredential: false, supportsReadOnly: true, supportsWrite: false, supportsRefresh: false, requiresExternalRedirect: false, implemented: false },
+  // I-075: customer invites the Jury service account as GA4 Viewer; no customer credential is stored.
+  GA4_VIEWER: { method: 'GA4_VIEWER', requiresCredential: false, supportsReadOnly: true, supportsWrite: false, supportsRefresh: false, requiresExternalRedirect: true, implemented: true },
 };
 
 export function connectionMethodMetadata(method: ConnectionMethod): ConnectionMethodMetadata {

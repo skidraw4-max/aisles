@@ -60,7 +60,9 @@ export type ObservationRunFailure =
   | 'LOGIN_PLAN_INVALID'
   | 'CREDENTIAL_UNAVAILABLE'
   | 'CREDENTIAL_EXPIRED'
-  | 'DECRYPT_FAILED';
+  | 'DECRYPT_FAILED'
+  /** I-073: connection created after the ownership gate started and has no verified ownership. */
+  | 'OWNERSHIP_REQUIRED';
 
 const SELECTOR_MAX = 200;
 

@@ -5,13 +5,15 @@
  */
 import type { JuryAccessMethod } from '../records';
 import { READONLY_ACCOUNT_UI_ENABLED } from './readonly-account/flags';
+import { ga4ViewerFlags } from './phase1-flags';
 
 export type SelectableMethod = { value: JuryAccessMethod; label: string; description: string };
 
 export type SelectableMethodFlags = { readonlyAccount: boolean; ga4Viewer?: boolean };
 
 export function defaultSelectableMethodFlags(): SelectableMethodFlags {
-  return { readonlyAccount: READONLY_ACCOUNT_UI_ENABLED };
+  // I-075: GA4_VIEWER only when JURY_GA4_VIEWER_ENABLED and Jury service-account credentials are configured.
+  return { readonlyAccount: READONLY_ACCOUNT_UI_ENABLED, ga4Viewer: ga4ViewerFlags().enabled };
 }
 
 const READONLY_ACCOUNT: SelectableMethod = {
@@ -24,7 +26,7 @@ export function selectableAccessMethods(flags: SelectableMethodFlags = defaultSe
   const out: SelectableMethod[] = [];
   if (flags.readonlyAccount) out.push(READONLY_ACCOUNT);
   if (flags.ga4Viewer) {
-    out.push({ value: 'GA4_VIEWER' as JuryAccessMethod, label: 'GA4 뷰어 초대', description: 'GA4 속성에 Jury 서비스 계정을 뷰어로 초대해요.' });
+    out.push({ value: 'GA4_VIEWER', label: 'GA4 보기 권한 초대', description: 'GA4 속성에 Jury 서비스 계정을 뷰어로 초대해요.' });
   }
   return out;
 }

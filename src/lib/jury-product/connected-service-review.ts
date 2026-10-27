@@ -272,6 +272,9 @@ export async function runConnectedServiceEvidenceCollection(
   });
   const scope = scopeRows.find((row) => row.status === 'APPROVED') ?? scopeRows[0] ?? null;
   const { runAisleServiceAccess } = await import('./service-access');
+  // I-076: GA4_VIEWER connections get their own property through the Jury service account (env GA4 stays stripped).
+  const { ga4OptionsForConnection } = await import('./services/ga4-viewer/service');
+  const connectionGa4 = ga4OptionsForConnection(connection) ?? undefined;
   const observed = await withoutGa4(() =>
     runAisleServiceAccess({
       actor,
@@ -294,6 +297,7 @@ export async function runConnectedServiceEvidenceCollection(
         : null,
       clientTenantId: null,
       evidenceDb: deps?.evidenceDb ?? mockObservationDb(),
+      ga4: connectionGa4,
     }),
   );
   if (!observed.ok) return { ok: false, reason: observed.reason === 'CONTEXT_NOT_ISSUED' ? 'COLLECTION_FAILED' : observed.reason };
