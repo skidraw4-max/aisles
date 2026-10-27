@@ -29,7 +29,7 @@ test('I-080 UI: tablist + aria-selected, juryHref query form, deleted columns, b
   assert.match(UI, /aria-selected=\{showDeleted\}/);
   assert.match(UI, /juryHref\('\/services', \{ filter: 'deleted' \}\)/);
   assert.ok(!/juryHref\('[^']*\?/.test(UI));
-  for (const s of ['연결 중 {counts.active}', '삭제된 연결 {counts.deleted}', '삭제 시각 (KST)', '삭제한 사람', '삭제됨', '연결 중 목록으로', 'styles.mutedRow', 'DELETED_VIEW_NOTICE', 'DELETED_VIEW_TITLE']) assert.ok(UI.includes(s), s);
+  for (const s of ['연결 중 <span className={styles.segTabCount}>{counts.active}</span>', '삭제된 연결 <span className={styles.segTabCount}>{counts.deleted}</span>', '삭제 시각 (KST)', '삭제한 사람', '삭제됨', '연결 중 목록으로', 'styles.mutedRow', 'DELETED_VIEW_NOTICE', 'DELETED_VIEW_TITLE']) assert.ok(UI.includes(s), s);
   assert.match(UI, /canDelete && !showDeleted \? \(\s*<td className=\{styles\.rowActions\}><ConnectionDeleteDialog/);
 });
 

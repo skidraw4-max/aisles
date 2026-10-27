@@ -61,9 +61,10 @@ test('tab bar is sticky, horizontally scrollable, button style', () => {
   const tabs = css.slice(css.indexOf('.serviceTabs {', css.indexOf('I-070')));
   assert.match(tabs.slice(0, 250), /overflow-x: auto/);
   assert.match(tabs.slice(0, 250), /flex-wrap: nowrap/);
-  const active = css.slice(css.indexOf('.serviceTabActive,'));
-  // I-083/I-084: active tab uses the single accent fill.
-  assert.match(active.slice(0, 250), /background: var\(--jury-accent\)/);
+  // I-085: service tabs share the segTabs underline pattern (accent text + accent underline).
+  assert.ok(!css.includes('.serviceTabActive'));
+  const active = css.slice(css.indexOf('.segTab.segTabActive {'));
+  assert.match(active.slice(0, 250), /border-bottom-color: var\(--jury-accent/);
 });
 
 test('page: tabs outside the summary card, 다음 할 일 in 개요, no empty card on 화면 심사', () => {
