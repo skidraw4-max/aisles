@@ -7,6 +7,8 @@ import { OWNERSHIP_CONSENT_TEXT } from '@/lib/jury-product/services/ownership/co
 import { GA4_VIEWER_CONSENT_TEXT, GA4_VIEWER_STEPS } from '@/lib/jury-product/services/ga4-viewer/consent-text';
 import { OWNERSHIP_STATUS_TEXT } from '@/lib/jury-product/services/phase1-text';
 import styles from './jury.module.css';
+import { StatusBadge } from './jury-controls';
+import { NoValue } from './info-table';
 import { connectGa4ViewerAction, issueOwnershipTokenAction, verifyOwnershipAction } from './phase1-actions';
 import { Ga4ConnectForm, OwnershipIssueForm, OwnershipVerifyButton } from './phase1-forms';
 
@@ -23,16 +25,34 @@ export async function OwnershipSection(props: { tenantId: string; connectionId: 
       <h2 id="ownership-title">사이트 소유 확인</h2>
       <p>사이트를 운영하는 분인지 확인해요. 확인 후에는 7일마다 자동으로 다시 확인해요.</p>
       {rows.length ? (
-        <ul>
-          {rows.map((r) => (
-            <li key={r.id}>
-              {r.host} · {OWNERSHIP_STATUS_TEXT[r.status] ?? r.status} · 마지막 확인 {kst(r.lastCheckedAt)}
-              {r.status === 'PENDING' || r.status === 'FAILED' || r.status === 'EXPIRED' ? (
-                <OwnershipVerifyButton connectionId={props.connectionId} verificationId={r.id} action={verifyOwnershipAction} />
-              ) : null}
-            </li>
-          ))}
-        </ul>
+        <div className={styles.resultTableWrap}>
+          {/* I-088: 도메인 | 상태 | 마지막 확인 | 동작 */}
+          <table className={`${styles.resultTable} ${styles.infoTable}`}>
+            <caption className={styles.srOnly}>사이트 소유 확인 기록</caption>
+            <thead>
+              <tr>
+                <th scope="col">도메인</th>
+                <th scope="col">상태</th>
+                <th scope="col">마지막 확인</th>
+                <th scope="col">동작</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r) => (
+                <tr key={r.id}>
+                  <th scope="row">{r.host}</th>
+                  <td><StatusBadge status={r.status} title={r.status}>{OWNERSHIP_STATUS_TEXT[r.status] ?? r.status}</StatusBadge></td>
+                  <td>{r.lastCheckedAt ? kst(r.lastCheckedAt) : <NoValue label="확인 기록 없음" />}</td>
+                  <td>
+                    {r.status === 'PENDING' || r.status === 'FAILED' || r.status === 'EXPIRED' ? (
+                      <OwnershipVerifyButton connectionId={props.connectionId} verificationId={r.id} action={verifyOwnershipAction} />
+                    ) : <NoValue label="동작 없음" />}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       ) : null}
       <OwnershipIssueForm connectionId={props.connectionId} defaultHost={props.defaultHost ?? ''} consentText={OWNERSHIP_CONSENT_TEXT} action={issueOwnershipTokenAction} />
     </section>
@@ -45,7 +65,7 @@ export function Ga4ViewerSection(props: { connectionId: string; accessMethod: st
   return (
     <section className={styles.panel} aria-labelledby="ga4-viewer-title">
       <h2 id="ga4-viewer-title">GA4 보기 권한 초대</h2>
-      <ol>{GA4_VIEWER_STEPS.map((s) => <li key={s}>{s}</li>)}</ol>
+      <ol className={styles.resultList}>{GA4_VIEWER_STEPS.map((s) => <li key={s}>{s}</li>)}</ol>
       {flags.serviceAccountEmail ? <p>서비스 계정 이메일: <code>{flags.serviceAccountEmail}</code></p> : null}
       <Ga4ConnectForm connectionId={props.connectionId} consentText={GA4_VIEWER_CONSENT_TEXT} defaultPropertyId={props.propertyId ?? ''} action={connectGa4ViewerAction} />
     </section>
