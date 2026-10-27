@@ -15,6 +15,7 @@ import type { ObservationDriver, ObservedRequest, RequestVerdict, ResourceStats 
 import { MOBILE_DEVICE, type MobileDevice } from '../screen-audit/viewports';
 import { LAYOUT_PROBE } from '../screen-audit/layout-probe';
 import { MASK_ATTR, MASK_PROBE, UNMASK_PROBE } from '../screen-audit/mask-probe';
+import { TAB_ATTR, TAB_CLICK_PROBE, TAB_LIST_PROBE, TAB_UNSAFE_TEXT_SOURCE } from '../screen-audit/tab-probe';
 
 export interface PwRequest {
   method(): string;
@@ -236,8 +237,20 @@ export const FONTS_READY_PROBE = (): Promise<boolean> | boolean => {
 };
 
 /** I-068: blocked subresources by type and blocked document navigations (origin only) for the current page. */
-type PageTracker = { blocked: ResourceStats['blocked']; blockedNavigationOrigin: string | null };
-const newTracker = (): PageTracker => ({ blocked: { stylesheet: 0, font: 0, script: 0, xhr: 0, other: 0 }, blockedNavigationOrigin: null });
+/** I-069: nonGet = non-GET/HEAD requests seen (all blocked by the guard); navigations = top-level document requests. */
+type PageTracker = { blocked: ResourceStats['blocked']; blockedNavigationOrigin: string | null; nonGet: number; navigations: number };
+const newTracker = (): PageTracker => ({ blocked: { stylesheet: 0, font: 0, script: 0, xhr: 0, other: 0 }, blockedNavigationOrigin: null, nonGet: 0, navigations: 0 });
+
+/** I-069: URL identity for tab clicks (hash changes are same-page). */
+export function sameDocumentUrl(a: string, b: string): boolean {
+  try {
+    const x = new URL(a);
+    const y = new URL(b);
+    return x.origin === y.origin && x.pathname === y.pathname && x.search === y.search;
+  } catch {
+    return a === b;
+  }
+}
 function recordBlocked(t: PageTracker, req: PwRequest) {
   const type = req.resourceType();
   if (req.isNavigationRequest() && type === 'document') {
@@ -279,6 +292,10 @@ export function createBrowserObservationDriver(launch: PwContextLauncher, option
   const installGuard = async (ctx: PwContext, tracker: () => PageTracker) => {
     await ctx.route('**/*', async (route) => {
       const req = route.request();
+      const t = tracker();
+      const m = req.method().toUpperCase();
+      if (m !== 'GET' && m !== 'HEAD') t.nonGet += 1;
+      if (req.isNavigationRequest() && req.resourceType() === 'document') t.navigations += 1;
       const block = () => {
         recordBlocked(tracker(), req);
         return route.abort('blockedbyclient');
@@ -409,6 +426,20 @@ export function createBrowserObservationDriver(launch: PwContextLauncher, option
       } finally {
         await p.evaluate(UNMASK_PROBE, MASK_ATTR).catch(() => undefined);
       }
+    },
+    async listTabs(limit) {
+      const p = await ensure();
+      const tabs = await p.evaluate(TAB_LIST_PROBE, { attr: TAB_ATTR, limit: Math.max(0, Math.min(limit, 5)), unsafe: TAB_UNSAFE_TEXT_SOURCE }).catch(() => []);
+      return Array.isArray(tabs) ? tabs : [];
+    },
+    async clickTab(index) {
+      const p = await ensure();
+      const before = p.url();
+      const t0 = { nonGet: desktopTracker.nonGet, navigations: desktopTracker.navigations };
+      const clicked = (await p.evaluate(TAB_CLICK_PROBE, { attr: TAB_ATTR, index }).catch(() => false)) === true;
+      if (clicked) await waitForSettle(p);
+      const t = desktopTracker;
+      return { clicked, urlChanged: !sameDocumentUrl(before, p.url()), nonGetRequests: t.nonGet - t0.nonGet, navigations: t.navigations - t0.navigations };
     },
     async close() {
       const c = context;

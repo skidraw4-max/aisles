@@ -12,7 +12,7 @@ import type { AccountCredentialSecret } from './credential-crypto';
 import type { ObservationScope } from './consent';
 import { allowedSitesOf, isFontHostRequest, isSameSiteSubresource } from './same-site';
 import type { LayoutMetrics } from '../screen-audit/layout-probe';
-import { DEFAULT_DISCOVERY, normalizeLinkKey, normalizeStats, pickLinks, type DiscoveredLink, type DiscoveryOptions, type PageStats } from './discovery';
+import { classifyLink, DEFAULT_DISCOVERY, normalizeLinkKey, normalizeStats, pickLinks, type DiscoveredLink, type DiscoveryOptions, type PageStats } from './discovery';
 
 export const READONLY_ACCOUNT_EXECUTOR_ENABLED = true as boolean;
 
@@ -58,8 +58,21 @@ export interface ObservationDriver {
   closeMobile?(): Promise<void>;
   /** I-068: subresources blocked on the current page since its last navigation (counts only), and document.fonts state. */
   resourceStats?(): Promise<ResourceStats>;
+  /**
+   * I-069: same-URL tabs on the current desktop page (role=tab, [aria-controls], href="#…"), excluding elements inside
+   * forms, submit buttons and anything that looks like cart/buy/pay/logout/delete. Max `limit`. Optional.
+   */
+  listTabs?(limit: number): Promise<AuditTab[]>;
+  /**
+   * I-069: DOM-click one tab returned by listTabs, then settle. Reports whether the URL (origin+path+query) changed,
+   * how many non-GET requests (blocked by the guard) and document navigations the click caused. Optional.
+   */
+  clickTab?(index: number): Promise<TabClickResult>;
   close(): Promise<void>;
 }
+
+export type AuditTab = { index: number; name: string; selected: boolean };
+export type TabClickResult = { clicked: boolean; urlChanged: boolean; nonGetRequests: number; navigations: number };
 
 export type LoginPlan = { loginUrl: string; usernameSelector: string; passwordSelector: string; submitSelector: string; successPathPrefix: string };
 
@@ -110,6 +123,8 @@ export type ExecutorReport = {
     stoppedBy: DiscoveryStop;
     /** I-050: links whose final URL redirected to an already-observed page (not counted as new pages). */
     redirects?: { from: string; to: string }[];
+    /** I-069: seed paths (earlier observation) queued first. */
+    seeded?: number;
   };
   blockedRequests: { method: string; url: string; reason: 'ORIGIN' | 'METHOD' | 'FORM_SUBMIT' | 'LOGIN_ALREADY_USED' }[];
 };
@@ -244,6 +259,11 @@ export async function executeReadonlyObservation(input: {
   clock?: () => number;
   /** I-059: called after each observed page while the browser is still on it (screen audit). Errors are ignored. */
   onPage?: (page: { label: string; url: string }) => Promise<void>;
+  /**
+   * I-069: paths (from earlier observations of the same connection) visited first during discovery, same GET-only
+   * navigation and the same link safety / allowed-origin checks as discovered links. Ignored when discovery is off.
+   */
+  seedPaths?: readonly string[];
 }): Promise<ExecutorReport> {
   const clock = input.clock ?? Date.now;
   const startedAt = clock();
@@ -253,9 +273,14 @@ export async function executeReadonlyObservation(input: {
   const policy = createRequestGuard({ scope: input.scope, loginOrigin: plan.loginOrigin });
   report.blockedRequests = policy.blocked;
   const { driver } = input;
+  // I-069: time spent inside onPage (screen-audit measuring) does not count against the discovery budget.
+  let hookMs = 0;
   const afterPage = async () => {
     const last = report.snapshots[report.snapshots.length - 1];
-    if (input.onPage && last) await input.onPage({ label: last.label, url: last.url }).catch(() => undefined);
+    if (!input.onPage || !last) return;
+    const t0 = clock();
+    await input.onPage({ label: last.label, url: last.url }).catch(() => undefined);
+    hookMs += Math.max(0, clock() - t0);
   };
   let step: ExecutorStep = 'LOGIN_PAGE';
   const stop = async (reason: ExecutorStop, extra: Partial<ExecutorReport> = {}) => {
@@ -345,12 +370,26 @@ export async function executeReadonlyObservation(input: {
       const d: NonNullable<ExecutorReport['discovery']> = { enabled: true, found: 0, visited: 0, skipped: 0, errors: 0, stoppedBy: driver.collectLinks ? 'DONE' : 'UNSUPPORTED', redirects: [] };
       report.discovery = d;
       step = 'DISCOVERY';
+      // I-069: seed paths go first (in the given order), checked exactly like discovered links.
+      if (input.seedPaths?.length) {
+        const seeds: typeof queue = [];
+        for (const raw of input.seedPaths.slice(0, 50)) {
+          if (typeof raw !== 'string' || !raw.startsWith('/') || raw.startsWith('//')) continue;
+          const v = classifyLink({ href: raw, text: '' }, landed.origin, input.scope.allowedOrigins, loginPath);
+          if (!v.ok || visited.has(v.key) || seeds.some((q) => q.key === v.key)) continue;
+          queued.add(v.key);
+          seeds.push({ key: v.key, path: v.path, label: v.path.slice(0, 64), depth: 1 });
+        }
+        const rest = queue.filter((q) => !seeds.some((x) => x.key === q.key));
+        queue.splice(0, queue.length, ...seeds, ...rest);
+        d.seeded = seeds.length;
+      }
       while (queue.length > 0) {
         if (report.snapshots.length >= opts.maxPages) {
           d.stoppedBy = 'MAX_PAGES';
           break;
         }
-        if (clock() - startedAt >= opts.budgetMs) {
+        if (clock() - startedAt - hookMs >= opts.budgetMs) {
           d.stoppedBy = 'BUDGET';
           break;
         }
