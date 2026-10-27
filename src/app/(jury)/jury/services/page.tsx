@@ -4,6 +4,7 @@ import { juryHref, juryLoginHref } from '@/lib/jury-product/jury-url';
 import { loadServiceOperations } from '@/lib/jury-product/service-operations';
 import { providerViewsFor } from '@/lib/jury-product/services/provider-boundary';
 import { canDeleteConnection, isGithubConnection } from '@/lib/jury-product/services/connection-delete/delete';
+import { loadDeletedConnectionMeta } from '@/lib/jury-product/services/connection-delete/deleted-view';
 import { getJuryEntry } from '@/lib/jury-product/session';
 import { ServiceOperationsList } from '../service-operations-ui';
 import { JuryChrome, ServicesBody } from '../ui';
@@ -24,6 +25,7 @@ export default async function JuryServicesPage({
   const filter = (await searchParams).filter;
   const showDeleted = (Array.isArray(filter) ? filter[0] : filter) === 'deleted';
   const operations = actor.ok ? await loadServiceOperations(actor) : null;
+  const deletedMeta = actor.ok && showDeleted ? await loadDeletedConnectionMeta(actor.tenantId).catch(() => ({})) : {};
   const error = !actor.ok
     ? actor.reason === 'STORE_UNAVAILABLE'
       ? 'Jury 저장소가 아직 준비되지 않았습니다.'
@@ -37,6 +39,7 @@ export default async function JuryServicesPage({
         rows={operations?.ok ? operations.rows : null}
         error={error}
         showDeleted={showDeleted}
+        deletedMeta={deletedMeta}
         canDelete={canDeleteConnection(actor)}
         githubConnectionIds={view ? view.connections.filter(isGithubConnection).map((row) => row.id) : []}
         providers={actor.ok && view ? providerViewsFor({
