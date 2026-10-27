@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import Script from 'next/script';
 import { SpeedInsights } from '@vercel/speed-insights/next';
-import { Syne, DM_Sans, Roboto_Mono } from 'next/font/google';
+import localFont from 'next/font/local';
 import { AdSenseScript } from '@/components/AdSenseScript';
 import { CapacitorSafeArea } from '@/components/CapacitorSafeArea';
 import { HomeSupabaseRedirectHandler } from '@/components/HomeSupabaseRedirectHandler';
@@ -10,24 +10,22 @@ import { GA_MEASUREMENT_ID } from '@/lib/ga4';
 import { rootLayoutRobots } from '@/lib/seo-robots';
 import './globals.css';
 
-const display = Syne({
-  subsets: ['latin'],
+// Self-hosted (OFL, see ./fonts) so the build never downloads fonts from Google.
+const display = localFont({
+  src: [{ path: './fonts/Syne-latin-var.woff2', weight: '600 800', style: 'normal' }],
   variable: '--font-display',
-  weight: ['600', '700', '800'],
   display: 'swap',
 });
 
-const body = DM_Sans({
-  subsets: ['latin'],
+const body = localFont({
+  src: [{ path: './fonts/DMSans-latin-var.woff2', weight: '400 700', style: 'normal' }],
   variable: '--font-body',
-  weight: ['400', '500', '600', '700'],
   display: 'swap',
 });
 
-const mono = Roboto_Mono({
-  subsets: ['latin'],
+const mono = localFont({
+  src: [{ path: './fonts/RobotoMono-latin-var.woff2', weight: '400 700', style: 'normal' }],
   variable: '--font-mono',
-  weight: ['400', '500', '700'],
   display: 'swap',
 });
 
