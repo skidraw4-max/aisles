@@ -7,8 +7,8 @@ import { getJuryEntry } from '@/lib/jury-product/session';
 import { loadQualityTrend } from '@/lib/jury-product/quality-trend';
 import { GithubRefreshStatus } from '../../github-refresh-status';
 import { ServiceDetailBody } from '../../service-onboarding-ui';
-import { QualityTrendPanel, ServiceOperationDetail, ServiceOperationState, ServiceSummaryHeader } from '../../service-operations-ui';
-import { parseServiceTab, ServiceTabNav } from '../../service-detail-tabs';
+import { QualityTrendPanel, ServiceNextActionPanel, ServiceOperationDetail, ServiceOperationState, ServiceSummaryHeader } from '../../service-operations-ui';
+import { parseServiceTab, serviceTabBadges, ServiceTabNav } from '../../service-detail-tabs';
 import { ServiceTabMemory } from '../../service-tab-memory';
 import { JuryChrome } from '../../ui';
 import { ReadonlyAccountSection, readonlyObservationNeeded } from '../../readonly-account-section';
@@ -67,15 +67,17 @@ export default async function ServiceDetailPage({
   const observationNeeded = ready ? await readonlyObservationNeeded({ tenantId: actor.tenantId, connectionId, accessMethod }) : false;
   return (
     <JuryChrome actor={actor} notice={notice}>
-      <ServiceSummaryHeader model={operation.model} observationNeeded={observationNeeded}>
-        <ServiceTabNav connectionId={connectionId} active={tab} />
-      </ServiceSummaryHeader>
+      <ServiceSummaryHeader model={operation.model} observationNeeded={observationNeeded} />
+      {/* I-070: tabs in their own sticky bar under the name/status row; badges use already-loaded data only. */}
+      <ServiceTabNav connectionId={connectionId} active={tab} badges={serviceTabBadges(operation.model, observationNeeded)} />
+      {tab === 'overview' ? <ServiceNextActionPanel model={operation.model} observationNeeded={observationNeeded} /> : null}
       <ServiceTabMemory connectionId={connectionId} tab={tab} />
       {/* I-052: 관찰 결과 tab shows the latest observation first, then the evidence built from it. */}
       {ready && tab === 'results' ? (
         <ReadonlyAccountSection tenantId={actor.tenantId} connectionId={connectionId} accessMethod={accessMethod} view="result" />
       ) : null}
-      <ServiceOperationDetail model={operation.model} provider={providers[connectionId] ?? null} section={tab} />
+      {/* I-070: 화면 심사 has no summary part, so skip the empty card there. */}
+      {tab !== 'screen' ? <ServiceOperationDetail model={operation.model} provider={providers[connectionId] ?? null} section={tab} /> : null}
       {tab === 'overview' && trend?.visible ? <QualityTrendPanel trend={trend} /> : null}
       {ready && tab !== 'review' && tab !== 'history' && tab !== 'screen' ? <ServiceDetailBody actor={actor} view={view} connectionId={connectionId} section={tab} /> : null}
       {ready && tab === 'connect' ? (

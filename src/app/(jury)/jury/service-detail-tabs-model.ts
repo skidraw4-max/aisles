@@ -37,3 +37,33 @@ export function restoreServiceTabUrl(href: string, saved: string | null): string
   url.searchParams.set('tab', saved);
   return `${url.pathname}${url.search}${url.hash}`;
 }
+
+/** I-070: per-tab status badge derived only from data the page already loaded (no extra queries). */
+export type ServiceTabBadge = { text: string; tone: 'ok' | 'warn' | 'muted' };
+
+export type ServiceTabBadgeInput = {
+  connectionStatus: string;
+  onboarding: { discovery: string };
+  evidence: { empty: boolean; evidenceItemCount: number };
+  review: { empty: boolean; running?: boolean };
+  improvement: { openCount: number };
+  activity: readonly unknown[];
+};
+
+export function serviceTabBadges(
+  model: ServiceTabBadgeInput,
+  observationNeeded = false,
+): Partial<Record<ServiceTab, ServiceTabBadge>> {
+  const connectReady = !observationNeeded && model.onboarding.discovery === 'COMPLETE' && model.connectionStatus === 'CONNECTED';
+  const badges: Partial<Record<ServiceTab, ServiceTabBadge>> = {
+    connect: connectReady ? { text: '✓', tone: 'ok' } : { text: '필요', tone: 'warn' },
+    results: model.evidence.empty
+      ? { text: '없음', tone: 'muted' }
+      : { text: `${model.evidence.evidenceItemCount}건`, tone: 'ok' },
+  };
+  if (model.review.running) badges.review = { text: '진행 중', tone: 'warn' };
+  else if (model.improvement.openCount > 0) badges.review = { text: `개선 ${model.improvement.openCount}`, tone: 'warn' };
+  else if (!model.review.empty) badges.review = { text: '✓', tone: 'ok' };
+  if (model.activity.length > 0) badges.history = { text: `${model.activity.length}`, tone: 'muted' };
+  return badges;
+}

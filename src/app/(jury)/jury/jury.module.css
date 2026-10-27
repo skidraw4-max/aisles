@@ -1570,14 +1570,6 @@ a.inline {
 }
 
 /* I-051: service detail tabs and read-only account steps. Existing palette tokens only. */
-.serviceTabs {
-  flex-wrap: nowrap;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  white-space: nowrap;
-  max-width: 100%;
-}
-
 .summaryHeader {
   display: flex;
   flex-wrap: wrap;
@@ -1638,35 +1630,83 @@ a.inline {
   margin-top: 0;
 }
 
-/* Section tabs inside the content area: small underline links, not a second top nav. */
-.serviceTabs {
-  display: flex;
-  flex-wrap: wrap;
-  overflow-x: visible;
-  gap: 0.25rem 1.25rem;
-  margin: 1.1rem 0 -0.25rem;
-  padding: 0 0.25rem;
-  border-bottom: 1px solid var(--jury-c-148-163-184-0_16, rgba(148, 163, 184, 0.16));
-  background: none;
+/* I-070: service area tabs in their own sticky bar; button style like the top nav. */
+.serviceTabBar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  margin: 0 0 1rem;
+  padding: 0.5rem;
+  border: 1px solid var(--jury-c-148-163-184-0_16, rgba(148, 163, 184, 0.16));
+  border-radius: 14px;
+  background: var(--jury-c-13-20-34-0_88, rgba(13, 20, 34, 0.88));
+  backdrop-filter: blur(10px);
+  box-shadow: 0 10px 28px var(--jury-c-0-0-0-0_14, rgba(0, 0, 0, 0.14));
 }
 
-.serviceTabs .tab,
-.serviceTabs a {
-  padding: 0.45rem 0 0.4rem;
-  margin-bottom: -1px;
+.serviceTabs {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0.4rem;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  white-space: nowrap;
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
   border: 0;
-  border-bottom: 2px solid transparent;
-  border-radius: 0;
-  background: none;
-  font-size: 0.9rem;
-  color: var(--jury-text-muted, #a8b5c9);
+}
+
+.serviceTab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex: 0 0 auto;
+  padding: 0.6rem 1rem;
+  border-radius: 10px;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--jury-c-b8c5d9, #b8c5d9);
   text-decoration: none;
 }
 
-.serviceTabs .tabActive {
-  border-bottom-color: var(--jury-accent, #72c7f3);
+.serviceTab:hover {
   color: var(--jury-text-bright, #f5f7ff);
-  font-weight: 600;
+  background: var(--jury-c-148-163-184-0_16, rgba(148, 163, 184, 0.16));
+}
+
+.serviceTab:focus-visible {
+  outline: 2px solid var(--jury-accent, #72c7f3);
+  outline-offset: 2px;
+}
+
+.serviceTabActive,
+.serviceTabActive:hover {
+  color: var(--jury-bg, #07111d);
+  background: linear-gradient(135deg, var(--jury-mint, #8ee7cf), var(--jury-accent, #72c7f3));
+  box-shadow: 0 6px 16px var(--jury-c-114-199-243-0_18, rgba(114, 199, 243, 0.18));
+}
+
+.serviceTabBadge {
+  display: inline-block;
+  min-width: 1.25rem;
+  padding: 0.05rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1.4;
+  text-align: center;
+  border: 1px solid transparent;
+}
+
+.serviceTabBadgeOk { color: #9fe3c4; border-color: rgba(159, 227, 196, 0.42); background: rgba(159, 227, 196, 0.12); }
+.serviceTabBadgeWarn { color: var(--jury-amber, #f8d89e); border-color: rgba(248, 216, 158, 0.42); background: rgba(248, 216, 158, 0.12); }
+.serviceTabBadgeMuted { color: var(--jury-text-muted, #a8b5c9); border-color: rgba(148, 163, 184, 0.32); background: rgba(148, 163, 184, 0.12); }
+.serviceTabActive .serviceTabBadge { color: var(--jury-bg, #07111d); border-color: rgba(7, 17, 29, 0.35); background: rgba(255, 255, 255, 0.35); }
+
+@media (max-width: 640px) {
+  .serviceTab { padding: 0.55rem 0.85rem; font-size: 0.95rem; }
 }
 
 .wrapText {
