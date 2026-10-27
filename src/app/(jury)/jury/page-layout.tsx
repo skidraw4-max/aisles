@@ -7,7 +7,9 @@ import type { ComponentProps, ReactNode } from 'react';
 import { Inbox, type LucideIcon } from 'lucide-react';
 import styles from './jury.module.css';
 
-export type Crumb = { label: string; href?: string };
+import { shouldShowBreadcrumb, type Crumb } from './page-layout-model';
+
+export type { Crumb };
 
 export function PageHeader({ crumbs, title, status, description, actions }: {
   crumbs: readonly Crumb[];
@@ -19,15 +21,17 @@ export function PageHeader({ crumbs, title, status, description, actions }: {
   return (
     <header className={styles.pageIntro}>
       <div className={styles.pageHeaderMain}>
-        <nav aria-label="현재 위치">
-          <ol className={styles.breadcrumb}>
-            {crumbs.map((c, i) => (
-              <li key={`${c.label}-${i}`} aria-current={i === crumbs.length - 1 ? 'page' : undefined}>
-                {c.href ? <Link href={c.href}>{c.label}</Link> : c.label}
-              </li>
-            ))}
-          </ol>
-        </nav>
+        {shouldShowBreadcrumb(crumbs, title) ? (
+          <nav aria-label="현재 위치">
+            <ol className={styles.breadcrumb}>
+              {crumbs.map((c, i) => (
+                <li key={`${c.label}-${i}`} aria-current={i === crumbs.length - 1 ? 'page' : undefined}>
+                  {c.href ? <Link href={c.href}>{c.label}</Link> : c.label}
+                </li>
+              ))}
+            </ol>
+          </nav>
+        ) : null}
         <div className={styles.pageHeaderTitleRow}>
           <h2 className={styles.pageTitle}>{title}</h2>
           {status}
