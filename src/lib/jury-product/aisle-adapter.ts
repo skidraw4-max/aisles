@@ -2,7 +2,7 @@
  * Aisle adapter reads through the existing v9.x functions.
  * It returns their EvidencePack unchanged and does not decide tenant or scope.
  */
-import { attachGa4Evidence } from '@/lib/ai-review-board/ga4-evidence';
+import { attachGa4Evidence, type AttachGa4Options } from '@/lib/ai-review-board/ga4-evidence';
 import { buildEvidencePackFromDb, type EvidenceDb } from '@/lib/ai-review-board/evidence-pack';
 import type { EvidencePack } from '@/lib/ai-review-board/types';
 import { isIssuedAccessContext, type JuryAccessContext } from './access-layer';
@@ -33,12 +33,14 @@ async function defaultEvidenceDb(): Promise<EvidenceDb> {
 export async function runAisleAdapter(
   context: JuryAccessContext,
   evidenceDb?: EvidenceDb,
+  /** I-076: per-connection GA4 (GA4_VIEWER). Absent = unchanged env-based behaviour. */
+  ga4?: AttachGa4Options,
 ): Promise<AisleObservation> {
   if (!isIssuedAccessContext(context)) return { ok: false, reason: 'CONTEXT_NOT_ISSUED' };
   try {
     const db = evidenceDb ?? (await defaultEvidenceDb());
     const built = await buildEvidencePackFromDb(db);
-    const pack = await attachGa4Evidence(built);
+    const pack = await attachGa4Evidence(built, ga4);
     return {
       ok: true,
       executed: true,

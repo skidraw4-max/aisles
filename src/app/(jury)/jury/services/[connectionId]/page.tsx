@@ -13,6 +13,7 @@ import { ServiceTabMemory } from '../../service-tab-memory';
 import { JuryChrome } from '../../ui';
 import { ReadonlyAccountSection, readonlyObservationNeeded } from '../../readonly-account-section';
 import { ScreenAuditSection } from '../../screen-audit-section';
+import { Ga4ViewerSection, OwnershipSection } from '../../phase1-sections';
 import { loadJuryShell, readJurySessionEmail } from '../../load';
 
 /**
@@ -83,6 +84,9 @@ export default async function ServiceDetailPage({
       {ready && tab === 'connect' ? (
         <ReadonlyAccountSection tenantId={actor.tenantId} connectionId={connectionId} accessMethod={accessMethod} view="form" />
       ) : null}
+      {/* I-072~I-075: render nothing unless the ownership / GA4 viewer flags are on. */}
+      {ready && tab === 'connect' ? <OwnershipSection tenantId={actor.tenantId} connectionId={connectionId} accessMethod={accessMethod} /> : null}
+      {ready && tab === 'connect' ? <Ga4ViewerSection connectionId={connectionId} accessMethod={accessMethod} /> : null}
       {/* I-063: 화면 심사 (screen audit) tab. */}
       {ready && tab === 'screen' ? <ScreenAuditSection tenantId={actor.tenantId} connectionId={connectionId} accessMethod={accessMethod} /> : null}
       {tab === 'overview' ? <GithubRefreshStatus connectionId={connectionId} /> : null}

@@ -14,8 +14,13 @@ export async function runScreenAuditAction(_prev: ScreenAuditActionResult, formD
     import('@/lib/jury-product/services/screen-audit/screenshot-store'),
   ]);
   try {
+    const actor = await getJuryActor();
+    // I-073: ownership gate (only for connections created after JURY_OWNERSHIP_ENFORCE_FROM; off by default).
+    const { enforceOwnershipGate } = await import('@/lib/jury-product/services/ownership/enforce');
+    const gate = await enforceOwnershipGate({ actor, connectionId: String(formData.get('connectionId') ?? '') });
+    if (!gate.allowed) return { ok: false, reason: gate.reason };
     const result = await runScreenAudit({
-      actor: await getJuryActor(),
+      actor,
       connectionId: String(formData.get('connectionId') ?? ''),
       parentAuditId: String(formData.get('parentAuditId') ?? '') || null,
       observationStore: await createPrismaObservationRunStore(),

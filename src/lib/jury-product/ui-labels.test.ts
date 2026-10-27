@@ -11,7 +11,7 @@ test('status labels follow the glossary and keep raw values as keys', () => {
   assert.equal(userLabel('COMPLETED'), '완료');
   assert.equal(userLabel('FULL_REVIEW'), '전체 심사');
   assert.equal(userLabel('OWNER'), '소유자');
-  assert.ok(Object.keys(STATUS_LABELS).every((key) => /^[A-Z_]+$/.test(key)));
+  assert.ok(Object.keys(STATUS_LABELS).every((key) => /^[A-Z][A-Z0-9_]*$/.test(key)));
 });
 
 test('unknown values keep the previous readable fallback', () => {

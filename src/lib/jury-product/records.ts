@@ -25,6 +25,7 @@ export const JURY_ACCESS_METHODS = [
   'READ_ONLY_ACCOUNT',
   'BROWSER_SESSION',
   'FILE_UPLOAD',
+  'GA4_VIEWER',
 ] as const;
 export type JuryAccessMethod = (typeof JURY_ACCESS_METHODS)[number];
 

@@ -91,6 +91,10 @@ export async function storeReadonlyAccountCredentialAction(formData: FormData): 
 
 export async function runReadonlyAccountObservationAction(formData: FormData): Promise<ReadonlyAccountActionResult> {
   if (!READONLY_ACCOUNT_PHASE1_ENABLED) return { ok: false, reason: 'NOT_IMPLEMENTED' };
+  // I-073: ownership gate (only for connections created after JURY_OWNERSHIP_ENFORCE_FROM; off by default).
+  const { enforceOwnershipGate } = await import('@/lib/jury-product/services/ownership/enforce');
+  const gate = await enforceOwnershipGate({ actor: await getJuryActor(), connectionId: String(formData.get('connectionId') ?? '') });
+  if (!gate.allowed) return { ok: false, reason: gate.reason };
   const [{ runStoredCredentialObservation, createPrismaObservationRunStore }, { createServerlessObservationDriver }] = await Promise.all([
     import('@/lib/jury-product/services/readonly-account/observation-run'),
     import('@/lib/jury-product/services/readonly-account/browser-runtime'),

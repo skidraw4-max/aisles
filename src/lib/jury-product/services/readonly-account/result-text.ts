@@ -43,6 +43,7 @@ const REASON_TEXT: Record<string, string> = {
   ACCESS_METHOD_UNSUPPORTED: '읽기 전용 계정 방식의 연결이 아니에요.',
   SCOPE_INVALID: '허용 도메인(https)과 관찰 경로(/로 시작)를 확인해 주세요.',
   CONSENT_REQUIRED: '먼저 동의를 저장해 주세요.',
+  OWNERSHIP_REQUIRED: '사이트 소유 확인이 먼저 필요해요. 연결 탭의 "사이트 소유 확인"을 마쳐 주세요.',
   CONSENT_STALE: '허용 도메인·관찰 경로가 동의한 내용과 다르거나, 동의 내용이 바뀌어(메뉴 자동 관찰 추가) 다시 동의가 필요해요. 동의를 다시 저장해 주세요.',
   CREDENTIAL_INVALID: '아이디와 비밀번호를 확인해 주세요.',
   RETENTION_INVALID: '보관 기간이 올바르지 않아요.',

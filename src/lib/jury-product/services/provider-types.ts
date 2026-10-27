@@ -25,6 +25,7 @@ export const CONNECTION_METHODS = [
   'READ_ONLY_ACCOUNT',
   'BROWSER_SESSION',
   'FILE_IMPORT',
+  'GA4_VIEWER',
 ] as const;
 export type ConnectionMethod = (typeof CONNECTION_METHODS)[number];
 
