@@ -24,6 +24,7 @@ import { countConnectionRows, DELETED_VIEW_EMPTY, DELETED_VIEW_NOTICE, DELETED_V
 import styles from './jury.module.css';
 import { Button, ButtonLink, StatusBadge, buttonClass } from './jury-controls';
 import { Download, Link2, Play } from 'lucide-react';
+import { InfoItem, InfoList, InfoRow, InfoTable } from './info-table';
 
 function mark(value: boolean): string {
   return value ? '✓' : '—';
@@ -240,16 +241,19 @@ export function ServiceOperationDetail({
       {show('connect') && provider ? (
         <>
           <h3>연결 설정</h3>
-          <p>제공자 {provider.displayName}</p>
-          <p>연결 방식 <span title={provider.configuration.connectionMethod}>{displayText(provider.configuration.connectionMethod)}</span></p>
-          <p>접근 방식 <span title={provider.configuration.accessMode}>{displayText(provider.configuration.accessMode)}</span></p>
-          <p>자격 증명 상태 <StatusBadge status={provider.configuration.credentialStatus} title={provider.configuration.credentialStatus}>{userLabel(provider.configuration.credentialStatus)}</StatusBadge></p>
-          <p>연결 상태 <StatusBadge status={provider.configuration.connectionStatus} title={provider.configuration.connectionStatus}>{userLabel(provider.configuration.connectionStatus)}</StatusBadge></p>
-          <p>수명 주기 <StatusBadge status={provider.configuration.lifecycle} title={provider.configuration.lifecycle}>{userLabel(provider.configuration.lifecycle)}</StatusBadge></p>
-          <p>준비 상태 <StatusBadge status={provider.configuration.readiness} title={provider.configuration.readiness}>{userLabel(provider.configuration.readiness)}</StatusBadge></p>
-          <p>연결 상태 점검 <StatusBadge status={provider.health} title={provider.health}>{userLabel(provider.health)}</StatusBadge></p>
-          <p>기능 {userLabels(provider.configuration.capabilities)}</p>
-          <p>{provider.configuration.notice}</p>
+          {/* I-088: 항목 | 값 | 상태 table; rows without a status show a faint — plus srOnly 상태 없음. */}
+          <InfoTable caption="연결 설정">
+            <InfoRow label="제공자" value={provider.displayName} />
+            <InfoRow label="연결 방식" value={displayText(provider.configuration.connectionMethod)} title={provider.configuration.connectionMethod} />
+            <InfoRow label="접근 방식" value={displayText(provider.configuration.accessMode)} title={provider.configuration.accessMode} />
+            <InfoRow label="자격 증명 상태" status={<StatusBadge status={provider.configuration.credentialStatus} title={provider.configuration.credentialStatus}>{userLabel(provider.configuration.credentialStatus)}</StatusBadge>} />
+            <InfoRow label="연결 상태" status={<StatusBadge status={provider.configuration.connectionStatus} title={provider.configuration.connectionStatus}>{userLabel(provider.configuration.connectionStatus)}</StatusBadge>} />
+            <InfoRow label="수명 주기" status={<StatusBadge status={provider.configuration.lifecycle} title={provider.configuration.lifecycle}>{userLabel(provider.configuration.lifecycle)}</StatusBadge>} />
+            <InfoRow label="준비 상태" status={<StatusBadge status={provider.configuration.readiness} title={provider.configuration.readiness}>{userLabel(provider.configuration.readiness)}</StatusBadge>} />
+            <InfoRow label="연결 점검" status={<StatusBadge status={provider.health} title={provider.health}>{userLabel(provider.health)}</StatusBadge>} />
+            <InfoRow label="기능" value={userLabels(provider.configuration.capabilities)} />
+          </InfoTable>
+          <p className={styles.infoNote}>{provider.configuration.notice}</p>
           {provider.provider === 'GITHUB' ? <p><Link className={styles.inline} href={juryHref('/services/github')}>GitHub 저장소</Link></p> : null}
         </>
       ) : null}
@@ -267,9 +271,11 @@ export function ServiceOperationDetail({
       {show('connect') ? (
         <>
       <h3>연결 준비</h3>
-      <p>서비스 확인 {userLabel(model.onboarding.discovery)}</p>
-      <p>범위 {userLabel(model.onboarding.scope)}</p>
-      <p>연결 {userLabel(model.onboarding.connection)}</p>
+      <InfoList label="연결 준비">
+        <InfoItem term="서비스 확인"><StatusBadge status={model.onboarding.discovery} title={model.onboarding.discovery}>{userLabel(model.onboarding.discovery)}</StatusBadge></InfoItem>
+        <InfoItem term="범위"><StatusBadge status={model.onboarding.scope} title={model.onboarding.scope}>{userLabel(model.onboarding.scope)}</StatusBadge></InfoItem>
+        <InfoItem term="연결"><StatusBadge status={model.onboarding.connection} title={model.onboarding.connection}>{userLabel(model.onboarding.connection)}</StatusBadge></InfoItem>
+      </InfoList>
         </>
       ) : null}
 

@@ -28,6 +28,7 @@ import {
   startServiceOnboarding,
 } from './actions';
 import { OnboardingSubmit } from './shell-client';
+import { InfoRow, InfoTable } from './info-table';
 import { ReviewSubmitButton } from './review-submit-button';
 import { ConnectedReviewStatus } from './connected-review-status';
 import {
@@ -155,19 +156,26 @@ export function ServiceDetailBody({
       {show('connect') ? (
         <>
       <h3>서비스 확인</h3>
-      <p>상태 <StatusBadge status={detail.discoveryStatus}>{displayText(detail.discoveryStatus)}</StatusBadge></p>
+      {/* I-088: 항목 | 값 | 상태 table, including one row per proposed metric (지표명 | 사유). */}
+      <InfoTable caption="서비스 확인">
+        <InfoRow label="확인 상태" status={<StatusBadge status={detail.discoveryStatus}>{displayText(detail.discoveryStatus)}</StatusBadge>} />
+        {discovery ? (
+          <>
+            {/* I-049: READ_ONLY_ACCOUNT does not use the mock discovery adapter; hide the misleading name. */}
+            {connection.accessMethod === 'READ_ONLY_ACCOUNT' ? null : <InfoRow label="어댑터" value={github && !synthetic ? 'GitHubRepositoryDiscovery' : 'MockDiscoveryAdapter'} />}
+            <InfoRow label="탐색 시각" value={formatKstFull(discovery.exploredAt)} />
+            <InfoRow label="자원" value={`${surfaceLabels(discovery.surfaces)} · ${discovery.menus.map(discoveryMenuText).join(', ')}`} />
+            <InfoRow label="데이터 원천" value={dataSourceLabels(discovery.dataSources)} />
+            <InfoRow label="수집 가능성" value={displayText(discovery.feasibility)} />
+            {discovery.proposedMetrics.map((item) => (
+              <InfoRow key={item.metric} label={metricLabel(item.metric)} value={reasonDisplay(item.reason)} title={item.metric} />
+            ))}
+          </>
+        ) : null}
+      </InfoTable>
       {discovery ? (
         <>
-          {/* I-049: READ_ONLY_ACCOUNT does not use the mock discovery adapter; hide the misleading name. */}
-          {connection.accessMethod === 'READ_ONLY_ACCOUNT' ? null : <p>어댑터 {github && !synthetic ? 'GitHubRepositoryDiscovery' : 'MockDiscoveryAdapter'}</p>}
           {github && synthetic ? <p>This discovery is a mock placeholder. It is not a GitHub repository list.</p> : null}
-          <p>탐색 시각 {formatKstFull(discovery.exploredAt)}</p>
-          <p className={styles.wrapText}>자원 {surfaceLabels(discovery.surfaces)} · {discovery.menus.map(discoveryMenuText).join(', ')}</p>
-          <p>데이터 원천 {dataSourceLabels(discovery.dataSources)}</p>
-          <p>수집 가능성 {displayText(discovery.feasibility)}</p>
-          {discovery.proposedMetrics.map((item) => (
-            <p key={item.metric} title={item.metric}>{metricLabel(item.metric)}: {reasonDisplay(item.reason)}</p>
-          ))}
           <details className={styles.technicalDetails}>
             <summary>기술 정보</summary>
             <p>자원 {discovery.surfaces.join(', ')}</p>
