@@ -1,6 +1,17 @@
 /* Jury dark palette tokens (phase 1). Values are the current effective literals;
    every use keeps its literal as var() fallback so computed colors are unchanged. */
 .wrap {
+  /* I-082 unified dark tokens */
+  --jury-surface-1: #0e1a2c;
+  --jury-surface-2: #132238;
+  --jury-surface-3: #1b2d47;
+  --jury-border: #24364f;
+  --jury-text-subtle: #94a3b8;
+  --jury-accent-tint: rgba(114, 199, 243, 0.10);
+  --jury-accent-line: rgba(114, 199, 243, 0.35);
+  --jury-warn: #fbbf24;
+  --jury-warn-tint: rgba(251, 191, 36, 0.10);
+  --jury-warn-line: rgba(251, 191, 36, 0.40);
   --jury-c-e8eaed: #e8eaed;
   --jury-c-b7c0cc: #b7c0cc;
   --jury-c-9fd0c8: #9fd0c8;
@@ -568,7 +579,7 @@ a.inline {
 .wrap {
   max-width: 1180px;
   padding: 2rem 1.5rem 5rem;
-  color: var(--jury-c-172033, #172033);
+  color: var(--jury-text);
   font-size: 1rem;
   line-height: 1.65;
 }
@@ -580,15 +591,15 @@ a.inline {
   gap: 2rem;
   padding: 1.25rem 1.5rem;
   margin-bottom: 1.25rem;
-  border: 1px solid var(--jury-text-soft, #d7dee8);
+  border: 1px solid var(--jury-border);
   border-radius: 16px;
-  background: var(--jury-white, #ffffff);
+  background: var(--jury-surface-1);
   text-align: left;
   box-shadow: 0 8px 24px var(--jury-c-11-23-48-0_06, rgba(11, 23, 48, 0.06));
 }
 
 .title {
-  color: var(--jury-surface, #0b1730);
+  color: var(--jury-text);
   font-size: 1.85rem;
   letter-spacing: -0.03em;
 }
@@ -596,7 +607,7 @@ a.inline {
 .lead,
 .muted,
 .label {
-  color: var(--jury-border-strong, #52627a);
+  color: var(--jury-text-muted);
 }
 
 .lead {
@@ -613,9 +624,9 @@ a.inline {
 .navWrap {
   margin: 0 0 1.5rem;
   padding: 0.35rem;
-  border: 1px solid var(--jury-text-soft, #d7dee8);
+  border: 1px solid var(--jury-border);
   border-radius: 14px;
-  background: var(--jury-c-f4f7fb, #f4f7fb);
+  background: var(--jury-surface-2);
 }
 
 .nav {
@@ -628,7 +639,7 @@ a.inline {
   display: inline-block;
   padding: 0.55rem 1rem;
   border-radius: 10px;
-  color: var(--jury-c-33435d, #33435d);
+  color: var(--jury-text-muted);
   font-weight: 700;
   font-size: 1rem;
 }
@@ -641,17 +652,17 @@ a.inline {
 }
 
 .panel {
-  border: 1px solid var(--jury-text-soft, #d7dee8);
+  border: 1px solid var(--jury-border);
   border-radius: 14px;
   padding: 1.35rem 1.5rem;
   margin-bottom: 1.1rem;
-  background: var(--jury-white, #ffffff);
+  background: var(--jury-surface-1);
   box-shadow: 0 5px 18px var(--jury-c-11-23-48-0_04, rgba(11, 23, 48, 0.04));
 }
 
 .panel h2,
 .panel h3 {
-  color: var(--jury-surface, #0b1730);
+  color: var(--jury-text);
   font-size: 1.25rem;
   line-height: 1.35;
 }
@@ -659,7 +670,7 @@ a.inline {
 .pageTitle {
   margin-bottom: 0.25rem;
   text-align: left;
-  color: var(--jury-surface, #0b1730);
+  color: var(--jury-text);
   font-size: clamp(1.65rem, 3vw, 2.25rem);
   letter-spacing: -0.04em;
 }
@@ -674,13 +685,13 @@ a.inline {
 
 .pageDescription {
   margin: 0;
-  color: var(--jury-border-strong, #52627a);
+  color: var(--jury-text-muted);
   font-size: 1.05rem;
 }
 
 .eyebrow {
   margin: 0 0 0.25rem;
-  color: var(--jury-teal, #0d7c83);
+  color: var(--jury-accent);
   font-size: 0.82rem;
   font-weight: 800;
   letter-spacing: 0.03em;
@@ -691,8 +702,8 @@ a.inline {
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  border-color: var(--jury-c-b7dcd8, #b7dcd8);
-  background: var(--jury-c-eef8f7, #eef8f7);
+  border-color: var(--jury-accent-line);
+  background: var(--jury-accent-tint);
 }
 
 .nextAction h2 {
@@ -724,13 +735,13 @@ a.inline {
 }
 
 .secondaryButton {
-  border: 1px solid var(--jury-c-2b66c8, #2b66c8);
-  color: var(--jury-c-234f9e, #234f9e);
-  background: var(--jury-white, #ffffff);
+  border: 1px solid var(--jury-accent);
+  color: var(--jury-accent);
+  background: var(--jury-surface-1);
 }
 
 .secondaryButton:hover {
-  background: var(--jury-text, #eef4ff);
+  background: var(--jury-surface-3);
 }
 
 .cards {
@@ -738,7 +749,7 @@ a.inline {
 }
 
 .metric {
-  color: var(--jury-surface, #0b1730);
+  color: var(--jury-text);
   font-size: 2.2rem;
   line-height: 1.1;
 }
@@ -747,11 +758,11 @@ a.inline {
 .statusBadge {
   display: inline-flex;
   align-items: center;
-  border: 1px solid var(--jury-c-9bcac5, #9bcac5);
+  border: 1px solid var(--jury-accent-line);
   border-radius: 999px;
   padding: 0.15rem 0.6rem;
-  color: var(--jury-c-0d6268, #0d6268);
-  background: var(--jury-c-eef8f7, #eef8f7);
+  color: var(--jury-accent);
+  background: var(--jury-accent-tint);
   font-size: 0.84rem;
   font-weight: 800;
 }
@@ -759,23 +770,23 @@ a.inline {
 .table {
   display: block;
   overflow-x: auto;
-  border: 1px solid var(--jury-text-soft, #d7dee8);
+  border: 1px solid var(--jury-border);
   border-radius: 10px;
-  background: var(--jury-white, #ffffff);
+  background: var(--jury-surface-1);
 }
 
 .table th,
 .table td {
   min-width: 8rem;
   padding: 0.75rem 0.8rem;
-  border-bottom: 1px solid var(--jury-c-e3e8ef, #e3e8ef);
-  color: var(--jury-c-27344a, #27344a);
+  border-bottom: 1px solid var(--jury-border);
+  color: var(--jury-text);
   line-height: 1.5;
 }
 
 .table th {
-  color: var(--jury-surface, #0b1730);
-  background: var(--jury-c-f4f7fb, #f4f7fb);
+  color: var(--jury-text);
+  background: var(--jury-surface-2);
   font-weight: 800;
   white-space: nowrap;
 }
@@ -785,25 +796,25 @@ a.inline {
 }
 
 .inline {
-  color: var(--jury-c-1556b4, #1556b4);
+  color: var(--jury-accent);
   font-weight: 700;
 }
 
 .field {
   min-height: 2.75rem;
   margin: 0.45rem 0 0.75rem;
-  border-color: var(--jury-c-aeb9c9, #aeb9c9);
-  background: var(--jury-white, #ffffff);
-  color: var(--jury-c-172033, #172033);
+  border-color: var(--jury-border);
+  background: var(--jury-surface-1);
+  color: var(--jury-text);
   font-size: 1rem;
 }
 
 .notice {
   padding: 0.8rem 1rem;
-  border: 1px solid var(--jury-c-e8c88b, #e8c88b);
+  border: 1px solid var(--jury-warn-line);
   border-radius: 10px;
-  color: var(--jury-c-7d4d00, #7d4d00);
-  background: var(--jury-c-fff7e8, #fff7e8);
+  color: var(--jury-warn);
+  background: var(--jury-warn-tint);
   font-weight: 700;
 }
 
@@ -821,10 +832,10 @@ a.inline {
   align-items: center;
   gap: 0.6rem;
   padding: 0.8rem 1rem;
-  border: 1px solid var(--jury-text-soft, #d7dee8);
+  border: 1px solid var(--jury-border);
   border-radius: 10px;
-  color: var(--jury-border-strong, #52627a);
-  background: var(--jury-c-f4f7fb, #f4f7fb);
+  color: var(--jury-text-muted);
+  background: var(--jury-surface-2);
   font-weight: 700;
 }
 
@@ -834,14 +845,14 @@ a.inline {
   height: 1.6rem;
   place-items: center;
   border-radius: 50%;
-  color: var(--jury-border-strong, #52627a);
-  background: var(--jury-text-soft, #d7dee8);
+  color: var(--jury-text-muted);
+  background: var(--jury-surface-3);
 }
 
 .stepper .stepActive {
-  border-color: var(--jury-c-b7dcd8, #b7dcd8);
-  color: var(--jury-c-0d6268, #0d6268);
-  background: var(--jury-c-eef8f7, #eef8f7);
+  border-color: var(--jury-accent-line);
+  color: var(--jury-accent);
+  background: var(--jury-accent-tint);
 }
 
 .stepper .stepActive strong {
@@ -851,32 +862,32 @@ a.inline {
 
 .helperText {
   margin: 0 0 1.1rem;
-  color: var(--jury-border-strong, #52627a);
+  color: var(--jury-text-muted);
 }
 
 .technicalDetails {
   margin-top: 1rem;
   padding-top: 0.75rem;
-  border-top: 1px solid var(--jury-c-e3e8ef, #e3e8ef);
+  border-top: 1px solid var(--jury-border);
 }
 
 .technicalDetails summary {
-  color: var(--jury-c-1556b4, #1556b4);
+  color: var(--jury-accent);
   cursor: pointer;
   font-weight: 800;
 }
 
 .resultHighlight {
   padding: 1rem 1.1rem;
-  border: 1px solid var(--jury-c-e8c88b, #e8c88b);
+  border: 1px solid var(--jury-warn-line);
   border-radius: 12px;
-  background: var(--jury-c-fff7e8, #fff7e8);
+  background: var(--jury-warn-tint);
 }
 
 .resultHighlight strong {
   display: block;
   margin-top: 0.2rem;
-  color: var(--jury-c-7d4d00, #7d4d00);
+  color: var(--jury-warn);
   font-size: 1.5rem;
 }
 
@@ -905,25 +916,25 @@ a.inline {
   display: grid;
   gap: 0.2rem;
   padding: 1rem;
-  border: 1px solid var(--jury-text-soft, #d7dee8);
+  border: 1px solid var(--jury-border);
   border-radius: 12px;
-  color: var(--jury-c-172033, #172033);
-  background: var(--jury-c-f4f7fb, #f4f7fb);
+  color: var(--jury-text);
+  background: var(--jury-surface-2);
   text-decoration: none;
 }
 
 .adminCard:hover {
-  border-color: var(--jury-c-9bcac5, #9bcac5);
-  background: var(--jury-c-eef8f7, #eef8f7);
+  border-color: var(--jury-accent-line);
+  background: var(--jury-accent-tint);
 }
 
 .adminCard strong {
-  color: var(--jury-surface, #0b1730);
+  color: var(--jury-text);
   font-size: 1.05rem;
 }
 
 .adminCard span {
-  color: var(--jury-border-strong, #52627a);
+  color: var(--jury-text-muted);
   font-size: 0.92rem;
 }
 
