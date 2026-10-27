@@ -20,6 +20,7 @@ import { CONNECTED_REVIEW_PENDING_NOTE } from '@/lib/jury-product/connected-serv
 import type { ServiceTab } from './service-detail-tabs-model';
 import { ConnectionDeleteDialog } from './connection-delete-dialog';
 import { filterConnectionRows } from '@/lib/jury-product/services/connection-delete/list-filter';
+import { countConnectionRows, DELETED_VIEW_EMPTY, DELETED_VIEW_NOTICE, DELETED_VIEW_TITLE, type DeletedConnectionMeta } from '@/lib/jury-product/services/connection-delete/deleted-view';
 import styles from './jury.module.css';
 
 function mark(value: boolean): string {
@@ -101,6 +102,7 @@ export function ServiceOperationsList({
   showDeleted = false,
   canDelete = false,
   githubConnectionIds = [],
+  deletedMeta = {},
 }: {
   rows: ServiceOperationModel[] | null;
   error: string | null;
@@ -109,25 +111,35 @@ export function ServiceOperationsList({
   showDeleted?: boolean;
   canDelete?: boolean;
   githubConnectionIds?: readonly string[];
+  /** I-080: deletion time + actor label for deleted rows. */
+  deletedMeta?: Record<string, DeletedConnectionMeta>;
 }) {
   const visible = rows ? filterConnectionRows(rows, showDeleted) : null;
+  const counts = countConnectionRows(rows ?? []);
+  const activeHref = juryHref('/services');
+  const deletedHref = juryHref('/services', { filter: 'deleted' });
   return (
     <section className={styles.panel}>
       <div className={styles.pageIntro}>
         <div>
           <p className={styles.eyebrow}>현재 메뉴 · 서비스</p>
-          <h2 className={styles.pageTitle}>서비스</h2>
+          <h2 className={styles.pageTitle}>{showDeleted ? DELETED_VIEW_TITLE : '서비스'}</h2>
           <p className={styles.pageDescription}>서비스별 연결 상태, 검증 근거, 심사, 개선, 에이전트 상태를 확인해요. 접근 권한 변경은 관리 &gt; 서비스 연결에서 해요.</p>
         </div>
       </div>
       <p><Link className={styles.inline} href={juryHref('/services/github')}>GitHub 연결</Link></p>
-      <p>
-        {showDeleted
-          ? <Link className={styles.inline} href={juryHref('/services')}>사용 중인 연결 보기</Link>
-          : <Link className={styles.inline} href={juryHref('/services', { filter: 'deleted' })}>삭제된 연결</Link>}
-      </p>
+      <div className={styles.segTabs} role="tablist" aria-label="연결 목록 보기">
+        <Link role="tab" aria-selected={!showDeleted} className={`${styles.segTab} ${!showDeleted ? styles.segTabActive : ''}`} href={activeHref}>연결 중 {counts.active}</Link>
+        <Link role="tab" aria-selected={showDeleted} className={`${styles.segTab} ${showDeleted ? styles.segTabActive : ''}`} href={deletedHref}>삭제된 연결 {counts.deleted}</Link>
+      </div>
+      {showDeleted ? (
+        <div className={styles.deletedNotice} role="note">
+          <span>{DELETED_VIEW_NOTICE}</span>
+          <Link className={styles.button} href={activeHref}>연결 중 목록으로</Link>
+        </div>
+      ) : null}
       {error ? <p>{error}</p> : null}
-      {!error && visible && visible.length === 0 ? <p>{showDeleted ? '삭제된 연결이 없어요.' : '현재 권한으로 볼 수 있는 서비스가 없어요.'}</p> : null}
+      {!error && visible && visible.length === 0 ? <p>{showDeleted ? DELETED_VIEW_EMPTY : '현재 권한으로 볼 수 있는 서비스가 없어요.'}</p> : null}
       {visible && visible.length > 0 ? (
         <div className={styles.servicesTableWrap}>
         <table className={`${styles.table} ${styles.servicesTable} ${styles.servicesTableWide}`}>
@@ -135,7 +147,7 @@ export function ServiceOperationsList({
             <tr>
               <th>서비스 이름</th>
               <th>제공자</th>
-              <th>연결 상태</th>
+              {showDeleted ? <><th>삭제 시각 (KST)</th><th>삭제한 사람</th></> : <th>연결 상태</th>}
               <th>운영 상태</th>
               <th>최근 검증 근거</th>
               <th>최근 심사</th>
@@ -148,10 +160,17 @@ export function ServiceOperationsList({
           </thead>
           <tbody>
             {visible.map((row) => (
-              <tr key={row.connectionId}>
-                <td><Link className={`${styles.inline} ${styles.ellipsisText}`} href={juryHref(`/services/${row.connectionId}`)} title={row.name}>{row.name}</Link></td>
+              <tr key={row.connectionId} className={showDeleted ? styles.mutedRow : undefined}>
+                <td><Link className={`${styles.inline} ${styles.ellipsisText}`} href={juryHref(`/services/${row.connectionId}`)} title={row.name}>{row.name}</Link>{showDeleted ? <> <span className={`${styles.badge} ${styles.badgeDeleted}`}>삭제됨</span></> : null}</td>
                 <td>{providers[row.connectionId]?.displayName ?? displayText('Unknown')}</td>
-                <td><span className={badgeClass(row.connectionStatus)} title={row.connectionStatus}>{userLabel(row.connectionStatus)}</span></td>
+                {showDeleted ? (
+                  <>
+                    <td>{formatKstFull(deletedMeta[row.connectionId]?.disconnectedAt)}</td>
+                    <td>{deletedMeta[row.connectionId]?.deletedBy ?? '—'}</td>
+                  </>
+                ) : (
+                  <td><span className={badgeClass(row.connectionStatus)} title={row.connectionStatus}>{userLabel(row.connectionStatus)}</span></td>
+                )}
                 <td title={row.phase ?? undefined}>{row.phase ? userLabel(row.phase) : '—'}</td>
                 <td>{row.parts.evidence === 'READY' ? userLabel('READY') : displayText('No evidence collected yet')}</td>
                 <td>{hasReviewAccess(row) ? displayText(row.lastReview) : '—'}</td>
