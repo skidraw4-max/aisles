@@ -151,10 +151,10 @@ export function ServiceOperationsList({
               <th>최근 검증 근거</th>
               <th>최근 심사</th>
               <th>현재 결론</th>
-              <th>열린 개선 작업</th>
+              <th className={styles.num}>열린 개선 작업</th>
               <th>에이전트 상태</th>
               <th>최근 활동</th>
-              {canDelete && !showDeleted ? <th>관리</th> : null}
+              {canDelete && !showDeleted ? <th className={styles.rowActions}>관리</th> : null}
             </tr>
           </thead>
           <tbody>
@@ -170,15 +170,15 @@ export function ServiceOperationsList({
                 ) : (
                   <td><StatusBadge status={row.connectionStatus} title={row.connectionStatus}>{userLabel(row.connectionStatus)}</StatusBadge></td>
                 )}
-                {showDeleted ? null : <td title={row.phase ?? undefined}>{row.phase ? userLabel(row.phase) : '—'}</td>}
+                {showDeleted ? null : <td>{row.phase ? <StatusBadge status={row.phase} title={row.phase}>{userLabel(row.phase)}</StatusBadge> : '—'}</td>}
                 <td>{row.parts.evidence === 'READY' ? userLabel('READY') : displayText('No evidence collected yet')}</td>
                 <td>{hasReviewAccess(row) ? displayText(row.lastReview) : '—'}</td>
                 <td>{hasReviewAccess(row) ? displayText(row.review.decision ?? 'No review') : '—'}</td>
-                <td>{improvementOpenCountCell(row)}</td>
-                <td>{hasReviewAccess(row) ? displayText(row.agent.status ?? 'No execution') : '—'}</td>
+                <td className={styles.num}>{improvementOpenCountCell(row)}</td>
+                <td>{hasReviewAccess(row) ? <StatusBadge status={row.agent.status ?? undefined} title={row.agent.status ?? undefined}>{displayText(row.agent.status ?? 'No execution')}</StatusBadge> : '—'}</td>
                 <td>{displayText(row.lastActivity)}</td>
                 {canDelete && !showDeleted ? (
-                  <td><ConnectionDeleteDialog connectionId={row.connectionId} displayName={row.name} github={githubConnectionIds.includes(row.connectionId)} /></td>
+                  <td className={styles.rowActions}><ConnectionDeleteDialog connectionId={row.connectionId} displayName={row.name} github={githubConnectionIds.includes(row.connectionId)} /></td>
                 ) : null}
               </tr>
             ))}
