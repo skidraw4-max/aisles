@@ -11,6 +11,7 @@ import { readonlySectionMode } from '@/lib/jury-product/services/readonly-accoun
 import { storedConsentScope } from '@/lib/jury-product/services/readonly-account/consent';
 import { storedLoginPlan } from '@/lib/jury-product/services/readonly-account/observation-run';
 import styles from './jury.module.css';
+import { badgeClass, buttonClass } from './jury-controls';
 import { LatestObservationResult, ReadOnlyAccountCredentialForm, type StoredLoginView, type StoredScopeView } from './ReadOnlyAccountCredentialForm';
 import { acceptReadonlyAccountConsentAction, runReadonlyAccountObservationAction, storeReadonlyAccountCredentialAction } from './readonly-account-actions';
 
@@ -122,16 +123,16 @@ export async function ReadonlyAccountSection(props: {
         optional: styles.optionalMark,
         step: styles.stepCard,
         steps: styles.stepList,
-        badge: styles.badge,
-        button: styles.button,
+        badge: badgeClass('info'),
+        button: buttonClass('secondary'),
         notice: styles.notice,
         pill: styles.stepPill,
         pillDone: styles.stepPillDone,
         pillCurrent: styles.stepPillCurrent,
         pillLocked: styles.stepPillLocked,
         success: styles.successNotice,
-        primary: styles.primaryButton,
-        big: styles.bigButton,
+        primary: buttonClass('primary'),
+        big: styles.jbLg,
         summary: styles.stepSummary,
       }}
     />

@@ -3,6 +3,7 @@
 import { useActionState, useRef, useState } from 'react';
 import { deleteConnectionAction, type ConnectionDeleteActionState } from './connection-delete-actions';
 import styles from './jury.module.css';
+import { buttonClass } from './jury-controls';
 
 export function ConnectionDeleteDialog({ connectionId, displayName, github }: { connectionId: string; displayName: string; github: boolean }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -11,7 +12,7 @@ export function ConnectionDeleteDialog({ connectionId, displayName, github }: { 
   const matches = typed.normalize('NFC').trim() === displayName.normalize('NFC').trim() && typed.trim().length > 0;
   return (
     <>
-      <button type="button" className={`${styles.button} ${styles.dangerButton}`} onClick={() => dialogRef.current?.showModal()} aria-haspopup="dialog">
+      <button type="button" className={buttonClass('danger')} onClick={() => dialogRef.current?.showModal()} aria-haspopup="dialog">
         삭제
       </button>
       <dialog ref={dialogRef} className={styles.confirmDialog} aria-labelledby={`del-${connectionId}`}>
@@ -19,7 +20,7 @@ export function ConnectionDeleteDialog({ connectionId, displayName, github }: { 
         {state?.ok ? (
           <div role="status">
             <p>{state.message}</p>
-            <p><button type="button" className={styles.button} onClick={() => dialogRef.current?.close()}>닫기</button></p>
+            <p><button type="button" className={buttonClass('ghost')} onClick={() => dialogRef.current?.close()}>닫기</button></p>
           </div>
         ) : (
           <form action={action}>
@@ -47,8 +48,8 @@ export function ConnectionDeleteDialog({ connectionId, displayName, github }: { 
             </label>
             {state && !state.ok ? <p role="alert">{state.message}</p> : null}
             <p>
-              <button type="button" className={styles.button} onClick={() => dialogRef.current?.close()}>취소</button>{' '}
-              <button type="submit" className={`${styles.button} ${styles.dangerButton}`} disabled={!matches || pending}>
+              <button type="button" className={buttonClass('ghost')} onClick={() => dialogRef.current?.close()}>취소</button>{' '}
+              <button type="submit" className={buttonClass('danger')} disabled={!matches || pending}>
                 {pending ? '삭제하는 중…' : '연결 삭제'}
               </button>
             </p>

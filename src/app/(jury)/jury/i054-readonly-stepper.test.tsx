@@ -87,9 +87,11 @@ test('header next action, DEGRADED warning badge and route wording', async () =>
   assert.equal(observationTakesPriority(m('discover'), true), false);
   const ui = readFileSync('src/app/(jury)/jury/service-operations-ui.tsx', 'utf8');
   assert.match(ui, /tab=connect#observe/);
-  assert.match(ui, /className=\{badgeClass\(model.health\)\}/);
-  const css = readFileSync('src/app/(jury)/jury/jury.module.css', 'utf8');
-  assert.match(css, /\.badgeWarn/);
+  // I-083: DEGRADED is rendered by StatusBadge with the partial (warning) tone.
+  assert.match(ui, /<StatusBadge status=\{model.health\}/);
+  const { statusTone } = await import('@/lib/jury-product/status-tone');
+  assert.equal(statusTone('DEGRADED'), 'partial');
+  assert.equal(statusTone('ACTION_REQUIRED'), 'partial');
   assert.equal(reasonDisplay('화면 route 후보. 측정하지 않음.'), '화면 경로 후보. 측정하지 않음.');
   assert.doesNotMatch(readFileSync('src/lib/jury-product/discovery.ts', 'utf8'), /화면 route/);
 });

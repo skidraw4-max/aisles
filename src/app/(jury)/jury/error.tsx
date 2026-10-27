@@ -1,6 +1,8 @@
 'use client';
 
 import styles from './jury.module.css';
+import { Button } from './jury-controls';
+import { RotateCcw } from 'lucide-react';
 
 export default function JuryError({ reset }: { error: Error & { digest?: string }; reset: () => void }) {
   return (
@@ -8,7 +10,7 @@ export default function JuryError({ reset }: { error: Error & { digest?: string 
       <section className={styles.panel} role="alert">
         <h1 className={styles.title}>Jury 콘솔</h1>
         <p>화면을 읽지 못했습니다. 다시 시도하거나 페이지를 새로고침하세요.</p>
-        <button type="button" className={styles.button} onClick={() => reset()}>다시 시도</button>
+        <Button variant="secondary" icon={RotateCcw} type="button" onClick={() => reset()}>다시 시도</Button>
       </section>
     </main>
   );

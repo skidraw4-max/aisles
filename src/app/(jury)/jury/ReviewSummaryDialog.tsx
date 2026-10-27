@@ -2,6 +2,7 @@
 
 import { useRef, useState } from 'react';
 import styles from './jury.module.css';
+import { StatusBadge, buttonClass } from './jury-controls';
 import { shortId } from './review-summary-format';
 
 export function CopyIdButton({ value }: { value: string }) {
@@ -9,7 +10,7 @@ export function CopyIdButton({ value }: { value: string }) {
   return (
     <button
       type="button"
-      className={styles.copyButton}
+      className={buttonClass('ghost')}
       aria-label={copied ? '복사됨' : '리뷰 자료 ID 복사'}
       title={copied ? '복사됨' : '전체 ID 복사'}
       onClick={() => {
@@ -39,7 +40,7 @@ export function ReviewSummaryDialog(props: ReviewSummaryDialogProps) {
   const close = () => ref.current?.close();
   return (
     <>
-      <button type="button" className={styles.summaryButton} onClick={() => ref.current?.showModal()} aria-haspopup="dialog">
+      <button type="button" className={buttonClass('secondary')} onClick={() => ref.current?.showModal()} aria-haspopup="dialog">
         상세보기
       </button>
       <dialog
@@ -54,8 +55,8 @@ export function ReviewSummaryDialog(props: ReviewSummaryDialogProps) {
           <button type="button" className={styles.summaryDialogClose} aria-label="닫기" onClick={close}>✕</button>
           <h3 className={styles.summaryDialogTitle}>요약 상세</h3>
           <div className={styles.summaryDialogBadges}>
-            <span className={styles.badge}>결론: {props.decisionLabel}</span>
-            <span className={styles.badge}>상태: {props.statusLabel}</span>
+            <StatusBadge>결론: {props.decisionLabel}</StatusBadge>
+            <StatusBadge>상태: {props.statusLabel}</StatusBadge>
           </div>
           <p className={styles.summaryDialogMeta}>
             완료일 {props.completedAtFull}
@@ -71,7 +72,7 @@ export function ReviewSummaryDialog(props: ReviewSummaryDialogProps) {
           <p className={styles.muted}>영문 요약입니다. 브라우저 번역 기능으로 한국어로 볼 수 있습니다.</p>
           <div className={styles.summaryDialogFooter}>
             <a className={styles.inline} href={props.detailHref}>리뷰 상세로 이동</a>
-            <button type="button" className={styles.secondaryButton} onClick={close}>닫기</button>
+            <button type="button" className={buttonClass('ghost')} onClick={close}>닫기</button>
           </div>
         </div>
       </dialog>

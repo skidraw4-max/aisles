@@ -13,6 +13,8 @@ import {
   startGithubConnect,
 } from '../../github-actions';
 import styles from '../../jury.module.css';
+import { Button, StatusBadge } from '../../jury-controls';
+import { Check, Download, Link2, Play, Unlink } from 'lucide-react';
 
 export function GithubPanel({
   configured,
@@ -80,13 +82,13 @@ export function GithubPanel({
           <input type="hidden" name="userId" value="client-supplied-user" />
           <input type="hidden" name="role" value="OWNER" />
           <input type="hidden" name="permission" value="AGENT" />
-          <button className={styles.button} type="submit">GitHub 연결</button>
+          <Button variant="secondary" icon={Link2} type="submit">GitHub 연결</Button>
         </form>
       ) : null}
       {connection ? (
         <>
           <p>계정 {connection.displayName}</p>
-          <p>연결 상태 <span className={styles.badge}>{displayText(connection.status)}</span></p>
+          <p>연결 상태 <StatusBadge status={connection.status}>{displayText(connection.status)}</StatusBadge></p>
           {state === 'no-repository' ? <p>No repositories are available to this installation.</p> : null}
           {repositoriesVisible && repositories && repositories.length > 0 ? (
             <ul>
@@ -111,7 +113,7 @@ export function GithubPanel({
                   ))}
                 </select>
               </label>
-              <button className={styles.button} type="submit">이 저장소 사용</button>
+              <Button variant="secondary" icon={Check} type="submit">이 저장소 사용</Button>
             </form>
           ) : null}
           {screen?.scope ? <p>범위 {screen.scope.resource} {screen.scope.operation} readonly</p> : null}
@@ -121,7 +123,7 @@ export function GithubPanel({
               <input type="hidden" name="fullName" value={selected} />
               <input type="hidden" name="tenantId" value="client-supplied-tenant" />
               <input type="hidden" name="operation" value="write" />
-              <button className={styles.button} type="submit">자료 수집</button>
+              <Button variant="secondary" icon={Download} type="submit">자료 수집</Button>
             </form>
           ) : null}
           {screen?.evidenceStatus ? (
@@ -143,13 +145,13 @@ export function GithubPanel({
               {screen.unavailable.length > 0 ? <p>확인 불가 {screen.unavailable.join(', ')}</p> : null}
             </>
           ) : null}
-          {screen?.reviewStatus ? <p>심사 상태 <span className={styles.badge}>{displayText(screen.reviewStatus)}</span></p> : null}
+          {screen?.reviewStatus ? <p>심사 상태 <StatusBadge status={screen.reviewStatus}>{displayText(screen.reviewStatus)}</StatusBadge></p> : null}
           {screen?.reviewStatus === 'FAILED' ? <p>The review did not complete. Collect evidence again before another review.</p> : null}
           {screen?.canStartReview ? (
             <form action={reviewGithubEvidence}>
               <input type="hidden" name="connectionId" value={connection.id} />
               <input type="hidden" name="tenantId" value="client-supplied-tenant" />
-              <button className={styles.button} type="submit">심사 시작</button>
+              <Button variant="secondary" icon={Play} type="submit">심사 시작</Button>
             </form>
           ) : null}
           {screen?.reviewView ? (
@@ -189,7 +191,7 @@ export function GithubPanel({
                 const warnings = display.flags.filter((flag) => flag !== 'UNKNOWN_SOURCE' && flag !== 'NON_REAL_SOURCE');
                 return (
                   <>
-                    <p><span className={styles.badge} title={display.source.value}>{display.source.label}</span></p>
+                    <p><StatusBadge status={display.source.value} title={display.source.value}>{display.source.label}</StatusBadge></p>
                     {display.problems.items.length > 0 ? <ul>{display.problems.items.map((item) => <li key={item}>{item}</li>)}</ul> : <p>{display.problems.state === 'UNAVAILABLE' ? '집계 불가' : '문제 목록 없음'}</p>}
                     {display.problems.severityNote ? <p>{display.problems.severityNote}</p> : null}
                     {warnings.length > 0 ? <ul>{warnings.map((flag) => <li key={flag}>⚠ {DISPLAY_FLAG_LABELS[flag]}</li>)}</ul> : null}
@@ -215,7 +217,7 @@ export function GithubPanel({
             <form action={disconnectGithub}>
               <input type="hidden" name="connectionId" value={connection.id} />
               <input type="hidden" name="tenantId" value="client-supplied-tenant" />
-              <button className={styles.button} type="submit">GitHub 연결 해제</button>
+              <Button variant="secondary" icon={Unlink} type="submit">GitHub 연결 해제</Button>
             </form>
           ) : null}
           <p>Disconnect stops this Jury connection. It does not uninstall the GitHub App.</p>

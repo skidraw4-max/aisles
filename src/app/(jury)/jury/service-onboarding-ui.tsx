@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { formatKstFull } from './review-summary-format';
-import { reasonDisplay, WARN_BADGES } from '@/lib/jury-product/services/readonly-account/flow';
+import { reasonDisplay } from '@/lib/jury-product/services/readonly-account/flow';
 import { dataSourceLabels, discoveryMenuText, displayText, metricLabel, scopeResourceLabel, surfaceLabels } from '@/lib/jury-product/ui-labels';
 import { CollectPeriodFields } from './collect-period-fields';
 import { summarizeProblems } from '@/lib/jury-product/review-display-model';
@@ -40,11 +40,9 @@ import {
 import { canShowWrite } from './ui';
 import type { ServiceTab } from './service-detail-tabs-model';
 import styles from './jury.module.css';
+import { StatusBadge } from './jury-controls';
 
 
-function warnBadge(value: string | null | undefined): string {
-  return value && WARN_BADGES.has(value) ? `${styles.badge} ${styles.badgeWarn}` : styles.badge;
-}
 
 export function AddServiceBody({ actor }: { actor: Extract<JuryActor, { ok: true }> }) {
   const methods = selectableAccessMethods();
@@ -139,8 +137,8 @@ export function ServiceDetailBody({
       {show('overview') ? (
         <>
       <h3>연결 상태</h3>
-      <p>연결 방식 <span className={styles.badge}>{displayText(connection.accessMethod)}</span></p>
-      <p>상태 <span className={warnBadge(connection.status)}>{displayText(connection.status)}</span></p>
+      <p>연결 방식 <StatusBadge status={connection.accessMethod}>{displayText(connection.accessMethod)}</StatusBadge></p>
+      <p>상태 <StatusBadge status={connection.status}>{displayText(connection.status)}</StatusBadge></p>
       <details className={styles.technicalDetails}>
         <summary>관리자용 기술 정보</summary>
         <p>연결 어댑터 {github ? 'github' : MOCK_ONBOARDING_SERVICE.adapterKey}</p>
@@ -149,7 +147,7 @@ export function ServiceDetailBody({
         <p>수정일 {formatKstFull(connection.updatedAt)}</p>
       </details>
       <h3>활성화</h3>
-      <p>상태 <span className={warnBadge(connection.status)}>{displayText(connection.status)}</span></p>
+      <p>상태 <StatusBadge status={connection.status}>{displayText(connection.status)}</StatusBadge></p>
       {connection.status === 'CONNECTED' ? <p>연결됨</p> : <p>연결되지 않음</p>}
         </>
       ) : null}
@@ -157,7 +155,7 @@ export function ServiceDetailBody({
       {show('connect') ? (
         <>
       <h3>서비스 확인</h3>
-      <p>상태 <span className={warnBadge(detail.discoveryStatus)}>{displayText(detail.discoveryStatus)}</span></p>
+      <p>상태 <StatusBadge status={detail.discoveryStatus}>{displayText(detail.discoveryStatus)}</StatusBadge></p>
       {discovery ? (
         <>
           {/* I-049: READ_ONLY_ACCOUNT does not use the mock discovery adapter; hide the misleading name. */}
@@ -214,7 +212,7 @@ export function ServiceDetailBody({
                 <td>{scope.grants.map((grant) => scopePurpose(grant.resource, discovery)).join(', ')}</td>
                 <td>{scope.grants.map((grant) => displayText(grant.mode)).join(', ') || displayText('Not available')}</td>
                 <td>{scope.grants.some((grant) => grant.mode === 'READ') ? displayText('READ') : displayText('Not available')}</td>
-                <td><span className={styles.badge}>{displayText(scope.status)}</span></td>
+                <td><StatusBadge status={scope.status}>{displayText(scope.status)}</StatusBadge></td>
               </tr>
             ))}
           </tbody>
@@ -274,7 +272,7 @@ export function ServiceDetailBody({
       {projectConnectedServiceFlow(view, connection.id).map((row) => (
         <article key={row.id}>
           <p>수집 기간 {row.periodStart} – {row.periodEnd} · {row.timezone === 'Asia/Seoul' ? '한국 시간' : row.timezone}</p>
-          <p>수집 상태 <span className={warnBadge(row.collectionStatus)}>{displayText(row.collectionStatus)}</span></p>
+          <p>수집 상태 <StatusBadge status={row.collectionStatus}>{displayText(row.collectionStatus)}</StatusBadge></p>
           {row.metrics.map((metric) => (
             <p key={metric.id} title={metric.metric}>{metricLabel(metric.metric)} {connectedMetricText(metric.value, metric.availability, formatMeasuredValue)}</p>
           ))}
@@ -288,7 +286,6 @@ export function ServiceDetailBody({
           </details>
           {row.metrics.some((metric) => metric.availability !== 'AVAILABLE') ? <p className={styles.muted}>{UNMEASURED_METRICS_NOTE}</p> : null}
           <ConnectedReviewStatus
-            badgeClass={styles.badge}
             mutedClass={styles.muted}
             statusText={connectedReviewStatusText(row.reviewStatus, row.reviewStale, displayText)}
             staleText={row.reviewStale ? CONNECTED_REVIEW_STALE_TEXT : null}

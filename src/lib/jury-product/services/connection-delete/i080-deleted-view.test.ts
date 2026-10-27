@@ -36,10 +36,11 @@ test('I-080 UI: tablist + aria-selected, juryHref query form, deleted columns, b
 test('I-081 dark scheme: scoped panel, outline return button, phase column hidden in deleted view', () => {
   const css = readFileSync('src/app/(jury)/jury/jury.module.css', 'utf8');
   assert.ok(UI.includes('styles.servicesPanelDark'));
-  assert.ok(UI.includes('<Link className={styles.outlineButton} href={activeHref}>연결 중 목록으로</Link>'));
+  // I-083: outline return button is now the shared secondary ButtonLink.
+  assert.ok(UI.includes('<ButtonLink variant="secondary" icon={Link2} href={activeHref}>연결 중 목록으로</ButtonLink>'));
   assert.ok(UI.includes('{showDeleted ? null : <th>운영 상태</th>}'));
   assert.match(UI, /showDeleted \? null : <td title=\{row\.phase/);
-  for (const needle of ['--svc-body: #16213a', 'rgba(255, 255, 255, 0.08)', '--svc-deleted-text: #9aa4b5', 'tbody tr:hover td', '.outlineButton', 'border-left: 3px solid', '.badge.badgeDeleted']) assert.ok(css.includes(needle), needle);
+  for (const needle of ['--svc-body: #16213a', 'rgba(255, 255, 255, 0.08)', '--svc-deleted-text: #9aa4b5', 'tbody tr:hover td', 'border-left: 3px solid']) assert.ok(css.includes(needle), needle);
   assert.ok(!/\.badgeDeleted \{ background: #e4e7ec/.test(css), 'old light badge removed');
 });
 
