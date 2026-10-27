@@ -11,6 +11,7 @@ import {
 } from './delete';
 import { isDeletedConnection } from './active-guard';
 import { filterConnectionRows } from './list-filter';
+import { juryHref } from '../../jury-url';
 
 const actor = (role: string, tenantId = 't1'): JuryActor => ({ ok: true, userId: 'u1', tenantId, role } as unknown as JuryActor);
 
@@ -127,4 +128,11 @@ test('I-079: migration is additive and idempotent', () => {
   assert.match(sql, /ADD COLUMN IF NOT EXISTS "disconnectedAt"/);
   assert.match(sql, /ADD COLUMN IF NOT EXISTS "disconnectedByUserId"/);
   assert.doesNotMatch(sql, /\b(DROP|DELETE FROM|UPDATE|TRUNCATE)\b/);
+});
+
+test('I-079 deleted filter link keeps /services path and filter query (not home)', () => {
+  assert.equal(juryHref('/services', { filter: 'deleted' }, ''), '/jury/services?filter=deleted');
+  assert.equal(juryHref('/services', { filter: 'deleted' }, 'https://jury.aisleshub.com'), 'https://jury.aisleshub.com/services?filter=deleted');
+  const ui = readFileSync('src/app/(jury)/jury/service-operations-ui.tsx', 'utf8');
+  assert.ok(!/juryHref\('[^']*\?/.test(ui), 'juryHref route must not embed a query string');
 });
