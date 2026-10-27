@@ -1850,3 +1850,78 @@ a.inline {
 .servicesTableWrap .table.servicesTable tr.mutedRow td,
 .servicesTableWrap .table.servicesTable tr.mutedRow a { color: var(--svc-deleted-text, #9aa4b5); }
 .badge.badgeDeleted { background: #2b3445; color: #d0d5dd; border-color: #3a4456; }
+
+/* I-083 (UI plan P2): button hierarchy + status badge palette. Tokens only; all text pairs ≥ 4.5:1 on --jury-bg/surface-*. */
+.wrap {
+  --jury-st-pass: #4ade80;
+  --jury-st-fail: #fc8d8d;
+  --jury-st-partial: #fbbf24;
+  --jury-st-blocked: #fb923c;
+  --jury-st-error: #d0a2fd;
+  --jury-st-running: #72c7f3;
+  --jury-st-neutral: #a9b5c7;
+  --jury-danger: #fc8d8d;
+}
+
+.jb {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 2.5rem;
+  padding: 0.5rem 1rem;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1.2;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.jb:focus-visible { outline: 2px solid var(--jury-accent); outline-offset: 2px; }
+.jb:disabled, .jb[aria-disabled='true'] { opacity: 0.55; cursor: not-allowed; }
+.jbLg { min-height: 3rem; padding: 0.7rem 1.4rem; font-size: 1.05rem; }
+.jbPrimary { background: var(--jury-accent); border-color: var(--jury-accent); color: var(--jury-bg); }
+.jbPrimary:hover:not(:disabled) { background: var(--jury-c-8dd7f7, #8dd7f7); }
+.jbSecondary { background: transparent; border-color: var(--jury-accent); color: var(--jury-accent); }
+.jbSecondary:hover:not(:disabled) { background: var(--jury-accent-tint); }
+.jbGhost { background: transparent; color: var(--jury-text); }
+.jbGhost:hover:not(:disabled) { background: var(--jury-surface-3); }
+.jbDanger { background: transparent; border-color: var(--jury-danger); color: var(--jury-danger); }
+.jbDanger:hover:not(:disabled) { background: rgba(248, 113, 113, 0.12); }
+.jbSpin { animation: jbSpin 0.9s linear infinite; }
+@keyframes jbSpin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .jbSpin { animation: none; } }
+.srOnly { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+.sb {
+  --sb: var(--jury-text-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.15rem 0.55rem;
+  border: 1px solid color-mix(in srgb, var(--sb) 40%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--sb) 14%, transparent);
+  color: var(--sb);
+  font-size: 0.82rem;
+  font-weight: 700;
+  line-height: 1.4;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+.sbPass { --sb: var(--jury-st-pass); }
+.sbFail { --sb: var(--jury-st-fail); }
+.sbPartial { --sb: var(--jury-st-partial); }
+.sbBlocked { --sb: var(--jury-st-blocked); }
+.sbError { --sb: var(--jury-st-error); }
+.sbRunning { --sb: var(--jury-st-running); }
+.sbDeleted, .sbNeutral { --sb: var(--jury-st-neutral); }
+.sbInfo { --sb: var(--jury-text-muted); }
+
+/* P2: current-nav / active-step / active-tab indicators move from mint to the single accent. */
+.navActive { background: var(--jury-accent) !important; color: var(--jury-bg) !important; }
+.stepper .stepActive strong { background: var(--jury-accent); color: var(--jury-bg); }
+.serviceTabActive, .serviceTabActive:hover { background: var(--jury-accent); color: var(--jury-bg); }

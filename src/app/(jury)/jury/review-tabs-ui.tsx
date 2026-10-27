@@ -16,6 +16,7 @@ import { buildResultDetailView } from '@/lib/jury-product/review-result-detail';
 import type { ReviewComparisonView } from '@/lib/jury-product/review-comparison';
 import { Tabs, TranslationHint, type TabItem } from './ui-primitives';
 import styles from './jury.module.css';
+import { StatusBadge } from './jury-controls';
 
 export const REVIEW_TAB_IDS = ['summary', 'members', 'evidence', 'history'] as const;
 export type ReviewTabId = (typeof REVIEW_TAB_IDS)[number];
@@ -62,8 +63,8 @@ export function ResultFixedSummary({ screen }: { screen: ReviewConsoleScreen }) 
       <div className={styles.row}>
         <span className={styles.label}>판정</span>
         <span>
-          <strong><span className={styles.badge}>{view.summary.decision}</span></strong>{' '}
-          <span className={styles.badge} data-source-tone={view.summary.source.tone}>{view.summary.source.label}</span>
+          <strong><StatusBadge>{view.summary.decision}</StatusBadge></strong>{' '}
+          <StatusBadge data-source-tone={view.summary.source.tone}>{view.summary.source.label}</StatusBadge>
         </span>
       </div>
       {view.summary.decisionNote ? <p className={styles.muted}>{view.summary.decisionNote}</p> : null}
@@ -90,7 +91,7 @@ export function ResultComparison({ screen }: { screen: ReviewConsoleScreen }) {
           <div className={styles.row} key={row.step}>
             <span className={styles.label}>{row.step}</span>
             <span lang={row.step === '기대' && row.note ? 'en' : undefined}>
-              {row.value}{row.note ? <> <span className={styles.badge}>{row.note}</span></> : null}
+              {row.value}{row.note ? <> <StatusBadge>{row.note}</StatusBadge></> : null}
             </span>
           </div>
         ))}
@@ -122,7 +123,7 @@ export function UncheckedMetricsPanel({ screen }: { screen: ReviewConsoleScreen 
       {!view ? <p className={styles.muted}>집계 불가</p> : view.unchecked.state !== 'LISTED' ? (
         <p className={styles.muted}>{view.unchecked.text}</p>
       ) : (
-        <ul>{view.unchecked.items.map((name) => <li key={name}><span className={styles.badge}>미검사</span> {name}</li>)}</ul>
+        <ul>{view.unchecked.items.map((name) => <li key={name}><StatusBadge>미검사</StatusBadge> {name}</li>)}</ul>
       )}
     </section>
   );
@@ -248,14 +249,14 @@ export function ReviewEvidenceTab({ screen }: { screen: ReviewConsoleScreen }) {
         {screen.measured.map((metric) => (
           <div className={styles.row} key={metric.id}>
             <span>{metric.metric}</span>
-            <span>{metric.text} <span className={styles.badge}>{userLabel(metric.availability)}</span></span>
+            <span>{metric.text} <StatusBadge status={metric.availability}>{userLabel(metric.availability)}</StatusBadge></span>
           </div>
         ))}
       </section>
       <section className={styles.panel}>
         <h2>확인된 주장</h2>
         {claimList(screen, 'supported').length === 0 ? <p className={styles.muted}>{claimEmptyText(screen)}</p> : (
-          <ul lang="en">{claimList(screen, 'supported').map((item) => <li key={item}><span className={styles.badge}>확인됨</span> {item}</li>)}</ul>
+          <ul lang="en">{claimList(screen, 'supported').map((item) => <li key={item}><StatusBadge>확인됨</StatusBadge> {item}</li>)}</ul>
         )}
         <h3>판단 근거</h3>
         {screen.dimensionEvidence.length === 0 ? <p className={styles.muted}>판단 근거 기록 없음</p> : (
@@ -267,11 +268,11 @@ export function ReviewEvidenceTab({ screen }: { screen: ReviewConsoleScreen }) {
         <p className={styles.muted}>일부만 확인된 주장과 아직 확인되지 않은 가설입니다. 자료를 보완하면 다시 요청할 수 있습니다.</p>
         <h3>일부만 확인된 주장</h3>
         {claimList(screen, 'partial').length === 0 ? <p className={styles.muted}>{claimEmptyText(screen)}</p> : (
-          <ul lang="en">{claimList(screen, 'partial').map((item) => <li key={item}><span className={styles.badge}>일부 확인</span> {item}</li>)}</ul>
+          <ul lang="en">{claimList(screen, 'partial').map((item) => <li key={item}><StatusBadge>일부 확인</StatusBadge> {item}</li>)}</ul>
         )}
         <h3>확인되지 않은 가설</h3>
         {claimList(screen, 'unverified').length === 0 ? <p className={styles.muted}>{claimEmptyText(screen)}</p> : (
-          <ul lang="en">{claimList(screen, 'unverified').map((item) => <li key={item}><span className={styles.badge}>미확인</span> {item}</li>)}</ul>
+          <ul lang="en">{claimList(screen, 'unverified').map((item) => <li key={item}><StatusBadge>미확인</StatusBadge> {item}</li>)}</ul>
         )}
         <TranslationHint />
       </section>

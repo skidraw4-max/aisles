@@ -42,6 +42,8 @@ import { ReviewSubmitButton } from './review-submit-button';
 import { evidenceReviewStatus } from '@/lib/jury-product/evidence-review-status';
 import { auditActionLabel, DECISION_GUIDANCE, displayText, traceLabel, userLabel } from '@/lib/jury-product/ui-labels';
 import styles from './jury.module.css';
+import { Button, ButtonLink, StatusBadge, buttonClass } from './jury-controls';
+import { ArrowRight, Check, FileText, Lightbulb, Play, Plus, Send, Square, X } from 'lucide-react';
 
 const GATE_COPY: Record<Exclude<JuryActor, { ok: true }>['reason'], string> = {
   UNAUTHENTICATED: '로그인한 뒤 Jury membership이 있는 계정으로 다시 열어야 합니다.',
@@ -101,7 +103,7 @@ export async function JuryChrome({
             <p className={styles.muted}>
               사용자 <strong>{identity?.userLabel ?? displayText(SHELL_UNAVAILABLE)}</strong>
               {' · '}
-              역할 <span className={styles.badge} title={actor.role}>{userLabel(actor.role)}</span>
+              역할 <StatusBadge status={actor.role} title={actor.role}>{userLabel(actor.role)}</StatusBadge>
             </p>
             <LogoutButton />
           </div>
@@ -207,7 +209,7 @@ function CreateTenantForm() {
       <p className={styles.muted}>이름만 입력합니다. tenant 식별자는 서버가 만듭니다.</p>
       <input className={styles.field} name="tenantName" placeholder="조직 이름" required />
       <input type="hidden" name="tenantId" value="client-supplied-tenant" />
-      <button className={styles.button} type="submit">
+      <button className={buttonClass('secondary')} type="submit">
         내 tenant 만들기
       </button>
     </form>
@@ -244,7 +246,7 @@ export function WriteControl({
   if (disabledHint !== undefined) {
     return (
       <div>
-        <button className={styles.button} type="button" disabled aria-disabled="true">
+        <button className={buttonClass('secondary')} type="button" disabled aria-disabled="true">
           {label} (준비 중)
         </button>
         <p className={styles.muted}>{disabledHint}</p>
@@ -257,7 +259,7 @@ export function WriteControl({
       <input type="hidden" name="tenantId" value="client-supplied-tenant" />
       <input type="hidden" name="resourceId" value={resourceId ?? ''} />
       <input type="hidden" name="returnTo" value={returnTo} />
-      <button className={styles.button} type="submit">{label}</button>
+      <Button variant="secondary" type="submit">{label}</Button>
     </form>
   );
 }
@@ -289,7 +291,7 @@ export function DashboardBody({ view }: { view: JuryConsoleView }) {
           <h2 className={styles.pageTitle}>홈</h2>
           <p className={styles.pageDescription}>지금 해야 할 일과 최근 결과를 한눈에 확인하세요.</p>
         </div>
-        <Link className={styles.primaryButton} href={juryHref('/evidence')}>리뷰 요청 시작</Link>
+        <ButtonLink variant="primary" icon={Play} href={juryHref('/evidence')}>리뷰 요청 시작</ButtonLink>
       </div>
       <section className={`${styles.panel} ${styles.nextAction}`}>
         <div>
@@ -297,7 +299,7 @@ export function DashboardBody({ view }: { view: JuryConsoleView }) {
           <h2>최근 리뷰 결과를 확인하세요</h2>
           <p className={styles.muted}>새로운 결과가 도착하면 주요 문제와 권장 조치를 바로 확인할 수 있습니다.</p>
         </div>
-        <Link className={styles.primaryButton} href={juryHref('/reviews')}>결과 보기</Link>
+        <ButtonLink variant="primary" icon={FileText} href={juryHref('/reviews')}>결과 보기</ButtonLink>
       </section>
       <div className={styles.cards}>
         <section className={styles.panel}>
@@ -343,7 +345,7 @@ export function DashboardBody({ view }: { view: JuryConsoleView }) {
                   <td className={styles.identifier} title={event.actor}>{compactIdentifier(event.actor)}</td>
                   <td title={event.action}>{auditActionLabel(event.action)}</td>
                   <td className={styles.identifier} title={event.resource}>{compactIdentifier(event.resource)}</td>
-                  <td className={styles.nowrapCell}><span className={styles.statusBadge} title={event.status}>{auditActionLabel(event.status)}</span></td>
+                  <td className={styles.nowrapCell}><StatusBadge status={event.status} title={event.status}>{auditActionLabel(event.status)}</StatusBadge></td>
                 </tr>
               ))}
             </tbody>
@@ -360,7 +362,7 @@ export function ServicesBody({ actor, view }: { actor: JuryActor; view: JuryCons
     <section className={styles.panel}>
       <h2 className={styles.pageTitle}>서비스 연결 목록</h2>
       {canShowWrite(actor, 'connection.write') ? (
-        <p><Link className={styles.button} href={juryHref('/services/new')}>서비스 추가</Link></p>
+        <p><ButtonLink variant="secondary" icon={Plus} href={juryHref('/services/new')}>서비스 추가</ButtonLink></p>
       ) : (
         <p className={styles.muted}>서비스 추가: 현재 역할에는 이 변경 권한이 없습니다.</p>
       )}
@@ -383,7 +385,7 @@ export function ServicesBody({ actor, view }: { actor: JuryActor; view: JuryCons
               <tr key={row.id}>
                 <td><Link className={`${styles.inline} ${styles.ellipsisText}`} href={juryHref(`/services/${row.id}`)} title={row.displayName}>{row.displayName}</Link></td>
                 <td title={row.accessMethod}>{displayText(row.accessMethod)}</td>
-                <td><span className={styles.badge} title={row.status}>{userLabel(row.status)}</span></td>
+                <td><StatusBadge status={row.status} title={row.status}>{userLabel(row.status)}</StatusBadge></td>
                 <td>{formatKstFull(row.createdAt)}</td>
                 <td>{formatKstFull(row.updatedAt)}</td>
                 <td title={row.discoveryStatus}>{displayText(row.discoveryStatus)}</td>
@@ -410,7 +412,7 @@ export function DiscoveryBody({ actor, view }: { actor: JuryActor; view: JuryCon
           <input type="hidden" name="connectionId" value={row.id} />
           <input type="hidden" name="tenantId" value="client-supplied-tenant" />
           {canShowWrite(actor, 'discovery.approve') ? (
-            <button className={styles.button} type="submit">Mock Discovery 실행</button>
+            <Button variant="secondary" icon={Play} type="submit">Mock Discovery 실행</Button>
           ) : (
             <p className={styles.muted}>Discovery 실행: 현재 역할에는 이 변경 권한이 없습니다.</p>
           )}
@@ -432,8 +434,8 @@ export function DiscoveryBody({ actor, view }: { actor: JuryActor; view: JuryCon
               <form action={decideJuryScope}>
                 <input type="hidden" name="scopeId" value={scope.id} />
                 <input type="hidden" name="tenantId" value="client-supplied-tenant" />
-                <button className={styles.button} name="decision" value="APPROVE" type="submit">승인</button>
-                <button className={styles.button} name="decision" value="REJECT" type="submit">거부</button>
+                <Button variant="secondary" icon={Check} name="decision" value="APPROVE" type="submit">승인</Button>
+                <Button variant="secondary" icon={X} name="decision" value="REJECT" type="submit">거부</Button>
               </form>
             ) : null}
             {scope && scope.status === 'PROPOSED' && !canShowWrite(actor, 'scope.write') ? (
@@ -473,15 +475,15 @@ function CatalogScopeForm({ actor, view }: { actor: JuryActor; view: JuryConsole
               ))}
             </select>
           </label>
-          <button className={styles.button} type="submit">Catalog Scope 제안</button>
+          <Button variant="secondary" icon={Lightbulb} type="submit">Catalog Scope 제안</Button>
         </form>
       ))}
       {form.pending.map((scope) => (
         <form action={decideCatalogScope} key={scope.scopeId}>
           <p>{scope.label}</p>
           <input type="hidden" name="scopeId" value={scope.scopeId} />
-          <button className={styles.button} name="decision" value="APPROVE" type="submit">Catalog 승인</button>
-          <button className={styles.button} name="decision" value="REJECT" type="submit">Catalog 거부</button>
+          <Button variant="secondary" icon={Check} name="decision" value="APPROVE" type="submit">Catalog 승인</Button>
+          <Button variant="secondary" icon={X} name="decision" value="REJECT" type="submit">Catalog 거부</Button>
         </form>
       ))}
     </>
@@ -497,7 +499,7 @@ export function ReviewsBody({ view }: { view: JuryConsoleView }) {
           <h2 className={styles.pageTitle}>결과</h2>
           <p className={styles.pageDescription}>결론과 주요 문제, 권장 조치를 먼저 확인하세요.</p>
         </div>
-        <Link className={styles.secondaryButton} href={juryHref('/evidence')}>새 리뷰 요청</Link>
+        <ButtonLink variant="secondary" icon={Plus} href={juryHref('/evidence')}>새 리뷰 요청</ButtonLink>
       </div>
       <RequestStatusSection view={view} />
       {view.results.length > 0 ? <TranslationHint /> : null}
@@ -534,10 +536,10 @@ export function ReviewsBody({ view }: { view: JuryConsoleView }) {
               const summary = row.finalSurface.statusSummary;
               return (
                 <tr key={row.id}>
-                  <td title={request?.status}><span className={styles.badge}>{statusLabel}</span></td>
+                  <td title={request?.status}><StatusBadge status={request?.status}>{statusLabel}</StatusBadge></td>
                   <td title={row.expectedDecision}>
-                    <Link className={styles.inline} href={detailHref}><span className={styles.badge}>{decisionLabel}</span></Link>
-                    <span className={styles.badge} title={display.source.value}>{display.source.label}</span>
+                    <Link className={styles.inline} href={detailHref}><StatusBadge>{decisionLabel}</StatusBadge></Link>
+                    <StatusBadge status={display.source.value} title={display.source.value}>{display.source.label}</StatusBadge>
                     {warnings.length > 0 ? <span className={styles.muted} title={warnings.map((flag) => DISPLAY_FLAG_LABELS[flag]).join('\n')}> ⚠ {warnings.length}</span> : null}
                   </td>
                   <td title={formatKstFull(row.completedAt)}>{formatKstShort(row.completedAt)}</td>
@@ -589,8 +591,8 @@ export function ReviewDetailBody({ screen, noted }: { screen: ReviewConsoleScree
         <h2 className={styles.pageTitle}>리뷰 결과</h2>
         <div className={styles.resultHighlight}>
           <span className={styles.label}>결론</span>
-          <strong><span className={styles.badge}>{display?.decision.withheld ? display.decision.label : userLabel(screen.decision)}</span></strong>
-          {display ? <span className={styles.badge} title={display.source.value}>{display.source.label}</span> : null}
+          <strong><StatusBadge>{display?.decision.withheld ? display.decision.label : userLabel(screen.decision)}</StatusBadge></strong>
+          {display ? <StatusBadge status={display.source.value} title={display.source.value}>{display.source.label}</StatusBadge> : null}
           <p>왜: {screen.decisionMeaning}</p>
           {display && display.flags.length > 0 ? (
             <ul className={styles.muted}>
@@ -620,10 +622,10 @@ export function ReviewDetailBody({ screen, noted }: { screen: ReviewConsoleScree
         <div className={styles.actionPanel}>
           <div>
             <h2>권장 조치</h2>
-            {screen.expectedUserEffect || screen.risk ? <span className={styles.badge}>AI 추정</span> : null}
+            {screen.expectedUserEffect || screen.risk ? <StatusBadge>AI 추정</StatusBadge> : null}
             <p lang={screen.expectedUserEffect || screen.risk ? 'en' : undefined}>{screen.expectedUserEffect || screen.risk || fallbackAction}</p>
           </div>
-          {screen.humanChoices.length > 0 ? <span className={styles.badge}>확인 필요</span> : null}
+          {screen.humanChoices.length > 0 ? <StatusBadge>확인 필요</StatusBadge> : null}
         </div>
         <p className={styles.muted}>위험도: <span lang={screen.risk ? 'en' : undefined}>{screen.risk || '기록 없음'}</span></p>
       </section>
@@ -650,7 +652,7 @@ export function ReviewDetailBody({ screen, noted }: { screen: ReviewConsoleScree
           <form action={acknowledgeHumanReview}>
             <input type="hidden" name="reviewId" value={screen.reviewId} />
             {screen.humanChoices.map((choice) => (
-              <button className={styles.button} key={choice.code} name="action" value={choice.code} type="submit">{choice.label}</button>
+              <Button variant="secondary" key={choice.code} name="action" value={choice.code} type="submit">{choice.label}</Button>
             ))}
           </form>
         ) : null}
@@ -661,7 +663,7 @@ export function ReviewDetailBody({ screen, noted }: { screen: ReviewConsoleScree
         {screen.canCreateImprovement ? (
           <form action={createHumanImprovementTask}>
             <input type="hidden" name="reviewId" value={screen.reviewId} />
-            <button className={styles.button} type="submit">개선 작업 만들기</button>
+            <Button variant="secondary" icon={Plus} type="submit">개선 작업 만들기</Button>
           </form>
         ) : null}
         {screen.agentExecution ? (
@@ -683,13 +685,13 @@ export function ReviewDetailBody({ screen, noted }: { screen: ReviewConsoleScree
         {screen.canRun && screen.agentExecution ? (
           <form action={runHumanAgentExecution}>
             <input type="hidden" name="agentExecutionId" value={screen.agentExecution.id} />
-            <button className={styles.button} type="submit">에이전트 작업 시작</button>
+            <Button variant="secondary" icon={Play} type="submit">에이전트 작업 시작</Button>
           </form>
         ) : null}
         {screen.canHandoff && screen.improvementTask ? (
           <form action={handoffHumanImprovement}>
             <input type="hidden" name="improvementTaskId" value={screen.improvementTask.id} />
-            <button className={styles.button} type="submit">에이전트에 전달</button>
+            <Button variant="secondary" icon={Send} type="submit">에이전트에 전달</Button>
           </form>
         ) : null}
       </section>
@@ -708,13 +710,13 @@ export function ReReviewAgentHandoffBody({ screen }: { screen: ReviewConsoleScre
       {screen.canApproveReReviewAgent && screen.nextImprovement ? (
         <form action={approveReReviewAgentAction}>
           <input type="hidden" name="improvementTaskId" value={screen.nextImprovement.id} />
-          <button className={styles.button} type="submit">에이전트 작업 승인</button>
+          <Button variant="secondary" icon={Check} type="submit">에이전트 작업 승인</Button>
         </form>
       ) : null}
       {screen.canHandoffReReviewAgent && screen.nextImprovement ? (
         <form action={handoffReReviewImprovement}>
           <input type="hidden" name="improvementTaskId" value={screen.nextImprovement.id} />
-          <button className={styles.button} type="submit">에이전트에 전달</button>
+          <Button variant="secondary" icon={Send} type="submit">에이전트에 전달</Button>
         </form>
       ) : null}
       {execution?.status === 'PENDING' ? <p>에이전트 대기 중</p> : null}
@@ -739,7 +741,7 @@ export function HumanReReviewBody({ screen }: { screen: ReviewConsoleScreen }) {
       {screen.canRunReReview && screen.agentExecution ? (
         <form action={runHumanReReview}>
           <input type="hidden" name="agentExecutionId" value={screen.agentExecution.id} />
-          <button className={styles.button} type="submit">재심사 실행 (Mock)</button>
+          <Button variant="secondary" icon={Play} type="submit">재심사 실행 (Mock)</Button>
           <p className={styles.muted}>{MOCK_RE_REVIEW_NOTICE}</p>
         </form>
       ) : null}
@@ -755,7 +757,7 @@ export function HumanReReviewBody({ screen }: { screen: ReviewConsoleScreen }) {
       {screen.canCreateReReviewImprovement && screen.reReview?.reviewResultId ? (
         <form action={createReReviewImprovementTask}>
           <input type="hidden" name="reReviewResultId" value={screen.reReview.reviewResultId} />
-          <button className={styles.button} type="submit">개선 작업 만들기</button>
+          <Button variant="secondary" icon={Plus} type="submit">개선 작업 만들기</Button>
         </form>
       ) : null}
     </section>
@@ -791,7 +793,7 @@ export function HumanChangeGateBody({ screen }: { screen: ReviewConsoleScreen })
       {screen.canRunChangeGate && screen.agentExecution ? (
         <form action={runHumanChangeGate}>
           <input type="hidden" name="agentExecutionId" value={screen.agentExecution.id} />
-          <button className={styles.button} type="submit">변경 검사 실행</button>
+          <Button variant="secondary" icon={Play} type="submit">변경 검사 실행</Button>
         </form>
       ) : null}
     </section>
@@ -866,7 +868,7 @@ export function EvidenceBody({ actor, view, query = { q: '', filter: '', page: 1
                   </div>
                 ))}
               </fieldset>
-              <button className={`${styles.primaryButton} ${styles.intakeSubmit}`} type="submit">리뷰 자료 만들기</button>
+              <button className={buttonClass('primary', 'lg', styles.intakeSubmit)} type="submit">리뷰 자료 만들기</button>
             </form>
           ))
         )
@@ -946,14 +948,14 @@ export function EvidenceBody({ actor, view, query = { q: '', filter: '', page: 1
 }
 
 const criteriaDialogClasses = {
-  button: styles.summaryButton,
+  button: buttonClass('secondary'),
   dialog: styles.summaryDialog,
   inner: styles.summaryDialogInner,
   close: styles.summaryDialogClose,
   title: styles.summaryDialogTitle,
   body: styles.summaryDialogBody,
   footer: styles.summaryDialogFooter,
-  secondaryButton: styles.secondaryButton,
+  secondaryButton: buttonClass('ghost'),
 };
 
 export function ImprovementsBody({
@@ -1003,7 +1005,7 @@ export function ImprovementsBody({
           <tbody>
             {rows.map((task) => (
               <tr key={task.id}>
-                <td><span className={styles.badge} title={task.status}>{userLabel(task.status)}</span></td>
+                <td><StatusBadge status={task.status} title={task.status}>{userLabel(task.status)}</StatusBadge></td>
                 <td>{task.taskType ?? displayText(SHELL_UNAVAILABLE)}</td>
                 <td><span className={styles.ellipsisText} title={task.diagnosis}>{task.diagnosis}</span></td>
                 <td className={styles.nowrapCell}><AcceptanceCriteriaDialog criteria={task.acceptanceCriteria} classes={criteriaDialogClasses} /></td>
@@ -1027,7 +1029,7 @@ export function ImprovementsBody({
                   {canRun && task.approval === 'APPROVED' && task.agentStatus === 'PENDING' && task.agentExecutionId ? (
                     <form action={runHumanAgentExecution}>
                       <input type="hidden" name="agentExecutionId" value={task.agentExecutionId} />
-                      <button className={styles.button} type="submit">에이전트 실행 (Mock)</button>
+                      <Button variant="secondary" icon={Play} type="submit">에이전트 실행 (Mock)</Button>
                     </form>
                   ) : null}
                   {task.agentStatus === 'COMPLETED' && task.agentExecutionId && gates[task.agentExecutionId] ? (
@@ -1037,7 +1039,7 @@ export function ImprovementsBody({
                       {canRun && gates[task.agentExecutionId] === 'PENDING' ? (
                         <form action={runProductChangeGate}>
                           <input type="hidden" name="agentExecutionId" value={task.agentExecutionId} />
-                          <button className={styles.button} type="submit">변경 검사 실행</button>
+                          <Button variant="secondary" icon={Play} type="submit">변경 검사 실행</Button>
                         </form>
                       ) : null}
                     </>
@@ -1058,7 +1060,7 @@ export function ImprovementsBody({
                     ) : canReview ? (
                       <form action={runProductChangeGateReReview}>
                         <input type="hidden" name="agentExecutionId" value={task.agentExecutionId} />
-                        <button className={styles.button} type="submit">재심사 실행 (Mock)</button>
+                        <Button variant="secondary" icon={Play} type="submit">재심사 실행 (Mock)</Button>
           <p className={styles.muted}>{MOCK_RE_REVIEW_NOTICE}</p>
                       </form>
                     ) : null
@@ -1069,7 +1071,7 @@ export function ImprovementsBody({
                   {canHandoff && agentTasks.has(task.id) && task.approval === 'APPROVED' && task.status === 'OPEN' && !task.agentStatus ? (
                     <form action={handoffHumanImprovement}>
                       <input type="hidden" name="improvementTaskId" value={task.id} />
-                      <button className={styles.button} type="submit">에이전트에 전달</button>
+                      <Button variant="secondary" icon={Send} type="submit">에이전트에 전달</Button>
                     </form>
                   ) : null}
                 </td>
@@ -1119,7 +1121,7 @@ export function ImprovementTraceBody({ trace }: { trace: ImprovementTrace }) {
           {screen.timeline.map((item) => (
             <article key={item.key}>
               <h3 title={item.title}>{traceLabel(item.title)}</h3>
-              <p><span className={styles.badge} title={item.status}>{userLabel(item.status)}</span></p>
+              <p><StatusBadge status={item.status} title={item.status}>{userLabel(item.status)}</StatusBadge></p>
               {item.lines.map((line) => (
                 <div className={styles.row} key={`${item.key}-${line.label}`}>
                   <span className={styles.label} title={line.label}>{traceLabel(line.label)}</span>
@@ -1205,7 +1207,7 @@ export function AutomationBody({
         <form action={stopJuryAutoLoop}>
           <input type="hidden" name="command" value="STOP" />
           <input type="hidden" name="tenantId" value="client-supplied-tenant" />
-          <button className={styles.button} type="submit">자동 Loop 중지</button>
+          <Button variant="secondary" icon={Square} type="submit">자동 Loop 중지</Button>
         </form>
       ) : (
         <p className={styles.muted}>자동 Loop 중지: 현재 역할에는 이 변경 권한이 없습니다.</p>
@@ -1231,7 +1233,7 @@ function ListControls({ path, query, filterLabel, filterOptions, labelOf, total,
             </select>
           </label>
         ) : null}
-        <button className={styles.button} type="submit">적용</button>
+        <Button variant="secondary" icon={Check} type="submit">적용</Button>
       </form>
       <p className={styles.muted}>{total}건 · {page}/{pages}쪽</p>
     </>
@@ -1361,7 +1363,7 @@ export function SettingsBody({
             <option value="REMOVE_MEMBER">제거</option>
           </select>
           <input type="hidden" name="tenantId" value="client-supplied-tenant" />
-          <button className={styles.primaryButton} type="submit">
+          <button className={buttonClass('primary')} type="submit">
             역할 적용
           </button>
         </form>
@@ -1413,7 +1415,7 @@ export function ReReviewAgentRunBody({ screen }: { screen: ReviewConsoleScreen }
       {screen.canRunReReviewAgent && execution ? (
         <form action={runReReviewAgentExecution}>
           <input type="hidden" name="agentExecutionId" value={execution.id} />
-          <button className={styles.button} type="submit">에이전트 실행</button>
+          <Button variant="secondary" icon={Play} type="submit">에이전트 실행</Button>
         </form>
       ) : null}
       {execution?.status === 'RUNNING' ? <p>에이전트 진행 중</p> : null}
@@ -1431,7 +1433,7 @@ export function ReReviewChangeGateBody({ screen }: { screen: ReviewConsoleScreen
       {screen.canRunReReviewChangeGate && execution ? (
         <form action={runReReviewChangeGate}>
           <input type="hidden" name="agentExecutionId" value={execution.id} />
-          <button className={styles.button} type="submit">변경 검사 실행</button>
+          <Button variant="secondary" icon={Play} type="submit">변경 검사 실행</Button>
         </form>
       ) : null}
       {gate?.status === 'APPROVED' ? <p>변경 검사: 승인됨</p> : null}
@@ -1450,7 +1452,7 @@ export function SecondReReviewBody({ screen }: { screen: ReviewConsoleScreen }) 
       {screen.canRunSecondReReview && execution ? (
         <form action={runSecondReReview}>
           <input type="hidden" name="agentExecutionId" value={execution.id} />
-          <button className={styles.button} type="submit">재심사 실행 (Mock)</button>
+          <Button variant="secondary" icon={Play} type="submit">재심사 실행 (Mock)</Button>
           <p className={styles.muted}>{MOCK_RE_REVIEW_NOTICE}</p>
         </form>
       ) : null}
@@ -1477,7 +1479,7 @@ export function SecondImprovementBody({ screen }: { screen: ReviewConsoleScreen 
       {screen.canCreateSecondImprovement && screen.secondReReviewResultId ? (
         <form action={createSecondReReviewImprovementTask}>
           <input type="hidden" name="reReviewResultId" value={screen.secondReReviewResultId} />
-          <button className={styles.button} type="submit">다음 개선 작업</button>
+          <Button variant="secondary" icon={ArrowRight} type="submit">다음 개선 작업</Button>
         </form>
       ) : null}
     </section>
@@ -1494,7 +1496,7 @@ export function SecondImprovementApprovalBody({ screen }: { screen: ReviewConsol
       {screen.canApproveSecondImprovement && task ? (
         <form action={approveSecondImprovementTask}>
           <input type="hidden" name="improvementTaskId" value={task.id} />
-          <button className={styles.button} type="submit">에이전트 작업 승인</button>
+          <Button variant="secondary" icon={Check} type="submit">에이전트 작업 승인</Button>
         </form>
       ) : null}
     </section>
@@ -1511,7 +1513,7 @@ export function SecondImprovementHandoffBody({ screen }: { screen: ReviewConsole
       {screen.canHandoffSecondImprovement && task ? (
         <form action={handoffSecondImprovementTask}>
           <input type="hidden" name="improvementTaskId" value={task.id} />
-          <button className={styles.button} type="submit">에이전트에 전달</button>
+          <Button variant="secondary" icon={Send} type="submit">에이전트에 전달</Button>
         </form>
       ) : null}
     </section>
@@ -1528,7 +1530,7 @@ export function SecondChangeGateBody({ screen }: { screen: ReviewConsoleScreen }
       {screen.canRunSecondChangeGate && execution ? (
         <form action={runSecondChangeGate}>
           <input type="hidden" name="agentExecutionId" value={execution.id} />
-          <button className={styles.button} type="submit">변경 검사 실행</button>
+          <Button variant="secondary" icon={Play} type="submit">변경 검사 실행</Button>
         </form>
       ) : null}
       {gate?.status === 'APPROVED' ? <p>변경 검사: 승인됨</p> : null}
@@ -1547,7 +1549,7 @@ export function LaterReReviewBody({ screen }: { screen: ReviewConsoleScreen }) {
       {screen.canRunLaterReReview && execution ? (
         <form action={runLaterReReview}>
           <input type="hidden" name="agentExecutionId" value={execution.id} />
-          <button className={styles.button} type="submit">재심사 실행 (Mock)</button>
+          <Button variant="secondary" icon={Play} type="submit">재심사 실행 (Mock)</Button>
           <p className={styles.muted}>{MOCK_RE_REVIEW_NOTICE}</p>
         </form>
       ) : null}
@@ -1575,7 +1577,7 @@ export function LaterImprovementBody({ screen }: { screen: ReviewConsoleScreen }
       {screen.canCreateLaterImprovement && review?.reviewResultId ? (
         <form action={createLaterReReviewImprovementTask}>
           <input type="hidden" name="reReviewResultId" value={review.reviewResultId} />
-          <button className={styles.button} type="submit">다음 개선 작업</button>
+          <Button variant="secondary" icon={ArrowRight} type="submit">다음 개선 작업</Button>
         </form>
       ) : null}
     </section>
@@ -1592,7 +1594,7 @@ export function LaterImprovementApprovalBody({ screen }: { screen: ReviewConsole
       {screen.canApproveLaterImprovement && task ? (
         <form action={approveLaterImprovementTask}>
           <input type="hidden" name="improvementTaskId" value={task.id} />
-          <button className={styles.button} type="submit">에이전트 작업 승인</button>
+          <Button variant="secondary" icon={Check} type="submit">에이전트 작업 승인</Button>
         </form>
       ) : null}
     </section>
@@ -1609,7 +1611,7 @@ export function LaterImprovementHandoffBody({ screen }: { screen: ReviewConsoleS
       {screen.canHandoffLaterImprovement && task ? (
         <form action={handoffLaterImprovementTask}>
           <input type="hidden" name="improvementTaskId" value={task.id} />
-          <button className={styles.button} type="submit">에이전트에 전달</button>
+          <Button variant="secondary" icon={Send} type="submit">에이전트에 전달</Button>
         </form>
       ) : null}
     </section>
@@ -1624,7 +1626,7 @@ export function LaterAgentRunBody({ screen }: { screen: ReviewConsoleScreen }) {
       {screen.canRunLaterAgent && execution ? (
         <form action={runLaterAgentExecution}>
           <input type="hidden" name="agentExecutionId" value={execution.id} />
-          <button className={styles.button} type="submit">에이전트 실행</button>
+          <Button variant="secondary" icon={Play} type="submit">에이전트 실행</Button>
         </form>
       ) : null}
       {execution?.status === 'RUNNING' ? <p>에이전트 진행 중</p> : null}
@@ -1642,7 +1644,7 @@ export function LaterChangeGateBody({ screen }: { screen: ReviewConsoleScreen })
       {screen.canRunLaterChangeGate && execution ? (
         <form action={runLaterChangeGate}>
           <input type="hidden" name="agentExecutionId" value={execution.id} />
-          <button className={styles.button} type="submit">변경 검사 실행</button>
+          <Button variant="secondary" icon={Play} type="submit">변경 검사 실행</Button>
         </form>
       ) : null}
       {gate?.status === 'APPROVED' ? <p>변경 검사: 승인됨</p> : null}
@@ -1662,7 +1664,7 @@ export function FollowingReReviewBody({ screen }: { screen: ReviewConsoleScreen 
       {screen.canRunFollowingReReview && execution ? (
         <form action={runFollowingReReview}>
           <input type="hidden" name="agentExecutionId" value={execution.id} />
-          <button className={styles.button} type="submit">재심사 실행 (Mock)</button>
+          <Button variant="secondary" icon={Play} type="submit">재심사 실행 (Mock)</Button>
           <p className={styles.muted}>{MOCK_RE_REVIEW_NOTICE}</p>
         </form>
       ) : null}
@@ -1715,7 +1717,7 @@ function RequestStatusSection({ view }: { view: JuryConsoleView }) {
         <tbody>
           {rows.map((row) => (
             <tr key={row.key}>
-              <td className={styles.nowrapCell} title={row.state}><span className={styles.badge}>{row.stateLabel}</span></td>
+              <td className={styles.nowrapCell} title={row.state}><StatusBadge>{row.stateLabel}</StatusBadge></td>
               <td className={styles.nowrapCell} title={row.startedAt ? formatKstFull(row.startedAt) : undefined}>{row.startedAt ? formatKstShort(row.startedAt) : '기록 없음'}</td>
               <td className={styles.nowrapCell} title={row.finishedAt ? formatKstFull(row.finishedAt) : undefined}>{row.finishedAt ? formatKstShort(row.finishedAt) : '-'}</td>
               <td title={row.reviewType}>{userLabel(row.reviewType)}</td>

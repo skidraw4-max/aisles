@@ -13,7 +13,7 @@ import {
   runOnboardingDiscovery,
 } from './actions';
 import { displayText, userLabel, userLabels } from '@/lib/jury-product/ui-labels';
-import { observationTakesPriority, WARN_BADGES } from '@/lib/jury-product/services/readonly-account/flow';
+import { observationTakesPriority } from '@/lib/jury-product/services/readonly-account/flow';
 import { TranslationHint } from './ui-primitives';
 import { ReviewSubmitButton } from './review-submit-button';
 import { CONNECTED_REVIEW_PENDING_NOTE } from '@/lib/jury-product/connected-service-copy';
@@ -22,15 +22,14 @@ import { ConnectionDeleteDialog } from './connection-delete-dialog';
 import { filterConnectionRows } from '@/lib/jury-product/services/connection-delete/list-filter';
 import { countConnectionRows, DELETED_VIEW_EMPTY, DELETED_VIEW_NOTICE, DELETED_VIEW_TITLE, type DeletedConnectionMeta } from '@/lib/jury-product/services/connection-delete/deleted-view';
 import styles from './jury.module.css';
+import { Button, ButtonLink, StatusBadge, buttonClass } from './jury-controls';
+import { Download, Link2, Play } from 'lucide-react';
 
 function mark(value: boolean): string {
   return value ? '✓' : '—';
 }
 
 
-export function badgeClass(value: string | null | undefined): string {
-  return value && WARN_BADGES.has(value) ? `${styles.badge} ${styles.badgeWarn}` : styles.badge;
-}
 
 
 function NextAction({ model, observationNeeded }: { model: ServiceOperationModel; observationNeeded?: boolean }) {
@@ -42,7 +41,7 @@ function NextAction({ model, observationNeeded }: { model: ServiceOperationModel
         <h3>다음 할 일</h3>
         <p>관찰 실행</p>
         <p>
-          <a className={`${styles.button} ${styles.primaryButton}`} href={`/jury/services/${model.connectionId}?tab=connect#observe`}>
+          <a className={buttonClass('primary')} href={`/jury/services/${model.connectionId}?tab=connect#observe`}>
             ▶ 관찰 실행
           </a>
         </p>
@@ -56,12 +55,12 @@ function NextAction({ model, observationNeeded }: { model: ServiceOperationModel
     <section className={styles.serviceNextAction}>
       <h3>다음 할 일</h3>
       <p title={action.label}>{displayText(action.label)}</p>
-      <p>상태 <span className={styles.badge}>{userLabel(action.state)}</span></p>
+      <p>상태 <StatusBadge status={action.state}>{userLabel(action.state)}</StatusBadge></p>
       {action.state === 'AVAILABLE' && action.id === 'discover' ? (
         <form action={runOnboardingDiscovery}>
           <input type="hidden" name="connectionId" value={model.connectionId} />
           <input type="hidden" name="tenantId" value="client-supplied-tenant" />
-          <button className={styles.button} type="submit">서비스 확인 실행</button>
+          <Button variant="secondary" icon={Play} type="submit">서비스 확인 실행</Button>
         </form>
       ) : null}
       {action.state === 'AVAILABLE' && action.id === 'collect-evidence' ? (
@@ -71,7 +70,7 @@ function NextAction({ model, observationNeeded }: { model: ServiceOperationModel
           <input type="hidden" name="purpose" value="aisle-self-observation" />
           <CollectPeriodFields />
           <input type="hidden" name="timezone" value="Asia/Seoul" />
-          <button className={styles.button} type="submit">검증 근거 수집</button>
+          <Button variant="secondary" icon={Download} type="submit">검증 근거 수집</Button>
         </form>
       ) : null}
       {action.state === 'AVAILABLE' && action.id === 'run-review' && model.evidence.evidenceId && model.review.running ? (
@@ -135,7 +134,7 @@ export function ServiceOperationsList({
       {showDeleted ? (
         <div className={styles.deletedNotice} role="note">
           <span>{DELETED_VIEW_NOTICE}</span>
-          <Link className={styles.outlineButton} href={activeHref}>연결 중 목록으로</Link>
+          <ButtonLink variant="secondary" icon={Link2} href={activeHref}>연결 중 목록으로</ButtonLink>
         </div>
       ) : null}
       {error ? <p>{error}</p> : null}
@@ -161,7 +160,7 @@ export function ServiceOperationsList({
           <tbody>
             {visible.map((row) => (
               <tr key={row.connectionId} className={showDeleted ? styles.mutedRow : undefined}>
-                <td><Link className={`${styles.inline} ${styles.ellipsisText}`} href={juryHref(`/services/${row.connectionId}`)} title={row.name}>{row.name}</Link>{showDeleted ? <> <span className={`${styles.badge} ${styles.badgeDeleted}`}>삭제됨</span></> : null}</td>
+                <td><Link className={`${styles.inline} ${styles.ellipsisText}`} href={juryHref(`/services/${row.connectionId}`)} title={row.name}>{row.name}</Link>{showDeleted ? <> <StatusBadge status="DELETED">삭제됨</StatusBadge></> : null}</td>
                 <td>{providers[row.connectionId]?.displayName ?? displayText('Unknown')}</td>
                 {showDeleted ? (
                   <>
@@ -169,7 +168,7 @@ export function ServiceOperationsList({
                     <td>{deletedMeta[row.connectionId]?.deletedBy ?? '—'}</td>
                   </>
                 ) : (
-                  <td><span className={badgeClass(row.connectionStatus)} title={row.connectionStatus}>{userLabel(row.connectionStatus)}</span></td>
+                  <td><StatusBadge status={row.connectionStatus} title={row.connectionStatus}>{userLabel(row.connectionStatus)}</StatusBadge></td>
                 )}
                 {showDeleted ? null : <td title={row.phase ?? undefined}>{row.phase ? userLabel(row.phase) : '—'}</td>}
                 <td>{row.parts.evidence === 'READY' ? userLabel('READY') : displayText('No evidence collected yet')}</td>
@@ -197,9 +196,9 @@ export function ServiceSummaryHeader({ model, children, observationNeeded }: { m
     <section className={styles.panel}>
       <h2 className={styles.pageTitle}>{model.name}</h2>
       <div className={styles.summaryHeader}>
-        <p>연결 <span className={badgeClass(model.connectionStatus)} title={model.connectionStatus}>{userLabel(model.connectionStatus)}</span></p>
-        {model.phase ? <p>운영 상태 <span className={badgeClass(model.phase)} title={model.phase}>{userLabel(model.phase)}</span></p> : null}
-        {model.health ? <p>서비스 상태 <span className={badgeClass(model.health)} title={model.health}>{userLabel(model.health)}</span></p> : null}
+        <p>연결 <StatusBadge status={model.connectionStatus} title={model.connectionStatus}>{userLabel(model.connectionStatus)}</StatusBadge></p>
+        {model.phase ? <p>운영 상태 <StatusBadge status={model.phase} title={model.phase}>{userLabel(model.phase)}</StatusBadge></p> : null}
+        {model.health ? <p>서비스 상태 <StatusBadge status={model.health} title={model.health}>{userLabel(model.health)}</StatusBadge></p> : null}
       </div>
       {children}
     </section>
@@ -233,9 +232,9 @@ export function ServiceOperationDetail({
       {all ? (
         <>
           <h2 className={styles.pageTitle}>{model.name}</h2>
-          <p>연결 <span className={badgeClass(model.connectionStatus)} title={model.connectionStatus}>{userLabel(model.connectionStatus)}</span></p>
-          {model.phase ? <p>운영 상태 <span className={badgeClass(model.phase)} title={model.phase}>{userLabel(model.phase)}</span></p> : null}
-          {model.health ? <p>서비스 상태 <span className={badgeClass(model.health)} title={model.health}>{userLabel(model.health)}</span></p> : null}
+          <p>연결 <StatusBadge status={model.connectionStatus} title={model.connectionStatus}>{userLabel(model.connectionStatus)}</StatusBadge></p>
+          {model.phase ? <p>운영 상태 <StatusBadge status={model.phase} title={model.phase}>{userLabel(model.phase)}</StatusBadge></p> : null}
+          {model.health ? <p>서비스 상태 <StatusBadge status={model.health} title={model.health}>{userLabel(model.health)}</StatusBadge></p> : null}
         </>
       ) : null}
       {show('connect') && provider ? (
@@ -244,11 +243,11 @@ export function ServiceOperationDetail({
           <p>제공자 {provider.displayName}</p>
           <p>연결 방식 <span title={provider.configuration.connectionMethod}>{displayText(provider.configuration.connectionMethod)}</span></p>
           <p>접근 방식 <span title={provider.configuration.accessMode}>{displayText(provider.configuration.accessMode)}</span></p>
-          <p>자격 증명 상태 <span className={badgeClass(provider.configuration.credentialStatus)} title={provider.configuration.credentialStatus}>{userLabel(provider.configuration.credentialStatus)}</span></p>
-          <p>연결 상태 <span className={badgeClass(provider.configuration.connectionStatus)} title={provider.configuration.connectionStatus}>{userLabel(provider.configuration.connectionStatus)}</span></p>
-          <p>수명 주기 <span className={badgeClass(provider.configuration.lifecycle)} title={provider.configuration.lifecycle}>{userLabel(provider.configuration.lifecycle)}</span></p>
-          <p>준비 상태 <span className={badgeClass(provider.configuration.readiness)} title={provider.configuration.readiness}>{userLabel(provider.configuration.readiness)}</span></p>
-          <p>연결 상태 점검 <span className={badgeClass(provider.health)} title={provider.health}>{userLabel(provider.health)}</span></p>
+          <p>자격 증명 상태 <StatusBadge status={provider.configuration.credentialStatus} title={provider.configuration.credentialStatus}>{userLabel(provider.configuration.credentialStatus)}</StatusBadge></p>
+          <p>연결 상태 <StatusBadge status={provider.configuration.connectionStatus} title={provider.configuration.connectionStatus}>{userLabel(provider.configuration.connectionStatus)}</StatusBadge></p>
+          <p>수명 주기 <StatusBadge status={provider.configuration.lifecycle} title={provider.configuration.lifecycle}>{userLabel(provider.configuration.lifecycle)}</StatusBadge></p>
+          <p>준비 상태 <StatusBadge status={provider.configuration.readiness} title={provider.configuration.readiness}>{userLabel(provider.configuration.readiness)}</StatusBadge></p>
+          <p>연결 상태 점검 <StatusBadge status={provider.health} title={provider.health}>{userLabel(provider.health)}</StatusBadge></p>
           <p>기능 {userLabels(provider.configuration.capabilities)}</p>
           <p>{provider.configuration.notice}</p>
           {provider.provider === 'GITHUB' ? <p><Link className={styles.inline} href={juryHref('/services/github')}>GitHub 저장소</Link></p> : null}

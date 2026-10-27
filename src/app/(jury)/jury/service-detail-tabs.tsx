@@ -6,13 +6,15 @@ import Link from 'next/link';
 import { SERVICE_TABS, serviceTabHref, type ServiceTab, type ServiceTabBadge } from './service-detail-tabs-model';
 import { ServiceTabScroll } from './service-tab-scroll';
 import styles from './jury.module.css';
+import { StatusBadge } from './jury-controls';
+import type { StatusTone } from '@/lib/jury-product/status-tone';
 
 export { parseServiceTab, serviceTabBadges, type ServiceTab } from './service-detail-tabs-model';
 
-const TONE: Record<ServiceTabBadge['tone'], string> = {
-  ok: styles.serviceTabBadgeOk,
-  warn: styles.serviceTabBadgeWarn,
-  muted: styles.serviceTabBadgeMuted,
+const TONE: Record<ServiceTabBadge['tone'], StatusTone> = {
+  ok: 'pass',
+  warn: 'partial',
+  muted: 'neutral',
 };
 
 export function ServiceTabNav({
@@ -42,7 +44,7 @@ export function ServiceTabNav({
               className={selected ? `${styles.serviceTab} ${styles.serviceTabActive}` : styles.serviceTab}
             >
               <span>{t.label}</span>
-              {badge ? <span className={`${styles.serviceTabBadge} ${TONE[badge.tone]}`}>{badge.text}</span> : null}
+              {badge ? <StatusBadge tone={TONE[badge.tone]}>{badge.text}</StatusBadge> : null}
             </Link>
           );
         })}

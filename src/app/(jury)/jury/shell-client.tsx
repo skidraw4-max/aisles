@@ -8,6 +8,7 @@ import { createClient } from '@/lib/supabase/client';
 import { juryHref } from '@/lib/jury-product/jury-url';
 import { PRODUCT_NAV } from '@/lib/jury-product/product-nav';
 import styles from './jury.module.css';
+import { buttonClass } from './jury-controls';
 
 export function ProductNav() {
   const pathname = usePathname();
@@ -58,7 +59,7 @@ export function OnboardingSubmit({
 }) {
   const { pending } = useFormStatus();
   return (
-    <button className={styles.button} type="submit" name={name} value={value} disabled={pending} aria-busy={pending}>
+    <button className={buttonClass('secondary')} type="submit" name={name} value={value} disabled={pending} aria-busy={pending}>
       {pending ? pendingLabel : label}
     </button>
   );
@@ -69,7 +70,7 @@ export function LogoutButton() {
   return (
     <button
       type="button"
-      className={styles.button}
+      className={buttonClass('secondary')}
       onClick={async () => {
         const supabase = createClient();
         await supabase.auth.signOut();
