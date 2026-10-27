@@ -30,7 +30,7 @@ test('I-080 UI: tablist + aria-selected, juryHref query form, deleted columns, b
   assert.match(UI, /juryHref\('\/services', \{ filter: 'deleted' \}\)/);
   assert.ok(!/juryHref\('[^']*\?/.test(UI));
   for (const s of ['연결 중 {counts.active}', '삭제된 연결 {counts.deleted}', '삭제 시각 (KST)', '삭제한 사람', '삭제됨', '연결 중 목록으로', 'styles.mutedRow', 'DELETED_VIEW_NOTICE', 'DELETED_VIEW_TITLE']) assert.ok(UI.includes(s), s);
-  assert.match(UI, /canDelete && !showDeleted \? \(\s*<td><ConnectionDeleteDialog/);
+  assert.match(UI, /canDelete && !showDeleted \? \(\s*<td className=\{styles\.rowActions\}><ConnectionDeleteDialog/);
 });
 
 test('I-081 dark scheme: scoped panel, outline return button, phase column hidden in deleted view', () => {
@@ -39,7 +39,7 @@ test('I-081 dark scheme: scoped panel, outline return button, phase column hidde
   // I-083: outline return button is now the shared secondary ButtonLink.
   assert.ok(UI.includes('<ButtonLink variant="secondary" icon={Link2} href={activeHref}>연결 중 목록으로</ButtonLink>'));
   assert.ok(UI.includes('{showDeleted ? null : <th>운영 상태</th>}'));
-  assert.match(UI, /showDeleted \? null : <td title=\{row\.phase/);
+  assert.match(UI, /showDeleted \? null : <td>\{row\.phase \? <StatusBadge status=\{row\.phase\}/);
   for (const needle of ['--svc-body: #16213a', 'rgba(255, 255, 255, 0.08)', '--svc-deleted-text: #9aa4b5', 'tbody tr:hover td', 'border-left: 3px solid']) assert.ok(css.includes(needle), needle);
   assert.ok(!/\.badgeDeleted \{ background: #e4e7ec/.test(css), 'old light badge removed');
 });

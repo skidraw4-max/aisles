@@ -18,6 +18,7 @@ import {
   VIEWPORT_LABEL,
 } from '@/lib/jury-product/services/screen-audit/view-model';
 import styles from './jury.module.css';
+import { StatusBadge } from './jury-controls';
 import { runScreenAuditAction } from './screen-audit-actions';
 import { ScreenAuditRunButton } from './ScreenAuditRunButton';
 
@@ -95,7 +96,7 @@ export async function ScreenAuditSection(props: { tenantId: string; connectionId
                   <tr key={`${r.viewport}-${r.area}`}>
                     <td>{VIEWPORT_LABEL[r.viewport] ?? r.viewport}</td>
                     <td>{AREA_LABEL[r.area] ?? r.area}</td>
-                    <td>{STATUS_LABEL[r.status] ?? r.status}</td>
+                    <td><StatusBadge status={r.status} title={r.status}>{STATUS_LABEL[r.status] ?? r.status}</StatusBadge></td>
                     <td>{r.findings}</td>
                   </tr>
                 ))}

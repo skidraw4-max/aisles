@@ -3,6 +3,7 @@
 import { useActionState, useRef, useState } from 'react';
 import { deleteConnectionAction, type ConnectionDeleteActionState } from './connection-delete-actions';
 import styles from './jury.module.css';
+import { Trash2 } from 'lucide-react';
 import { buttonClass } from './jury-controls';
 
 export function ConnectionDeleteDialog({ connectionId, displayName, github }: { connectionId: string; displayName: string; github: boolean }) {
@@ -12,8 +13,8 @@ export function ConnectionDeleteDialog({ connectionId, displayName, github }: { 
   const matches = typed.normalize('NFC').trim() === displayName.normalize('NFC').trim() && typed.trim().length > 0;
   return (
     <>
-      <button type="button" className={buttonClass('danger')} onClick={() => dialogRef.current?.showModal()} aria-haspopup="dialog">
-        삭제
+      <button type="button" className={styles.iconButton} onClick={() => dialogRef.current?.showModal()} aria-haspopup="dialog" aria-label="삭제" title="삭제">
+        <Trash2 aria-hidden size={16} />
       </button>
       <dialog ref={dialogRef} className={styles.confirmDialog} aria-labelledby={`del-${connectionId}`}>
         <h3 id={`del-${connectionId}`}>연결 삭제</h3>

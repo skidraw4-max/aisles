@@ -43,6 +43,7 @@ import { evidenceReviewStatus } from '@/lib/jury-product/evidence-review-status'
 import { auditActionLabel, DECISION_GUIDANCE, displayText, traceLabel, userLabel } from '@/lib/jury-product/ui-labels';
 import styles from './jury.module.css';
 import { Button, ButtonLink, StatusBadge, buttonClass } from './jury-controls';
+import { EmptyState, PageHeader } from './page-layout';
 import { ArrowRight, Check, FileText, Lightbulb, Play, Plus, Send, Square, X } from 'lucide-react';
 
 const GATE_COPY: Record<Exclude<JuryActor, { ok: true }>['reason'], string> = {
@@ -285,14 +286,12 @@ export function DashboardBody({ view }: { view: JuryConsoleView }) {
   }
   return (
     <>
-      <div className={styles.pageIntro}>
-        <div>
-          <p className={styles.eyebrow}>현재 메뉴 · 홈</p>
-          <h2 className={styles.pageTitle}>홈</h2>
-          <p className={styles.pageDescription}>지금 해야 할 일과 최근 결과를 한눈에 확인하세요.</p>
-        </div>
-        <ButtonLink variant="primary" icon={Play} href={juryHref('/evidence')}>리뷰 요청 시작</ButtonLink>
-      </div>
+      <PageHeader
+        crumbs={[{ label: '홈' }]}
+        title="홈"
+        description="지금 해야 할 일과 최근 결과를 한눈에 확인하세요."
+        actions={<ButtonLink variant="primary" icon={Play} href={juryHref('/evidence')}>리뷰 요청 시작</ButtonLink>}
+      />
       <section className={`${styles.panel} ${styles.nextAction}`}>
         <div>
           <p className={styles.eyebrow}>지금 할 일</p>
@@ -327,7 +326,7 @@ export function DashboardBody({ view }: { view: JuryConsoleView }) {
       </div>
       <section className={styles.panel}>
         <h2>최근 결과와 활동</h2>
-        {board.activity.length === 0 ? <p>{displayText(SHELL_EMPTY.audit)}</p> : (
+        {board.activity.length === 0 ? <EmptyState>{displayText(SHELL_EMPTY.audit)}</EmptyState> : (
           <table className={`${styles.table} ${styles.activityTable}`}>
             <thead>
               <tr>
@@ -366,7 +365,7 @@ export function ServicesBody({ actor, view }: { actor: JuryActor; view: JuryCons
       ) : (
         <p className={styles.muted}>서비스 추가: 현재 역할에는 이 변경 권한이 없습니다.</p>
       )}
-      {rows.length === 0 ? <p>{displayText(SHELL_EMPTY.services)}</p> : (
+      {rows.length === 0 ? <EmptyState action={<ButtonLink variant="primary" icon={Plus} href={juryHref('/organization/services')}>서비스 연결</ButtonLink>}>{displayText(SHELL_EMPTY.services)}</EmptyState> : (
         <div className={styles.servicesTableWrap}>
         <table className={`${styles.table} ${styles.servicesTable}`}>
           <thead>
@@ -388,8 +387,8 @@ export function ServicesBody({ actor, view }: { actor: JuryActor; view: JuryCons
                 <td><StatusBadge status={row.status} title={row.status}>{userLabel(row.status)}</StatusBadge></td>
                 <td>{formatKstFull(row.createdAt)}</td>
                 <td>{formatKstFull(row.updatedAt)}</td>
-                <td title={row.discoveryStatus}>{displayText(row.discoveryStatus)}</td>
-                <td title={row.scopeStatus}>{displayText(row.scopeStatus)}</td>
+                <td><StatusBadge status={row.discoveryStatus} title={row.discoveryStatus}>{displayText(row.discoveryStatus)}</StatusBadge></td>
+                <td><StatusBadge status={row.scopeStatus} title={row.scopeStatus}>{displayText(row.scopeStatus)}</StatusBadge></td>
               </tr>
             ))}
           </tbody>
@@ -493,17 +492,15 @@ function CatalogScopeForm({ actor, view }: { actor: JuryActor; view: JuryConsole
 export function ReviewsBody({ view }: { view: JuryConsoleView }) {
   return (
     <section className={styles.panel}>
-      <div className={styles.pageIntro}>
-        <div>
-          <p className={styles.eyebrow}>현재 메뉴 · 결과</p>
-          <h2 className={styles.pageTitle}>결과</h2>
-          <p className={styles.pageDescription}>결론과 주요 문제, 권장 조치를 먼저 확인하세요.</p>
-        </div>
-        <ButtonLink variant="secondary" icon={Plus} href={juryHref('/evidence')}>새 리뷰 요청</ButtonLink>
-      </div>
+      <PageHeader
+        crumbs={[{ label: '홈', href: juryHref('/') }, { label: '결과' }]}
+        title="결과"
+        description="결론과 주요 문제, 권장 조치를 먼저 확인하세요."
+        actions={<ButtonLink variant="secondary" icon={Plus} href={juryHref('/evidence')}>새 리뷰 요청</ButtonLink>}
+      />
       <RequestStatusSection view={view} />
       {view.results.length > 0 ? <TranslationHint /> : null}
-      {view.results.length === 0 ? <p>{displayText(SHELL_EMPTY.reviews)}</p> : (
+      {view.results.length === 0 ? <EmptyState action={<ButtonLink variant="primary" icon={Plus} href={juryHref('/evidence')}>리뷰 요청</ButtonLink>}>{displayText(SHELL_EMPTY.reviews)}</EmptyState> : (
         <div className={styles.reviewsTableWrap}>
         <table className={`${styles.table} ${styles.reviewsTable}`}>
           <colgroup>
@@ -810,13 +807,11 @@ export function EvidenceBody({ actor, view, query = { q: '', filter: '', page: 1
   const evidence = evidencePage.items;
   return (
     <section className={styles.panel}>
-      <div className={styles.pageIntro}>
-        <div>
-          <p className={styles.eyebrow}>현재 메뉴 · 리뷰 요청</p>
-          <h2 className={styles.pageTitle}>리뷰 요청</h2>
-          <p className={styles.pageDescription}>한 화면에서 리뷰 자료를 입력하고, 아래 목록에서 리뷰를 요청하세요.</p>
-        </div>
-      </div>
+      <PageHeader
+        crumbs={[{ label: '홈', href: juryHref('/') }, { label: '리뷰 요청' }]}
+        title="리뷰 요청"
+        description="한 화면에서 리뷰 자료를 입력하고, 아래 목록에서 리뷰를 요청하세요."
+      />
       <p className={styles.helperText}>
         <span className={styles.requiredMark}>필수</span> 항목은 반드시 입력해야 하고, <span className={styles.optionalMark}>선택</span> 항목은 비워 둘 수 있습니다. 승인된 서비스와 리뷰 자료만 표시됩니다.
       </p>
@@ -876,7 +871,7 @@ export function EvidenceBody({ actor, view, query = { q: '', filter: '', page: 1
         <p className={styles.muted}>Evidence 입력: 현재 역할에는 이 변경 권한이 없습니다.</p>
       )}
       {allEvidence.length > 0 ? <ListControls path="/evidence" query={query} total={evidencePage.total} page={evidencePage.page} pages={evidencePage.pages} /> : null}
-      {allEvidence.length === 0 ? <p>{displayText(SHELL_EMPTY.evidence)}</p> : evidence.length === 0 ? <p className={styles.muted}>조건에 맞는 자료 없음</p> : null}
+      {allEvidence.length === 0 ? <EmptyState>{displayText(SHELL_EMPTY.evidence)}</EmptyState> : evidence.length === 0 ? <p className={styles.muted}>조건에 맞는 자료 없음</p> : null}
       {evidence.map((row) => {
         const stored = view.evidence.find((item) => item.id === row.id);
         // I-029: connected-collection evidence is reviewed from its service page (FULL_REVIEW only).
@@ -980,14 +975,12 @@ export function ImprovementsBody({
   const agentTasks = new Set(view.agentTaskIds ?? []);
   return (
     <section className={styles.panel}>
-      <div className={styles.pageIntro}>
-        <div>
-          <p className={styles.eyebrow}>현재 메뉴 · 개선</p>
-          <h2 className={styles.pageTitle}>개선</h2>
-          <p className={styles.pageDescription}>심사 결과에서 나온 개선 작업과 진행 상태를 확인하세요.</p>
-        </div>
-      </div>
-      {rows.length === 0 ? <p>{displayText(SHELL_EMPTY.improvements)}</p> : (
+      <PageHeader
+        crumbs={[{ label: '홈', href: juryHref('/') }, { label: '개선' }]}
+        title="개선"
+        description="심사 결과에서 나온 개선 작업과 진행 상태를 확인하세요."
+      />
+      {rows.length === 0 ? <EmptyState action={<ButtonLink variant="primary" icon={FileText} href={juryHref('/reviews')}>결과 보기</ButtonLink>}>{displayText(SHELL_EMPTY.improvements)}</EmptyState> : (
         <table className={styles.table}>
           <thead>
             <tr>
@@ -1260,15 +1253,13 @@ export function AuditBody({ view, query = { q: '', filter: '', page: 1 } }: { vi
   const events = paged.items;
   return (
     <section className={styles.panel}>
-      <div className={styles.pageIntro}>
-        <div>
-          <p className={styles.eyebrow}>현재 메뉴 · 감사 이력</p>
-          <h2 className={styles.pageTitle}>감사 이력</h2>
-          <p className={styles.pageDescription}>누가 언제 무엇을 했는지 시간순으로 확인하세요. 원래 기록 값은 마우스를 올리면 보입니다.</p>
-        </div>
-      </div>
+      <PageHeader
+        crumbs={[{ label: '홈', href: juryHref('/') }, { label: '감사 이력' }]}
+        title="감사 이력"
+        description="누가 언제 무엇을 했는지 시간순으로 확인하세요. 원래 기록 값은 마우스를 올리면 보입니다."
+      />
       {all.length > 0 ? <ListControls path="/audit" query={query} filterLabel="활동" filterOptions={paged.filterOptions} labelOf={auditActionLabel} total={paged.total} page={paged.page} pages={paged.pages} /> : null}
-      {all.length === 0 ? <p>{displayText(SHELL_EMPTY.audit)}</p> : events.length === 0 ? <p className={styles.muted}>조건에 맞는 기록 없음</p> : (
+      {all.length === 0 ? <EmptyState>{displayText(SHELL_EMPTY.audit)}</EmptyState> : events.length === 0 ? <p className={styles.muted}>조건에 맞는 기록 없음</p> : (
         <table className={styles.table}>
           <thead>
             <tr>
@@ -1288,7 +1279,7 @@ export function AuditBody({ view, query = { q: '', filter: '', page: 1 } }: { vi
                   {auditActionLabel(event.action)}
                 </td>
                 <td className={styles.identifier} title={event.resource}>{compactIdentifier(event.resource)}</td>
-                <td className={styles.nowrapCell} title={event.status}>{auditActionLabel(event.status)}</td>
+                <td className={styles.nowrapCell}><StatusBadge status={event.status} title={event.status}>{auditActionLabel(event.status)}</StatusBadge></td>
               </tr>
             ))}
           </tbody>
@@ -1314,13 +1305,11 @@ export function SettingsBody({
 }) {
   return (
     <>
-    <div className={styles.pageIntro}>
-      <div>
-        <p className={styles.eyebrow}>현재 메뉴 · 관리</p>
-        <h2 className={styles.pageTitle}>관리</h2>
-        <p className={styles.pageDescription}>서비스 연결, 멤버, 권한, 초대, 보안과 설정을 한 곳에서 관리합니다.</p>
-      </div>
-    </div>
+    <PageHeader
+      crumbs={[{ label: '홈', href: juryHref('/') }, { label: '관리' }]}
+      title="관리"
+      description="서비스 연결, 멤버, 권한, 초대, 보안과 설정을 한 곳에서 관리합니다."
+    />
     <nav className={styles.adminGrid} aria-label="관리 메뉴">
       <Link className={styles.adminCard} href={juryHref('/organization/services')}><strong>서비스 연결</strong><span>연결 상태와 서비스 권한</span></Link>
       {actor.ok && (actor.role === 'OWNER' || actor.role === 'ADMIN') ? <Link className={styles.adminCard} href={juryHref('/operations')}><strong>운영 지표</strong><span>요청 수·완료율·실패 사유·소요 시간</span></Link> : null}

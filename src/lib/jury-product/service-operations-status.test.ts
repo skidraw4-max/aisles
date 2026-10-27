@@ -679,7 +679,7 @@ test('follow-up 3: the UI gates review areas and list cells on hasReviewAccess a
   const ui = readFileSync(new URL('../../app/(jury)/jury/service-operations-ui.tsx', import.meta.url), 'utf8');
   assert.equal(ui.includes("<td>{hasReviewAccess(row) ? displayText(row.lastReview) : '—'}</td>"), true);
   assert.equal(ui.includes("<td>{hasReviewAccess(row) ? displayText(row.review.decision ?? 'No review') : '—'}</td>"), true);
-  assert.equal(ui.includes("<td>{hasReviewAccess(row) ? displayText(row.agent.status ?? 'No execution') : '—'}</td>"), true);
+  assert.equal(ui.includes("<td>{hasReviewAccess(row) ? <StatusBadge status={row.agent.status ?? undefined} title={row.agent.status ?? undefined}>{displayText(row.agent.status ?? 'No execution')}</StatusBadge> : '—'}</td>"), true);
   const gate = ui.indexOf('{hasReviewAccess(model) ? (');
   assert.ok(gate > 0);
   const end = ui.indexOf(') : null}', gate);
@@ -702,6 +702,6 @@ test('track A pre-commit: open improvement count shows — without review.read a
   assert.equal(improvementOpenCountCell(withoutOperationalState(full)), '—');
   assert.equal(improvementOpenCountCell(withoutOperationalState(empty)), '—');
   const ui = readFileSync('src/app/(jury)/jury/service-operations-ui.tsx', 'utf8');
-  assert.ok(ui.includes('<td>{improvementOpenCountCell(row)}</td>'));
+  assert.ok(ui.includes('<td className={styles.num}>{improvementOpenCountCell(row)}</td>'));
   assert.equal(ui.includes('<td>{row.improvement.openCount}</td>'), false);
 });
