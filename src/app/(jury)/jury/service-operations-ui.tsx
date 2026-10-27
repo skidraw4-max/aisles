@@ -18,6 +18,8 @@ import { TranslationHint } from './ui-primitives';
 import { ReviewSubmitButton } from './review-submit-button';
 import { CONNECTED_REVIEW_PENDING_NOTE } from '@/lib/jury-product/connected-service-copy';
 import type { ServiceTab } from './service-detail-tabs-model';
+import { ConnectionDeleteDialog } from './connection-delete-dialog';
+import { filterConnectionRows } from '@/lib/jury-product/services/connection-delete/list-filter';
 import styles from './jury.module.css';
 
 function mark(value: boolean): string {
@@ -96,11 +98,19 @@ export function ServiceOperationsList({
   rows,
   error,
   providers = {},
+  showDeleted = false,
+  canDelete = false,
+  githubConnectionIds = [],
 }: {
   rows: ServiceOperationModel[] | null;
   error: string | null;
   providers?: Record<string, SafeProviderView>;
+  /** I-079: '삭제된 연결' filter. Deleted (DISCONNECTED) connections are hidden by default. */
+  showDeleted?: boolean;
+  canDelete?: boolean;
+  githubConnectionIds?: readonly string[];
 }) {
+  const visible = rows ? filterConnectionRows(rows, showDeleted) : null;
   return (
     <section className={styles.panel}>
       <div className={styles.pageIntro}>
@@ -111,9 +121,14 @@ export function ServiceOperationsList({
         </div>
       </div>
       <p><Link className={styles.inline} href={juryHref('/services/github')}>GitHub 연결</Link></p>
+      <p>
+        {showDeleted
+          ? <Link className={styles.inline} href={juryHref('/services')}>사용 중인 연결 보기</Link>
+          : <Link className={styles.inline} href={juryHref('/services?filter=deleted')}>삭제된 연결</Link>}
+      </p>
       {error ? <p>{error}</p> : null}
-      {!error && rows && rows.length === 0 ? <p>현재 권한으로 볼 수 있는 서비스가 없어요.</p> : null}
-      {rows && rows.length > 0 ? (
+      {!error && visible && visible.length === 0 ? <p>{showDeleted ? '삭제된 연결이 없어요.' : '현재 권한으로 볼 수 있는 서비스가 없어요.'}</p> : null}
+      {visible && visible.length > 0 ? (
         <div className={styles.servicesTableWrap}>
         <table className={`${styles.table} ${styles.servicesTable} ${styles.servicesTableWide}`}>
           <thead>
@@ -128,10 +143,11 @@ export function ServiceOperationsList({
               <th>열린 개선 작업</th>
               <th>에이전트 상태</th>
               <th>최근 활동</th>
+              {canDelete && !showDeleted ? <th>관리</th> : null}
             </tr>
           </thead>
           <tbody>
-            {rows.map((row) => (
+            {visible.map((row) => (
               <tr key={row.connectionId}>
                 <td><Link className={`${styles.inline} ${styles.ellipsisText}`} href={juryHref(`/services/${row.connectionId}`)} title={row.name}>{row.name}</Link></td>
                 <td>{providers[row.connectionId]?.displayName ?? displayText('Unknown')}</td>
@@ -143,6 +159,9 @@ export function ServiceOperationsList({
                 <td>{improvementOpenCountCell(row)}</td>
                 <td>{hasReviewAccess(row) ? displayText(row.agent.status ?? 'No execution') : '—'}</td>
                 <td>{displayText(row.lastActivity)}</td>
+                {canDelete && !showDeleted ? (
+                  <td><ConnectionDeleteDialog connectionId={row.connectionId} displayName={row.name} github={githubConnectionIds.includes(row.connectionId)} /></td>
+                ) : null}
               </tr>
             ))}
           </tbody>
