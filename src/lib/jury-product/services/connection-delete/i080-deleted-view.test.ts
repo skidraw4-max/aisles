@@ -32,3 +32,24 @@ test('I-080 UI: tablist + aria-selected, juryHref query form, deleted columns, b
   for (const s of ['연결 중 {counts.active}', '삭제된 연결 {counts.deleted}', '삭제 시각 (KST)', '삭제한 사람', '삭제됨', '연결 중 목록으로', 'styles.mutedRow', 'DELETED_VIEW_NOTICE', 'DELETED_VIEW_TITLE']) assert.ok(UI.includes(s), s);
   assert.match(UI, /canDelete && !showDeleted \? \(\s*<td><ConnectionDeleteDialog/);
 });
+
+test('I-081 dark scheme: scoped panel, outline return button, phase column hidden in deleted view', () => {
+  const css = readFileSync('src/app/(jury)/jury/jury.module.css', 'utf8');
+  assert.ok(UI.includes('styles.servicesPanelDark'));
+  assert.ok(UI.includes('<Link className={styles.outlineButton} href={activeHref}>연결 중 목록으로</Link>'));
+  assert.ok(UI.includes('{showDeleted ? null : <th>운영 상태</th>}'));
+  assert.match(UI, /showDeleted \? null : <td title=\{row\.phase/);
+  for (const needle of ['--svc-body: #16213a', 'rgba(255, 255, 255, 0.08)', '--svc-deleted-text: #9aa4b5', 'tbody tr:hover td', '.outlineButton', 'border-left: 3px solid', '.badge.badgeDeleted']) assert.ok(css.includes(needle), needle);
+  assert.ok(!/\.badgeDeleted \{ background: #e4e7ec/.test(css), 'old light badge removed');
+});
+
+test('I-081 contrast ≥ 4.5:1 for body/deleted/header/badge text', () => {
+  const lum = (hex: string) => {
+    const c = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255).map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4));
+    return 0.2126 * c[0]! + 0.7152 * c[1]! + 0.0722 * c[2]!;
+  };
+  const ratio = (a: string, b: string) => { const [x, y] = [lum(a), lum(b)].sort((m, n) => n - m); return (x! + 0.05) / (y! + 0.05); };
+  for (const [fg, bg] of [['#c4cfdf', '#16213a'], ['#9aa4b5', '#16213a'], ['#a8b5c9', '#101a2f'], ['#d0d5dd', '#2b3445'], ['#8dd7f7', '#16213a']]) {
+    assert.ok(ratio(fg!, bg!) >= 4.5, `${fg} on ${bg} = ${ratio(fg!, bg!).toFixed(2)}`);
+  }
+});

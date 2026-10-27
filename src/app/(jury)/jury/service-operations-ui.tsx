@@ -119,7 +119,7 @@ export function ServiceOperationsList({
   const activeHref = juryHref('/services');
   const deletedHref = juryHref('/services', { filter: 'deleted' });
   return (
-    <section className={styles.panel}>
+    <section className={`${styles.panel} ${styles.servicesPanelDark}`}>
       <div className={styles.pageIntro}>
         <div>
           <p className={styles.eyebrow}>현재 메뉴 · 서비스</p>
@@ -135,7 +135,7 @@ export function ServiceOperationsList({
       {showDeleted ? (
         <div className={styles.deletedNotice} role="note">
           <span>{DELETED_VIEW_NOTICE}</span>
-          <Link className={styles.button} href={activeHref}>연결 중 목록으로</Link>
+          <Link className={styles.outlineButton} href={activeHref}>연결 중 목록으로</Link>
         </div>
       ) : null}
       {error ? <p>{error}</p> : null}
@@ -148,7 +148,7 @@ export function ServiceOperationsList({
               <th>서비스 이름</th>
               <th>제공자</th>
               {showDeleted ? <><th>삭제 시각 (KST)</th><th>삭제한 사람</th></> : <th>연결 상태</th>}
-              <th>운영 상태</th>
+              {showDeleted ? null : <th>운영 상태</th>}
               <th>최근 검증 근거</th>
               <th>최근 심사</th>
               <th>현재 결론</th>
@@ -171,7 +171,7 @@ export function ServiceOperationsList({
                 ) : (
                   <td><span className={badgeClass(row.connectionStatus)} title={row.connectionStatus}>{userLabel(row.connectionStatus)}</span></td>
                 )}
-                <td title={row.phase ?? undefined}>{row.phase ? userLabel(row.phase) : '—'}</td>
+                {showDeleted ? null : <td title={row.phase ?? undefined}>{row.phase ? userLabel(row.phase) : '—'}</td>}
                 <td>{row.parts.evidence === 'READY' ? userLabel('READY') : displayText('No evidence collected yet')}</td>
                 <td>{hasReviewAccess(row) ? displayText(row.lastReview) : '—'}</td>
                 <td>{hasReviewAccess(row) ? displayText(row.review.decision ?? 'No review') : '—'}</td>

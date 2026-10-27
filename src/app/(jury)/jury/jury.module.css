@@ -1814,12 +1814,28 @@ a.inline {
   margin-top: 0.5rem;
 }
 
-/* I-080: deleted-connections view */
-.segTabs { display: inline-flex; gap: 0; margin: 8px 0 12px; border: 1px solid #d0d5dd; border-radius: 8px; overflow: hidden; }
-.segTab { padding: 6px 14px; color: #344054; text-decoration: none; background: #fff; }
-.segTab + .segTab { border-left: 1px solid #d0d5dd; }
-.segTabActive { background: #344054; color: #fff; font-weight: 600; }
-.deletedNotice { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 14px; margin-bottom: 12px; background: #f2f4f7; border: 1px solid #e4e7ec; border-radius: 8px; color: #475467; }
-.mutedRow { color: #98a2b3; background: #fafafa; }
-.mutedRow a { color: #667085; }
-.badgeDeleted { background: #e4e7ec; color: #475467; }
+/* I-080/I-081: services list — dark navy scheme (contrast ≥ WCAG AA) */
+.servicesPanelDark {
+  --svc-body: #16213a;
+  --svc-head: #101a2f;
+  --svc-divider: rgba(255, 255, 255, 0.08);
+  --svc-hover: rgba(255, 255, 255, 0.04);
+  --svc-head-text: var(--jury-text-muted, #a8b5c9);
+  --svc-text: var(--jury-c-c4cfdf, #c4cfdf);
+  --svc-deleted-text: #9aa4b5;
+}
+.segTabs { display: inline-flex; margin: 8px 0 12px; border: 1px solid var(--svc-divider, rgba(255,255,255,0.08)); border-radius: 8px; overflow: hidden; }
+.segTab { padding: 6px 14px; color: var(--svc-head-text, #a8b5c9); text-decoration: none; background: transparent; }
+.segTab + .segTab { border-left: 1px solid var(--svc-divider, rgba(255,255,255,0.08)); }
+.segTab.segTabActive { background: var(--svc-body, #16213a); color: var(--jury-text, #eef4ff); font-weight: 600; box-shadow: inset 0 -2px 0 var(--jury-accent, #72c7f3); }
+.deletedNotice { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 14px; margin-bottom: 12px; background: rgba(255, 255, 255, 0.06); border: 0; border-left: 3px solid #6b7588; border-radius: 6px; color: var(--jury-text-soft, #d7dee8); }
+.outlineButton { display: inline-block; padding: 0.4rem 0.8rem; border: 1px solid var(--jury-text-muted, #a8b5c9); border-radius: 8px; background: transparent; color: var(--jury-text, #eef4ff); text-decoration: none; white-space: nowrap; }
+.outlineButton:hover { background: rgba(255, 255, 255, 0.06); }
+.servicesTableWrap .table.servicesTable { background: var(--svc-body, #16213a); border: 1px solid var(--svc-divider, rgba(255,255,255,0.08)); }
+.servicesTableWrap .table.servicesTable th { background: var(--svc-head, #101a2f); color: var(--svc-head-text, #a8b5c9); font-size: 0.8rem; font-weight: 600; border-bottom: 1px solid var(--svc-divider, rgba(255,255,255,0.08)); }
+.servicesTableWrap .table.servicesTable td { background: transparent; color: var(--svc-text, #c4cfdf); border-bottom: 1px solid var(--svc-divider, rgba(255,255,255,0.08)); }
+.servicesTableWrap .table.servicesTable tbody tr:hover td { background: var(--svc-hover, rgba(255,255,255,0.04)); }
+.servicesTableWrap .table.servicesTable .inline { color: var(--jury-c-8dd7f7, #8dd7f7); }
+.servicesTableWrap .table.servicesTable tr.mutedRow td,
+.servicesTableWrap .table.servicesTable tr.mutedRow a { color: var(--svc-deleted-text, #9aa4b5); }
+.badge.badgeDeleted { background: #2b3445; color: #d0d5dd; border-color: #3a4456; }
