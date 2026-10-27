@@ -153,7 +153,7 @@ export function ServiceOperationsList({
   );
 }
 
-/** I-051: always-visible summary header (name once, status badges, next action). */
+/** I-051: always-visible summary header (name once, status badges). I-070: 다음 할 일 moved to ServiceNextActionPanel. */
 export function ServiceSummaryHeader({ model, children, observationNeeded }: { model: ServiceOperationModel; children?: React.ReactNode; observationNeeded?: boolean }) {
   return (
     <section className={styles.panel}>
@@ -163,8 +163,17 @@ export function ServiceSummaryHeader({ model, children, observationNeeded }: { m
         {model.phase ? <p>운영 상태 <span className={badgeClass(model.phase)} title={model.phase}>{userLabel(model.phase)}</span></p> : null}
         {model.health ? <p>서비스 상태 <span className={badgeClass(model.health)} title={model.health}>{userLabel(model.health)}</span></p> : null}
       </div>
-      <NextAction model={model} observationNeeded={observationNeeded} />
       {children}
+    </section>
+  );
+}
+
+/** I-070: 다음 할 일 guidance, shown in the 개요 area below the service tabs. */
+export function ServiceNextActionPanel({ model, observationNeeded }: { model: ServiceOperationModel; observationNeeded?: boolean }) {
+  if (!model.next) return null;
+  return (
+    <section className={styles.panel}>
+      <NextAction model={model} observationNeeded={observationNeeded} />
     </section>
   );
 }
