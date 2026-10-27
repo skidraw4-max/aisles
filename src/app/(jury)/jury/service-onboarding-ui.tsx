@@ -94,7 +94,7 @@ export function AddServiceBody({ actor }: { actor: Extract<JuryActor, { ok: true
             ))}
           </select>
         </label>
-        <p className={styles.muted}>GitHub 저장소는 <Link className={styles.inline} href={juryHref('/services/github')}>GitHub 연결</Link>에서 연결합니다.</p>
+        <p className={styles.muted}>GitHub 저장소는 <Link className={styles.inline} href={juryHref('/services/github')}>GitHub 연결</Link>에서 연결해요.</p>
         <label>
           연결 정보 참조
           <input className={styles.field} name="credentialRef" required autoComplete="off" placeholder="mock-connection-001" />

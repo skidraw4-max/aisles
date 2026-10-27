@@ -17,14 +17,14 @@ export function defaultSelectableMethodFlags(): SelectableMethodFlags {
 const READONLY_ACCOUNT: SelectableMethod = {
   value: 'READ_ONLY_ACCOUNT',
   label: '읽기 전용 계정 로그인',
-  description: '고객이 만든 읽기 전용 계정으로 화면을 관찰합니다.',
+  description: '고객이 만든 읽기 전용 계정으로 화면을 관찰해요.',
 };
 
 export function selectableAccessMethods(flags: SelectableMethodFlags = defaultSelectableMethodFlags()): SelectableMethod[] {
   const out: SelectableMethod[] = [];
   if (flags.readonlyAccount) out.push(READONLY_ACCOUNT);
   if (flags.ga4Viewer) {
-    out.push({ value: 'GA4_VIEWER' as JuryAccessMethod, label: 'GA4 뷰어 초대', description: 'GA4 속성에 Jury 서비스 계정을 뷰어로 초대합니다.' });
+    out.push({ value: 'GA4_VIEWER' as JuryAccessMethod, label: 'GA4 뷰어 초대', description: 'GA4 속성에 Jury 서비스 계정을 뷰어로 초대해요.' });
   }
   return out;
 }
