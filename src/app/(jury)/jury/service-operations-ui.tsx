@@ -128,8 +128,8 @@ export function ServiceOperationsList({
       </div>
       <p><Link className={styles.inline} href={juryHref('/services/github')}>GitHub 연결</Link></p>
       <div className={styles.segTabs} role="tablist" aria-label="연결 목록 보기">
-        <Link role="tab" aria-selected={!showDeleted} className={`${styles.segTab} ${!showDeleted ? styles.segTabActive : ''}`} href={activeHref}>연결 중 {counts.active}</Link>
-        <Link role="tab" aria-selected={showDeleted} className={`${styles.segTab} ${showDeleted ? styles.segTabActive : ''}`} href={deletedHref}>삭제된 연결 {counts.deleted}</Link>
+        <Link role="tab" aria-selected={!showDeleted} className={`${styles.segTab} ${!showDeleted ? styles.segTabActive : ''}`} href={activeHref}>연결 중 <span className={styles.segTabCount}>{counts.active}</span></Link>
+        <Link role="tab" aria-selected={showDeleted} className={`${styles.segTab} ${showDeleted ? styles.segTabActive : ''}`} href={deletedHref}>삭제된 연결 <span className={styles.segTabCount}>{counts.deleted}</span></Link>
       </div>
       {showDeleted ? (
         <div className={styles.deletedNotice} role="note">

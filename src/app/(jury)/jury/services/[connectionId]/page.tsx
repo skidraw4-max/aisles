@@ -13,6 +13,7 @@ import { ServiceTabMemory } from '../../service-tab-memory';
 import { JuryChrome } from '../../ui';
 import { ReadonlyAccountSection, readonlyObservationNeeded } from '../../readonly-account-section';
 import { ScreenAuditSection } from '../../screen-audit-section';
+import { READONLY_ACCOUNT_UI_ENABLED, shouldShowReadonlyAccountSection } from '@/lib/jury-product/services/readonly-account/flags';
 import { Ga4ViewerSection, OwnershipSection } from '../../phase1-sections';
 import { loadJuryShell, readJurySessionEmail } from '../../load';
 
@@ -70,7 +71,12 @@ export default async function ServiceDetailPage({
     <JuryChrome actor={actor} notice={notice}>
       <ServiceSummaryHeader model={operation.model} observationNeeded={observationNeeded} />
       {/* I-070: tabs in their own sticky bar under the name/status row; badges use already-loaded data only. */}
-      <ServiceTabNav connectionId={connectionId} active={tab} badges={serviceTabBadges(operation.model, observationNeeded)} />
+      <ServiceTabNav
+        connectionId={connectionId}
+        active={tab}
+        badges={serviceTabBadges(operation.model, observationNeeded)}
+        hidden={shouldShowReadonlyAccountSection({ uiEnabled: READONLY_ACCOUNT_UI_ENABLED, accessMethod }) ? [] : ['screen']}
+      />
       {tab === 'overview' ? <ServiceNextActionPanel model={operation.model} observationNeeded={observationNeeded} /> : null}
       <ServiceTabMemory connectionId={connectionId} tab={tab} />
       {/* I-052: 관찰 결과 tab shows the latest observation first, then the evidence built from it. */}

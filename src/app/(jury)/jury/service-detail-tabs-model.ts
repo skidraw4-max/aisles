@@ -12,6 +12,11 @@ export const SERVICE_TABS = [
 
 export type ServiceTab = (typeof SERVICE_TABS)[number]['key'];
 
+/** I-085: tabs to render; `hidden` areas are dropped unless they are the active one. */
+export function visibleServiceTabs(hidden: readonly ServiceTab[], active: ServiceTab) {
+  return SERVICE_TABS.filter((t) => t.key === active || !hidden.includes(t.key));
+}
+
 export function parseServiceTab(value: string | string[] | undefined): ServiceTab {
   const raw = Array.isArray(value) ? value[0] : value;
   return SERVICE_TABS.some((t) => t.key === raw) ? (raw as ServiceTab) : 'overview';
