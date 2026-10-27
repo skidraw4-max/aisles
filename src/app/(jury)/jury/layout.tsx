@@ -1,10 +1,11 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import localFont from 'next/font/local';
 import { SEO_ROBOTS_PRIVATE } from '@/lib/seo-robots';
 import styles from './shell.module.css';
 
-const inter = Inter({
-  subsets: ['latin'],
+// Self-hosted Inter (OFL, see src/app/fonts) so the build never downloads fonts from Google.
+const inter = localFont({
+  src: [{ path: '../../fonts/Inter-latin-var.woff2', weight: '100 900', style: 'normal' }],
   display: 'swap',
 });
 
