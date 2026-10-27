@@ -1,18 +1,25 @@
 -- I-072 (Phase 1): ownership verification (DNS TXT / meta tag / well-known file) and per-connection provider config.
 -- Additive only: one nullable column, two new enums, one new table. No existing row is changed.
+-- Idempotent (IF NOT EXISTS / duplicate_object guards) so a later `prisma migrate deploy` is safe after a manual apply.
 -- Tokens are stored as HMAC hashes only (tokenHash) plus a 4-char hint; plaintext tokens are never stored.
 
 -- AlterTable
-ALTER TABLE "JuryServiceConnection" ADD COLUMN "providerConfig" JSONB;
+ALTER TABLE "JuryServiceConnection" ADD COLUMN IF NOT EXISTS "providerConfig" JSONB;
 
 -- CreateEnum
-CREATE TYPE "JuryOwnershipMethod" AS ENUM ('DNS_TXT', 'META_TAG', 'WELL_KNOWN_FILE');
+DO $$ BEGIN
+  CREATE TYPE "JuryOwnershipMethod" AS ENUM ('DNS_TXT', 'META_TAG', 'WELL_KNOWN_FILE');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- CreateEnum
-CREATE TYPE "JuryOwnershipStatus" AS ENUM ('PENDING', 'VERIFIED', 'FAILED', 'EXPIRED', 'REVOKED');
+DO $$ BEGIN
+  CREATE TYPE "JuryOwnershipStatus" AS ENUM ('PENDING', 'VERIFIED', 'FAILED', 'EXPIRED', 'REVOKED');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- CreateTable
-CREATE TABLE "JuryOwnershipVerification" (
+CREATE TABLE IF NOT EXISTS "JuryOwnershipVerification" (
     "id" TEXT NOT NULL,
     "tenantId" TEXT NOT NULL,
     "connectionId" TEXT NOT NULL,
@@ -37,21 +44,27 @@ CREATE TABLE "JuryOwnershipVerification" (
 );
 
 -- CreateIndex
-CREATE UNIQUE INDEX "JuryOwnershipVerification_tenantId_connectionId_host_key" ON "JuryOwnershipVerification"("tenantId", "connectionId", "host");
+CREATE UNIQUE INDEX IF NOT EXISTS "JuryOwnershipVerification_tenantId_connectionId_host_key" ON "JuryOwnershipVerification"("tenantId", "connectionId", "host");
 
 -- CreateIndex
-CREATE INDEX "JuryOwnershipVerification_tenantId_idx" ON "JuryOwnershipVerification"("tenantId");
+CREATE INDEX IF NOT EXISTS "JuryOwnershipVerification_tenantId_idx" ON "JuryOwnershipVerification"("tenantId");
 
 -- CreateIndex
-CREATE INDEX "JuryOwnershipVerification_connectionId_idx" ON "JuryOwnershipVerification"("connectionId");
+CREATE INDEX IF NOT EXISTS "JuryOwnershipVerification_connectionId_idx" ON "JuryOwnershipVerification"("connectionId");
 
 -- CreateIndex
-CREATE INDEX "JuryOwnershipVerification_status_nextCheckAt_idx" ON "JuryOwnershipVerification"("status", "nextCheckAt");
+CREATE INDEX IF NOT EXISTS "JuryOwnershipVerification_status_nextCheckAt_idx" ON "JuryOwnershipVerification"("status", "nextCheckAt");
 
 -- AddForeignKey
-ALTER TABLE "JuryOwnershipVerification" ADD CONSTRAINT "JuryOwnershipVerification_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES "JuryTenant"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN
+  ALTER TABLE "JuryOwnershipVerification" ADD CONSTRAINT "JuryOwnershipVerification_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES "JuryTenant"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- AddForeignKey
-ALTER TABLE "JuryOwnershipVerification" ADD CONSTRAINT "JuryOwnershipVerification_connectionId_fkey" FOREIGN KEY ("connectionId") REFERENCES "JuryServiceConnection"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN
+  ALTER TABLE "JuryOwnershipVerification" ADD CONSTRAINT "JuryOwnershipVerification_connectionId_fkey" FOREIGN KEY ("connectionId") REFERENCES "JuryServiceConnection"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 ALTER TABLE "JuryOwnershipVerification" ENABLE ROW LEVEL SECURITY;
