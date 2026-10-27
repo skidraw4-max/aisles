@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { JuryEmailNotice } from '@/components/jury/JuryEmailNotice';
 import { JuryMemberRemoveControl, JuryMemberRoleControl } from '@/components/jury/JuryMemberControls';
@@ -12,6 +11,9 @@ import { canManageMember } from '@/lib/jury-product/member-management';
 import { userLabel } from '@/lib/jury-product/ui-labels';
 import { getJuryEntry } from '@/lib/jury-product/session';
 import { JuryChrome } from '../../ui';
+import { PageHeader } from '../../page-layout';
+import { ButtonLink } from '../../jury-controls';
+import { UserPlus } from 'lucide-react';
 import { readJurySessionEmail } from '../../load';
 
 export const metadata: Metadata = {
@@ -39,8 +41,11 @@ export default async function JuryMembersPage() {
     : {};
   return (
     <JuryChrome actor={actor}>
-      <h2>구성원</h2>
-      {canInvite ? <p><Link href={juryHref('/organization/invitations')}>구성원 초대</Link></p> : null}
+      <PageHeader
+        crumbs={[{ label: '홈', href: juryHref('/') }, { label: '관리' }, { label: '구성원' }]}
+        title="구성원"
+        actions={canInvite ? <ButtonLink variant="primary" icon={UserPlus} href={juryHref('/organization/invitations')}>구성원 초대</ButtonLink> : undefined}
+      />
       {members.length === 0 ? <p className={listStyles.empty}>아직 구성원이 없습니다.</p> : (
         <div className={listStyles.tableWrap}>
         <table className={listStyles.table}>

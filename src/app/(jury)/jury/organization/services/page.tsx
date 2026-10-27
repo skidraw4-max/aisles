@@ -13,6 +13,7 @@ import { canManageServiceAccess, SERVICE_PERMISSION_LABEL } from '@/lib/jury-pro
 import { listServiceAccess } from '@/lib/jury-product/service-member-db';
 import { getJuryEntry } from '@/lib/jury-product/session';
 import { JuryChrome } from '../../ui';
+import { PageHeader } from '../../page-layout';
 import { readJurySessionEmail } from '../../load';
 import { formatKstFull } from '../../review-summary-format';
 import { displayText } from '@/lib/jury-product/ui-labels';
@@ -33,7 +34,7 @@ export default async function JuryServiceAccessPage() {
   const services = actor.ok ? await listServiceAccess(actor.tenantId).catch(() => []) : [];
   return (
     <JuryChrome actor={actor}>
-      <h2>서비스 접근 권한</h2>
+      <PageHeader crumbs={[{ label: '홈', href: juryHref('/') }, { label: '관리' }, { label: '서비스 접근 권한' }]} title="서비스 접근 권한" />
       {services.length === 0 ? <p className={listStyles.empty}>아직 연결된 서비스가 없습니다.</p> : services.map((service) => (
         <section key={service.connectionId}>
           <h3>{service.displayName}</h3>

@@ -18,7 +18,7 @@ export default async function JuryOperationsPage() {
     const m = loaded.metrics;
     return (
       <JuryChrome actor={actor}>
-        <section className={styles.panel}>
+        <section className={styles.resultCard}>
           <h2>운영 지표 (최근 {m.windowDays}일)</h2>
           <p className={styles.muted}>현재 조직의 심사 요청만 집계합니다. 비율은 종료된 요청 기준 정수 %입니다.</p>
           <div className={styles.row}><span className={styles.label}>전체 심사 요청</span><span>{m.total}건</span></div>
@@ -27,16 +27,16 @@ export default async function JuryOperationsPage() {
           <div className={styles.row}><span className={styles.label}>소요 시간</span><span>{m.duration.medianSec === null ? '측정 가능한 요청 없음' : `중앙값 ${m.duration.medianSec}초 · 최대 ${m.duration.maxSec}초 (${m.duration.measured}건)`}{m.duration.excludedLegacy ? ` · 출처 미기록 ${m.duration.excludedLegacy}건 제외` : ''}</span></div>
           <div className={styles.row}><span className={styles.label}>결과 출처</span><span>{m.bySource.map((s) => `${RESULT_SOURCE_LABELS[s.source as keyof typeof RESULT_SOURCE_LABELS] ?? s.source} ${s.count}`).join(' · ') || '기록 없음'}</span></div>
         </section>
-        <section className={styles.panel}>
+        <section className={styles.resultCard}>
           <h2>실패 사유</h2>
           {m.failureReasons.length === 0 ? <p className={styles.muted}>실패 기록 없음</p> : (
-            <ul>{m.failureReasons.map((r) => <li key={r.reason}>{r.reason} — {r.count}건</li>)}</ul>
+            <ul className={styles.resultList}>{m.failureReasons.map((r) => <li key={r.reason}>{r.reason} — {r.count}건</li>)}</ul>
           )}
         </section>
-        <section className={styles.panel}>
+        <section className={styles.resultCard}>
           <h2>모델별 호출</h2>
           {m.models.length === 0 ? <p className={styles.muted}>호출 기록 없음</p> : (
-            <ul>{m.models.map((r) => <li key={r.model}>{r.model} — 성공 {r.ok} · 실패 {r.failed}</li>)}</ul>
+            <ul className={styles.resultList}>{m.models.map((r) => <li key={r.model}>{r.model} — 성공 {r.ok} · 실패 {r.failed}</li>)}</ul>
           )}
         </section>
       </JuryChrome>
