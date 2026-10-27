@@ -124,7 +124,7 @@ export function ServiceOperationsList({
       <p>
         {showDeleted
           ? <Link className={styles.inline} href={juryHref('/services')}>사용 중인 연결 보기</Link>
-          : <Link className={styles.inline} href={juryHref('/services?filter=deleted')}>삭제된 연결</Link>}
+          : <Link className={styles.inline} href={juryHref('/services', { filter: 'deleted' })}>삭제된 연결</Link>}
       </p>
       {error ? <p>{error}</p> : null}
       {!error && visible && visible.length === 0 ? <p>{showDeleted ? '삭제된 연결이 없어요.' : '현재 권한으로 볼 수 있는 서비스가 없어요.'}</p> : null}
