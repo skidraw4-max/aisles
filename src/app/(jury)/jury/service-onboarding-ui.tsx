@@ -6,7 +6,7 @@ import { CollectPeriodFields } from './collect-period-fields';
 import { summarizeProblems } from '@/lib/jury-product/review-display-model';
 import { juryHref } from '@/lib/jury-product/jury-url';
 import type { JuryActor } from '@/lib/jury-product/access';
-import { JURY_ACCESS_METHODS } from '@/lib/jury-product/records';
+import { selectableAccessMethods } from '@/lib/jury-product/services/selectable-methods';
 import type { JuryConsoleView } from '@/lib/jury-product/console-view';
 import { projectConnectedServiceFlow } from '@/lib/jury-product/connected-service-review';
 import { formatMeasuredValue } from '@/lib/jury-product/product-shell';
@@ -47,6 +47,7 @@ function warnBadge(value: string | null | undefined): string {
 }
 
 export function AddServiceBody({ actor }: { actor: Extract<JuryActor, { ok: true }> }) {
+  const methods = selectableAccessMethods();
   if (!canShowWrite(actor, 'connection.write')) {
     return (
       <section className={styles.panel}>
@@ -87,12 +88,13 @@ export function AddServiceBody({ actor }: { actor: Extract<JuryActor, { ok: true
         </label>
         <label>
           연결 방식
-          <select className={styles.field} name="accessMethod" defaultValue="FILE_UPLOAD">
-            {JURY_ACCESS_METHODS.map((method) => (
-              <option key={method} value={method}>{method}</option>
+          <select className={styles.field} name="accessMethod" defaultValue={methods[0]?.value} required>
+            {methods.map((method) => (
+              <option key={method.value} value={method.value}>{method.label}</option>
             ))}
           </select>
         </label>
+        <p className={styles.muted}>GitHub 저장소는 <Link className={styles.inline} href={juryHref('/services/github')}>GitHub 연결</Link>에서 연결합니다.</p>
         <label>
           연결 정보 참조
           <input className={styles.field} name="credentialRef" required autoComplete="off" placeholder="mock-connection-001" />

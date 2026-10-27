@@ -1,5 +1,6 @@
 'use server';
 
+import { isSelectableAccessMethod } from '@/lib/jury-product/services/selectable-methods';
 import { redirect } from 'next/navigation';
 import { decideJuryMutation, isJuryAction, planJuryCommand } from '@/lib/jury-product/access';
 import type { EvidencePack } from '@/lib/ai-review-board/types';
@@ -213,6 +214,7 @@ export async function registerJuryService(formData: FormData): Promise<void> {
   if (!actor.ok) redirect(`/jury/services?result=${actor.reason}`);
   const accessMethod = String(formData.get('accessMethod') ?? '');
   if (!isAccessMethod(accessMethod)) redirect('/jury/services?result=FORBIDDEN');
+  if (!isSelectableAccessMethod(accessMethod)) redirect('/jury/services?result=NOT_IMPLEMENTED');
   try {
     const decision = await persistServiceTarget({
       actor,
@@ -1016,7 +1018,7 @@ export async function startServiceOnboarding(formData: FormData): Promise<void> 
   const actor = await getJuryActor();
   if (!actor.ok) redirect(`/jury/services/new?result=${actor.reason}`);
   const accessMethod = onboardingValue(formData, 'accessMethod');
-  if (!isAccessMethod(accessMethod)) redirect('/jury/services/new?result=NOT_IMPLEMENTED');
+  if (!isAccessMethod(accessMethod) || !isSelectableAccessMethod(accessMethod)) redirect('/jury/services/new?result=NOT_IMPLEMENTED');
   let target = '/jury/services/new?result=STORE_UNAVAILABLE';
   try {
     const decision = await persistServiceOnboarding({
