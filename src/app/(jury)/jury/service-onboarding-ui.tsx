@@ -61,29 +61,19 @@ export function AddServiceBody({ actor }: { actor: Extract<JuryActor, { ok: true
       <h2 className={styles.pageTitle}>서비스 연결</h2>
       <p className={styles.muted}>{MOCK_ONBOARDING_SERVICE.description}</p>
       <ol className={styles.stepper} aria-label="서비스 연결 단계">
-        <li className={styles.stepActive}><strong>1</strong><span>서비스 선택</span></li>
-        <li><strong>2</strong><span>연결 방식 안내</span></li>
-        <li><strong>3</strong><span>연결 확인</span></li>
+        <li className={styles.stepActive}><strong>1</strong><span>서비스 정보 입력</span></li>
+        <li><strong>2</strong><span>연결 확인</span></li>
       </ol>
       <form action={startServiceOnboarding}>
-        <p>
-          <span className={styles.muted}>연결할 서비스</span>
-          <br />
-          <strong>{MOCK_ONBOARDING_SERVICE.label}</strong>
-        </p>
-        <details className={styles.technicalDetails}>
-          <summary>기술 정보 자세히 보기</summary>
-          <p className={styles.muted}>연결 방식: {MOCK_ONBOARDING_SERVICE.adapterKey}</p>
-        </details>
         <input type="hidden" name="adapterKey" value={MOCK_ONBOARDING_SERVICE.adapterKey} />
         <input type="hidden" name="tenantId" value="client-supplied-tenant" />
         <label>
           서비스 이름
-          <input className={styles.field} name="displayName" required autoComplete="off" />
+          <input className={styles.field} name="displayName" required autoComplete="off" placeholder="예: 우리 쇼핑몰 웹" />
         </label>
         <label>
           서비스 식별 정보
-          <input className={styles.field} name="serviceKey" required autoComplete="off" />
+          <input className={styles.field} name="serviceKey" required autoComplete="off" placeholder="예: shop-web 또는 https://shop.example.com" />
         </label>
         <label>
           연결 방식
@@ -94,10 +84,8 @@ export function AddServiceBody({ actor }: { actor: Extract<JuryActor, { ok: true
           </select>
         </label>
         <p className={styles.muted}>GitHub 저장소는 <Link className={styles.inline} href={juryHref('/services/github')}>GitHub 연결</Link>에서 연결해요.</p>
-        <label>
-          연결 정보 참조
-          <input className={styles.field} name="credentialRef" required autoComplete="off" placeholder="mock-connection-001" />
-        </label>
+        {/* UX stage 2: the connection reference is not a user decision; fill a fixed non-secret pointer. */}
+        <input type="hidden" name="credentialRef" value="manual-entry" />
         <OnboardingSubmit label="연결 만들기" pendingLabel="연결 중" />
       </form>
     </section>
