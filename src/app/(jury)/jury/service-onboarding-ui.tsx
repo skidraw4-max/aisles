@@ -140,11 +140,11 @@ export function ServiceDetailBody({
       <h3>연결 상태</h3>
       <p>연결 방식 <StatusBadge status={connection.accessMethod}>{displayText(connection.accessMethod)}</StatusBadge></p>
       <p>상태 <StatusBadge status={connection.status}>{displayText(connection.status)}</StatusBadge></p>
+      <p>생성일 {formatKstFull(connection.createdAt)}</p>
       <details className={styles.technicalDetails}>
         <summary>관리자용 기술 정보</summary>
         <p>연결 어댑터 {github ? 'github' : MOCK_ONBOARDING_SERVICE.adapterKey}</p>
         <p>연결 정보 참조 {detail.credentialLabel}</p>
-        <p>생성일 {formatKstFull(connection.createdAt)}</p>
         <p>수정일 {formatKstFull(connection.updatedAt)}</p>
       </details>
       <h3>활성화</h3>

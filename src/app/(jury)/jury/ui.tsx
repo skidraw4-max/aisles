@@ -24,7 +24,6 @@ import { intakePeriodDefaults } from '@/lib/jury-product/evidence-period';
 import type { ReviewConsoleScreen } from '@/lib/jury-product/review-console';
 import { projectImprovementRows } from '@/lib/jury-product/product-improvement';
 import { formatMeasuredValue, projectAudit, projectDashboard, projectTraceLineage, SHELL_EMPTY, SHELL_UNAVAILABLE } from '@/lib/jury-product/product-shell';
-import { projectServiceRows } from '@/lib/jury-product/service-onboarding';
 import { acknowledgeHumanReview, changeJuryMembership, createHumanImprovementTask, createJuryTenant, decideCatalogScope, decideJuryScope, handoffHumanImprovement, proposeCatalogScope, runHumanAgentExecution, runHumanChangeGate, runProductChangeGate, runProductChangeGateReReview, runHumanReReview, createReReviewImprovementTask, approveReReviewAgentAction, handoffReReviewImprovement, runReReviewAgentExecution, runReReviewChangeGate, runSecondReReview, createSecondReReviewImprovementTask, approveSecondImprovementTask, handoffSecondImprovementTask, runSecondChangeGate, runLaterReReview, createLaterReReviewImprovementTask, approveLaterImprovementTask, handoffLaterImprovementTask, runLaterAgentExecution, runLaterChangeGate, runFollowingReReview, runJuryDiscovery, stopJuryAutoLoop, submitJuryAction, submitTenantEvidenceIntake, submitTenantReview } from './actions';
 import type { ProductReReviewState } from '@/lib/jury-product/product-change-gate-rereview';
 import { loadShellIdentity } from './load';
@@ -352,50 +351,6 @@ export function DashboardBody({ view }: { view: JuryConsoleView }) {
         )}
       </section>
     </>
-  );
-}
-
-export function ServicesBody({ actor, view }: { actor: JuryActor; view: JuryConsoleView }) {
-  const rows = projectServiceRows(view);
-  return (
-    <section className={styles.panel}>
-      <h2 className={styles.pageTitle}>서비스 연결 목록</h2>
-      {canShowWrite(actor, 'connection.write') ? (
-        <p><ButtonLink variant="secondary" icon={Plus} href={juryHref('/services/new')}>서비스 추가</ButtonLink></p>
-      ) : (
-        <p className={styles.muted}>서비스 추가: 현재 역할에는 이 변경 권한이 없습니다.</p>
-      )}
-      {rows.length === 0 ? <EmptyState action={<ButtonLink variant="primary" icon={Plus} href={juryHref('/organization/services')}>서비스 연결</ButtonLink>}>{displayText(SHELL_EMPTY.services)}</EmptyState> : (
-        <div className={styles.servicesTableWrap}>
-        <table className={`${styles.table} ${styles.servicesTable}`}>
-          <thead>
-            <tr>
-              <th>서비스 이름</th>
-              <th>연결 방식</th>
-              <th>상태</th>
-              <th>생성일</th>
-              <th>수정일</th>
-              <th>서비스 확인 상태</th>
-              <th>범위 상태</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row) => (
-              <tr key={row.id}>
-                <td><Link className={`${styles.inline} ${styles.ellipsisText}`} href={juryHref(`/services/${row.id}`)} title={row.displayName}>{row.displayName}</Link></td>
-                <td title={row.accessMethod}>{displayText(row.accessMethod)}</td>
-                <td><StatusBadge status={row.status} title={row.status}>{userLabel(row.status)}</StatusBadge></td>
-                <td>{formatKstFull(row.createdAt)}</td>
-                <td>{formatKstFull(row.updatedAt)}</td>
-                <td><StatusBadge status={row.discoveryStatus} title={row.discoveryStatus}>{displayText(row.discoveryStatus)}</StatusBadge></td>
-                <td><StatusBadge status={row.scopeStatus} title={row.scopeStatus}>{displayText(row.scopeStatus)}</StatusBadge></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        </div>
-      )}
-    </section>
   );
 }
 
