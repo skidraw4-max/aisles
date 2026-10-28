@@ -12,6 +12,8 @@ import { parseServiceTab, serviceTabBadges, ServiceTabNav } from '../../service-
 import { ServiceTabMemory } from '../../service-tab-memory';
 import { JuryChrome } from '../../ui';
 import { ReadonlyAccountSection, readonlyObservationNeeded } from '../../readonly-account-section';
+import { canShowWrite } from '../../ui';
+import { guardServiceFeature } from '@/lib/jury-product/service-feature-guard';
 import { ScreenAuditSection } from '../../screen-audit-section';
 import { READONLY_ACCOUNT_UI_ENABLED, shouldShowReadonlyAccountSection } from '@/lib/jury-product/services/readonly-account/flags';
 import { Ga4ViewerSection, OwnershipSection } from '../../phase1-sections';
@@ -67,6 +69,11 @@ export default async function ServiceDetailPage({
   const accessMethod = ready ? view.connections.find((row) => row.id === connectionId && row.tenantId === actor.tenantId)?.accessMethod : undefined;
   // I-054: header 다음 할 일 points at 관찰 실행 until one read-only observation succeeds.
   const observationNeeded = ready ? await readonlyObservationNeeded({ tenantId: actor.tenantId, connectionId, accessMethod }) : false;
+  // I-099: 위원 심사 button needs 근거 수집 (connection.write) + 심사 (review.start) and the review.execute grant.
+  const canJuryReview =
+    ready && tab === 'screen' && canShowWrite(actor, 'connection.write') && canShowWrite(actor, 'review.start')
+      ? (await guardServiceFeature({ actor, feature: 'review.execute', connectionId, clientTenantId: null }).catch(() => ({ ok: false as const }))).ok
+      : false;
   return (
     <JuryChrome actor={actor} notice={notice}>
       <ServiceSummaryHeader model={operation.model} observationNeeded={observationNeeded} />
@@ -94,7 +101,7 @@ export default async function ServiceDetailPage({
       {ready && tab === 'connect' ? <OwnershipSection tenantId={actor.tenantId} connectionId={connectionId} accessMethod={accessMethod} /> : null}
       {ready && tab === 'connect' ? <Ga4ViewerSection connectionId={connectionId} accessMethod={accessMethod} /> : null}
       {/* I-063: 화면 심사 (screen audit) tab. */}
-      {ready && tab === 'screen' ? <ScreenAuditSection tenantId={actor.tenantId} connectionId={connectionId} accessMethod={accessMethod} /> : null}
+      {ready && tab === 'screen' ? <ScreenAuditSection tenantId={actor.tenantId} connectionId={connectionId} accessMethod={accessMethod} canJuryReview={canJuryReview} /> : null}
       {tab === 'overview' ? <GithubRefreshStatus connectionId={connectionId} /> : null}
     </JuryChrome>
   );

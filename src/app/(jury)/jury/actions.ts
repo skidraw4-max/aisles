@@ -1150,3 +1150,85 @@ export async function runConnectedServiceJuryReview(formData: FormData): Promise
   }
   redirect(target);
 }
+
+/**
+ * I-099: "이 결과로 위원 심사하기". One click = 검증 근거 수집 (default period: 7 days ending yesterday, KST)
+ * + 심사 실행 started in the background (`after`), then the client polls. Never runs without this click (cost).
+ */
+export type AuditJuryStartResult =
+  | { ok: true; state: 'COMPLETED'; resultId: string }
+  | { ok: true; state: 'RUNNING'; requestId: string }
+  | { ok: false; reason: string };
+
+export async function startAuditJuryReviewAction(connectionIdRaw: string): Promise<AuditJuryStartResult> {
+  try {
+    const actor = await getJuryActor();
+    if (!actor.ok) return { ok: false, reason: actor.reason };
+    const connectionId = safeConnectionId(String(connectionIdRaw ?? ''));
+    if (!connectionId) return { ok: false, reason: 'NOT_FOUND' };
+    const { isDeletedConnection } = await import('@/lib/jury-product/services/connection-delete/active-guard');
+    if (await isDeletedConnection(actor, connectionId)) return { ok: false, reason: 'CONNECTION_DELETED' };
+    const { enforceOwnershipGate } = await import('@/lib/jury-product/services/ownership/enforce');
+    const gate = await enforceOwnershipGate({ actor, connectionId });
+    if (!gate.allowed) return { ok: false, reason: gate.reason };
+    const reviewAccess = await guardServiceFeature({
+      actor,
+      feature: 'review.execute',
+      connectionId,
+      clientTenantId: null,
+      actingUserId: null,
+      actorRole: null,
+      permission: null,
+      capability: null,
+    });
+    if (!reviewAccess.ok) return { ok: false, reason: featureRedirectCode(reviewAccess) };
+    const { defaultEvidencePeriod } = await import('@/lib/jury-product/evidence-period');
+    const period = defaultEvidencePeriod();
+    const collected = await runConnectedServiceEvidenceCollection({
+      actor,
+      connectionId,
+      purpose: 'aisle-self-observation',
+      periodStart: period.start,
+      periodEnd: period.end,
+      timezone: period.timezone,
+      clientTenantId: null,
+    });
+    if (!collected.ok) return { ok: false, reason: collected.reason };
+    const [{ after }, { startConnectedServiceReview }] = await Promise.all([
+      import('next/server'),
+      import('@/lib/jury-product/connected-service-review'),
+    ]);
+    const started = await startConnectedServiceReview(
+      { actor, connectionId, evidenceId: collected.evidenceId, clientTenantId: null, core: tenantReviewCore },
+      (work) => after(work),
+    );
+    if (!started.ok) return { ok: false, reason: started.reason };
+    if ('started' in started) return { ok: true, state: 'RUNNING', requestId: started.requestId };
+    return { ok: true, state: 'COMPLETED', resultId: started.resultId };
+  } catch (error) {
+    return { ok: false, reason: isJuryStoreUnavailable(error) ? 'STORE_UNAVAILABLE' : 'ERROR' };
+  }
+}
+
+export async function pollAuditJuryReviewAction(
+  requestIdRaw: string,
+): Promise<import('@/lib/jury-product/services/screen-audit/audit-jury-review').AuditJuryPoll> {
+  try {
+    const actor = await getJuryActor();
+    const requestId = String(requestIdRaw ?? '');
+    if (!actor.ok || !/^[a-f0-9]{64}$/.test(requestId)) return { state: 'NOT_FOUND' };
+    const [{ prisma }, { isStaleRunningReview }] = await Promise.all([import('@/lib/prisma'), import('@/lib/jury-product/review-stale')]);
+    const row = await prisma.juryReviewRequest.findFirst({
+      where: { id: requestId, tenantId: actor.tenantId },
+      select: { status: true, createdAt: true, updatedAt: true, failureReason: true, result: { select: { id: true } } },
+    });
+    if (!row) return { state: 'NOT_FOUND' };
+    if (row.result?.id) return { state: 'COMPLETED', resultId: row.result.id };
+    if (row.status === 'RUNNING' && !isStaleRunningReview(row.status, row.updatedAt)) {
+      return { state: 'RUNNING', elapsedMs: Math.max(0, Date.now() - row.createdAt.getTime()) };
+    }
+    return { state: 'FAILED', reason: row.status === 'RUNNING' ? 'REVIEW_STALE' : row.failureReason ?? row.status };
+  } catch {
+    return { state: 'NOT_FOUND' };
+  }
+}

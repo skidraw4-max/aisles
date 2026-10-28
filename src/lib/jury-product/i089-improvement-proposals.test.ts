@@ -88,7 +88,7 @@ test('I-093 + I-089 wiring: Jury sets reviewMode only in review-core; screen fin
   const core = readFileSync(new URL('./review-core.ts', import.meta.url), 'utf8');
   assert.ok(core.includes("reviewMode: 'jury'"));
   const csr = readFileSync(new URL('./connected-service-review.ts', import.meta.url), 'utf8');
-  assert.ok(csr.includes('loadScreenAuditEvidence(prisma, actor.tenantId, connection.id)'));
+  assert.ok(csr.includes('loadScreenAuditEvidence(prisma, actor.tenantId, connection.id, boundScreenAuditId(evidenceRow.apiEvidence))'));
   const dir = new URL('../../app/(root)/admin/ai-review-board/', import.meta.url);
   const files = readdirSync(dir, { recursive: true }).map(String).filter((f) => /\.tsx?$/.test(f));
   assert.ok(files.length > 0);

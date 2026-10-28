@@ -65,6 +65,9 @@ function NextAction({ model, observationNeeded }: { model: ServiceOperationModel
         </form>
       ) : null}
       {action.state === 'AVAILABLE' && action.id === 'collect-evidence' ? (
+        <details className={styles.technicalDetails} data-advanced="collect-evidence">
+          <summary>고급: 기간을 직접 골라 검증 근거 수집</summary>
+          <p className={styles.muted}>보통은 화면 심사 탭의 “이 결과로 위원 심사하기”를 쓰세요.</p>
         <form action={collectConnectedServiceEvidence}>
           <input type="hidden" name="connectionId" value={model.connectionId} />
           <input type="hidden" name="tenantId" value="client-supplied-tenant" />
@@ -73,11 +76,14 @@ function NextAction({ model, observationNeeded }: { model: ServiceOperationModel
           <input type="hidden" name="timezone" value="Asia/Seoul" />
           <Button variant="secondary" icon={Download} type="submit">검증 근거 수집</Button>
         </form>
+        </details>
       ) : null}
       {action.state === 'AVAILABLE' && action.id === 'run-review' && model.evidence.evidenceId && model.review.running ? (
         <p className={styles.muted} role="status">진행 중인 심사가 있어요. 잠시 후 결과를 확인하세요.</p>
       ) : null}
       {action.state === 'AVAILABLE' && action.id === 'run-review' && model.evidence.evidenceId && !model.review.running ? (
+        <details className={styles.technicalDetails} data-advanced="run-review">
+          <summary>고급: 수집한 근거로 심사 실행</summary>
         <form action={runConnectedServiceJuryReview}>
           <input type="hidden" name="connectionId" value={model.connectionId} />
           <input type="hidden" name="evidenceId" value={model.evidence.evidenceId} />
@@ -85,6 +91,7 @@ function NextAction({ model, observationNeeded }: { model: ServiceOperationModel
           <ReviewSubmitButton label="심사 실행" pendingLabel="심사 진행 중" pendingNote={CONNECTED_REVIEW_PENDING_NOTE} />
           <p className={styles.muted}>{CONNECTED_REVIEW_PENDING_NOTE}</p>
         </form>
+        </details>
       ) : null}
       {action.state === 'AVAILABLE' && (action.id === 'review-improvement' || action.id === 'run-agent') && model.improvement.latestId ? (
         <p><Link className={styles.inline} href={juryHref(`/improvements/${model.improvement.latestId}`)}>{displayText(action.label)}</Link></p>
