@@ -65,7 +65,7 @@ test('I-096: normal page stays PASS', async () => {
 test('I-096: view model tolerates old summaries and formats KST', () => {
   assert.deepEqual(errorScreenRows({ areas: [] }), []);
   assert.deepEqual(errorScreenRows(null), []);
-  assert.deepEqual(errorScreenRows({ errorScreens: [{ path: '/projects?x=1', viewport: 'MOBILE' }, { bad: 1 }] }), [{ path: '/projects', viewport: 'MOBILE' }]);
+  assert.deepEqual(errorScreenRows({ errorScreens: [{ path: '/projects?x=1', viewport: 'MOBILE' }, { bad: 1 }] }), [{ path: '/projects', viewport: 'MOBILE', errors: [] }]);
   assert.equal(formatKstTime('2026-10-27T17:46:58.000Z'), '02:46:58 KST');
   assert.equal(formatKstTime('nope'), '-');
 });

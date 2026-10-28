@@ -2,12 +2,14 @@
  * I-063: pure view model for the 화면 심사 tab (no CSS, no DB) so node tests cover labels and ordering.
  * No overall score: each area×viewport shows its own status, and NOT_TESTED / BLOCKED are never shown as 통과.
  */
+import { parsePageErrors } from '../readonly-account/page-errors';
+
 export const STATUS_LABEL: Record<string, string> = {
   PASS: '통과',
   FAIL: '문제 있음',
   PARTIAL: '일부 확인',
   NOT_TESTED: '확인 못 함',
-  BLOCKED: '차단됨(민감 화면)',
+  BLOCKED: '차단됨',
   ERROR: '오류',
 };
 export const AREA_LABEL: Record<string, string> = { LAYOUT: '레이아웃', MOBILE: '모바일', A11Y: '접근성', NAVIGATION: '메뉴' };
@@ -90,13 +92,16 @@ export function diffAudits(previous: DiffFinding[], current: DiffFinding[], curr
 }
 
 /** I-096: page×viewport entries that showed the site's own error screen (empty for audits before I-096). */
-export function errorScreenRows(summary: unknown): { path: string; viewport: string }[] {
+/** I-098: label for pages that showed the site's own error screen (distinct from 차단됨). */
+export const ERROR_SCREEN_LABEL = '오류 화면';
+
+export function errorScreenRows(summary: unknown): { path: string; viewport: string; errors: string[] }[] {
   const raw = summary && typeof summary === 'object' ? (summary as { errorScreens?: unknown }).errorScreens : null;
   if (!Array.isArray(raw)) return [];
   return raw
     .filter((r): r is { path: string; viewport: string } => Boolean(r) && typeof r.path === 'string' && typeof r.viewport === 'string')
     .slice(0, 50)
-    .map((r) => ({ path: r.path.split(/[?]/)[0].slice(0, 200), viewport: r.viewport }));
+    .map((r) => ({ path: r.path.split(/[?]/)[0].slice(0, 200), viewport: r.viewport, errors: parsePageErrors((r as { errors?: unknown }).errors) }));
 }
 
 export const ERROR_SCREEN_NOTE =

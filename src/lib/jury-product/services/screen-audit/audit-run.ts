@@ -38,7 +38,7 @@ export type AuditRows = {
 
 /** I-068: page metrics JSON keeps the old shape; env / reason / mobileOrigin are added only when present. */
 function pageMetricsJson(r: AuditPageResult): Record<string, unknown> | null {
-  const extra = { ...(r.env ? { env: r.env } : {}), ...(r.mobileOrigin ? { mobileOrigin: r.mobileOrigin } : {}), ...(r.metrics && r.reason === 'ERROR_SCREEN' ? { reason: r.reason } : {}) };
+  const extra = { ...(r.env ? { env: r.env } : {}), ...(r.mobileOrigin ? { mobileOrigin: r.mobileOrigin } : {}), ...(r.metrics && r.reason === 'ERROR_SCREEN' ? { reason: r.reason } : {}), ...(r.errors?.length ? { errors: r.errors } : {}) };
   if (r.metrics) return Object.keys(extra).length ? { ...r.metrics, ...extra } : (r.metrics as unknown as Record<string, unknown>);
   return r.reason ? { reason: r.reason, ...extra } : null;
 }
@@ -71,7 +71,7 @@ export function buildAuditRows(results: readonly AuditPageResult[], now: Date, i
 
 /** I-096: page×viewport entries that showed the site's own error screen. */
 export function errorScreens(results: readonly AuditPageResult[]) {
-  return results.filter((r) => r.reason === 'ERROR_SCREEN').map((r) => ({ path: r.path, viewport: r.viewport }));
+  return results.filter((r) => r.reason === 'ERROR_SCREEN').map((r) => ({ path: r.path, viewport: r.viewport, ...(r.errors?.length ? { errors: r.errors } : {}) }));
 }
 
 /** I-069: tab entries are recorded as `${path}#tab-N` (desktop). */

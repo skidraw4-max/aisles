@@ -15,6 +15,7 @@ import type { ObservationDriver, ObservedRequest, RequestVerdict, ResourceStats 
 import { MOBILE_DEVICE, type MobileDevice } from '../screen-audit/viewports';
 import { LAYOUT_PROBE } from '../screen-audit/layout-probe';
 import { analyticsStubResponse } from './analytics-stub';
+import { pushPageError } from './page-errors';
 import { ERROR_SCREEN_PATTERN } from '../screen-audit/error-screen';
 import { MASK_ATTR, MASK_PROBE, UNMASK_PROBE } from '../screen-audit/mask-probe';
 import { TAB_ATTR, TAB_CLICK_PROBE, TAB_LIST_PROBE, TAB_UNSAFE_TEXT_SOURCE } from '../screen-audit/tab-probe';
@@ -46,6 +47,8 @@ export interface PwPage {
   setViewportSize?(size: { width: number; height: number }): Promise<void>;
   /** I-060: optional in fakes. */
   screenshot?(options: { type: 'jpeg'; quality: number; fullPage: false; animations?: 'disabled'; scale?: 'css' }): Promise<Uint8Array>;
+  /** I-098: optional in fakes (pageerror / console events). */
+  on?(event: 'pageerror' | 'console', handler: (arg: unknown) => void): unknown;
   evaluate<R>(fn: () => R): Promise<R>;
   evaluate<R, A>(fn: (arg: A) => R, arg: A): Promise<R>;
 }
@@ -76,10 +79,47 @@ export const SETTLE_STABLE_CHECKS = 2;
 
 /** Runs in the page. Kept as a string so it is not transpiled with Node globals. */
 export const INIT_SCRIPT = `(() => {
-  const deny = function () { throw new Error('blocked by Jury read-only policy'); };
-  try { Object.defineProperty(window, 'WebSocket', { value: deny, configurable: false }); } catch (e) {}
-  try { Object.defineProperty(window, 'EventSource', { value: deny, configurable: false }); } catch (e) {}
-  try { Object.defineProperty(window, 'RTCPeerConnection', { value: deny, configurable: false }); } catch (e) {}
+  // I-098: non-throwing fakes. No real connection is ever opened (websocket/eventsource requests are also aborted by
+  // the route guard); the fake reports a failed connection asynchronously (error, then close) like a network drop,
+  // so sites that open sockets in effects keep rendering instead of crashing on a thrown constructor.
+  const later = (fn) => { try { setTimeout(fn, 0); } catch (e) {} };
+  const fire = (t, type, ev) => { try { const h = t['on' + type]; if (typeof h === 'function') h.call(t, ev); } catch (e) {} try { t.dispatchEvent(ev); } catch (e) {} };
+  class FakeWebSocket extends EventTarget {
+    constructor(url, protocols) {
+      super();
+      this.url = String(url); this.protocol = ''; this.extensions = ''; this.bufferedAmount = 0; this.binaryType = 'blob';
+      this.readyState = 0; this.onopen = null; this.onmessage = null; this.onerror = null; this.onclose = null;
+      void protocols;
+      later(() => { if (this.readyState === 3) return; this.readyState = 3; fire(this, 'error', new Event('error')); fire(this, 'close', new CloseEvent('close', { code: 1006, reason: '', wasClean: false })); });
+    }
+    send() {}
+    close() { if (this.readyState === 3) return; this.readyState = 3; later(() => fire(this, 'close', new CloseEvent('close', { code: 1000, reason: '', wasClean: true }))); }
+  }
+  Object.assign(FakeWebSocket, { CONNECTING: 0, OPEN: 1, CLOSING: 2, CLOSED: 3 });
+  class FakeEventSource extends EventTarget {
+    constructor(url) {
+      super();
+      this.url = String(url); this.withCredentials = false; this.readyState = 0; this.onopen = null; this.onmessage = null; this.onerror = null;
+      later(() => { if (this.readyState === 2) return; this.readyState = 2; fire(this, 'error', new Event('error')); });
+    }
+    close() { this.readyState = 2; }
+  }
+  Object.assign(FakeEventSource, { CONNECTING: 0, OPEN: 1, CLOSED: 2 });
+  class FakeRTCPeerConnection extends EventTarget {
+    constructor() { super(); this.connectionState = 'closed'; this.iceConnectionState = 'closed'; this.signalingState = 'closed'; }
+    createDataChannel() { return { close() {}, send() {}, addEventListener() {}, removeEventListener() {}, readyState: 'closed' }; }
+    createOffer() { return Promise.reject(new Error('unavailable')); }
+    createAnswer() { return Promise.reject(new Error('unavailable')); }
+    setLocalDescription() { return Promise.reject(new Error('unavailable')); }
+    setRemoteDescription() { return Promise.reject(new Error('unavailable')); }
+    addIceCandidate() { return Promise.resolve(); }
+    getSenders() { return []; } getReceivers() { return []; } getTransceivers() { return []; }
+    close() {}
+  }
+  try { Object.defineProperty(window, 'WebSocket', { value: FakeWebSocket, configurable: false, writable: false }); } catch (e) {}
+  try { Object.defineProperty(window, 'EventSource', { value: FakeEventSource, configurable: false, writable: false }); } catch (e) {}
+  try { Object.defineProperty(window, 'RTCPeerConnection', { value: FakeRTCPeerConnection, configurable: false, writable: false }); } catch (e) {}
+  try { Object.defineProperty(window, 'webkitRTCPeerConnection', { value: FakeRTCPeerConnection, configurable: false, writable: false }); } catch (e) {}
   try { Object.defineProperty(navigator, 'sendBeacon', { value: () => false, configurable: false }); } catch (e) {}
   try { if (navigator.serviceWorker) Object.defineProperty(navigator.serviceWorker, 'register', { value: () => Promise.reject(new Error('blocked')), configurable: false }); } catch (e) {}
   const blockSubmit = (ev) => { if (window.sessionStorage.getItem('__jury_block_submit') === '1') { ev.preventDefault(); ev.stopImmediatePropagation(); } };
@@ -242,8 +282,22 @@ export const FONTS_READY_PROBE = (): Promise<boolean> | boolean => {
 
 /** I-068: blocked subresources by type and blocked document navigations (origin only) for the current page. */
 /** I-069: nonGet = non-GET/HEAD requests seen (all blocked by the guard); navigations = top-level document requests. */
-type PageTracker = { blocked: ResourceStats['blocked']; blockedNavigationOrigin: string | null; nonGet: number; navigations: number };
-const newTracker = (): PageTracker => ({ blocked: { stylesheet: 0, font: 0, script: 0, xhr: 0, other: 0 }, blockedNavigationOrigin: null, nonGet: 0, navigations: 0 });
+type PageTracker = { blocked: ResourceStats['blocked']; blockedNavigationOrigin: string | null; nonGet: number; navigations: number; errors: string[] };
+const newTracker = (): PageTracker => ({ blocked: { stylesheet: 0, font: 0, script: 0, xhr: 0, other: 0 }, blockedNavigationOrigin: null, nonGet: 0, navigations: 0, errors: [] });
+/** I-098: sanitized pageerror / console.error messages into the current tracker (optional in fakes). */
+function listenErrors(p: PwPage, tracker: () => PageTracker) {
+  if (!p.on) return;
+  p.on('pageerror', (e: unknown) => {
+    pushPageError(tracker().errors, e && typeof e === 'object' && 'message' in e ? `${(e as { name?: string }).name ?? 'Error'}: ${(e as { message?: unknown }).message}` : e);
+  });
+  p.on('console', (m: unknown) => {
+    const msg = m as { type?: () => string; text?: () => string };
+    if (typeof msg?.type === 'function' && msg.type() === 'error' && typeof msg.text === 'function') {
+      const t = msg.text();
+      if (!/^Failed to load resource/i.test(t)) pushPageError(tracker().errors, t);
+    }
+  });
+}
 
 /** I-069: URL identity for tab clicks (hash changes are same-page). */
 export function sameDocumentUrl(a: string, b: string): boolean {
@@ -320,6 +374,7 @@ export function createBrowserObservationDriver(launch: PwContextLauncher, option
       await context.addInitScript({ content: INIT_SCRIPT });
       await installGuard(context, () => desktopTracker);
       page = await context.newPage();
+      listenErrors(page, () => desktopTracker);
     }
     return page as PwPage;
   };
@@ -393,6 +448,10 @@ export function createBrowserObservationDriver(launch: PwContextLauncher, option
     async layoutMetrics() {
       return (await auditPage()).evaluate(LAYOUT_PROBE, ERROR_SCREEN_PATTERN);
     },
+    async pageErrors() {
+      await auditPage();
+      return [...(mobileActive ? mobileTracker : desktopTracker).errors];
+    },
     async resourceStats() {
       const p = await auditPage();
       const fontsReady = (await p.evaluate(FONTS_READY_PROBE).catch(() => false)) === true;
@@ -408,6 +467,7 @@ export function createBrowserObservationDriver(launch: PwContextLauncher, option
         await mobileContext.addInitScript({ content: `(() => { try { window.sessionStorage.setItem('__jury_block_submit', '1'); } catch (e) {} })();${INIT_SCRIPT}` });
         await installGuard(mobileContext, () => mobileTracker);
         mobilePage = await mobileContext.newPage();
+        listenErrors(mobilePage, () => mobileTracker);
       }
       void base;
       mobileTracker = newTracker();
