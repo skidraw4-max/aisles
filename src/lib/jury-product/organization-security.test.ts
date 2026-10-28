@@ -261,11 +261,11 @@ test('security overview is read only and organization pages ignore url identity'
   const chrome = readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/ui.tsx'), 'utf8');
   const db = readFileSync(path.resolve(process.cwd(), 'src/lib/jury-product/jury-db.ts'), 'utf8');
   assert.match(security, /조직 보안/);
-  assert.match(security, /여기서 변경할 수 없습니다/);
+  assert.match(security, /여기서 변경할 수 없어요/);
   assert.match(members, /서비스 접근 권한/);
   assert.match(members, /countOrganizationServiceAccess/);
   assert.match(services, /구성원:/);
-  assert.match(controls, /이 조직의 서비스 접근 권한도 함께 삭제됩니다/);
+  assert.match(controls, /이 조직의 서비스 접근 권한도 함께 삭제돼요/);
   assert.match(chrome, /juryHref\('\/organization\/security'\)/);
   assert.equal(db.includes('juryServiceMember.delete'), false);
   assert.equal(db.includes('juryServiceMember.create'), false);

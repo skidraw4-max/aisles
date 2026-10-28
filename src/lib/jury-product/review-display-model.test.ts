@@ -119,7 +119,7 @@ test('M-012 composite score is never produced; AI inference stays labeled', () =
 import { cycleStatusLabel, displayModelForCatalogRow, summarizeDisplayModels, summarizeProblems } from './review-display-model';
 
 test('RM-02b summarizeProblems never says "없음" and flags verdict mismatch', () => {
-  assert.equal(summarizeProblems('REWORD', []).emptyText, '문제 목록 없음 — 판정과 불일치');
+  assert.equal(summarizeProblems('REWORD', []).emptyText, '문제 목록 없음 — 결론과 불일치');
   assert.equal(summarizeProblems('ACCEPT', []).emptyText, '문제 목록 없음');
   assert.equal(summarizeProblems('VERIFY', 'x').state, 'UNAVAILABLE');
   assert.equal(summarizeProblems('VERIFY', ['a', 'a']).count, 1);

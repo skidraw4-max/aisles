@@ -20,21 +20,21 @@ export function ReviewRequestFields() {
       claimRequired && length.blank
         ? '검증할 주장을 입력하세요.'
         : length.tooLong
-          ? `주장은 ${JURY_CLAIM_MAX_LENGTH}자 이하로 입력하세요. 줄바꿈은 2자로 셉니다.`
+          ? `주장은 ${JURY_CLAIM_MAX_LENGTH}자 이하로 입력하세요. 줄바꿈은 2자로 세요.`
           : '',
     );
   }, [claimRequired, length.blank, length.tooLong]);
   return (
     <>
       <label>
-        리뷰 유형
+        심사 유형
         <select
           className={styles.field}
           name="reviewType"
           value={reviewType}
           onChange={(event) => setReviewType(event.target.value === 'CLAIM_VALIDATION' ? 'CLAIM_VALIDATION' : 'FULL_REVIEW')}
         >
-          <option value="FULL_REVIEW">전체 리뷰</option>
+          <option value="FULL_REVIEW">전체 심사</option>
           <option value="CLAIM_VALIDATION">주장 검증</option>
         </select>
       </label>
@@ -53,9 +53,9 @@ export function ReviewRequestFields() {
         />
       </label>
       <p id={counterId} className={styles.muted} aria-live="polite">
-        {length.length}/{length.max}자{length.tooLong ? ' · 최대 글자 수를 넘었습니다' : ''}
+        {length.length}/{length.max}자{length.tooLong ? ' · 최대 글자 수를 넘었어요' : ''}
       </p>
-      <p className={styles.muted}>주장 검증은 주장이 있어야 요청됩니다 · 최대 {JURY_CLAIM_MAX_LENGTH}자 · 앞뒤 공백은 제거됩니다</p>
+      <p className={styles.muted}>주장 검증은 주장이 있어야 요청돼요 · 최대 {JURY_CLAIM_MAX_LENGTH}자 · 앞뒤 공백은 제거돼요</p>
     </>
   );
 }

@@ -46,10 +46,10 @@ import { EmptyState, PageHeader } from './page-layout';
 import { ArrowRight, Check, FileText, Lightbulb, Play, Plus, Send, Square, X } from 'lucide-react';
 
 const GATE_COPY: Record<Exclude<JuryActor, { ok: true }>['reason'], string> = {
-  UNAUTHENTICATED: '로그인한 뒤 Jury membership이 있는 계정으로 다시 열어야 합니다.',
-  NO_MEMBERSHIP: '이 사용자에게 연결된 Jury membership이 없습니다. 관리자 권한만으로는 tenant에 들어갈 수 없습니다.',
-  AMBIGUOUS_MEMBERSHIP: '이 사용자에게 membership이 둘 이상입니다. 클라이언트가 tenant를 고르지 않으며, 서버에 활성 membership이 하나일 때만 엽니다.',
-  STORE_UNAVAILABLE: 'Jury 저장소가 아직 준비되지 않았습니다. migration을 적용하기 전에는 tenant 데이터를 열지 않습니다.',
+  UNAUTHENTICATED: '로그인한 뒤 Jury membership이 있는 계정으로 다시 열어야 해요.',
+  NO_MEMBERSHIP: '이 계정은 아직 어느 조직에도 속해 있지 않아요. 조직을 만들거나 초대를 받아 주세요.',
+  AMBIGUOUS_MEMBERSHIP: '속한 조직이 여러 개라 화면을 열 수 없어요. 관리자에게 조직 정리를 요청해 주세요.',
+  STORE_UNAVAILABLE: 'Jury 저장소가 아직 준비되지 않았어요. 잠시 후 다시 시도해 주세요.',
 };
 
 function compactIdentifier(value: string, start = 10, end = 8): string {
@@ -81,7 +81,7 @@ export async function JuryChrome({
         <div>
           <h1 className={styles.title}>AIsles Jury</h1>
           <p className={styles.lead}>
-            리뷰 요청부터 결과 확인, 조직 관리까지 한 곳에서 진행합니다.
+            심사 요청부터 결과 확인, 조직 관리까지 한 곳에서 진행해요.
           </p>
         </div>
         {actor.ok ? (
@@ -116,7 +116,7 @@ export async function JuryChrome({
         children
       ) : (
         <section className={styles.panel} role="alert">
-          <h2>접근할 수 없습니다</h2>
+          <h2>접근할 수 없어요</h2>
           <p>{GATE_COPY[actor.reason]}</p>
           {actor.reason === 'UNAUTHENTICATED' ? (
             <p>
@@ -134,83 +134,83 @@ export async function JuryChrome({
 }
 
 function noticeText(code: string): string {
-  if (code === 'FORBIDDEN') return '이 역할에는 해당 변경 권한이 없습니다.';
-  if (code === 'TENANT_MISMATCH') return '다른 tenant의 데이터는 변경할 수 없습니다.';
-  if (code === 'NOT_IMPLEMENTED') return '권한은 확인됐지만, 이 단계에는 저장소가 없어 변경을 기록하지 않습니다.';
-  if (code === 'NO_MEMBERSHIP') return 'membership이 없는 계정입니다.';
-  if (code === 'UNAUTHENTICATED') return '로그인이 필요합니다.';
-  if (code === 'EMAIL_UNVERIFIED') return '이메일 인증이 필요합니다.';
-  if (code === 'AMBIGUOUS_MEMBERSHIP') return 'membership이 여러 개라 tenant를 정할 수 없습니다.';
-  if (code === 'STORE_UNAVAILABLE') return 'Jury 저장소가 아직 준비되지 않았습니다.';
-  if (code === 'LAST_OWNER') return '마지막 OWNER는 제거하거나 내릴 수 없습니다.';
-  if (code === 'ALREADY_HAS_MEMBERSHIP') return '이 사용자는 이미 Jury membership이 있습니다.';
-  if (code === 'TARGET_NOT_IN_TENANT') return '현재 tenant의 멤버만 바꿀 수 있습니다.';
-  if (code === 'NAME_REQUIRED') return 'tenant 이름이 필요합니다.';
-  if (code === 'USER_NOT_FOUND') return '대상 사용자 계정을 찾을 수 없습니다.';
-  if (code === 'OK') return 'membership 변경을 저장했습니다.';
-  if (code === 'SERVICE_REGISTERED') return '탐색 대상을 등록했습니다. 자격 증명은 저장하지 않습니다.';
-  if (code === 'DISCOVERY_RECORDED') return 'Discovery 제안과 PROPOSED scope를 기록했습니다. 측정값은 없습니다.';
-  if (code === 'CATALOG_SCOPE_PROPOSED') return 'Catalog metric scope를 제안했습니다. OWNER 승인 후 Evidence를 만들 수 있습니다.';
-  if (code === 'CATALOG_SCOPE_REUSED') return '같은 Catalog metric scope가 이미 있습니다.';
-  if (code === 'SCOPE_APPROVED') return 'AccessScope를 승인했습니다. 승인되지 않은 scope가 남아 있으면 연결은 활성화되지 않습니다.';
-  if (code === 'SERVICE_CONNECTED') return '필요한 scope가 승인되어 연결이 CONNECTED가 되었습니다. 수치 수집은 시작하지 않습니다.';
-  if (code === 'SCOPE_REVOKED') return 'AccessScope를 거부했습니다.';
-  if (code === 'SCOPE_NOT_APPROVED') return '승인된 scope에서만 Evidence를 만들 수 있습니다.';
-  if (code === 'SCOPE_CONNECTION_MISMATCH') return 'scope와 connection이 일치하지 않습니다.';
-  if (code === 'CONNECTION_WRITE_REQUIRED') return 'connection 쓰기 권한이 필요합니다.';
-  if (code === 'METRIC_NOT_IN_CATALOG') return 'Catalog에 없는 metric입니다.';
-  if (code === 'METRIC_NOT_IN_SCOPE') return '승인된 scope가 허용하지 않은 metric입니다.';
-  if (code === 'INVALID_TIMEZONE') return '시간대는 Asia/Seoul만 사용할 수 있습니다.';
-  if (code === 'INVALID_VALUE') return '입력값이 올바르지 않습니다.';
-  if (code === 'INVALID_PERIOD') return '기간이 올바르지 않습니다. 시작일 ≤ 종료일 ≤ 오늘(KST), 최대 92일입니다.';
-  if (code === 'PERSISTENCE_FAILED') return 'Evidence를 저장하지 못했습니다. Review는 실행하지 않습니다.';
-  if (code === 'EVIDENCE_CREATED') return 'Evidence를 만들었습니다.';
-  if (code === 'EVIDENCE_REUSED') return '같은 Evidence가 이미 있습니다.';
-  if (code === 'EVIDENCE_CONNECTION_MISMATCH') return 'Evidence와 connection이 일치하지 않습니다.';
-  if (code === 'PROJECTION_FAILED') return 'Evidence를 Review 입력으로 만들지 못했습니다. Review는 실행하지 않습니다.';
-  if (code === 'REVIEW_NOT_EXECUTED') return 'Review를 실행하지 못했습니다.';
+  if (code === 'FORBIDDEN') return '이 역할에는 해당 변경 권한이 없어요.';
+  if (code === 'TENANT_MISMATCH') return '다른 조직의 데이터는 변경할 수 없어요.';
+  if (code === 'NOT_IMPLEMENTED') return '권한은 확인됐지만, 이 단계에는 저장소가 없어 변경을 기록하지 않아요.';
+  if (code === 'NO_MEMBERSHIP') return 'membership이 없는 계정이에요.';
+  if (code === 'UNAUTHENTICATED') return '로그인이 필요해요.';
+  if (code === 'EMAIL_UNVERIFIED') return '이메일 인증이 필요해요.';
+  if (code === 'AMBIGUOUS_MEMBERSHIP') return '속한 조직이 여러 개라 조직을 정할 수 없어요. 관리자에게 문의해 주세요.';
+  if (code === 'STORE_UNAVAILABLE') return 'Jury 저장소가 아직 준비되지 않았어요.';
+  if (code === 'LAST_OWNER') return '마지막 OWNER는 제거하거나 내릴 수 없어요.';
+  if (code === 'ALREADY_HAS_MEMBERSHIP') return '이 사용자는 이미 Jury membership이 있어요.';
+  if (code === 'TARGET_NOT_IN_TENANT') return '현재 조직의 구성원만 바꿀 수 있어요.';
+  if (code === 'NAME_REQUIRED') return '조직 이름이 필요해요.';
+  if (code === 'USER_NOT_FOUND') return '대상 사용자 계정을 찾을 수 없어요.';
+  if (code === 'OK') return 'membership 변경을 저장했어요.';
+  if (code === 'SERVICE_REGISTERED') return '탐색 대상을 등록했어요. 자격 증명은 저장하지 않아요.';
+  if (code === 'DISCOVERY_RECORDED') return 'Discovery 제안과 PROPOSED scope를 기록했어요. 측정값은 없어요.';
+  if (code === 'CATALOG_SCOPE_PROPOSED') return 'Catalog metric scope를 제안했어요. OWNER 승인 후 Evidence를 만들 수 있어요.';
+  if (code === 'CATALOG_SCOPE_REUSED') return '같은 Catalog metric scope가 이미 있어요.';
+  if (code === 'SCOPE_APPROVED') return 'AccessScope를 승인했어요. 승인되지 않은 scope가 남아 있으면 연결은 활성화되지 않아요.';
+  if (code === 'SERVICE_CONNECTED') return '필요한 scope가 승인되어 연결이 CONNECTED가 되었어요. 수치 수집은 시작하지 않아요.';
+  if (code === 'SCOPE_REVOKED') return 'AccessScope를 거부했어요.';
+  if (code === 'SCOPE_NOT_APPROVED') return '승인된 scope에서만 Evidence를 만들 수 있어요.';
+  if (code === 'SCOPE_CONNECTION_MISMATCH') return 'scope와 connection이 일치하지 않아요.';
+  if (code === 'CONNECTION_WRITE_REQUIRED') return 'connection 쓰기 권한이 필요해요.';
+  if (code === 'METRIC_NOT_IN_CATALOG') return 'Catalog에 없는 metric이에요.';
+  if (code === 'METRIC_NOT_IN_SCOPE') return '승인된 scope가 허용하지 않은 metric이에요.';
+  if (code === 'INVALID_TIMEZONE') return '시간대는 Asia/Seoul만 사용할 수 있어요.';
+  if (code === 'INVALID_VALUE') return '입력값이 올바르지 않아요.';
+  if (code === 'INVALID_PERIOD') return '기간이 올바르지 않아요. 시작일 ≤ 종료일 ≤ 오늘(KST), 최대 92일이에요.';
+  if (code === 'PERSISTENCE_FAILED') return '심사 근거를 저장하지 못했어요. Review는 실행하지 않아요.';
+  if (code === 'EVIDENCE_CREATED') return 'Evidence를 만들었어요.';
+  if (code === 'EVIDENCE_REUSED') return '같은 Evidence가 이미 있어요.';
+  if (code === 'EVIDENCE_CONNECTION_MISMATCH') return 'Evidence와 connection이 일치하지 않아요.';
+  if (code === 'PROJECTION_FAILED') return 'Evidence를 Review 입력으로 만들지 못했어요. Review는 실행하지 않아요.';
+  if (code === 'REVIEW_NOT_EXECUTED') return 'Review를 실행하지 못했어요.';
   if (code === 'REVIEW_ALREADY_EXISTS') return '진행 중인 심사가 있어요. 잠시 후 결과를 확인하세요.';
-  if (code === 'CLAIM_REQUIRED') return '이 Review에는 claim이 필요합니다.';
+  if (code === 'CLAIM_REQUIRED') return '이 Review에는 claim이 필요해요.';
   if (code === 'CLAIM_TOO_LONG') return `주장은 ${JURY_CLAIM_MAX_LENGTH}자 이하로 입력하세요.`;
-  if (code === 'ALREADY_DECIDED') return '이미 결정된 scope입니다.';
-  if (code === 'INVALID_ACTION') return '허용되지 않은 Human Decision입니다.';
-  if (code === 'DECISION_LOCKED') return '이미 저장된 Human Decision은 바꾸지 않습니다.';
-  if (code === 'HUMAN_DECISION_REQUIRED') return '저장된 Human Decision이 있어야 개선 작업을 만들 수 있습니다.';
-  if (code === 'REVIEW_NOT_COMPLETED') return '완료된 Review에서만 Improvement Task를 만들 수 있습니다.';
-  if (code === 'HUMAN_APPROVAL_REQUIRED') return '사람이 VERIFY 또는 REWORD로 승인한 개선 작업만 Agent에 넘길 수 있습니다.';
-  if (code === 'ALREADY_RUNNING') return 'Agent 실행이 이미 진행 중입니다.';
-  if (code === 'EXECUTION_NOT_COMPLETED') return 'Agent 실행이 완료된 뒤에만 Change Gate를 실행할 수 있습니다.';
-  if (code === 'RE-REVIEW_NOT_APPROVED') return 'Change Gate가 APPROVED일 때만 Re-review를 실행할 수 있습니다.';
-  if (code === 'NOT_REREVIEW_RESULT') return 'Re-review 결과에서만 다음 Improvement Task를 만들 수 있습니다.';
-  if (code === 'NOT_REREVIEW_IMPROVEMENT_TASK') return 'Re-review에서 만든 Improvement Task만 Agent에 넘길 수 있습니다.';
-  if (code === 'SNAPSHOT_UNSAFE') return '자격 증명으로 보이는 값은 저장하거나 전달하지 않습니다.';
-  if (code === 'CREDENTIAL_REF_REQUIRED') return 'Credential reference가 없어 연결을 활성화하지 않았습니다.';
-  if (code === 'CONNECTION_NOT_APPROVED') return 'CONNECTED가 아닌 서비스에서는 Evidence를 수집하지 않습니다.';
-  if (code === 'EVIDENCE_RECORDED') return 'Evidence를 저장했습니다. Credential은 포함하지 않습니다.';
-  if (code === 'COLLECTION_FAILED') return 'Evidence 수집에 실패했습니다. Review는 실행하지 않습니다.';
-  if (code === 'EVIDENCE_UNAVAILABLE') return '사용할 수 있는 Evidence가 없어 Review를 실행하지 않습니다.';
-  if (code === 'TIMEZONE_UNSUPPORTED') return '시간대는 Asia/Seoul만 사용할 수 있습니다.';
-  if (code === 'DECISION_NOT_IN_CONTRACT') return 'Core decision이 기존 contract 밖에 있어 성공 결과로 저장하지 않았습니다.';
-  if (code === 'CORE_READING_REJECTED') return 'Core 결과를 저장하지 않았습니다.';
-  if (code === 'OBSERVATION_REQUIRED') return '읽기 전용 계정 관찰을 먼저 성공적으로 실행해야 검증 근거를 수집할 수 있습니다.';
-  if (code === 'PACK_NOT_READ_ONLY') return 'read-only Evidence만 Review할 수 있습니다.';
-  if (code === 'NOT_FOUND') return '현재 tenant에서 대상을 찾을 수 없습니다.';
-  if (code === 'KEY_REQUIRED') return '서비스 키와 이름이 필요합니다.';
-  if (code === 'LOOP_STOPPED') return '자동 Loop를 중지했습니다. Agent는 실행하지 않습니다.';
-  if (code === 'LOOP_ALREADY_STOPPED') return '자동 Loop는 이미 중지 상태입니다.';
-  if (code === 'INVALID_TRANSITION') return '이 화면에서는 중지만 할 수 있습니다.';
-  if (code === 'CREDENTIAL_IN_REASON') return '자격 증명이 포함된 요청은 기록하지 않습니다.';
-  return '요청을 처리하지 않았습니다.';
+  if (code === 'ALREADY_DECIDED') return '이미 결정된 scope이에요.';
+  if (code === 'INVALID_ACTION') return '허용되지 않은 Human Decision이에요.';
+  if (code === 'DECISION_LOCKED') return '이미 저장된 Human Decision은 바꾸지 않아요.';
+  if (code === 'HUMAN_DECISION_REQUIRED') return '저장된 Human Decision이 있어야 개선 작업을 만들 수 있어요.';
+  if (code === 'REVIEW_NOT_COMPLETED') return '완료된 Review에서만 Improvement Task를 만들 수 있어요.';
+  if (code === 'HUMAN_APPROVAL_REQUIRED') return '사람이 VERIFY 또는 REWORD로 승인한 개선 작업만 Agent에 넘길 수 있어요.';
+  if (code === 'ALREADY_RUNNING') return 'Agent 실행이 이미 진행 중이에요.';
+  if (code === 'EXECUTION_NOT_COMPLETED') return 'Agent 실행이 완료된 뒤에만 Change Gate를 실행할 수 있어요.';
+  if (code === 'RE-REVIEW_NOT_APPROVED') return 'Change Gate가 APPROVED일 때만 Re-review를 실행할 수 있어요.';
+  if (code === 'NOT_REREVIEW_RESULT') return 'Re-review 결과에서만 다음 Improvement Task를 만들 수 있어요.';
+  if (code === 'NOT_REREVIEW_IMPROVEMENT_TASK') return 'Re-review에서 만든 Improvement Task만 Agent에 넘길 수 있어요.';
+  if (code === 'SNAPSHOT_UNSAFE') return '자격 증명으로 보이는 값은 저장하거나 전달하지 않아요.';
+  if (code === 'CREDENTIAL_REF_REQUIRED') return 'Credential reference가 없어 연결을 활성화하지 않았어요.';
+  if (code === 'CONNECTION_NOT_APPROVED') return 'CONNECTED가 아닌 서비스에서는 Evidence를 수집하지 않아요.';
+  if (code === 'EVIDENCE_RECORDED') return 'Evidence를 저장했어요. Credential은 포함하지 않아요.';
+  if (code === 'COLLECTION_FAILED') return 'Evidence 수집에 실패했어요. Review는 실행하지 않아요.';
+  if (code === 'EVIDENCE_UNAVAILABLE') return '사용할 수 있는 Evidence가 없어 Review를 실행하지 않아요.';
+  if (code === 'TIMEZONE_UNSUPPORTED') return '시간대는 Asia/Seoul만 사용할 수 있어요.';
+  if (code === 'DECISION_NOT_IN_CONTRACT') return 'Core decision이 기존 contract 밖에 있어 성공 결과로 저장하지 않았어요.';
+  if (code === 'CORE_READING_REJECTED') return 'Core 결과를 저장하지 않았어요.';
+  if (code === 'OBSERVATION_REQUIRED') return '읽기 전용 계정 관찰을 먼저 성공적으로 실행해야 심사 근거를 수집할 수 있어요.';
+  if (code === 'PACK_NOT_READ_ONLY') return 'read-only Evidence만 Review할 수 있어요.';
+  if (code === 'NOT_FOUND') return '현재 조직에서 대상을 찾을 수 없어요.';
+  if (code === 'KEY_REQUIRED') return '서비스 키와 이름이 필요해요.';
+  if (code === 'LOOP_STOPPED') return '자동 Loop를 중지했어요. Agent는 실행하지 않아요.';
+  if (code === 'LOOP_ALREADY_STOPPED') return '자동 Loop는 이미 중지 상태예요.';
+  if (code === 'INVALID_TRANSITION') return '이 화면에서는 중지만 할 수 있어요.';
+  if (code === 'CREDENTIAL_IN_REASON') return '자격 증명이 포함된 요청은 기록하지 않아요.';
+  return '요청을 처리하지 않았어요.';
 }
 
 function CreateTenantForm() {
   return (
     <form action={createJuryTenant}>
-      <p className={styles.muted}>이름만 입력합니다. tenant 식별자는 서버가 만듭니다.</p>
+      <p className={styles.muted}>조직 이름만 입력하면 돼요.</p>
       <input className={styles.field} name="tenantName" placeholder="조직 이름" required />
       <input type="hidden" name="tenantId" value="client-supplied-tenant" />
       <button className={buttonClass('secondary')} type="submit">
-        내 tenant 만들기
+        내 조직 만들기
       </button>
     </form>
   );
@@ -222,7 +222,7 @@ export function canShowWrite(actor: JuryActor, action: JuryAction): boolean {
 }
 
 /** RM-05 (D-11): re-review chains run with the mock review-board LLM (change-gate-rereview-store defaultCore). */
-export const MOCK_RE_REVIEW_NOTICE = 'Mock AI 응답으로 만든 결과이며 실제 심사가 아닙니다.';
+export const MOCK_RE_REVIEW_NOTICE = 'Mock AI 응답으로 만든 결과이며 실제 심사가 아니에요.';
 
 export function WriteControl({
   actor,
@@ -241,7 +241,7 @@ export function WriteControl({
   disabledHint?: ReactNode;
 }) {
   if (!canShowWrite(actor, action)) {
-    return <p className={styles.muted}>{label}: 현재 역할에는 이 변경 권한이 없습니다.</p>;
+    return <p className={styles.muted}>{label}: 현재 역할에는 이 변경 권한이 없어요.</p>;
   }
   if (disabledHint !== undefined) {
     return (
@@ -270,7 +270,7 @@ function metricLine(metric: string, value: number | null, availability: string):
     (JURY_PROJECTABLE_DB_METRICS as readonly string[]).includes(metric) ||
     (JURY_PROJECTABLE_GA4_METRICS as readonly string[]).includes(metric) ||
     metric.startsWith(JURY_GA4_EVENT_PREFIX);
-  return `${metric}: ${displayText(shown)} (${availability})${scored ? '' : ' · v9.x 품질 판정 밖'}`;
+  return `${metric}: ${displayText(shown)} (${availability})${scored ? '' : ' · v9.x 품질 결론 밖'}`;
 }
 
 export function DashboardBody({ view }: { view: JuryConsoleView }) {
@@ -289,13 +289,13 @@ export function DashboardBody({ view }: { view: JuryConsoleView }) {
         crumbs={[{ label: '홈' }]}
         title="홈"
         description="지금 해야 할 일과 최근 결과를 한눈에 확인하세요."
-        actions={<ButtonLink variant="primary" icon={Play} href={juryHref('/evidence')}>리뷰 요청 시작</ButtonLink>}
+        actions={<ButtonLink variant="primary" icon={Play} href={juryHref('/evidence')}>심사 요청 시작</ButtonLink>}
       />
       <section className={`${styles.panel} ${styles.nextAction}`}>
         <div>
           <p className={styles.eyebrow}>지금 할 일</p>
-          <h2>최근 리뷰 결과를 확인하세요</h2>
-          <p className={styles.muted}>새로운 결과가 도착하면 주요 문제와 권장 조치를 바로 확인할 수 있습니다.</p>
+          <h2>최근 심사 결과를 확인하세요</h2>
+          <p className={styles.muted}>새로운 결과가 도착하면 주요 문제와 권장 조치를 바로 확인할 수 있어요.</p>
         </div>
         <ButtonLink variant="primary" icon={FileText} href={juryHref('/reviews')}>결과 보기</ButtonLink>
       </section>
@@ -306,12 +306,12 @@ export function DashboardBody({ view }: { view: JuryConsoleView }) {
           <p className={styles.muted}>정상 연결 {board.connectedServices}개 · 전체 {board.services}개</p>
         </section>
         <section className={styles.panel}>
-          <h2>리뷰 자료</h2>
+          <h2>심사 근거</h2>
           <p className={styles.metric}>{board.evidence}</p>
           <p className={styles.muted}>최근 분석에 사용된 자료</p>
         </section>
         <section className={styles.panel}>
-          <h2>진행 중 리뷰</h2>
+          <h2>진행 중 심사</h2>
           <p className={styles.metric}>{board.inFlightReviews}</p>
           <p className={styles.muted}>완료된 결과 {board.reviews}건 · 출처 미기록 {board.resultSummary.unknownSource} · Mock/Fixture {board.resultSummary.nonReal} · 실모델(미검증) {board.resultSummary.realUnverified} · 검증된 실모델 {board.resultSummary.aggregatable}</p>
           {board.resultSummary.withWarnings > 0 ? <p className={styles.muted}>⚠ 확인이 필요한 결과 {board.resultSummary.withWarnings}건</p> : null}
@@ -359,7 +359,7 @@ export function DiscoveryBody({ actor, view }: { actor: JuryActor; view: JuryCon
   return (
     <section className={styles.panel}>
       <h2>서비스 확인</h2>
-      <p className={styles.muted}>제안만 표시합니다. 측정값은 없고, scope가 승인되기 전에는 수집하지 않습니다.</p>
+      <p className={styles.muted}>제안만 표시해요. 측정값은 없고, scope가 승인되기 전에는 수집하지 않아요.</p>
       {view.connections.filter((row) => !discovered.has(row.id)).map((row) => (
         <form action={runJuryDiscovery} key={row.id}>
           <p>{row.displayName}</p>
@@ -368,7 +368,7 @@ export function DiscoveryBody({ actor, view }: { actor: JuryActor; view: JuryCon
           {canShowWrite(actor, 'discovery.approve') ? (
             <Button variant="secondary" icon={Play} type="submit">Mock Discovery 실행</Button>
           ) : (
-            <p className={styles.muted}>Discovery 실행: 현재 역할에는 이 변경 권한이 없습니다.</p>
+            <p className={styles.muted}>Discovery 실행: 현재 역할에는 이 변경 권한이 없어요.</p>
           )}
         </form>
       ))}
@@ -393,7 +393,7 @@ export function DiscoveryBody({ actor, view }: { actor: JuryActor; view: JuryCon
               </form>
             ) : null}
             {scope && scope.status === 'PROPOSED' && !canShowWrite(actor, 'scope.write') ? (
-              <p className={styles.muted}>scope 승인: 현재 역할에는 이 변경 권한이 없습니다.</p>
+              <p className={styles.muted}>scope 승인: 현재 역할에는 이 변경 권한이 없어요.</p>
             ) : null}
           </article>
         );
@@ -409,14 +409,14 @@ function CatalogScopeForm({ actor, view }: { actor: JuryActor; view: JuryConsole
     return (
       <>
         <h2>카탈로그 지표 범위</h2>
-        <p className={styles.muted}>Catalog scope 승인: 현재 역할에는 이 변경 권한이 없습니다.</p>
+        <p className={styles.muted}>Catalog scope 승인: 현재 역할에는 이 변경 권한이 없어요.</p>
       </>
     );
   }
   return (
     <>
       <h2>카탈로그 지표 범위</h2>
-      <p className={styles.muted}>Catalog metric만 선택합니다. Discovery placeholder는 승인 대상이 아닙니다.</p>
+      <p className={styles.muted}>Catalog metric만 선택해요. Discovery placeholder는 승인 대상이 아니에요.</p>
       {form.connections.map((connection) => (
         <form action={proposeCatalogScope} key={connection.id}>
           <p>{connection.label}</p>
@@ -451,11 +451,11 @@ export function ReviewsBody({ view }: { view: JuryConsoleView }) {
         crumbs={[{ label: '홈', href: juryHref('/') }, { label: '결과' }]}
         title="결과"
         description="결론과 주요 문제, 권장 조치를 먼저 확인하세요."
-        actions={<ButtonLink variant="secondary" icon={Plus} href={juryHref('/evidence')}>새 리뷰 요청</ButtonLink>}
+        actions={<ButtonLink variant="secondary" icon={Plus} href={juryHref('/evidence')}>새 심사 요청</ButtonLink>}
       />
       <RequestStatusSection view={view} />
       {view.results.length > 0 ? <TranslationHint /> : null}
-      {view.results.length === 0 ? <EmptyState action={<ButtonLink variant="primary" icon={Plus} href={juryHref('/evidence')}>리뷰 요청</ButtonLink>}>{displayText(SHELL_EMPTY.reviews)}</EmptyState> : (
+      {view.results.length === 0 ? <EmptyState action={<ButtonLink variant="primary" icon={Plus} href={juryHref('/evidence')}>심사 요청</ButtonLink>}>{displayText(SHELL_EMPTY.reviews)}</EmptyState> : (
         <div className={styles.reviewsTableWrap}>
         <table className={`${styles.table} ${styles.reviewsTable}`}>
           <colgroup>
@@ -471,8 +471,8 @@ export function ReviewsBody({ view }: { view: JuryConsoleView }) {
               <th>상태</th>
               <th>결론</th>
               <th>완료일</th>
-              <th>리뷰 유형</th>
-              <th>리뷰 자료</th>
+              <th>심사 유형</th>
+              <th>심사 근거</th>
               <th>요약</th>
             </tr>
           </thead>
@@ -535,12 +535,12 @@ export function ReviewDetailBody({ screen, noted }: { screen: ReviewConsoleScree
   const missing = display ? display.missingEvidenceCount : null;
   const supportedCount = display ? display.claims.counts?.supported ?? null : null;
   const noActionAllowed = !display || (display.decision.raw === 'ACCEPT' && display.flags.length === 0);
-  const fallbackAction = noActionAllowed ? '추가 조치가 필요하지 않습니다.' : '권장 조치 기록 없음';
+  const fallbackAction = noActionAllowed ? '추가 조치가 필요하지 않아요.' : '권장 조치 기록 없음';
   return (
     <>
       <section className={styles.panel}>
         <p className={styles.eyebrow}>현재 메뉴 · 결과 · 요약</p>
-        <h2 className={styles.pageTitle}>리뷰 결과</h2>
+        <h2 className={styles.pageTitle}>심사 결과</h2>
         <div className={styles.resultHighlight}>
           <span className={styles.label}>결론</span>
           <strong><StatusBadge>{display?.decision.withheld ? display.decision.label : userLabel(screen.decision)}</StatusBadge></strong>
@@ -556,10 +556,10 @@ export function ReviewDetailBody({ screen, noted }: { screen: ReviewConsoleScree
         <ConfidenceLine screen={screen} />
         {screen.requestInput ? (
           <p className={styles.muted}>
-            {screen.requestInput.reviewType === 'CLAIM_VALIDATION' ? '주장 검증' : '전체 리뷰'} · 검증한 주장: {screen.requestInput.claim ?? '주장 입력 없음'}
+            {screen.requestInput.reviewType === 'CLAIM_VALIDATION' ? '주장 검증' : '전체 심사'} · 검증한 주장: {screen.requestInput.claim ?? '주장 입력 없음'}
           </p>
         ) : null}
-        <p className={styles.resultSummary} lang={screen.summary ? 'en' : undefined}>{screen.summary || '요약이 없습니다.'}</p>
+        <p className={styles.resultSummary} lang={screen.summary ? 'en' : undefined}>{screen.summary || '요약이 없어요.'}</p>
         <TranslationHint />
         {screen.humanDecision ? <p className={styles.muted}>사용자 확인: {userLabel(screen.humanDecision)}</p> : null}
         <details className={styles.technicalDetails}>
@@ -580,13 +580,13 @@ export function ReviewDetailBody({ screen, noted }: { screen: ReviewConsoleScree
           </div>
           {screen.humanChoices.length > 0 ? <StatusBadge>확인 필요</StatusBadge> : null}
         </div>
-        <p className={styles.muted}>위험도: <span lang={screen.risk ? 'en' : undefined}>{screen.risk || '기록 없음'}</span></p>
+        <p className={styles.muted}>위험도: <span lang={screen.risk ? 'en' : undefined}>{screen.risk ? userLabel(screen.risk) : '기록 없음'}</span></p>
       </section>
       <section className={styles.panel}>
         <h2>근거 요약</h2>
         <div className={styles.row}>
           <span className={styles.label}>핵심 근거</span>
-          <span>{supportedCount === null ? (display?.claims.state === 'NONE_RECORDED' ? '주장 기록 없음' : '확인된 주장 집계 불가') : `확인된 주장 ${supportedCount}개`} · <Link className={styles.inline} href={reviewTabHref(screen.reviewId, 'evidence')}>검증 근거 탭에서 보기</Link></span>
+          <span>{supportedCount === null ? (display?.claims.state === 'NONE_RECORDED' ? '주장 기록 없음' : '확인된 주장 집계 불가') : `확인된 주장 ${supportedCount}개`} · <Link className={styles.inline} href={reviewTabHref(screen.reviewId, 'evidence')}>심사 근거 탭에서 보기</Link></span>
         </div>
         <div className={styles.row}>
           <span className={styles.label}>검증 상태</span>
@@ -599,7 +599,7 @@ export function ReviewDetailBody({ screen, noted }: { screen: ReviewConsoleScree
       </section>
       <section className={styles.panel}>
         <h2>다음 행동</h2>
-        {noted && screen.humanDecision ? <p className={styles.muted}>Human Decision을 저장했습니다.</p> : null}
+        {noted && screen.humanDecision ? <p className={styles.muted}>선택을 저장했어요.</p> : null}
         {screen.humanDecision ? <p>선택 완료</p> : null}
         {screen.humanChoices.length > 0 ? (
           <form action={acknowledgeHumanReview}>
@@ -610,9 +610,9 @@ export function ReviewDetailBody({ screen, noted }: { screen: ReviewConsoleScree
           </form>
         ) : null}
         {!screen.humanDecision && screen.humanChoices.length === 0 ? (
-          <p className={styles.muted}>다음 행동 선택: 현재 역할에는 이 변경 권한이 없습니다.</p>
+          <p className={styles.muted}>다음 행동 선택: 현재 역할에는 이 변경 권한이 없어요.</p>
         ) : null}
-        {screen.improvementTask ? <p>개선 작업을 만들었습니다</p> : null}
+        {screen.improvementTask ? <p>개선 작업을 만들었어요</p> : null}
         {screen.canCreateImprovement ? (
           <form action={createHumanImprovementTask}>
             <input type="hidden" name="reviewId" value={screen.reviewId} />
@@ -622,7 +622,7 @@ export function ReviewDetailBody({ screen, noted }: { screen: ReviewConsoleScree
         {screen.agentExecution ? (
           <>
             <p>에이전트 작업</p>
-            <p>상태: {screen.agentExecution.status}</p>
+            <p>상태: {userLabel(screen.agentExecution.status)}</p>
             <p>제공자: {screen.agentExecution.agent}</p>
             {screen.agentExecution.status === 'RUNNING' ? <p>진행 중</p> : null}
             {screen.agentExecution.status === 'COMPLETED' ? <p>완료</p> : null}
@@ -673,7 +673,7 @@ export function ReReviewAgentHandoffBody({ screen }: { screen: ReviewConsoleScre
         </form>
       ) : null}
       {execution?.status === 'PENDING' ? <p>에이전트 대기 중</p> : null}
-      {execution && execution.status !== 'PENDING' ? <p>상태: {execution.status}</p> : null}
+      {execution && execution.status !== 'PENDING' ? <p>상태: {userLabel(execution.status)}</p> : null}
     </section>
   );
 }
@@ -685,9 +685,9 @@ export function HumanReReviewBody({ screen }: { screen: ReviewConsoleScreen }) {
       <p>원래 심사: {screen.reviewId}</p>
       {screen.reReview ? (
         <>
-          <p>재심사: {screen.reReview.status}</p>
+          <p>재심사: {userLabel(screen.reReview.status)}</p>
           {screen.reReview.reviewResultId ? <p>심사 결과: {screen.reReview.reviewResultId}</p> : null}
-          {screen.reReview.decision ? <p>결론: {screen.reReview.decision}</p> : null}
+          {screen.reReview.decision ? <p>결론: {userLabel(screen.reReview.decision)}</p> : null}
           {screen.reReview.completedAt ? <p>완료 시각: {formatKstFull(screen.reReview.completedAt)}</p> : null}
         </>
       ) : null}
@@ -698,13 +698,13 @@ export function HumanReReviewBody({ screen }: { screen: ReviewConsoleScreen }) {
           <p className={styles.muted}>{MOCK_RE_REVIEW_NOTICE}</p>
         </form>
       ) : null}
-      {screen.reReview?.decision === 'ACCEPT' ? <p>개선이 필요하지 않습니다</p> : null}
+      {screen.reReview?.decision === 'ACCEPT' ? <p>개선이 필요하지 않아요</p> : null}
       {screen.nextImprovement ? (
         <>
           <p>다음 개선 작업</p>
           <p>작업: {screen.nextImprovement.id}</p>
-          <p>유형: {screen.nextImprovement.taskType}</p>
-          <p>상태: {screen.nextImprovement.status}</p>
+          <p>유형: {userLabel(screen.nextImprovement.taskType)}</p>
+          <p>상태: {userLabel(screen.nextImprovement.status)}</p>
         </>
       ) : null}
       {screen.canCreateReReviewImprovement && screen.reReview?.reviewResultId ? (
@@ -725,8 +725,8 @@ export function ReReviewNextImprovementBody({ screen }: { screen: ReviewConsoleS
     <section className={styles.panel}>
       <h2>다음 개선 작업</h2>
       <p>작업: {task.id}</p>
-      <p>유형: {task.taskType}</p>
-      <p>상태: {task.status}</p>
+      <p>유형: {userLabel(task.taskType)}</p>
+      <p>상태: {userLabel(task.status)}</p>
     </section>
   );
 }
@@ -737,8 +737,8 @@ export function HumanChangeGateBody({ screen }: { screen: ReviewConsoleScreen })
       <h2>변경 검사</h2>
       {screen.changeGate ? (
         <>
-          <p>변경 검사: {screen.changeGate.status}</p>
-          {screen.changeGate.errorCode ? <p>사유: {screen.changeGate.errorCode}</p> : null}
+          <p>변경 검사: {userLabel(screen.changeGate.status)}</p>
+          {screen.changeGate.errorCode ? <p>사유: {userLabel(screen.changeGate.errorCode)}</p> : null}
           {screen.changeGate.discrepancy ? <p>불일치</p> : null}
           {screen.changeGate.reasons.map((reason) => <p key={reason}>{reason}</p>)}
         </>
@@ -764,20 +764,20 @@ export function EvidenceBody({ actor, view, query = { q: '', filter: '', page: 1
   return (
     <section className={styles.panel}>
       <PageHeader
-        crumbs={[{ label: '홈', href: juryHref('/') }, { label: '리뷰 요청' }]}
-        title="리뷰 요청"
-        description="한 화면에서 리뷰 자료를 입력하고, 아래 목록에서 리뷰를 요청하세요."
+        crumbs={[{ label: '홈', href: juryHref('/') }, { label: '심사 요청' }]}
+        title="심사 요청"
+        description="한 화면에서 심사 근거를 입력하고, 아래 목록에서 심사를 요청하세요."
       />
       <p className={styles.helperText}>
-        <span className={styles.requiredMark}>필수</span> 항목은 반드시 입력해야 하고, <span className={styles.optionalMark}>선택</span> 항목은 비워 둘 수 있습니다. 승인된 서비스와 리뷰 자료만 표시됩니다.
+        <span className={styles.requiredMark}>필수</span> 항목은 반드시 입력해야 하고, <span className={styles.optionalMark}>선택</span> 항목은 비워 둘 수 있어요. 승인된 서비스와 심사 근거만 표시돼요.
       </p>
       {form.visible ? (
         form.scopes.length === 0 ? (
-          <p className={styles.muted}>현재 승인된 Scope에는 입력 가능한 Catalog Metric이 없습니다.</p>
+          <p className={styles.muted}>현재 승인된 Scope에는 입력 가능한 Catalog Metric이 없어요.</p>
         ) : (
           form.scopes.map((scope) => (
             <form action={submitTenantEvidenceIntake} key={scope.scopeId}>
-              <h3>리뷰 자료 입력</h3>
+              <h3>심사 근거 입력</h3>
               <p className={`${styles.muted} ${styles.selectedService}`}>선택한 서비스: {scope.label}</p>
               <input type="hidden" name="connectionId" value={scope.connectionId} />
               <input type="hidden" name="scopeId" value={scope.scopeId} />
@@ -796,7 +796,7 @@ export function EvidenceBody({ actor, view, query = { q: '', filter: '', page: 1
               </fieldset>
               <fieldset>
                 <legend>분석 항목<span className={styles.requiredMark}>1개 이상</span></legend>
-                <p className={styles.muted}>입력하지 않을 항목은 「포함 안 함」으로 두세요. 포함하지 않은 항목은 미검사로 표시되며 문제 없음으로 보지 않습니다.</p>
+                <p className={styles.muted}>입력하지 않을 항목은 「포함 안 함」으로 두세요. 포함하지 않은 항목은 미검사로 표시되며 문제 없음으로 보지 않아요.</p>
                 {scope.metrics.map((metric, index) => (
                   <div className={`${styles.row} ${styles.metricRow}`} key={metric}>
                     <input type="hidden" name="metricName" value={metric} />
@@ -819,12 +819,12 @@ export function EvidenceBody({ actor, view, query = { q: '', filter: '', page: 1
                   </div>
                 ))}
               </fieldset>
-              <button className={buttonClass('primary', 'lg', styles.intakeSubmit)} type="submit">리뷰 자료 만들기</button>
+              <button className={buttonClass('primary', 'lg', styles.intakeSubmit)} type="submit">심사 근거 만들기</button>
             </form>
           ))
         )
       ) : (
-        <p className={styles.muted}>Evidence 입력: 현재 역할에는 이 변경 권한이 없습니다.</p>
+        <p className={styles.muted}>Evidence 입력: 현재 역할에는 이 변경 권한이 없어요.</p>
       )}
       {allEvidence.length > 0 ? <ListControls path="/evidence" query={query} total={evidencePage.total} page={evidencePage.page} pages={evidencePage.pages} /> : null}
       {allEvidence.length === 0 ? <EmptyState>{displayText(SHELL_EMPTY.evidence)}</EmptyState> : evidence.length === 0 ? <p className={styles.muted}>조건에 맞는 자료 없음</p> : null}
@@ -836,7 +836,7 @@ export function EvidenceBody({ actor, view, query = { q: '', filter: '', page: 1
         const reviewState = evidenceReviewStatus(view, row.id, Date.now());
         return (
         <article key={row.id}>
-          <div className={styles.row}><span className={styles.label}>리뷰 자료</span><span>{row.purpose}</span></div>
+          <div className={styles.row}><span className={styles.label}>심사 근거</span><span>{row.purpose}</span></div>
           <div className={styles.row}><span className={styles.label}>분석 기간</span><span>{row.periodStart} – {row.periodEnd}</span></div>
           <details className={styles.technicalDetails}>
             <summary>기술 정보 자세히 보기</summary>
@@ -858,7 +858,7 @@ export function EvidenceBody({ actor, view, query = { q: '', filter: '', page: 1
               <form action={submitTenantReview}>
                 <input type="hidden" name="evidenceId" value={row.id} />
                 <ReviewRequestFields />
-                <ReviewSubmitButton label="리뷰 요청하기" disabledReason={reviewState.inFlight ? '이 자료로 실행 중인 리뷰가 있습니다. 끝난 뒤 새로고침하면 결과를 볼 수 있습니다.' : null} />
+                <ReviewSubmitButton label="심사 요청하기" disabledReason={reviewState.inFlight ? '이 자료로 실행 중인 심사가 있어요. 끝난 뒤 새로고침하면 결과를 볼 수 있어요.' : null} />
               </form>
             ) : (
               <p className={styles.muted}>
@@ -890,7 +890,7 @@ export function EvidenceBody({ actor, view, query = { q: '', filter: '', page: 1
               </Link>
             </div>
           ) : null}
-          {!reviewState.attemptsLoaded ? <p className={styles.muted}>실행 기록을 불러오지 못해 진행 중인 요청은 확인할 수 없습니다.</p> : null}
+          {!reviewState.attemptsLoaded ? <p className={styles.muted}>실행 기록을 불러오지 못해 진행 중인 요청은 확인할 수 없어요.</p> : null}
         </article>
         );
       })}
@@ -955,7 +955,7 @@ export function ImprovementsBody({
             {rows.map((task) => (
               <tr key={task.id}>
                 <td><StatusBadge status={task.status} title={task.status}>{userLabel(task.status)}</StatusBadge></td>
-                <td>{task.taskType ?? displayText(SHELL_UNAVAILABLE)}</td>
+                <td title={task.taskType ?? undefined}>{task.taskType ? userLabel(task.taskType) : displayText(SHELL_UNAVAILABLE)}</td>
                 <td><span className={styles.ellipsisText} title={task.diagnosis}>{task.diagnosis}</span></td>
                 <td className={styles.nowrapCell}><AcceptanceCriteriaDialog criteria={task.acceptanceCriteria} classes={criteriaDialogClasses} /></td>
                 <td><Link className={`${styles.inline} ${styles.identifier}`} href={juryHref(`/reviews/${task.sourceReviewId}`)} title={task.sourceReviewId}>{compactIdentifier(task.sourceReviewId)}</Link></td>
@@ -1029,7 +1029,7 @@ export function ImprovementsBody({
           </tbody>
         </table>
       )}
-      <WriteControl actor={actor} action="improvement.write" label="개선 Task 작성" returnTo={juryHref('/improvements')} resourceId={view.tasks[0]?.id} disabledHint={<>아직 저장 기능이 없습니다. <Link className={styles.inline} href={juryHref('/reviews')}>결과</Link>에서 리뷰 상세를 열어 「개선 작업 만들기」를 사용하세요.</>} />
+      <WriteControl actor={actor} action="improvement.write" label="개선 Task 작성" returnTo={juryHref('/improvements')} resourceId={view.tasks[0]?.id} disabledHint={<>아직 저장 기능이 없어요. <Link className={styles.inline} href={juryHref('/reviews')}>결과</Link>에서 심사 상세를 열어 「개선 작업 만들기」를 사용하세요.</>} />
     </section>
   );
 }
@@ -1091,11 +1091,11 @@ export function AgentsBody({ actor, view }: { actor: JuryActor; view: JuryConsol
       <h2>에이전트</h2>
       {view.executions.map((row) => (
         <div className={styles.row} key={row.id}>
-          <span>{row.agent}</span>
+          <span title={row.agent}>{userLabel(row.agent)}</span>
           <span className={styles.muted}>{displayText(row.status)}</span>
         </div>
       ))}
-      <WriteControl actor={actor} action="agent.execute" label="Agent 실행" returnTo={juryHref('/agents')} resourceId={view.executions[0]?.id} disabledHint={<>아직 저장 기능이 없습니다. <Link className={styles.inline} href={juryHref('/reviews')}>결과</Link>에서 리뷰 상세의 에이전트 실행을 사용하세요.</>} />
+      <WriteControl actor={actor} action="agent.execute" label="Agent 실행" returnTo={juryHref('/agents')} resourceId={view.executions[0]?.id} disabledHint={<>아직 저장 기능이 없어요. <Link className={styles.inline} href={juryHref('/reviews')}>결과</Link>에서 심사 상세의 에이전트 실행을 사용하세요.</>} />
     </section>
   );
 }
@@ -1129,13 +1129,13 @@ export function AutomationBody({
   return (
     <section className={styles.panel}>
       <h2>자동화</h2>
-      <p className={styles.muted}>한도는 저장된 Loop Guard입니다. 이 화면은 자동 Loop를 켜지 않습니다.</p>
+      <p className={styles.muted}>한도는 저장된 Loop Guard이에요. 이 화면은 자동 Loop를 켜지 않아요.</p>
       {loop ? (
         <>
           <div className={styles.row}><span className={styles.label}>사용 여부</span><span>{loop.enabled ? '켜짐' : '꺼짐'}</span></div>
           <div className={styles.row}><span className={styles.label}>실행 방식</span><span title={loop.mode}>{userLabel(loop.mode)}</span></div>
           <div className={styles.row}><span className={styles.label}>중단 이유</span><span>{loop.stopReason ?? '표시된 Loop 기준 없음'}</span></div>
-          <p className={styles.muted}>권한이 있는 서비스의 Loop만 표시합니다. 중단 이유도 표시된 Loop 기준입니다.</p>
+          <p className={styles.muted}>권한이 있는 서비스의 Loop만 표시해요. 중단 이유도 표시된 Loop 기준이에요.</p>
           {loop.cycles.map((cycle) => (
             <div className={styles.row} key={cycle.id}>
               <span title={cycle.status}>{cycleStatusLabel(cycle.status, loop.enabled)}</span>
@@ -1144,7 +1144,7 @@ export function AutomationBody({
           ))}
         </>
       ) : (
-        <p className={styles.muted}>Loop 상태를 읽지 못했습니다.</p>
+        <p className={styles.muted}>Loop 상태를 읽지 못했어요.</p>
       )}
       <div className={styles.row}><span className={styles.label}>maxIterations</span><span>{policy.maxIterations ?? '미정'}</span></div>
       <div className={styles.row}><span className={styles.label}>maxVerificationAttempts</span><span>{policy.maxVerificationAttempts ?? '미정'}</span></div>
@@ -1159,7 +1159,7 @@ export function AutomationBody({
           <Button variant="secondary" icon={Square} type="submit">자동 Loop 중지</Button>
         </form>
       ) : (
-        <p className={styles.muted}>자동 Loop 중지: 현재 역할에는 이 변경 권한이 없습니다.</p>
+        <p className={styles.muted}>자동 Loop 중지: 현재 역할에는 이 변경 권한이 없어요.</p>
       )}
     </section>
   );
@@ -1212,7 +1212,7 @@ export function AuditBody({ view, query = { q: '', filter: '', page: 1 } }: { vi
       <PageHeader
         crumbs={[{ label: '홈', href: juryHref('/') }, { label: '감사 이력' }]}
         title="감사 이력"
-        description="누가 언제 무엇을 했는지 시간순으로 확인하세요. 원래 기록 값은 마우스를 올리면 보입니다."
+        description="누가 언제 무엇을 했는지 시간순으로 확인하세요. 원래 기록 값은 마우스를 올리면 보여요."
       />
       {all.length > 0 ? <ListControls path="/audit" query={query} filterLabel="활동" filterOptions={paged.filterOptions} labelOf={auditActionLabel} total={paged.total} page={paged.page} pages={paged.pages} /> : null}
       {all.length === 0 ? <EmptyState>{displayText(SHELL_EMPTY.audit)}</EmptyState> : events.length === 0 ? <p className={styles.muted}>조건에 맞는 기록 없음</p> : (
@@ -1229,7 +1229,7 @@ export function AuditBody({ view, query = { q: '', filter: '', page: 1 } }: { vi
           <tbody>
             {events.map((event) => (
               <tr key={event.id}>
-                <td className={styles.nowrapCell}>{event.timestamp}</td>
+                <td className={styles.nowrapCell} title={event.timestamp}>{formatKstFull(event.timestamp)}</td>
                 <td className={styles.identifier} title={event.actor}>{compactIdentifier(event.actor)}</td>
                 <td title={event.action}>
                   {auditActionLabel(event.action)}
@@ -1264,7 +1264,7 @@ export function SettingsBody({
     <PageHeader
       crumbs={[{ label: '홈', href: juryHref('/') }, { label: '관리' }]}
       title="관리"
-      description="서비스 연결, 멤버, 권한, 초대, 보안과 설정을 한 곳에서 관리합니다."
+      description="서비스 연결, 멤버, 권한, 초대, 보안과 설정을 한 곳에서 관리해요."
     />
     <nav className={styles.adminGrid} aria-label="관리 메뉴">
       <Link className={styles.adminCard} href={juryHref('/organization/services')}><strong>서비스 연결</strong><span>연결 상태와 서비스 권한</span></Link>
@@ -1285,7 +1285,7 @@ export function SettingsBody({
     </section>
     <section className={styles.panel}>
       <h2>멤버와 역할</h2>
-      <p className={styles.muted}>OWNER와 ADMIN만 멤버를 추가·변경·제거할 수 있습니다. 마지막 OWNER는 보호됩니다.</p>
+      <p className={styles.muted}>OWNER와 ADMIN만 멤버를 추가·변경·제거할 수 있어요. 마지막 OWNER는 보호돼요.</p>
       {members.map((row) => (
         <div className={styles.row} key={row.id}>
           <span>{userLabel(row.role)}</span>
@@ -1298,7 +1298,7 @@ export function SettingsBody({
           <select className={styles.field} name="role" defaultValue="DEVELOPER">
             <option value="OWNER">소유자</option>
             <option value="ADMIN">관리자</option>
-            <option value="REVIEWER">리뷰어</option>
+            <option value="REVIEWER">심사자</option>
             <option value="DEVELOPER">개발자</option>
             <option value="VIEWER">열람자</option>
           </select>
@@ -1313,9 +1313,9 @@ export function SettingsBody({
           </button>
         </form>
       ) : (
-        <p className={styles.muted}>Membership 변경: 현재 역할에는 이 변경 권한이 없습니다.</p>
+        <p className={styles.muted}>Membership 변경: 현재 역할에는 이 변경 권한이 없어요.</p>
       )}
-      <WriteControl actor={actor} action="settings.write" label="조직 설정 변경" returnTo={juryHref('/settings')} disabledHint="아직 저장 기능이 없습니다." />
+      <WriteControl actor={actor} action="settings.write" label="조직 설정 변경" returnTo={juryHref('/settings')} disabledHint="아직 저장 기능이 없어요." />
     </section>
     <section className={styles.panel}>
       <h2>권한 요약</h2>
@@ -1338,7 +1338,7 @@ export function SettingsBody({
     </section>
     <section className={styles.panel}>
       <h2>자동화</h2>
-      <p className={styles.muted}>저장된 Loop Guard만 보여 줍니다. 이 화면은 자동화 설정을 바꾸지 않습니다.</p>
+      <p className={styles.muted}>저장된 Loop Guard만 보여 줘요. 이 화면은 자동화 설정을 바꾸지 않아요.</p>
       <div className={styles.row}><span className={styles.label}>사용 여부</span><span>{loop ? (loop.enabled ? '켜짐' : '꺼짐') : displayText(SHELL_UNAVAILABLE)}</span></div>
       <div className={styles.row}><span className={styles.label}>실행 방식</span><span title={loop?.mode}>{loop?.mode ? userLabel(loop.mode) : displayText(SHELL_UNAVAILABLE)}</span></div>
       <div className={styles.row}><span className={styles.label} title="maxIterations">최대 반복 횟수</span><span>{view.loopPolicy.maxIterations ?? displayText(SHELL_UNAVAILABLE)}</span></div>
@@ -1412,13 +1412,13 @@ export function SecondImprovementBody({ screen }: { screen: ReviewConsoleScreen 
   return (
     <section className={styles.panel}>
       <h2>다음 개선</h2>
-      {screen.secondReReviewDecision === 'ACCEPT' ? <p>추가 개선이 필요하지 않습니다</p> : null}
+      {screen.secondReReviewDecision === 'ACCEPT' ? <p>추가 개선이 필요하지 않아요</p> : null}
       {task ? (
         <>
           <p>다음 개선 작업</p>
           <p>작업: {task.id}</p>
-          <p>유형: {task.taskType}</p>
-          <p>상태: {task.status}</p>
+          <p>유형: {userLabel(task.taskType)}</p>
+          <p>상태: {userLabel(task.status)}</p>
         </>
       ) : null}
       {screen.canCreateSecondImprovement && screen.secondReReviewResultId ? (
@@ -1499,7 +1499,7 @@ export function LaterReReviewBody({ screen }: { screen: ReviewConsoleScreen }) {
         </form>
       ) : null}
       {review?.status === 'EXECUTED' ? <p>두 번째 재심사 결과</p> : null}
-      {review?.decision ? <p>결론: {review.decision}</p> : null}
+      {review?.decision ? <p>결론: {userLabel(review.decision)}</p> : null}
     </section>
   );
 }
@@ -1515,8 +1515,8 @@ export function LaterImprovementBody({ screen }: { screen: ReviewConsoleScreen }
         <>
           <p>다음 개선 작업</p>
           <p>작업: {task.id}</p>
-          <p>유형: {task.taskType}</p>
-          <p>상태: {task.status}</p>
+          <p>유형: {userLabel(task.taskType)}</p>
+          <p>상태: {userLabel(task.status)}</p>
         </>
       ) : null}
       {screen.canCreateLaterImprovement && review?.reviewResultId ? (
@@ -1613,7 +1613,7 @@ export function FollowingReReviewBody({ screen }: { screen: ReviewConsoleScreen 
           <p className={styles.muted}>{MOCK_RE_REVIEW_NOTICE}</p>
         </form>
       ) : null}
-      {review?.decision ? <p>결론: {review.decision}</p> : null}
+      {review?.decision ? <p>결론: {userLabel(review.decision)}</p> : null}
       {surface ? <TranslationHint /> : null}
       {surface ? <p lang="en">{surface.statusSummary}</p> : null}
       {surface ? (
@@ -1640,22 +1640,22 @@ export function FollowingReReviewBody({ screen }: { screen: ReviewConsoleScreen 
 // RM-03 (CT-11): requests that have no result yet. Status, times and failure reason; verdict column stays empty.
 function RequestStatusSection({ view }: { view: JuryConsoleView }) {
   if (!view.attempts) {
-    return <p className={styles.muted}>실행 기록을 불러오지 못했습니다. 결과가 없는 요청 목록은 확인할 수 없습니다.</p>;
+    return <p className={styles.muted}>실행 기록을 불러오지 못했어요. 결과가 없는 요청 목록은 확인할 수 없어요.</p>;
   }
   const rows = buildRequestStatusRows(view, Date.now());
   if (rows.length === 0) return null;
   return (
     <section className={styles.panel}>
       <h3>결과가 없는 요청</h3>
-      <p className={styles.muted}>실행 중이거나 실패한 요청입니다. 판정은 표시하지 않습니다.</p>
+      <p className={styles.muted}>실행 중이거나 실패한 요청이에요. 결론은 표시하지 않아요.</p>
       <table className={styles.table}>
         <thead>
           <tr>
             <th>상태</th>
             <th>시작</th>
             <th>종료</th>
-            <th>리뷰 유형</th>
-            <th>리뷰 자료</th>
+            <th>심사 유형</th>
+            <th>심사 근거</th>
             <th>사유</th>
           </tr>
         </thead>

@@ -17,9 +17,9 @@ export type ProposalView = {
 };
 
 export const PROPOSAL_NOTICES = {
-  LEGACY: '이 결과는 개선 제안 형식 도입 전에 저장되었습니다. 문제 목록만 표시합니다.',
-  EMPTY: '근거와 구체 수정안을 갖춘 개선 제안이 없습니다.',
-  OMITTED: '민감 정보가 포함되어 개선 제안을 표시하지 않습니다.',
+  LEGACY: '이 결과는 개선 제안 형식 도입 전에 저장되었어요. 문제 목록만 표시해요.',
+  EMPTY: '근거와 구체 수정안을 갖춘 개선 제안이 없어요.',
+  OMITTED: '민감 정보가 포함되어 개선 제안을 표시하지 않아요.',
 } as const;
 
 function strings(v: unknown): string[] {

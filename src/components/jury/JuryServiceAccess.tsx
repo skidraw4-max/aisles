@@ -56,7 +56,7 @@ export function JuryServiceMemberAdd({
       }
       router.refresh();
     } catch {
-      setMessage('서비스 접근 권한을 변경하지 못했습니다');
+      setMessage('서비스 접근 권한을 변경하지 못했어요');
     } finally {
       setLoading(false);
     }
@@ -85,7 +85,7 @@ export function JuryServiceMemberAdd({
         </select>
       </label>
       <button className={styles.primary} type="submit" disabled={loading || visible.length === 0}>구성원 추가</button>
-      {visible.length === 0 ? <p className={listStyles.empty}>일치하는 조직 구성원이 없습니다.</p> : null}
+      {visible.length === 0 ? <p className={listStyles.empty}>일치하는 조직 구성원이 없어요.</p> : null}
       {message ? <p className={styles.alert} role="alert">{message}</p> : null}
     </form>
   );
@@ -121,7 +121,7 @@ export function JuryServicePermissionControl({
       }
       router.refresh();
     } catch {
-      setMessage('서비스 접근 권한을 변경하지 못했습니다');
+      setMessage('서비스 접근 권한을 변경하지 못했어요');
     } finally {
       setLoading(false);
     }
@@ -174,7 +174,7 @@ export function JuryServiceRemoveControl({
       setOpen(false);
       router.refresh();
     } catch {
-      setMessage('서비스 접근 권한을 변경하지 못했습니다');
+      setMessage('서비스 접근 권한을 변경하지 못했어요');
     } finally {
       setLoading(false);
     }

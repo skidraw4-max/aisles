@@ -57,7 +57,7 @@ export async function ScreenAuditSection(props: {
     return (
       <section className={styles.resultCard}>
         <h2>화면 심사</h2>
-        <p>화면 심사는 “읽기 전용 계정” 방식으로 연결된 서비스에서 쓸 수 있습니다.</p>
+        <p>화면 심사는 “읽기 전용 계정” 방식으로 연결된 서비스에서 쓸 수 있어요.</p>
       </section>
     );
   }
@@ -104,7 +104,7 @@ export async function ScreenAuditSection(props: {
               {latest.status ? STATUS_LABEL[latest.status] ?? latest.status : latest.state === 'RUNNING' ? '진행 중' : '결과 없음'}
             </StatusBadge>
           </h3>
-          {latest.parentAuditId ? <p>이전 심사를 다시 확인한 재심사입니다.</p> : null}
+          {latest.parentAuditId ? <p>이전 심사를 다시 확인한 재심사예요.</p> : null}
           {view.diff ? (
             <div role="group" aria-label="이전 심사와 비교">
               <h3>이전 심사와 비교</h3>
@@ -125,7 +125,7 @@ export async function ScreenAuditSection(props: {
                   </details>
                 ) : null,
               )}
-              <p>다시 확인하지 못한 화면의 문제는 “고쳐짐”으로 세지 않습니다.</p>
+              <p>다시 확인하지 못한 화면의 문제는 “고쳐짐”으로 세지 않아요.</p>
             </div>
           ) : null}
           {stop ? <p role="note">{stop}</p> : null}
@@ -241,7 +241,7 @@ export async function ScreenAuditSection(props: {
           ) : null}
         </>
       ) : (
-        <p className={styles.muted}>아직 화면 심사 기록이 없습니다.</p>
+        <p className={styles.muted}>아직 화면 심사 기록이 없어요.</p>
       )}
       {view.history.length > 0 ? (
         <>

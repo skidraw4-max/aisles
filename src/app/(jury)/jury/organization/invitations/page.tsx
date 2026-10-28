@@ -37,7 +37,7 @@ export default async function JuryInvitationsPage() {
       {allowed ? (
         <>
           <JuryInvitationForm />
-          {invitations.length === 0 ? <p className={listStyles.empty}>아직 초대가 없습니다.</p> : (
+          {invitations.length === 0 ? <p className={listStyles.empty}>아직 초대가 없어요.</p> : (
             <div className={listStyles.tableWrap}>
             <table className={listStyles.table}>
               <thead>
@@ -64,7 +64,7 @@ export default async function JuryInvitationsPage() {
             </div>
           )}
         </>
-      ) : <p role="alert">초대 권한이 없습니다</p>}
+      ) : <p role="alert">초대 권한이 없어요</p>}
     </JuryChrome>
   );
 }

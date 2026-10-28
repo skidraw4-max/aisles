@@ -74,8 +74,8 @@ export function AuditJuryReviewButton(props: {
           ))}
         </ol>
       ) : null}
-      {phase === 'running' || phase === 'starting' ? <p role="status">위원 5명이 근거를 검토하고 있어요. 보통 1~4분 걸리고, 이 화면을 떠나도 심사는 계속됩니다.</p> : null}
-      {error ? <p role="alert">위원 심사를 끝내지 못했습니다 ({error}). 잠시 후 다시 눌러 주세요.</p> : null}
+      {phase === 'running' || phase === 'starting' ? <p role="status">위원 5명이 근거를 검토하고 있어요. 보통 1~4분 걸리고, 이 화면을 떠나도 심사는 계속돼요.</p> : null}
+      {error ? <p role="alert">위원 심사를 끝내지 못했어요 ({error}). 잠시 후 다시 눌러 주세요.</p> : null}
     </div>
   );
 }

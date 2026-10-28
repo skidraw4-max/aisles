@@ -13,10 +13,10 @@ export { CONNECTED_REVIEW_STALE_TEXT };
 export const STALE_RUNNING_DEFAULT_MS = 15 * 60 * 1000;
 
 const FAILURE_LABELS: Record<string, string> = {
-  REVIEW_NOT_EXECUTED: '심사를 실행하지 못했습니다',
-  DECISION_NOT_IN_CONTRACT: '판정 값이 계약 범위를 벗어났습니다',
-  CORE_READING_REJECTED: '심사 결과 형식이 올바르지 않습니다',
-  PERSISTENCE_FAILED: '결과 저장에 실패했습니다',
+  REVIEW_NOT_EXECUTED: '심사를 실행하지 못했어요',
+  DECISION_NOT_IN_CONTRACT: '결론 값이 계약 범위를 벗어났어요',
+  CORE_READING_REJECTED: '심사 결과 형식이 올바르지 않아요',
+  PERSISTENCE_FAILED: '결과 저장에 실패했어요',
   REVIEW_ALREADY_EXISTS: '진행 중인 심사가 있어요. 잠시 후 결과를 확인하세요',
 };
 

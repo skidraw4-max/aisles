@@ -27,7 +27,7 @@ export function JuryLoginForm({ notice, returnQuery }: { notice?: string; return
       const supabase = createClient();
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
-      if (!data.session) throw new Error('세션을 받지 못했습니다.');
+      if (!data.session) throw new Error('세션을 받지 못했어요.');
       const syncOutcome = await runProfileSync(
         syncPrismaUserWithAuth,
         data.session.access_token,
@@ -41,7 +41,7 @@ export function JuryLoginForm({ notice, returnQuery }: { notice?: string; return
       router.push(returnQuery ? safeJuryNext(returnQuery) : juryHref('/'));
       router.refresh();
     } catch (err: unknown) {
-      setMessage(err instanceof Error ? err.message : '로그인에 실패했습니다.');
+      setMessage(err instanceof Error ? err.message : '로그인에 실패했어요.');
     } finally {
       setLoading(false);
     }
@@ -53,13 +53,13 @@ export function JuryLoginForm({ notice, returnQuery }: { notice?: string; return
     try {
       const supabase = createClient();
       const callback = juryOAuthRedirect(getAuthCallbackSiteUrl(), returnQuery);
-      if (!callback) throw new Error('Google 계정으로 진행할 수 없습니다.');
+      if (!callback) throw new Error('Google 계정으로 진행할 수 없어요.');
       await signInWithOAuth(supabase, 'google', {
         redirectTo: callback.redirectTo,
         queryParams: { prompt: 'select_account' },
       });
     } catch (err: unknown) {
-      setMessage(err instanceof Error ? err.message : 'Google 계정으로 진행할 수 없습니다.');
+      setMessage(err instanceof Error ? err.message : 'Google 계정으로 진행할 수 없어요.');
       setLoading(false);
     }
   };

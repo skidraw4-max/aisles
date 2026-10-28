@@ -688,7 +688,7 @@ test('follow-up 3: the UI gates review areas and list cells on hasReviewAccess a
     assert.equal(gated.includes(text), true, text);
     assert.equal(ui.split(text).length - 1, 1, `${text} renders only inside the gate`);
   }
-  const evidence = ui.indexOf('<h3>검증 근거</h3>');
+  const evidence = ui.indexOf('<h3>심사 근거</h3>');
   assert.ok(evidence > 0 && evidence < gate, 'evidence stays outside the gate');
   assert.equal(ui.includes('{model.flow ? ('), true);
   assert.equal(ui.includes('if (!action) return null;'), true);

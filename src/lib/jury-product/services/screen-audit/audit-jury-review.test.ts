@@ -133,7 +133,7 @@ describe('wiring (source)', () => {
     const review = read('src/lib/jury-product/connected-service-review.ts');
     assert.equal(review.includes('boundScreenAuditId(evidenceRow.apiEvidence)'), true);
   });
-  it('manual 검증 근거 수집 / 심사 실행 stay, inside 고급', () => {
+  it('manual 심사 근거 수집 / 심사 실행 stay, inside 고급', () => {
     for (const file of ['src/app/(jury)/jury/service-operations-ui.tsx', 'src/app/(jury)/jury/service-onboarding-ui.tsx']) {
       const src = read(file);
       for (const kind of ['collect-evidence', 'run-review']) {
@@ -143,7 +143,7 @@ describe('wiring (source)', () => {
       }
       assert.equal(src.includes('label="심사 실행"'), true);
     }
-    assert.equal(read('src/app/(jury)/jury/service-operations-ui.tsx').includes('검증 근거 수집'), true);
+    assert.equal(read('src/app/(jury)/jury/service-operations-ui.tsx').includes('심사 근거 수집'), true);
   });
   it('does not touch /ai-review-board', () => {
     assert.equal(read('src/lib/jury-product/evidence-builder.ts').includes("from '@/lib/ai-review-board/types'"), true);

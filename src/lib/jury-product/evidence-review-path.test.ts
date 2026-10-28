@@ -15,6 +15,6 @@ test('I-029: connected-collection evidence uses the service-page path (no claim 
 });
 
 test('I-029 (t449u): notice states when the service-page button exists (collection AVAILABLE, no running review)', () => {
-  assert.match(CONNECTED_EVIDENCE_REVIEW_NOTICE, /수집이 완료되고 실행 중인 리뷰가 없을 때/);
+  assert.match(CONNECTED_EVIDENCE_REVIEW_NOTICE, /수집이 완료되고 실행 중인 심사가 없을 때/);
   assert.match(CONNECTED_EVIDENCE_REVIEW_NOTICE, /주장 검증은 직접 입력 자료에서만/);
 });

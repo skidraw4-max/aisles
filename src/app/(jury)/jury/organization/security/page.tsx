@@ -32,7 +32,7 @@ export default async function JuryOrganizationSecurityPage() {
   return (
     <JuryChrome actor={entry}>
       <PageHeader crumbs={[{ label: '홈', href: juryHref('/') }, { label: '관리' }, { label: '조직 보안' }]} title="조직 보안" />
-      <p className={listStyles.empty}>현재 정책을 보여 주는 화면입니다. 이 설정은 여기서 변경할 수 없습니다.</p>
+      <p className={listStyles.empty}>현재 정책을 보여 주는 화면이에요. 이 설정은 여기서 변경할 수 없어요.</p>
       {SECTIONS.map(([key, title]) => (
         <section key={key}>
           <h3>{title}</h3>

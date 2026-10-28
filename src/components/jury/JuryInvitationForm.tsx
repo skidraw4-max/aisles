@@ -32,7 +32,7 @@ export function JuryInvitationForm() {
       setEmail('');
       setRole('VIEWER');
     } catch {
-      setMessage('초대를 만들지 못했습니다');
+      setMessage('초대를 만들지 못했어요');
     } finally {
       setLoading(false);
     }

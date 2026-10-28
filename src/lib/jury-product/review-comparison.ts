@@ -1,6 +1,6 @@
 /**
  * RM-11 (M-011, UI-06, CT-10): 이전 대비 비교. Pure projection of two AGG-01 display models.
- * Output = 판정 범주 변화 + 문제 수 차이(정수). No ratios, no composite score.
+ * Output = 결론 범주 변화 + 문제 수 차이(정수). No ratios, no composite score.
  * Either side MOCK/FIXTURE/UNKNOWN_LEGACY → "비교 불가". Different service or metric set → "비교 불가".
  * Does not run a review and does not touch JuryReReviewResult (D-08 undecided).
  */
@@ -23,13 +23,13 @@ export type ComparisonBlock =
   | 'DECISION_WITHHELD';
 
 export const COMPARISON_BLOCK_LABELS: Record<ComparisonBlock, string> = {
-  NO_PREVIOUS: '같은 서비스의 이전 실제 결과가 없습니다.',
-  NON_REAL_SOURCE: 'Mock/Fixture 결과가 포함되어 비교할 수 없습니다.',
-  LEGACY_SOURCE: '출처를 판별할 수 없는 과거 결과가 포함되어 비교할 수 없습니다.',
-  DIFFERENT_SOURCE_GRADE: '두 결과의 출처 등급(실모델/검증된 실모델)이 달라 비교할 수 없습니다.',
-  DIFFERENT_SERVICE: '서비스가 달라 비교할 수 없습니다.',
-  DIFFERENT_METRICS: '두 결과의 지표 구성이 달라 비교할 수 없습니다.',
-  DECISION_WITHHELD: '한쪽 판정이 표시 보류 상태라 비교할 수 없습니다.',
+  NO_PREVIOUS: '같은 서비스의 이전 실제 결과가 없어요.',
+  NON_REAL_SOURCE: 'Mock/Fixture 결과가 포함되어 비교할 수 없어요.',
+  LEGACY_SOURCE: '출처를 판별할 수 없는 과거 결과가 포함되어 비교할 수 없어요.',
+  DIFFERENT_SOURCE_GRADE: '두 결과의 출처 등급(실모델/검증된 실모델)이 달라 비교할 수 없어요.',
+  DIFFERENT_SERVICE: '서비스가 달라 비교할 수 없어요.',
+  DIFFERENT_METRICS: '두 결과의 지표 구성이 달라 비교할 수 없어요.',
+  DECISION_WITHHELD: '한쪽 결론이 표시 보류 상태라 비교할 수 없어요.',
 };
 
 export type ReviewComparisonView =
@@ -74,8 +74,8 @@ export function compareReviewResults(current: ComparisonSide, previous: Comparis
   const delta = prevCount === null || curCount === null ? null : curCount - prevCount;
   const changed = previous.display.decision.raw !== current.display.decision.raw;
   const decisionText = changed
-    ? `판정 ${previous.display.decision.label} → ${current.display.decision.label}`
-    : `판정 변화 없음 (${current.display.decision.label})`;
+    ? `결론 ${previous.display.decision.label} → ${current.display.decision.label}`
+    : `결론 변화 없음 (${current.display.decision.label})`;
   const problemText = delta === null
     ? '문제 수 차이 집계 불가'
     : delta === 0 ? '수정 필요 항목 수 변화 없음' : `수정 필요 항목 ${delta > 0 ? '+' : ''}${delta}건`;

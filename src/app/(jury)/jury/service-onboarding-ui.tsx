@@ -123,7 +123,7 @@ export function ServiceDetailBody({
     return (
       <section className={styles.panel} role="alert">
         <h2 className={styles.pageTitle}>서비스</h2>
-        <p>현재 tenant에서 이 서비스를 찾지 못했어요.</p>
+        <p>현재 조직에서 이 서비스를 찾지 못했어요.</p>
       </section>
     );
   }
@@ -175,7 +175,7 @@ export function ServiceDetailBody({
       </InfoTable>
       {discovery ? (
         <>
-          {github && synthetic ? <p>This discovery is a mock placeholder. It is not a GitHub repository list.</p> : null}
+          {github && synthetic ? <p>이 서비스 확인 결과는 예시 데이터예요. 실제 GitHub 저장소 목록이 아니에요.</p> : null}
           <details className={styles.technicalDetails}>
             <summary>기술 정보</summary>
             <p>자원 {discovery.surfaces.join(', ')}</p>
@@ -186,7 +186,7 @@ export function ServiceDetailBody({
             <form action={runOnboardingDiscovery}>
               <input type="hidden" name="connectionId" value={connection.id} />
               <input type="hidden" name="tenantId" value="client-supplied-tenant" />
-              <OnboardingSubmit label="Run GitHub Discovery" pendingLabel="Discovery running" />
+              <OnboardingSubmit label="GitHub 서비스 확인" pendingLabel="서비스 확인 중" />
             </form>
           ) : null}
         </>
@@ -194,7 +194,7 @@ export function ServiceDetailBody({
         <form action={runOnboardingDiscovery}>
           <input type="hidden" name="connectionId" value={connection.id} />
           <input type="hidden" name="tenantId" value="client-supplied-tenant" />
-          <OnboardingSubmit label="Run Discovery" pendingLabel="Discovery running" />
+          <OnboardingSubmit label="서비스 확인 실행" pendingLabel="서비스 확인 중" />
         </form>
       ) : (
         <p className={styles.muted}>서비스 확인 실행: 현재 역할에는 이 변경 권한이 없어요.</p>
@@ -256,7 +256,7 @@ export function ServiceDetailBody({
       <h3>자료</h3>
       {github ? (
         <p>
-          Evidence collection stays closed until one repository scope is approved.
+          저장소 하나의 접근 범위를 승인해야 심사 근거를 수집할 수 있어요.
           {' '}
           <Link className={styles.inline} href={juryHref('/services/github')}>GitHub 저장소</Link>
         </p>
@@ -301,7 +301,7 @@ export function ServiceDetailBody({
             statusText={connectedReviewStatusText(row.reviewStatus, row.reviewStale, displayText)}
             staleText={row.reviewStale ? CONNECTED_REVIEW_STALE_TEXT : null}
           />
-          {row.decision ? <p>판정 {displayText(row.decision)}</p> : null}
+          {row.decision ? <p>결론 {displayText(row.decision)}</p> : null}
           {row.completedAt ? <p>완료 시각 {formatKstFull(row.completedAt)}</p> : null}
           {row.summary ? (
             <>

@@ -55,7 +55,7 @@ export function BlockedRequestsTable(props: { details: readonly BlockedDetail[] 
       {stubbed > 0 ? (
         <p className={c.muted} style={muted}>분석·광고 대체: 분석·광고 스크립트는 외부로 보내지 않고 빈 응답으로 대신해 화면이 멈추지 않게 했어요.</p>
       ) : null}
-      <p className={c.muted} style={muted}>주소는 도메인과 경로만 저장합니다(검색어·쿠키·내용은 저장하지 않음).</p>
+      <p className={c.muted} style={muted}>주소는 도메인과 경로만 저장해요(검색어·쿠키·내용은 저장하지 않음).</p>
     </details>
   );
 }

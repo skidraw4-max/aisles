@@ -40,7 +40,7 @@ test('M-011: decision change + integer problem delta, no ratio', () => {
 
 test('no change is stated explicitly, never as "no problem"', () => {
   const v = compareReviewResults(side({ id: 'b', problems: ['x'] }), side({ id: 'a', problems: ['y'] }));
-  assert.equal(v.state === 'COMPARED' && v.text.includes('판정 변화 없음') && v.text.includes('변화 없음'), true);
+  assert.equal(v.state === 'COMPARED' && v.text.includes('결론 변화 없음') && v.text.includes('변화 없음'), true);
   assert.equal(v.text.includes('문제 없음'), false);
 });
 

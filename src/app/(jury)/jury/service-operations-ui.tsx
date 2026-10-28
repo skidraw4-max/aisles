@@ -68,7 +68,7 @@ function NextAction({ model, observationNeeded }: { model: ServiceOperationModel
       ) : null}
       {action.state === 'AVAILABLE' && action.id === 'collect-evidence' ? (
         <details className={styles.technicalDetails} data-advanced="collect-evidence">
-          <summary>고급: 기간을 직접 골라 검증 근거 수집</summary>
+          <summary>고급: 기간을 직접 골라 심사 근거 수집</summary>
           <p className={styles.muted}>보통은 화면 심사 탭의 “이 결과로 위원 심사하기”를 쓰세요.</p>
         <form action={collectConnectedServiceEvidence}>
           <input type="hidden" name="connectionId" value={model.connectionId} />
@@ -76,7 +76,7 @@ function NextAction({ model, observationNeeded }: { model: ServiceOperationModel
           <input type="hidden" name="purpose" value="aisle-self-observation" />
           <CollectPeriodFields />
           <input type="hidden" name="timezone" value="Asia/Seoul" />
-          <Button variant="secondary" icon={Download} type="submit">검증 근거 수집</Button>
+          <Button variant="secondary" icon={Download} type="submit">심사 근거 수집</Button>
         </form>
         </details>
       ) : null}
@@ -139,7 +139,7 @@ export function ServiceOperationsList({
         <div>
           <p className={styles.eyebrow}>현재 메뉴 · 서비스</p>
           <h2 className={styles.pageTitle}>{showDeleted ? DELETED_VIEW_TITLE : '서비스'}</h2>
-          <p className={styles.pageDescription}>서비스별 연결 상태, 검증 근거, 심사, 개선, 에이전트 상태를 확인해요. 접근 권한 변경은 관리 &gt; 서비스 연결에서 해요.</p>
+          <p className={styles.pageDescription}>서비스별 연결 상태, 심사 근거, 심사, 개선, 에이전트 상태를 확인해요. 접근 권한 변경은 관리 &gt; 서비스 연결에서 해요.</p>
         </div>
         {/* I-100: single list — primary 서비스 추가 + secondary GitHub 연결 in the header. */}
         <div className={styles.headerActions} data-testid="services-header-actions">
@@ -176,7 +176,7 @@ export function ServiceOperationsList({
               <th>제공자</th>
               {showDeleted ? <><th>삭제 시각 (KST)</th><th>삭제한 사람</th></> : <th>연결 상태</th>}
               {showDeleted ? null : <th>운영 상태</th>}
-              <th>최근 검증 근거</th>
+              <th>최근 심사 근거</th>
               <th>최근 심사</th>
               <th>현재 결론</th>
               <th className={styles.num}>열린 개선 작업</th>
@@ -202,7 +202,7 @@ export function ServiceOperationsList({
                   <td><StatusBadge status={row.connectionStatus} title={row.connectionStatus}>{userLabel(row.connectionStatus)}</StatusBadge></td>
                 )}
                 {showDeleted ? null : <td>{row.phase ? <StatusBadge status={row.phase} title={row.phase}>{userLabel(row.phase)}</StatusBadge> : '—'}</td>}
-                <td>{row.parts.evidence === 'READY' ? userLabel('READY') : displayText('No evidence collected yet')}</td>
+                <td>{row.parts.evidence === 'READY' ? userLabel('READY') : '아직 수집한 심사 근거가 없어요'}</td>
                 <td>{hasReviewAccess(row) ? displayText(row.lastReview) : '—'}</td>
                 <td>{hasReviewAccess(row) ? displayText(row.review.decision ?? 'No review') : '—'}</td>
                 <td className={styles.num}>{improvementOpenCountCell(row)}</td>
@@ -291,7 +291,7 @@ export function ServiceOperationDetail({
       {show('overview') ? (
         <>
       <h3>개요</h3>
-      <p>검증 근거 {userLabel(model.parts.evidence)}</p>
+      <p>심사 근거 {userLabel(model.parts.evidence)}</p>
       {model.parts.review ? <p>심사 {userLabel(model.parts.review)}</p> : null}
       {model.parts.improvement ? <p>개선 {userLabel(model.parts.improvement)}</p> : null}
       {model.parts.agent ? <p>에이전트 {userLabel(model.parts.agent)}</p> : null}
@@ -311,15 +311,15 @@ export function ServiceOperationDetail({
 
       {show('results') ? (
         <>
-      <h3>검증 근거</h3>
-      {model.evidence.empty ? <p>{displayText('No evidence collected yet')}</p> : (
+      <h3>심사 근거</h3>
+      {model.evidence.empty ? <p>{'아직 수집한 심사 근거가 없어요'}</p> : (
         <>
           <p>근거 수집 시각 {formatKstFull(model.evidence.collectedAt)}</p>
-          <p className={styles.muted}>검증 근거는 [자료 수집]을 실행한 시점의 관찰 결과로 만들어져요. 그 뒤에 실행한 관찰은 자료를 다시 수집해야 반영돼요.</p>
+          <p className={styles.muted}>심사 근거는 [자료 수집]을 실행한 시점의 관찰 결과로 만들어져요. 그 뒤에 실행한 관찰은 자료를 다시 수집해야 반영돼요.</p>
           <p>기간 {model.evidence.period}</p>
           <p>측정된 지표 {model.evidence.measuredCount}</p>
           <p>측정되지 않은 지표 {model.evidence.notMeasuredCount}</p>
-          <p>검증 근거 항목 {model.evidence.evidenceItemCount}</p>
+          <p>심사 근거 항목 {model.evidence.evidenceItemCount}</p>
           <p>수집 상태 <span title={model.evidence.collectionStatus}>{displayText(model.evidence.collectionStatus)}</span></p>
           <details className={styles.technicalDetails}>
             <summary>기술 정보</summary>

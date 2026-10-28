@@ -249,7 +249,7 @@ test('the detail page keeps review.read, then gates improvement and agent on the
   assert.equal(page.includes("guardReviewFeature(actor, reviewId, 'agent.execute')"), true);
   assert.equal(page.includes('restrictReviewConsoleScreen(loaded.screen, blocks)'), true);
   assert.equal(page.includes('screen={loaded.screen}'), false);
-  assert.equal(page.includes("'Not authorized'"), true);
+  assert.equal(page.includes("'이 화면을 볼 권한이 없어요.'"), true);
   for (const name of ['HumanChangeGate', 'HumanReReview', 'ReReviewNextImprovement', 'ReReviewAgentHandoff', 'ReReviewAgentRun', 'ReReviewChangeGate', 'SecondReReview', 'SecondImprovement', 'SecondImprovementApproval', 'SecondImprovementHandoff', 'SecondChangeGate', 'LaterReReview', 'LaterImprovement', 'LaterImprovementApproval', 'LaterImprovementHandoff', 'LaterAgentRun', 'LaterChangeGate', 'FollowingReReview']) {
     assert.equal(page.includes(`{show.${name} ? <${name}Body screen={screen} /> : null}`), true, name);
   }
@@ -311,7 +311,7 @@ test('t336 3: the next improvement block renders only the task id, type, and sta
   const ui = readSource(UI);
   const body = between(ui, 'export function ReReviewNextImprovementBody', 'export function HumanChangeGateBody');
   assert.equal(ui.indexOf('export function HumanReReviewBody') < ui.indexOf('export function ReReviewNextImprovementBody'), true);
-  for (const field of ['<h2>다음 개선 작업</h2>', '{task.id}', '{task.taskType}', '{task.status}']) {
+  for (const field of ['<h2>다음 개선 작업</h2>', '{task.id}', '{userLabel(task.taskType)}', '{userLabel(task.status)}']) {
     assert.equal(body.includes(field), true, field);
   }
   for (const token of ['reReview', 'decision', 'Decision', 'reviewResultId', 'completedAt', 'agentExecution', 'AgentExecution', 'changeGate', 'Re-review', '<form', 'name=', 'Approve', 'Send to Agent', 'Run ', 'Create ', '결론', '재심사', '승인', '에이전트에 전달', '실행', '만들기']) {
@@ -329,7 +329,7 @@ test('t336 4: with improvement.read and agent.execute the layout stays as before
   assert.equal(sections.HumanReReview, true);
   assert.equal(sections.ReReviewNextImprovement, false);
   const reviewBody = between(readSource(UI), 'export function HumanReReviewBody', 'export function ReReviewNextImprovementBody');
-  for (const label of ['다음 개선 작업', '{screen.nextImprovement.id}', '{screen.nextImprovement.taskType}', '{screen.nextImprovement.status}']) {
+  for (const label of ['다음 개선 작업', '{screen.nextImprovement.id}', '{userLabel(screen.nextImprovement.taskType)}', '{userLabel(screen.nextImprovement.status)}']) {
     assert.equal(reviewBody.includes(label), true, label);
   }
   assert.equal(readSource(PAGE).includes([
@@ -421,7 +421,7 @@ test('t336 existing ui source checks around the Re-review body still hold', () =
   assert.equal(reviewBody.includes('재심사:'), true);
   // rereview-improvement-bridge.test.ts
   assert.equal(reviewBody.includes('개선 작업 만들기'), true);
-  assert.equal(reviewBody.includes('개선이 필요하지 않습니다'), true);
+  assert.equal(reviewBody.includes('개선이 필요하지 않아요'), true);
   assert.equal(reviewBody.includes('다음 개선 작업'), true);
   for (const label of ['에이전트에 전달', '변경 검사 실행', '자동 수정', '루프 실행']) {
     assert.equal(reviewBody.includes(label), false, label);
@@ -450,7 +450,7 @@ test('phase 3: review tabs keep the permission blocks verbatim inside the 이력
   assert.equal(page.includes('reviewTabFrom(query.tab)'), true);
   assert.equal(page.indexOf("{tab === 'history' ? (") < page.indexOf('{show.HumanChangeGate ? <HumanChangeGateBody screen={screen} /> : null}'), true);
   assert.equal(page.includes("{tab === 'summary' ? <ReviewDetailBody screen={screen} noted={noted} /> : null}"), true);
-  for (const label of ['요약', '위원 의견', '검증 근거', '이력']) assert.equal(tabs.includes(`'${label}'`), true, label);
+  for (const label of ['요약', '위원 의견', '심사 근거', '이력']) assert.equal(tabs.includes(`'${label}'`), true, label);
   for (const token of ['prisma', 'runReviewBoardPipeline', 'formData', "'use server'", 'action={']) {
     assert.equal(tabs.includes(token), false, token);
   }

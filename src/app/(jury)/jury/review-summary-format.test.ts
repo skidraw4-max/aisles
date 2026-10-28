@@ -27,5 +27,5 @@ test('reviews table uses fixed columns and a summary popup', () => {
   assert.match(dialog, /^'use client';/);
   assert.match(dialog, /<dialog/);
   assert.match(dialog, /요약 상세/);
-  assert.match(dialog, /리뷰 상세로 이동/);
+  assert.match(dialog, /심사 상세로 이동/);
 });

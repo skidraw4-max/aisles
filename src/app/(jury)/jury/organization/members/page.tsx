@@ -46,7 +46,7 @@ export default async function JuryMembersPage() {
         title="구성원"
         actions={canInvite ? <ButtonLink variant="primary" icon={UserPlus} href={juryHref('/organization/invitations')}>구성원 초대</ButtonLink> : undefined}
       />
-      {members.length === 0 ? <p className={listStyles.empty}>아직 구성원이 없습니다.</p> : (
+      {members.length === 0 ? <p className={listStyles.empty}>아직 구성원이 없어요.</p> : (
         <div className={listStyles.tableWrap}>
         <table className={listStyles.table}>
           <thead>

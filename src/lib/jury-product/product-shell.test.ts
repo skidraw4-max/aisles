@@ -26,7 +26,7 @@ test('product shell navigation opens the console routes', () => {
   }
   assert.deepEqual(PRODUCT_NAV.map((item) => item.label), [
     '홈',
-    '리뷰 요청',
+    '심사 요청',
     '결과',
     '서비스',
     '개선',
@@ -130,6 +130,6 @@ test('auditor stays read-only and the shell does not fall back to fixtures', () 
   // I-100: the services empty state lives in the single services list.
   const ops = readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/service-operations-ui.tsx'), 'utf8');
   assert.equal(ops.includes('SHELL_EMPTY.services'), true);
-  assert.equal(ui.includes('접근할 수 없습니다'), true);
+  assert.equal(ui.includes('접근할 수 없어요'), true);
   assert.equal(ui.includes('Logout'), true);
 });

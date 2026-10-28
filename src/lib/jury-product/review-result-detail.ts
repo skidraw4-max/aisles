@@ -16,8 +16,8 @@ export type ResultDetailView = {
     facts: { label: string; value: string }[];
     warnings: string[];
   };
-  /** 주장 → 근거 → 판정 → 기대 */
-  comparison: { step: '주장' | '근거' | '판정' | '기대'; value: string; note: string | null }[];
+  /** 주장 → 근거 → 결론 → 기대 */
+  comparison: { step: '주장' | '근거' | '결론' | '기대'; value: string; note: string | null }[];
   /** 수정 필요 → 원인 링크. PC-03: no problem→evidence link exists, so each cause points at result-level evidence. */
   problems: { state: 'LISTED' | 'EMPTY' | 'UNAVAILABLE'; emptyText: string | null; items: { text: string; cause: DetailLink }[] };
   unchecked: { state: 'LISTED' | 'NONE' | 'UNKNOWN'; text: string | null; items: string[] };
@@ -30,11 +30,11 @@ export function buildResultDetailView(display: ReviewDisplayModel): ResultDetail
     ? 'NON_REAL'
     : display.source.value === 'UNKNOWN_LEGACY' ? 'LEGACY' : 'REAL';
   const sourceNote = tone === 'NON_REAL'
-    ? '실제 심사 결과가 아니며 종합 상태·비교·추세 집계에서 제외됩니다.'
-    : tone === 'LEGACY' ? '출처를 판별할 수 없는 과거 결과입니다.' : null;
+    ? '실제 심사 결과가 아니며 종합 상태·비교·추세 집계에서 제외돼요.'
+    : tone === 'LEGACY' ? '출처를 판별할 수 없는 과거 결과예요.' : null;
 
   const decisionNote = display.decision.withheld
-    ? `판정 표시 보류 — ${display.decision.withheldReason ? DISPLAY_FLAG_LABELS[display.decision.withheldReason] : '근거 미연결'}`
+    ? `결론 표시 보류 — ${display.decision.withheldReason ? DISPLAY_FLAG_LABELS[display.decision.withheldReason] : '근거 미연결'}`
     : null;
 
   const claims = display.claims;
@@ -45,7 +45,7 @@ export function buildResultDetailView(display: ReviewDisplayModel): ResultDetail
   const problemsText = display.problems.state === 'UNAVAILABLE'
     ? '집계 불가'
     : display.problems.count === 0
-      ? (display.flags.includes('DECISION_PROBLEM_MISMATCH') ? '문제 목록 없음 — 판정과 불일치' : '문제 목록 없음')
+      ? (display.flags.includes('DECISION_PROBLEM_MISMATCH') ? '문제 목록 없음 — 결론과 불일치' : '문제 목록 없음')
       : `${display.problems.count}건 (${display.problems.severityNote ?? '심각도 미기록'})`;
 
   const scope = display.scope;
@@ -70,7 +70,7 @@ export function buildResultDetailView(display: ReviewDisplayModel): ResultDetail
   const comparison: ResultDetailView['comparison'] = [
     { step: '주장', value: claimsText, note: null },
     { step: '근거', value: scopeText, note: display.strength.evidence ? `근거 강도: ${display.strength.evidence}` : null },
-    { step: '판정', value: display.decision.label, note: decisionNote },
+    { step: '결론', value: display.decision.label, note: decisionNote },
     {
       step: '기대',
       value: display.aiInference.expectedUserEffect ?? '기록 없음',

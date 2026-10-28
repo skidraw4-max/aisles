@@ -51,14 +51,14 @@ export function maskJuryEmail(email: string): string {
 export function juryAuthErrorMessage(raw: string | null | undefined): string {
   const text = (raw ?? '').toLowerCase();
   if (/already been registered|already exists|already registered|duplicate/.test(text)) {
-    return '이미 가입된 이메일입니다. 로그인해 주세요.';
+    return '이미 가입된 이메일이에요. 로그인해 주세요.';
   }
   if (/password/.test(text) && /weak|short|least|6|character/.test(text)) {
-    return '비밀번호는 6자 이상이어야 합니다.';
+    return '비밀번호는 6자 이상이어야 해요.';
   }
   if (/invalid/.test(text) && /email/.test(text)) return '올바른 이메일을 입력하세요.';
-  if (/rate limit|too many/.test(text)) return '시도가 너무 많습니다. 잠시 후 다시 시도하세요.';
-  return '계정을 만들 수 없습니다. 다시 시도해 주세요.';
+  if (/rate limit|too many/.test(text)) return '시도가 너무 많어요. 잠시 후 다시 시도하세요.';
+  return '계정을 만들 수 없어요. 다시 시도해 주세요.';
 }
 
 export function classifyJurySignUpResult(result: {
