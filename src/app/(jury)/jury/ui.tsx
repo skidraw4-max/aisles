@@ -26,7 +26,7 @@ import { intakePeriodDefaults } from '@/lib/jury-product/evidence-period';
 import type { ReviewConsoleScreen } from '@/lib/jury-product/review-console';
 import { projectImprovementRows } from '@/lib/jury-product/product-improvement';
 import { formatMeasuredValue, projectAudit, projectDashboard, projectTraceLineage, SHELL_EMPTY, SHELL_UNAVAILABLE } from '@/lib/jury-product/product-shell';
-import { acknowledgeHumanReview, changeJuryMembership, createHumanImprovementTask, createJuryTenant, decideCatalogScope, decideJuryScope, handoffHumanImprovement, proposeCatalogScope, runHumanAgentExecution, runHumanChangeGate, runProductChangeGate, runProductChangeGateReReview, runHumanReReview, createReReviewImprovementTask, approveReReviewAgentAction, handoffReReviewImprovement, runReReviewAgentExecution, runReReviewChangeGate, runSecondReReview, createSecondReReviewImprovementTask, approveSecondImprovementTask, handoffSecondImprovementTask, runSecondChangeGate, runLaterReReview, createLaterReReviewImprovementTask, approveLaterImprovementTask, handoffLaterImprovementTask, runLaterAgentExecution, runLaterChangeGate, runFollowingReReview, runJuryDiscovery, stopJuryAutoLoop, submitJuryAction, submitTenantEvidenceIntake, submitTenantReview } from './actions';
+import { acknowledgeHumanReview, createHumanImprovementTask, createJuryTenant, decideCatalogScope, decideJuryScope, handoffHumanImprovement, proposeCatalogScope, runHumanAgentExecution, runHumanChangeGate, runProductChangeGate, runProductChangeGateReReview, runHumanReReview, createReReviewImprovementTask, approveReReviewAgentAction, handoffReReviewImprovement, runReReviewAgentExecution, runReReviewChangeGate, runSecondReReview, createSecondReReviewImprovementTask, approveSecondImprovementTask, handoffSecondImprovementTask, runSecondChangeGate, runLaterReReview, createLaterReReviewImprovementTask, approveLaterImprovementTask, handoffLaterImprovementTask, runLaterAgentExecution, runLaterChangeGate, runFollowingReReview, runJuryDiscovery, stopJuryAutoLoop, submitJuryAction, submitTenantEvidenceIntake, submitTenantReview } from './actions';
 import type { ProductReReviewState } from '@/lib/jury-product/product-change-gate-rereview';
 import { loadShellIdentity } from './load';
 import { LogoutButton, ProductNav } from './shell-client';
@@ -81,7 +81,7 @@ export async function JuryChrome({
     <div className={styles.wrap}>
       <header className={styles.header}>
         <div>
-          <h1 className={styles.title}>AIsles Jury</h1>
+          <h1 className={styles.title}>AIsles Jury{actor.ok && actor.role === 'VIEWER' ? <> <StatusBadge status="VIEW_ONLY" title="열람자 역할은 내용을 볼 수만 있어요.">보기 전용</StatusBadge></> : null}</h1>
           <p className={styles.lead}>
             심사 요청부터 결과 확인, 조직 관리까지 한 곳에서 진행해요.
           </p>
@@ -1187,37 +1187,37 @@ export function AutomationBody({
   return (
     <section className={styles.panel}>
       <h2>자동화</h2>
-      <p className={styles.muted}>한도는 저장된 Loop Guard이에요. 이 화면은 자동 Loop를 켜지 않아요.</p>
+      <p className={styles.muted}>저장된 자동 반복 한도를 보여 줘요. 이 화면은 자동 반복을 켜지 않아요.</p>
       {loop ? (
         <>
           <div className={styles.row}><span className={styles.label}>사용 여부</span><span>{loop.enabled ? '켜짐' : '꺼짐'}</span></div>
           <div className={styles.row}><span className={styles.label}>실행 방식</span><span title={loop.mode}>{userLabel(loop.mode)}</span></div>
-          <div className={styles.row}><span className={styles.label}>중단 이유</span><span>{loop.stopReason ?? '표시된 Loop 기준 없음'}</span></div>
-          <p className={styles.muted}>권한이 있는 서비스의 Loop만 표시해요. 중단 이유도 표시된 Loop 기준이에요.</p>
+          <div className={styles.row}><span className={styles.label}>중단 이유</span><span>{loop.stopReason ?? '없음'}</span></div>
+          <p className={styles.muted}>권한이 있는 서비스의 자동 반복만 표시해요.</p>
           {loop.cycles.map((cycle) => (
             <div className={styles.row} key={cycle.id}>
               <span title={cycle.status}>{cycleStatusLabel(cycle.status, loop.enabled)}</span>
-              <span className={styles.muted}>iteration {cycle.iteration} · {cycle.blockedReason ?? '중단 이유 없음'}</span>
+              <span className={styles.muted}>반복 {cycle.iteration}회 · {cycle.blockedReason ?? '중단 이유 없음'}</span>
             </div>
           ))}
         </>
       ) : (
-        <p className={styles.muted}>Loop 상태를 읽지 못했어요.</p>
+        <p className={styles.muted}>자동 반복 상태를 읽지 못했어요.</p>
       )}
-      <div className={styles.row}><span className={styles.label}>maxIterations</span><span>{policy.maxIterations ?? '미정'}</span></div>
-      <div className={styles.row}><span className={styles.label}>maxVerificationAttempts</span><span>{policy.maxVerificationAttempts ?? '미정'}</span></div>
-      <div className={styles.row}><span className={styles.label}>maxSameDecision</span><span>{policy.maxSameDecision ?? '미정'}</span></div>
-      <div className={styles.row}><span className={styles.label}>maxSameConflict</span><span>{policy.maxSameConflict ?? '미정'}</span></div>
-      <div className={styles.row}><span className={styles.label}>maxRuntimeMs</span><span>{policy.maxRuntimeMs ?? '미정'}</span></div>
-      <div className={styles.row}><span className={styles.label}>maxCostUsd</span><span>{policy.maxCostUsd ?? '미정'}</span></div>
+      <div className={styles.row}><span className={styles.label} title="maxIterations">최대 반복 횟수</span><span>{policy.maxIterations ?? '미정'}</span></div>
+      <div className={styles.row}><span className={styles.label} title="maxVerificationAttempts">최대 검증 시도</span><span>{policy.maxVerificationAttempts ?? '미정'}</span></div>
+      <div className={styles.row}><span className={styles.label} title="maxSameDecision">같은 결론 반복 한도</span><span>{policy.maxSameDecision ?? '미정'}</span></div>
+      <div className={styles.row}><span className={styles.label} title="maxSameConflict">같은 충돌 반복 한도</span><span>{policy.maxSameConflict ?? '미정'}</span></div>
+      <div className={styles.row}><span className={styles.label} title="maxRuntimeMs">최대 실행 시간(ms)</span><span>{policy.maxRuntimeMs ?? '미정'}</span></div>
+      <div className={styles.row}><span className={styles.label} title="maxCostUsd">최대 비용(USD)</span><span>{policy.maxCostUsd ?? '미정'}</span></div>
       {canShowWrite(actor, 'automation.write') ? (
         <form action={stopJuryAutoLoop}>
           <input type="hidden" name="command" value="STOP" />
           <input type="hidden" name="tenantId" value="client-supplied-tenant" />
-          <Button variant="secondary" icon={Square} type="submit">자동 Loop 중지</Button>
+          <Button variant="secondary" icon={Square} type="submit">자동 반복 중지</Button>
         </form>
       ) : (
-        <p className={styles.muted}>자동 Loop 중지: 현재 역할에는 이 변경 권한이 없어요.</p>
+        <p className={styles.muted}>자동 반복 중지: 현재 역할에는 이 변경 권한이 없어요.</p>
       )}
     </section>
   );
@@ -1325,7 +1325,7 @@ export function SettingsBody({
       description="서비스 연결, 멤버, 권한, 초대, 보안과 설정을 한 곳에서 관리해요."
     />
     <nav className={styles.adminGrid} aria-label="관리 메뉴">
-      <Link className={styles.adminCard} href={juryHref('/organization/services')}><strong>서비스 연결</strong><span>연결 상태와 서비스 권한</span></Link>
+      <Link className={styles.adminCard} href={juryHref('/organization/services')}><strong>서비스 접근 권한</strong><span>연결 상태와 서비스 권한</span></Link>
       {actor.ok && (actor.role === 'OWNER' || actor.role === 'ADMIN') ? <Link className={styles.adminCard} href={juryHref('/operations')}><strong>운영 지표</strong><span>요청 수·완료율·실패 사유·소요 시간</span></Link> : null}
       <Link className={styles.adminCard} href={juryHref('/organization/members')}><strong>멤버</strong><span>조직 역할과 상태</span></Link>
       <Link className={styles.adminCard} href={juryHref('/organization/invitations')}><strong>초대</strong><span>이메일 초대와 대기 상태</span></Link>
@@ -1350,29 +1350,7 @@ export function SettingsBody({
           <span className={styles.muted}>멤버 {compactIdentifier(row.userId)}</span>
         </div>
       ))}
-      {canShowWrite(actor, 'membership.write') ? (
-        <form action={changeJuryMembership}>
-          <label>멤버 선택 또는 사용자 이메일<input className={styles.field} name="targetUserId" placeholder="멤버 식별자" required /></label>
-          <select className={styles.field} name="role" defaultValue="DEVELOPER">
-            <option value="OWNER">소유자</option>
-            <option value="ADMIN">관리자</option>
-            <option value="REVIEWER">심사자</option>
-            <option value="DEVELOPER">개발자</option>
-            <option value="VIEWER">열람자</option>
-          </select>
-          <select className={styles.field} name="command" defaultValue="ADD_MEMBER">
-            <option value="ADD_MEMBER">추가</option>
-            <option value="CHANGE_ROLE">역할 변경</option>
-            <option value="REMOVE_MEMBER">제거</option>
-          </select>
-          <input type="hidden" name="tenantId" value="client-supplied-tenant" />
-          <button className={buttonClass('primary')} type="submit">
-            역할 적용
-          </button>
-        </form>
-      ) : (
-        <p className={styles.muted}>Membership 변경: 현재 역할에는 이 변경 권한이 없어요.</p>
-      )}
+      <p><ButtonLink variant="primary" href={juryHref('/organization/members')}>멤버 관리로 이동</ButtonLink></p>
       <WriteControl actor={actor} action="settings.write" label="조직 설정 변경" returnTo={juryHref('/settings')} disabledHint="아직 저장 기능이 없어요." />
     </section>
     <section className={styles.panel}>
@@ -1396,13 +1374,8 @@ export function SettingsBody({
     </section>
     <section className={styles.panel}>
       <h2>자동화</h2>
-      <p className={styles.muted}>저장된 Loop Guard만 보여 줘요. 이 화면은 자동화 설정을 바꾸지 않아요.</p>
-      <div className={styles.row}><span className={styles.label}>사용 여부</span><span>{loop ? (loop.enabled ? '켜짐' : '꺼짐') : displayText(SHELL_UNAVAILABLE)}</span></div>
-      <div className={styles.row}><span className={styles.label}>실행 방식</span><span title={loop?.mode}>{loop?.mode ? userLabel(loop.mode) : displayText(SHELL_UNAVAILABLE)}</span></div>
-      <div className={styles.row}><span className={styles.label} title="maxIterations">최대 반복 횟수</span><span>{view.loopPolicy.maxIterations ?? displayText(SHELL_UNAVAILABLE)}</span></div>
-      <div className={styles.row}><span className={styles.label} title="maxRuntimeMs">최대 실행 시간(ms)</span><span>{view.loopPolicy.maxRuntimeMs ?? displayText(SHELL_UNAVAILABLE)}</span></div>
-      <div className={styles.row}><span className={styles.label} title="maxCostUsd">최대 비용(USD)</span><span>{view.loopPolicy.maxCostUsd ?? displayText(SHELL_UNAVAILABLE)}</span></div>
-      <p><Link className={styles.inline} href={juryHref('/automation')}>자동화 상태</Link></p>
+      <p className={styles.muted}>자동 반복 상태와 한도는 자동화 화면에서 한 곳에 모아 보여 줘요.</p>
+      <p><ButtonLink variant="secondary" href={juryHref('/automation')}>자동화 상태 보기</ButtonLink></p>
       {juryDevUi() ? <p><Link className={styles.inline} href={juryHref('/discovery')}>서비스 확인</Link></p> : null}
       {juryDevUi() ? <p><Link className={styles.inline} href={juryHref('/agents')}>에이전트</Link></p> : null}
     </section>
