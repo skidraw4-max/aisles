@@ -14,6 +14,7 @@
 import type { ObservationDriver, ObservedRequest, RequestVerdict, ResourceStats } from './executor';
 import { MOBILE_DEVICE, type MobileDevice } from '../screen-audit/viewports';
 import { LAYOUT_PROBE } from '../screen-audit/layout-probe';
+import { ERROR_SCREEN_PATTERN } from '../screen-audit/error-screen';
 import { MASK_ATTR, MASK_PROBE, UNMASK_PROBE } from '../screen-audit/mask-probe';
 import { TAB_ATTR, TAB_CLICK_PROBE, TAB_LIST_PROBE, TAB_UNSAFE_TEXT_SOURCE } from '../screen-audit/tab-probe';
 
@@ -384,7 +385,7 @@ export function createBrowserObservationDriver(launch: PwContextLauncher, option
       await waitForSettle(p);
     },
     async layoutMetrics() {
-      return (await auditPage()).evaluate(LAYOUT_PROBE);
+      return (await auditPage()).evaluate(LAYOUT_PROBE, ERROR_SCREEN_PATTERN);
     },
     async resourceStats() {
       const p = await auditPage();

@@ -38,7 +38,7 @@ export type AuditRows = {
 
 /** I-068: page metrics JSON keeps the old shape; env / reason / mobileOrigin are added only when present. */
 function pageMetricsJson(r: AuditPageResult): Record<string, unknown> | null {
-  const extra = { ...(r.env ? { env: r.env } : {}), ...(r.mobileOrigin ? { mobileOrigin: r.mobileOrigin } : {}) };
+  const extra = { ...(r.env ? { env: r.env } : {}), ...(r.mobileOrigin ? { mobileOrigin: r.mobileOrigin } : {}), ...(r.metrics && r.reason === 'ERROR_SCREEN' ? { reason: r.reason } : {}) };
   if (r.metrics) return Object.keys(extra).length ? { ...r.metrics, ...extra } : (r.metrics as unknown as Record<string, unknown>);
   return r.reason ? { reason: r.reason, ...extra } : null;
 }
@@ -67,6 +67,11 @@ export function buildAuditRows(results: readonly AuditPageResult[], now: Date, i
     rows.findings.push({ id: id(), pageId: pageIds.get(k) ?? null, area: f.area, rule: f.rule, severity: f.severity, status: f.status === 'FAIL' ? 'FAIL' : 'PARTIAL', viewport: f.viewport, message: f.message, evidenceIds: shot ? [shot] : [], boxes: f.boxes, ...(f.envLimited ? { envLimited: true } : {}) });
   }
   return { summary, rows };
+}
+
+/** I-096: page×viewport entries that showed the site's own error screen. */
+export function errorScreens(results: readonly AuditPageResult[]) {
+  return results.filter((r) => r.reason === 'ERROR_SCREEN').map((r) => ({ path: r.path, viewport: r.viewport }));
 }
 
 /** I-069: tab entries are recorded as `${path}#tab-N` (desktop). */
@@ -179,7 +184,7 @@ export async function runScreenAudit(input: {
   const status: AuditStatus = failed ? 'ERROR' : hook.results.length === 0 ? (stop ? 'BLOCKED' : 'NOT_TESTED') : stop && summary.status === 'PASS' ? 'PARTIAL' : summary.status;
   await input.auditStore.finishAudit({
     id: auditId, tenantId: auth.connection.tenantId, state: failed ? 'FAILED' : 'DONE', status,
-    summary: { areas: summary.areas, findings: summary.findings.length, stop, ai, mobileOriginsNotAllowed: mobileOriginsNotAllowed(hook.results), envLimitedFindings: summary.findings.filter((f) => f.envLimited).length, pages: new Set(hook.results.map((r) => r.path)).size, elapsedMs: hook.elapsedMs(), candidateSource: seedPaths.length ? 'RECENT_OBSERVATION' : 'DISCOVERY', seededPaths: seedPaths.length, tabs: tabCounts(hook.results) },
+    summary: { areas: summary.areas, findings: summary.findings.length, stop, ai, mobileOriginsNotAllowed: mobileOriginsNotAllowed(hook.results), envLimitedFindings: summary.findings.filter((f) => f.envLimited).length, pages: new Set(hook.results.map((r) => r.path)).size, elapsedMs: hook.elapsedMs(), candidateSource: seedPaths.length ? 'RECENT_OBSERVATION' : 'DISCOVERY', seededPaths: seedPaths.length, tabs: tabCounts(hook.results), errorScreens: errorScreens(hook.results) },
     finishedAt: now(), rows,
   });
   return { ok: true, auditId, status, areas: summary.areas, findings: summary.findings.length, stop };

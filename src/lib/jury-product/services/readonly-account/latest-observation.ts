@@ -3,6 +3,7 @@
  * Shared by the service detail page ("최근 관찰 결과") and evidence collection.
  */
 import { normalizeStats, type PageStats } from './discovery';
+import { parseBlockedDetails, type BlockedDetail } from './blocked-details';
 
 export type LatestObservationRun = {
   id: string;
@@ -17,6 +18,8 @@ export type LatestObservationRun = {
   blockedByReason: { ORIGIN: number; METHOD: number; FORM_SUBMIT: number; LOGIN_ALREADY_USED: number };
   /** I-055: blocked hostnames → count (empty for runs recorded before I-055). */
   blockedHosts?: Record<string, number>;
+  /** I-096: per-request detail (empty for runs recorded before I-096). */
+  blockedDetails?: BlockedDetail[];
   finalOrigin: string | null;
   finalPath: string | null;
   observedAt: string;
@@ -91,6 +94,7 @@ export function toLatestObservationRun(row: Row): LatestObservationRun {
     blockedRequestCount: row.blockedRequestCount,
     blockedByReason: { ORIGIN: num(b.ORIGIN), METHOD: num(b.METHOD), FORM_SUBMIT: num(b.FORM_SUBMIT), LOGIN_ALREADY_USED: num(b.LOGIN_ALREADY_USED) },
     blockedHosts,
+    blockedDetails: parseBlockedDetails(row.blockedByReason),
     finalOrigin: row.finalOrigin,
     finalPath: row.finalPath,
     observedAt: row.observedAt.toISOString(),

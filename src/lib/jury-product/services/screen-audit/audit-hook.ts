@@ -12,6 +12,7 @@ import { isSensitivePath } from '../readonly-account/sensitive-paths';
 import { sanitizeLabel } from '../readonly-account/discovery';
 import { createPageSampler, DEFAULT_SAMPLE_LIMITS, type SampleLimits } from './page-sampling';
 import type { LayoutMetrics } from './layout-probe';
+import { isErrorScreen } from './error-screen';
 import { AUDIT_LIMITS, DEFAULT_AUDIT_VIEWPORTS, DESKTOP_ONLY_MIN_WIDTH, type AuditViewport, type AuditViewportName } from './viewports';
 
 export type AuditPageStatus = 'PASS' | 'NOT_TESTED' | 'BLOCKED' | 'ERROR';
@@ -21,7 +22,7 @@ export type AuditPageResult = {
   viewport: AuditViewportName;
   /** PASS here only means "measured"; findings decide the area status (I-061/I-063). */
   status: AuditPageStatus;
-  reason?: 'SENSITIVE_PATH' | 'BUDGET' | 'MAX_PAGES' | 'UNSUPPORTED' | 'MEASURE_FAILED' | 'MOBILE_HOST_NOT_ALLOWED' | 'DESKTOP_ONLY_LAYOUT' | 'SAMPLE_LIMIT' | 'TAB_NAVIGATED' | 'TAB_NON_GET';
+  reason?: 'SENSITIVE_PATH' | 'BUDGET' | 'MAX_PAGES' | 'UNSUPPORTED' | 'MEASURE_FAILED' | 'MOBILE_HOST_NOT_ALLOWED' | 'DESKTOP_ONLY_LAYOUT' | 'SAMPLE_LIMIT' | 'TAB_NAVIGATED' | 'TAB_NON_GET' | 'ERROR_SCREEN';
   metrics?: LayoutMetrics;
   capture?: CaptureRef;
   /** I-068: when this page×viewport was measured (epoch ms). */
@@ -91,6 +92,7 @@ export function createAuditHook(input: {
   const budgetMs = input.budgetMs ?? AUDIT_LIMITS.budgetMs;
   const results: AuditPageResult[] = [];
   const seen = new Set<string>();
+  const errorPaths = new Set<string>();
   const sampler = createPageSampler({ ...(input.sample ?? DEFAULT_SAMPLE_LIMITS), total: maxPages });
   const tabsPerPage = input.tabsPerPage ?? AUDIT_LIMITS.tabsPerPage;
   const { driver } = input;
@@ -144,6 +146,13 @@ export function createAuditHook(input: {
           continue;
         }
         const capture = input.capture ? await input.capture({ path, viewport: vp }).catch(() => null) : null;
+        // I-096: the site showed its own error screen (possibly because a blocked request crashed it) → not a real
+        // measurement: BLOCKED, metrics kept for diagnosis, no UI findings.
+        if (isErrorScreen(metrics)) {
+          errorPaths.add(path);
+          results.push({ ...base, status: 'BLOCKED', reason: 'ERROR_SCREEN', metrics, capturedAt, env, ...(capture ? { capture } : {}) });
+          continue;
+        }
         results.push({ ...base, status: 'PASS', metrics, capturedAt, env, ...(capture ? { capture } : {}) });
       } catch {
         results.push({ ...base, status: 'ERROR', reason: 'MEASURE_FAILED' });
@@ -152,7 +161,7 @@ export function createAuditHook(input: {
     if (mobileOpened) await driver.closeMobile?.().catch(() => undefined);
     // leave the session on desktop so link discovery behaves as before
     await driver.setViewport!(viewports[0]).catch(() => undefined);
-    await auditTabs(page, path);
+    if (!errorPaths.has(path)) await auditTabs(page, path);
   }
 
   /** I-069: desktop-only tab pass on the current page. */
@@ -193,6 +202,13 @@ export function createAuditHook(input: {
         const capturedAt = clock();
         const env: AuditEnv = { emulated: false, blocked: stats?.blocked ?? NO_BLOCKED, fontsReady: stats?.fontsReady ?? true };
         const capture = input.capture ? await input.capture({ path: base.path, viewport: desktop }).catch(() => null) : null;
+        // I-096: the site showed its own error screen (possibly because a blocked request crashed it) → not a real
+        // measurement: BLOCKED, metrics kept for diagnosis, no UI findings.
+        if (isErrorScreen(metrics)) {
+          errorPaths.add(path);
+          results.push({ ...base, status: 'BLOCKED', reason: 'ERROR_SCREEN', metrics, capturedAt, env, ...(capture ? { capture } : {}) });
+          continue;
+        }
         results.push({ ...base, status: 'PASS', metrics, capturedAt, env, ...(capture ? { capture } : {}) });
       } catch {
         results.push({ ...base, status: 'ERROR', reason: 'MEASURE_FAILED' });

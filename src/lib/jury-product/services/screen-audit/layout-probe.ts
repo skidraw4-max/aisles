@@ -25,9 +25,13 @@ export type LayoutMetrics = {
   navVisible: boolean;
   searchVisible: boolean;
   headings: number;
+  /** I-096: page text matched an error-screen phrase (boolean only; text is never returned). Optional for old rows. */
+  errorText?: boolean;
+  /** I-096: visible body text length (count only). */
+  bodyTextLength?: number;
 };
 
-export const LAYOUT_PROBE = (): LayoutMetrics => {
+export const LAYOUT_PROBE = (errorPattern?: string): LayoutMetrics => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const g = globalThis as any;
   const doc = g.document;
@@ -131,6 +135,13 @@ export const LAYOUT_PROBE = (): LayoutMetrics => {
     if (ratio <= 1.05) continue;
     if (ratio < 7 && lowContrast.length < 40) lowContrast.push({ ratio, large, box: boxOf(el) });
   }
+  const bodyText: string = String((doc.body && doc.body.innerText) || '').slice(0, 5000);
+  let errorText = false;
+  try {
+    errorText = Boolean(errorPattern) && new RegExp(errorPattern as string, 'i').test(`${doc.title || ''} ${bodyText}`);
+  } catch {
+    errorText = false;
+  }
   const anyVisible = (sel: string) => (Array.from(doc.querySelectorAll(sel)) as any[]).some(visible);
   return {
     viewportWidth: vw,
@@ -147,5 +158,7 @@ export const LAYOUT_PROBE = (): LayoutMetrics => {
     navVisible: anyVisible('nav, [role="navigation"], header a[href], [class*="menu" i] a[href]'),
     searchVisible: anyVisible('input[type="search"], [role="search"], input[name*="search" i], input[placeholder*="검색"]'),
     headings: doc.querySelectorAll('h1, h2, h3').length,
+    errorText,
+    bodyTextLength: bodyText.trim().length,
   };
 };

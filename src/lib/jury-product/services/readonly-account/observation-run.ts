@@ -227,7 +227,7 @@ export async function createPrismaObservationRunStore(): Promise<ObservationRunS
           blockedRequestCount: s.blockedRequestCount,
           // I-055: hostnames are stored inside the existing JSON column (no schema change).
           // I-056: stop diagnosis (step names only) shares the same JSON column.
-          blockedByReason: { ...s.blockedByReason, hosts: s.blockedHosts ?? {}, ...(s.failedStep || s.missingField ? { diag: { failedStep: s.failedStep ?? null, missingField: s.missingField ?? null } } : {}) },
+          blockedByReason: { ...s.blockedByReason, hosts: s.blockedHosts ?? {}, ...(s.blockedDetails?.length ? { details: s.blockedDetails } : {}), ...(s.failedStep || s.missingField ? { diag: { failedStep: s.failedStep ?? null, missingField: s.missingField ?? null } } : {}) },
           finalOrigin: s.finalOrigin,
           finalPath: s.finalPath,
           observedAt: new Date(run.observedAt),

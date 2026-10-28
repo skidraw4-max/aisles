@@ -16,11 +16,14 @@ import {
   stopText,
   guidanceText,
   VIEWPORT_LABEL,
+  errorScreenRows,
+  ERROR_SCREEN_NOTE,
 } from '@/lib/jury-product/services/screen-audit/view-model';
 import styles from './jury.module.css';
 import { StatusBadge } from './jury-controls';
 import { runScreenAuditAction } from './screen-audit-actions';
 import { ScreenAuditRunButton } from './ScreenAuditRunButton';
+import { BlockedRequestsTable } from './BlockedRequestsTable';
 
 export async function ScreenAuditSection(props: { tenantId: string; connectionId: string; accessMethod: string | null | undefined }) {
   if (!shouldShowReadonlyAccountSection({ uiEnabled: READONLY_ACCOUNT_UI_ENABLED, accessMethod: props.accessMethod })) {
@@ -36,6 +39,7 @@ export async function ScreenAuditSection(props: { tenantId: string; connectionId
   const rows = latest ? areaRows(latest.summary) : [];
   const stop = latest ? stopText(latest.summary) : null;
   const guidance = latest ? guidanceText(latest.summary) : [];
+  const errorScreens = latest ? errorScreenRows(latest.summary) : [];
   const findings = latest ? [...latest.findings].sort((a, b) => (SEVERITY_ORDER[a.severity] ?? 9) - (SEVERITY_ORDER[b.severity] ?? 9)) : [];
   return (
     <section className={styles.resultCard} aria-labelledby="screen-audit-title">
@@ -87,6 +91,33 @@ export async function ScreenAuditSection(props: { tenantId: string; connectionId
               {g}
             </p>
           ))}
+          {errorScreens.length > 0 ? (
+            <div role="group" aria-label="오류 화면">
+              <h3>오류 화면이 나온 화면</h3>
+              <p role="note">{ERROR_SCREEN_NOTE}</p>
+              <div className={styles.resultTableWrap}>
+                <table className={styles.resultTable}>
+                  <thead>
+                    <tr>
+                      <th scope="col">화면</th>
+                      <th scope="col">경로</th>
+                      <th scope="col">결과</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {errorScreens.map((e) => (
+                      <tr key={`${e.viewport}-${e.path}`}>
+                        <td>{VIEWPORT_LABEL[e.viewport] ?? e.viewport}</td>
+                        <td>{e.path}</td>
+                        <td><StatusBadge status="BLOCKED" title="ERROR_SCREEN">오류 화면 · 측정 안 함</StatusBadge></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ) : null}
+          <BlockedRequestsTable details={latest.blocked} total={latest.blockedCount} highlightPages={errorScreens.map((e) => e.path)} classes={{ wrap: styles.resultTableWrap, table: styles.resultTable, muted: styles.muted }} />
           {rows.length > 0 ? (
             <div className={styles.resultTableWrap}>
             <table className={styles.resultTable}>

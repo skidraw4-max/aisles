@@ -1,5 +1,6 @@
 'use client';
 
+import { BlockedRequestsTable } from './BlockedRequestsTable';
 import * as React from 'react';
 import { READONLY_ACCOUNT_CONSENT_TEXT } from '@/lib/jury-product/services/readonly-account/consent-text';
 import {
@@ -105,6 +106,7 @@ export function LatestObservationResult(props: { run: LatestObservationRun | nul
                 .join(', ')}
             </p>
           ) : null}
+          <BlockedRequestsTable details={run.blockedDetails} total={run.blockedRequestCount} />
           <p>{BLOCKED_REQUESTS_NOTE}</p>
           <p>이 결과는 [자료 수집]을 다시 실행해야 검증 근거에 반영돼요.</p>
           {run.finalOrigin ? (

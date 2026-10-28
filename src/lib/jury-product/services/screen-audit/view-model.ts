@@ -88,3 +88,27 @@ export function diffAudits(previous: DiffFinding[], current: DiffFinding[], curr
     added: [...cur.values()].filter((f) => !prev.has(findingKey(f))),
   };
 }
+
+/** I-096: page×viewport entries that showed the site's own error screen (empty for audits before I-096). */
+export function errorScreenRows(summary: unknown): { path: string; viewport: string }[] {
+  const raw = summary && typeof summary === 'object' ? (summary as { errorScreens?: unknown }).errorScreens : null;
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .filter((r): r is { path: string; viewport: string } => Boolean(r) && typeof r.path === 'string' && typeof r.viewport === 'string')
+    .slice(0, 50)
+    .map((r) => ({ path: r.path.split(/[?]/)[0].slice(0, 200), viewport: r.viewport }));
+}
+
+export const ERROR_SCREEN_NOTE =
+  '이 화면들은 사이트의 오류 화면(예: “오류가 발생했습니다”)이 떠서 측정하지 않았습니다. 읽기 전용 보호 장치가 저장·갱신 요청(POST 등)을 막아 사이트가 오류를 낸 것일 수 있습니다. 아래 “차단된 요청”에서 같은 화면의 요청을 확인해 주세요. 이 화면에서는 레이아웃 문제를 세지 않습니다.';
+
+export const BLOCK_REASON_LABEL: Record<string, string> = { ORIGIN: '허용 안 된 도메인', METHOD: '조회 외 요청', FORM_SUBMIT: '폼 제출', LOGIN_ALREADY_USED: '재로그인' };
+
+/** HH:MM:SS KST for blocked-request rows. */
+export function formatKstTime(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '-';
+  const k = new Date(d.getTime() + 9 * 3_600_000);
+  const p = (n: number) => String(n).padStart(2, '0');
+  return `${p(k.getUTCHours())}:${p(k.getUTCMinutes())}:${p(k.getUTCSeconds())} KST`;
+}

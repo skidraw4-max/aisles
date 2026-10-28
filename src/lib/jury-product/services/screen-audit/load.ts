@@ -1,4 +1,5 @@
 /** I-063: tenant-scoped loader for the 화면 심사 tab. Screenshot links are 5-minute signed URLs created server side. */
+import { parseBlockedDetails, type BlockedDetail } from '../readonly-account/blocked-details';
 import { diffAudits, type AuditDiff, type AuditHeader } from './view-model';
 
 export type ScreenAuditView = {
@@ -6,6 +7,9 @@ export type ScreenAuditView = {
     findings: { id: string; area: string; rule: string; severity: string; status: string; viewport: string; message: string; path: string | null }[];
     shots: { id: string; path: string; viewport: string; url: string | null }[];
     pages: { path: string; viewport: string; status: string }[];
+    /** I-096: blocked requests of this audit's observation run (empty for older runs). */
+    blocked: BlockedDetail[];
+    blockedCount: number;
   }) | null;
   history: AuditHeader[];
   /** I-064: set when the latest audit is a re-review of a finished parent. */
@@ -22,11 +26,14 @@ export async function loadScreenAuditView(tenantId: string, connectionId: string
   });
   const head = history[0];
   if (!head) return { latest: null, history: [], diff: null };
-  const [findings, evidence, pages] = await Promise.all([
+  const [findings, evidence, pages, runs] = await Promise.all([
     prisma.juryAuditFinding.findMany({ where: { tenantId, auditId: head.id }, select: { id: true, area: true, rule: true, severity: true, status: true, viewport: true, message: true, page: { select: { path: true } } }, take: 100 }),
     prisma.juryAuditEvidence.findMany({ where: { tenantId, auditId: head.id, kind: 'SCREENSHOT', deletedAt: null, masked: true }, select: { id: true, storageKey: true, page: { select: { path: true, viewport: true } } }, take: 16 }),
     prisma.juryAuditPage.findMany({ where: { tenantId, auditId: head.id }, select: { path: true, viewport: true, status: true }, take: 100 }),
+    prisma.juryReadonlyObservationRun.findMany({ where: { tenantId, auditId: head.id }, orderBy: { observedAt: 'asc' }, select: { blockedByReason: true, blockedRequestCount: true }, take: 4 }),
   ]);
+  const blocked = runs.flatMap((r) => parseBlockedDetails(r.blockedByReason)).slice(0, 50);
+  const blockedCount = runs.reduce((n, r) => n + (r.blockedRequestCount || 0), 0);
   const { signedScreenshotUrl } = await import('./screenshot-store');
   const shots = await Promise.all(
     evidence.map(async (e) => ({ id: e.id, path: e.page?.path ?? '', viewport: e.page?.viewport ?? '', url: e.storageKey ? await signedScreenshotUrl(e.storageKey).catch(() => null) : null })),
@@ -43,7 +50,7 @@ export async function loadScreenAuditView(tenantId: string, connectionId: string
   }
   return {
     diff,
-    latest: { ...head, status: head.status ?? null, findings: findings.map((f) => ({ ...f, status: String(f.status), path: f.page?.path ?? null })), shots, pages: pages.map((p) => ({ ...p, status: String(p.status) })) },
+    latest: { ...head, status: head.status ?? null, findings: findings.map((f) => ({ ...f, status: String(f.status), path: f.page?.path ?? null })), shots, pages: pages.map((p) => ({ ...p, status: String(p.status) })), blocked, blockedCount },
     history: history.slice(1).map((h) => ({ ...h, status: h.status ?? null })),
   };
 }
