@@ -23,6 +23,22 @@ const defaultLookup: HostLookup = async (hostname) => {
   return lookup(hostname, { all: true, verbatim: true });
 };
 
+type LookupCallback = (err: Error | null, addr: string | { address: string; family: number }[], fam?: number) => void;
+
+/**
+ * I-095: socket lookup pinned to the already-checked address. Node 20+ calls lookup with `{ all: true }`
+ * (autoSelectFamily) and expects an array; answering with a bare string fails with ERR_INVALID_IP_ADDRESS.
+ * Either shape still only ever yields the pinned address.
+ */
+export function pinnedLookup(address: string, family: number) {
+  return (_hostname: string, options: unknown, cb?: LookupCallback): void => {
+    const callback = (typeof options === 'function' ? options : cb) as LookupCallback;
+    const all = typeof options === 'object' && options !== null && (options as { all?: unknown }).all === true;
+    if (all) callback(null, [{ address, family }]);
+    else callback(null, address, family);
+  };
+}
+
 const defaultPinnedGet: PinnedGet = async ({ url, address, family }) => {
   const https = await import('node:https');
   return new Promise((resolve) => {
@@ -41,7 +57,7 @@ const defaultPinnedGet: PinnedGet = async ({ url, address, family }) => {
         port: 443,
         path: `${url.pathname}${url.search}`,
         headers: { 'user-agent': 'JuryOwnershipCheck/1.0', accept: 'text/html,text/plain;q=0.9,*/*;q=0.1' },
-        lookup: (_h: string, _o: unknown, cb: (err: Error | null, addr: string, fam: number) => void) => cb(null, address, family),
+        lookup: pinnedLookup(address, family),
         timeout: OWNERSHIP_FETCH_TIMEOUT_MS,
       },
       (res) => {
