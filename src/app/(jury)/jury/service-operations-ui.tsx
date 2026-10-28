@@ -23,7 +23,9 @@ import { filterConnectionRows } from '@/lib/jury-product/services/connection-del
 import { countConnectionRows, DELETED_VIEW_EMPTY, DELETED_VIEW_NOTICE, DELETED_VIEW_TITLE, type DeletedConnectionMeta } from '@/lib/jury-product/services/connection-delete/deleted-view';
 import styles from './jury.module.css';
 import { Button, ButtonLink, StatusBadge, buttonClass } from './jury-controls';
-import { Download, Link2, Play } from 'lucide-react';
+import { Download, Link2, Play, Plus } from 'lucide-react';
+import { EmptyState } from './page-layout';
+import { SHELL_EMPTY } from '@/lib/jury-product/product-shell';
 import { InfoItem, InfoList, InfoRow, InfoTable } from './info-table';
 
 function mark(value: boolean): string {
@@ -110,6 +112,8 @@ export function ServiceOperationsList({
   canDelete = false,
   githubConnectionIds = [],
   deletedMeta = {},
+  accessMethods = {},
+  canAddService = false,
 }: {
   rows: ServiceOperationModel[] | null;
   error: string | null;
@@ -120,6 +124,10 @@ export function ServiceOperationsList({
   githubConnectionIds?: readonly string[];
   /** I-080: deletion time + actor label for deleted rows. */
   deletedMeta?: Record<string, DeletedConnectionMeta>;
+  /** I-100: 연결 방식 shown as small gray text under 제공자 (from the already-loaded console view). */
+  accessMethods?: Record<string, string>;
+  /** I-100: connection.write — shows the primary 서비스 추가 button. */
+  canAddService?: boolean;
 }) {
   const visible = rows ? filterConnectionRows(rows, showDeleted) : null;
   const counts = countConnectionRows(rows ?? []);
@@ -133,8 +141,16 @@ export function ServiceOperationsList({
           <h2 className={styles.pageTitle}>{showDeleted ? DELETED_VIEW_TITLE : '서비스'}</h2>
           <p className={styles.pageDescription}>서비스별 연결 상태, 검증 근거, 심사, 개선, 에이전트 상태를 확인해요. 접근 권한 변경은 관리 &gt; 서비스 연결에서 해요.</p>
         </div>
+        {/* I-100: single list — primary 서비스 추가 + secondary GitHub 연결 in the header. */}
+        <div className={styles.headerActions} data-testid="services-header-actions">
+          {canAddService ? (
+            <ButtonLink variant="primary" icon={Plus} href={juryHref('/services/new')}>서비스 추가</ButtonLink>
+          ) : (
+            <span className={styles.muted} data-testid="services-add-blocked">서비스 추가: 현재 역할에는 추가 권한이 없어요.</span>
+          )}
+          <ButtonLink variant="secondary" icon={Link2} href={juryHref('/services/github')}>GitHub 연결</ButtonLink>
+        </div>
       </div>
-      <p><Link className={styles.inline} href={juryHref('/services/github')}>GitHub 연결</Link></p>
       <div className={styles.segTabs} role="tablist" aria-label="연결 목록 보기">
         <Link role="tab" aria-selected={!showDeleted} className={`${styles.segTab} ${!showDeleted ? styles.segTabActive : ''}`} href={activeHref}>연결 중 <span className={styles.segTabCount}>{counts.active}</span></Link>
         <Link role="tab" aria-selected={showDeleted} className={`${styles.segTab} ${showDeleted ? styles.segTabActive : ''}`} href={deletedHref}>삭제된 연결 <span className={styles.segTabCount}>{counts.deleted}</span></Link>
@@ -146,7 +162,11 @@ export function ServiceOperationsList({
         </div>
       ) : null}
       {error ? <p>{error}</p> : null}
-      {!error && visible && visible.length === 0 ? <p>{showDeleted ? DELETED_VIEW_EMPTY : '현재 권한으로 볼 수 있는 서비스가 없어요.'}</p> : null}
+      {!error && visible && visible.length === 0 ? (
+        showDeleted ? <p>{DELETED_VIEW_EMPTY}</p> : (
+          <EmptyState action={canAddService ? <ButtonLink variant="primary" icon={Plus} href={juryHref('/organization/services')}>서비스 연결</ButtonLink> : undefined}>{displayText(SHELL_EMPTY.services)}</EmptyState>
+        )
+      ) : null}
       {visible && visible.length > 0 ? (
         <div className={styles.servicesTableWrap}>
         <table className={`${styles.table} ${styles.servicesTable} ${styles.servicesTableWide}`}>
@@ -169,7 +189,10 @@ export function ServiceOperationsList({
             {visible.map((row) => (
               <tr key={row.connectionId} className={showDeleted ? styles.mutedRow : undefined}>
                 <td><Link className={`${styles.inline} ${styles.ellipsisText}`} href={juryHref(`/services/${row.connectionId}`)} title={row.name}>{row.name}</Link>{showDeleted ? <> <StatusBadge status="DELETED">삭제됨</StatusBadge></> : null}</td>
-                <td>{providers[row.connectionId]?.displayName ?? displayText('Unknown')}</td>
+                <td>
+                  {providers[row.connectionId]?.displayName ?? displayText('Unknown')}
+                  {accessMethods[row.connectionId] ? <div className={styles.subText} title={accessMethods[row.connectionId]}>{displayText(accessMethods[row.connectionId])}</div> : null}
+                </td>
                 {showDeleted ? (
                   <>
                     <td>{formatKstFull(deletedMeta[row.connectionId]?.disconnectedAt)}</td>

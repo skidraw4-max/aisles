@@ -7,7 +7,7 @@ import { canDeleteConnection, isGithubConnection } from '@/lib/jury-product/serv
 import { loadDeletedConnectionMeta } from '@/lib/jury-product/services/connection-delete/deleted-view';
 import { getJuryEntry } from '@/lib/jury-product/session';
 import { ServiceOperationsList } from '../service-operations-ui';
-import { JuryChrome, ServicesBody } from '../ui';
+import { canShowWrite, JuryChrome } from '../ui';
 import { loadJuryShell, readJurySessionEmail } from '../load';
 
 export default async function JuryServicesPage({
@@ -40,6 +40,8 @@ export default async function JuryServicesPage({
         error={error}
         showDeleted={showDeleted}
         deletedMeta={deletedMeta}
+        canAddService={canShowWrite(actor, 'connection.write')}
+        accessMethods={actor.ok && view ? Object.fromEntries(view.connections.filter((row) => row.tenantId === actor.tenantId).map((row) => [row.id, row.accessMethod])) : {}}
         canDelete={canDeleteConnection(actor)}
         githubConnectionIds={view ? view.connections.filter(isGithubConnection).map((row) => row.id) : []}
         providers={actor.ok && view ? providerViewsFor({
@@ -49,7 +51,6 @@ export default async function JuryServicesPage({
           evidenceConnectionIds: view.evidence.map((row) => row.connectionId),
         }) : {}}
       />
-      {view ? <ServicesBody actor={actor} view={view} /> : null}
     </JuryChrome>
   );
 }

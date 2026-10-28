@@ -74,7 +74,7 @@ test('onboarding source reuses mock discovery and does not call the network', ()
     assert.equal(source.includes(token), false, token);
   }
   const ui = readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/service-onboarding-ui.tsx'), 'utf8');
-  assert.equal(ui.includes('서비스 추가') || readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/ui.tsx'), 'utf8').includes('서비스 추가'), true);
+  assert.equal(ui.includes('서비스 추가') || readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/service-operations-ui.tsx'), 'utf8').includes('서비스 추가'), true);
   assert.equal(ui.includes('No access scopes proposed.'), false);
   assert.equal(ui.includes('ONBOARDING_EMPTY_SCOPES'), true);
   assert.equal(ui.includes('label="승인"'), true);

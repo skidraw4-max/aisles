@@ -82,7 +82,9 @@ test('page header: 24px title, breadcrumb, actions on the right', () => {
   const ui = readFileSync(path.join(DIR, 'ui.tsx'), 'utf8');
   assert.ok((ui.match(/<PageHeader/g) ?? []).length >= 6);
   assert.doesNotMatch(ui, /<p>\{displayText\(SHELL_EMPTY\./);
-  assert.ok((ui.match(/<EmptyState/g) ?? []).length >= 6);
+  // I-100: the services empty state moved into the single list (service-operations-ui.tsx).
+  const ops = readFileSync(path.join(DIR, 'service-operations-ui.tsx'), 'utf8');
+  assert.ok(((ui + ops).match(/<EmptyState/g) ?? []).length >= 6);
 });
 
 function lum(hex: string): number {

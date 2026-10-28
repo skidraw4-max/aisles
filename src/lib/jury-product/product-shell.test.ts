@@ -127,7 +127,9 @@ test('auditor stays read-only and the shell does not fall back to fixtures', () 
   const ui = readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/ui.tsx'), 'utf8');
   assert.equal(ui.includes('SHELL_UNAVAILABLE'), true);
   assert.equal(ui.includes('No services connected yet'), false);
-  assert.equal(ui.includes('SHELL_EMPTY.services'), true);
+  // I-100: the services empty state lives in the single services list.
+  const ops = readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/service-operations-ui.tsx'), 'utf8');
+  assert.equal(ops.includes('SHELL_EMPTY.services'), true);
   assert.equal(ui.includes('접근할 수 없습니다'), true);
   assert.equal(ui.includes('Logout'), true);
 });

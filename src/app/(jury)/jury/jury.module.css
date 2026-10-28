@@ -1465,3 +1465,18 @@ a.inline {
 .proposalTable strong { color: var(--jury-text-soft, #d7dee8); }
 .proposalSteps { margin: 6px 0 0; padding-left: 20px; color: var(--jury-text-soft, #d7dee8); }
 .proposalSteps li + li { margin-top: 4px; }
+
+/* I-100: /jury/services single-list header actions + 연결 방식 sub text. */
+.headerActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+.subText {
+  margin-top: 0.15rem;
+  font-size: 0.75rem;
+  color: var(--svc-muted, rgba(255, 255, 255, 0.55));
+}
