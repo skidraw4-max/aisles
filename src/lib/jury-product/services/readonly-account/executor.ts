@@ -48,6 +48,8 @@ export interface ObservationDriver {
   setViewport?(viewport: { width: number; height: number }): Promise<void>;
   /** I-059: layout metrics of the current page (numbers and boxes only, no text). Optional. */
   layoutMetrics?(): Promise<LayoutMetrics>;
+  /** I-098: sanitized client errors (pageerror / console.error) of the current page, max 3. Optional. */
+  pageErrors?(): Promise<string[]>;
   /** I-060: mask (verified) → viewport JPEG → unmask. Returns null when masking could not be verified. Optional. */
   captureMasked?(): Promise<{ bytes: Uint8Array; masked: true; maskedCount: number } | null>;
   /**

@@ -18,12 +18,15 @@ import {
   VIEWPORT_LABEL,
   errorScreenRows,
   ERROR_SCREEN_NOTE,
+  ERROR_SCREEN_LABEL,
 } from '@/lib/jury-product/services/screen-audit/view-model';
 import styles from './jury.module.css';
 import { StatusBadge } from './jury-controls';
 import { runScreenAuditAction } from './screen-audit-actions';
 import { ScreenAuditRunButton } from './ScreenAuditRunButton';
 import { BlockedRequestsTable } from './BlockedRequestsTable';
+import { BuildVersionNotice } from './BuildVersionNotice';
+import { currentBuildVersion } from '@/lib/jury-product/build-version';
 
 export async function ScreenAuditSection(props: { tenantId: string; connectionId: string; accessMethod: string | null | undefined }) {
   if (!shouldShowReadonlyAccountSection({ uiEnabled: READONLY_ACCOUNT_UI_ENABLED, accessMethod: props.accessMethod })) {
@@ -47,6 +50,7 @@ export async function ScreenAuditSection(props: { tenantId: string; connectionId
         <h2 id="screen-audit-title">화면 심사</h2>
         <ScreenAuditRunButton connectionId={props.connectionId} label={latest ? '새로 심사' : '화면 심사 시작'} variant="primary" icon={latest ? 'refresh' : 'play'} action={runScreenAuditAction} />
       </div>
+      <BuildVersionNotice build={currentBuildVersion()} className={styles.muted} />
       <ul className={styles.resultList}>
         {SCREEN_AUDIT_NOTES.map((n) => (
           <li key={n}>{n}</li>
@@ -102,6 +106,7 @@ export async function ScreenAuditSection(props: { tenantId: string; connectionId
                       <th scope="col">화면</th>
                       <th scope="col">경로</th>
                       <th scope="col">결과</th>
+                      <th scope="col">브라우저 오류 메시지</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -109,7 +114,18 @@ export async function ScreenAuditSection(props: { tenantId: string; connectionId
                       <tr key={`${e.viewport}-${e.path}`}>
                         <td>{VIEWPORT_LABEL[e.viewport] ?? e.viewport}</td>
                         <td>{e.path}</td>
-                        <td><StatusBadge status="BLOCKED" title="ERROR_SCREEN">오류 화면 · 측정 안 함</StatusBadge></td>
+                        <td><StatusBadge status="BLOCKED" title="ERROR_SCREEN">{ERROR_SCREEN_LABEL} · 측정 안 함</StatusBadge></td>
+                        <td>
+                          {e.errors.length > 0 ? (
+                            <ul className={styles.muted} style={{ margin: 0, paddingLeft: 16 }}>
+                              {e.errors.map((m) => (
+                                <li key={m}><code>{m}</code></li>
+                              ))}
+                            </ul>
+                          ) : (
+                            <span className={styles.muted}>기록 없음</span>
+                          )}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -117,8 +133,15 @@ export async function ScreenAuditSection(props: { tenantId: string; connectionId
               </div>
             </div>
           ) : null}
+          {latest.blocked && latest.blocked.length > 0 ? (
+            <div role="group" aria-label="차단된 요청 상세">
+              <h3 className={styles.resultSubhead}>차단된 요청 상세</h3>
           <BlockedRequestsTable details={latest.blocked} total={latest.blockedCount} highlightPages={errorScreens.map((e) => e.path)} classes={{ wrap: styles.resultTableWrap, table: styles.resultTable, muted: styles.muted }} />
+            </div>
+          ) : null}
           {rows.length > 0 ? (
+            <div role="group" aria-label="영역별 결과">
+            <h3 className={styles.resultSubhead}>영역별 결과</h3>
             <div className={styles.resultTableWrap}>
             <table className={styles.resultTable}>
               <thead>
@@ -140,6 +163,7 @@ export async function ScreenAuditSection(props: { tenantId: string; connectionId
                 ))}
               </tbody>
             </table>
+            </div>
             </div>
           ) : null}
           {findings.length > 0 ? (

@@ -13,6 +13,7 @@ import { sanitizeLabel } from '../readonly-account/discovery';
 import { createPageSampler, DEFAULT_SAMPLE_LIMITS, type SampleLimits } from './page-sampling';
 import type { LayoutMetrics } from './layout-probe';
 import { isErrorScreen } from './error-screen';
+import { parsePageErrors } from '../readonly-account/page-errors';
 import { AUDIT_LIMITS, DEFAULT_AUDIT_VIEWPORTS, DESKTOP_ONLY_MIN_WIDTH, type AuditViewport, type AuditViewportName } from './viewports';
 
 export type AuditPageStatus = 'PASS' | 'NOT_TESTED' | 'BLOCKED' | 'ERROR';
@@ -24,6 +25,8 @@ export type AuditPageResult = {
   status: AuditPageStatus;
   reason?: 'SENSITIVE_PATH' | 'BUDGET' | 'MAX_PAGES' | 'UNSUPPORTED' | 'MEASURE_FAILED' | 'MOBILE_HOST_NOT_ALLOWED' | 'DESKTOP_ONLY_LAYOUT' | 'SAMPLE_LIMIT' | 'TAB_NAVIGATED' | 'TAB_NON_GET' | 'ERROR_SCREEN';
   metrics?: LayoutMetrics;
+  /** I-098: sanitized client error messages seen on an ERROR_SCREEN page (max 3 × 160 chars). */
+  errors?: string[];
   capture?: CaptureRef;
   /** I-068: when this page×viewport was measured (epoch ms). */
   capturedAt?: number;
@@ -150,7 +153,8 @@ export function createAuditHook(input: {
         // measurement: BLOCKED, metrics kept for diagnosis, no UI findings.
         if (isErrorScreen(metrics)) {
           errorPaths.add(path);
-          results.push({ ...base, status: 'BLOCKED', reason: 'ERROR_SCREEN', metrics, capturedAt, env, ...(capture ? { capture } : {}) });
+          const errors = driver.pageErrors ? await driver.pageErrors().catch(() => []) : [];
+          results.push({ ...base, status: 'BLOCKED', reason: 'ERROR_SCREEN', metrics, capturedAt, env, ...(capture ? { capture } : {}), ...(errors.length ? { errors: parsePageErrors(errors) } : {}) });
           continue;
         }
         results.push({ ...base, status: 'PASS', metrics, capturedAt, env, ...(capture ? { capture } : {}) });
@@ -206,7 +210,8 @@ export function createAuditHook(input: {
         // measurement: BLOCKED, metrics kept for diagnosis, no UI findings.
         if (isErrorScreen(metrics)) {
           errorPaths.add(path);
-          results.push({ ...base, status: 'BLOCKED', reason: 'ERROR_SCREEN', metrics, capturedAt, env, ...(capture ? { capture } : {}) });
+          const errors = driver.pageErrors ? await driver.pageErrors().catch(() => []) : [];
+          results.push({ ...base, status: 'BLOCKED', reason: 'ERROR_SCREEN', metrics, capturedAt, env, ...(capture ? { capture } : {}), ...(errors.length ? { errors: parsePageErrors(errors) } : {}) });
           continue;
         }
         results.push({ ...base, status: 'PASS', metrics, capturedAt, env, ...(capture ? { capture } : {}) });

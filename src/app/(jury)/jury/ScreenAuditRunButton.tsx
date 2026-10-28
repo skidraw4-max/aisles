@@ -18,6 +18,10 @@ export function ScreenAuditRunButton(props: {
   icon?: keyof typeof ICONS;
 }) {
   const [result, formAction, pending] = React.useActionState(props.action, null);
+  // I-098: let BuildVersionNotice re-check the live build after an audit (stale-tab prompt).
+  React.useEffect(() => {
+    if (result) window.dispatchEvent(new Event('jury:audit-finished'));
+  }, [result]);
   return (
     <form action={formAction}>
       <input type="hidden" name="connectionId" value={props.connectionId} />
