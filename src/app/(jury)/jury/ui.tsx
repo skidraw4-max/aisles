@@ -41,6 +41,7 @@ import { ReviewRequestFields } from './review-request-fields';
 import { CONNECTED_EVIDENCE_REVIEW_NOTICE, evidenceReviewPath } from '@/lib/jury-product/evidence-review-path';
 import { ReviewSubmitButton } from './review-submit-button';
 import { evidenceReviewStatus } from '@/lib/jury-product/evidence-review-status';
+import { evidenceServiceFilter, evidenceServiceInfo } from '@/lib/jury-product/evidence-service';
 import { auditActionLabel, DECISION_GUIDANCE, displayText, traceLabel, userLabel } from '@/lib/jury-product/ui-labels';
 import styles from './jury.module.css';
 import { Button, ButtonLink, StatusBadge, buttonClass } from './jury-controls';
@@ -778,8 +779,11 @@ export function EvidenceBody({ actor, view, query = { q: '', filter: '', page: 1
   const form = projectConsoleIntakeForm(actor, view);
   const intakePeriod = intakePeriodDefaults();
   const allEvidence = projectConsoleEvidence(view);
+  const connectionOf = (id: string) => view.evidence.find((item) => item.id === id)?.connectionId ?? '';
+  const serviceFilter = evidenceServiceFilter(view, allEvidence.map((row) => connectionOf(row.id)).filter(Boolean));
   const evidencePage = pageList(allEvidence, query, {
-    text: (row) => `${row.purpose} ${row.periodStart} ${row.periodEnd} ${row.metrics.map((m) => m.metric).join(' ')}`,
+    text: (row) => `${evidenceServiceInfo(view, connectionOf(row.id))?.name ?? ''} ${row.purpose} ${row.periodStart} ${row.periodEnd} ${row.metrics.map((m) => m.metric).join(' ')}`,
+    key: (row) => connectionOf(row.id),
   });
   const evidence = evidencePage.items;
   return (
@@ -850,7 +854,7 @@ export function EvidenceBody({ actor, view, query = { q: '', filter: '', page: 1
       ) : (
         <p className={styles.muted}>Evidence 입력: 현재 역할에는 이 변경 권한이 없어요.</p>
       )}
-      {allEvidence.length > 0 ? <ListControls path="/evidence" query={query} total={evidencePage.total} page={evidencePage.page} pages={evidencePage.pages} /> : null}
+      {allEvidence.length > 0 ? <ListControls path="/evidence" query={query} filterLabel="서비스" filterOptions={serviceFilter.options} labelOf={serviceFilter.labelOf} total={evidencePage.total} page={evidencePage.page} pages={evidencePage.pages} /> : null}
       {allEvidence.length === 0 ? (
         <>
           <EmptyState>{displayText(SHELL_EMPTY.evidence)}</EmptyState>
@@ -862,7 +866,8 @@ export function EvidenceBody({ actor, view, query = { q: '', filter: '', page: 1
       <table className={styles.table}>
         <thead>
           <tr>
-            <th>심사 근거</th>
+            <th>서비스</th>
+            <th>분석 목적</th>
             <th>분석 기간</th>
             <th>지표 수</th>
             <th>최근 결과</th>
@@ -876,8 +881,19 @@ export function EvidenceBody({ actor, view, query = { q: '', filter: '', page: 1
         const servicePageHref = stored ? juryHref(`/services/${stored.connectionId}`) : null;
         // I-030: stored state for this card (rebuilt from the DB on every render, so it survives a refresh).
         const reviewState = evidenceReviewStatus(view, row.id, Date.now());
+        const service = evidenceServiceInfo(view, stored?.connectionId);
         return (
         <tr key={row.id}>
+          <td>
+            {service ? (
+              <>
+                <Link className={styles.inline} href={juryHref(`/services/${service.id}`)}><strong>{service.name}</strong></Link>
+                {service.deleted ? <> <StatusBadge status="DISCONNECTED">삭제됨</StatusBadge></> : service.status !== 'CONNECTED' ? <> <StatusBadge status={service.status} title={service.status}>{userLabel(service.status)}</StatusBadge></> : null}
+                <br />
+                <span className={styles.muted}><small>{service.domain}</small></span>
+              </>
+            ) : <span className={styles.muted}>서비스 정보 없음</span>}
+          </td>
           <td>{row.purpose}</td>
           <td className={styles.nowrapCell}>{row.periodStart} – {row.periodEnd}</td>
           <td>{row.metricCount}</td>
@@ -905,7 +921,9 @@ export function EvidenceBody({ actor, view, query = { q: '', filter: '', page: 1
             </div>
           ))}
           </details>
-          {canShowWrite(actor, 'review.start') ? (
+          {service?.deleted ? (
+            <p className={styles.muted}>삭제된 서비스라 새 심사를 할 수 없어요.</p>
+          ) : canShowWrite(actor, 'review.start') ? (
             // I-029: only declared-intake evidence can be reviewed from this card (runTenantReview scope check).
             evidenceReviewPath(row) === 'TENANT_INTAKE' ? (
               <form action={submitTenantReview}>
