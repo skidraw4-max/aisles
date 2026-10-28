@@ -35,7 +35,9 @@ const report = {
 test('summary keeps counts/visibility only, no text or query strings', () => {
   const s = summarizeObservation(report);
   const json = JSON.stringify(s);
-  for (const leak of ['홍길동', 'a@b.c', 'email=', '/api']) assert.ok(!json.includes(leak), leak);
+  for (const leak of ['홍길동', 'a@b.c', 'email=']) assert.ok(!json.includes(leak), leak);
+  // I-096: blocked requests keep origin+path only (approved); no query strings.
+  assert.deepEqual(s.blockedDetails?.map((d) => `${d.method} ${d.origin}${d.path}`), ['POST https://app.example.com/api']);
   assert.equal(s.pagesObserved, 2);
   assert.deepEqual(s.pages.map((p) => p.visible), [true, false]);
   assert.equal(s.blockedByReason.LOGIN_ALREADY_USED, 1);

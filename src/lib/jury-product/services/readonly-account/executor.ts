@@ -126,7 +126,8 @@ export type ExecutorReport = {
     /** I-069: seed paths (earlier observation) queued first. */
     seeded?: number;
   };
-  blockedRequests: { method: string; url: string; reason: 'ORIGIN' | 'METHOD' | 'FORM_SUBMIT' | 'LOGIN_ALREADY_USED' }[];
+  /** I-096: page = path open when blocked (no query); at = epoch ms. Optional for old callers. */
+  blockedRequests: { method: string; url: string; reason: 'ORIGIN' | 'METHOD' | 'FORM_SUBMIT' | 'LOGIN_ALREADY_USED'; page?: string; at?: number }[];
 };
 
 export type DiscoveryStop = 'DONE' | 'MAX_PAGES' | 'BUDGET' | 'CHALLENGE' | 'SESSION_LOST' | 'UNSUPPORTED';
@@ -177,10 +178,15 @@ export function originPath(url: string): string {
 }
 
 /** Pure request policy; exported for tests and for real driver adapters. */
-export function createRequestGuard(input: { scope: ObservationScope; loginOrigin: string }) {
+export function createRequestGuard(input: { scope: ObservationScope; loginOrigin: string; clock?: () => number }) {
+  const now = input.clock ?? Date.now;
+  let page: string | undefined;
   let phase: 'PRE_LOGIN' | 'LOGIN_SUBMITTING' | 'POST_LOGIN' = 'PRE_LOGIN';
   let loginRequestUsed = false;
   const blocked: ExecutorReport['blockedRequests'] = [];
+  const push = (e: { method: string; url: string; reason: ExecutorReport['blockedRequests'][number]['reason'] }) => {
+    blocked.push({ ...e, ...(page ? { page } : {}), at: now() });
+  };
   const allowedOrigins = new Set(input.scope.allowedOrigins);
   const authOrigins = new Set((input.scope.authOrigins ?? []).filter((o) => !allowedOrigins.has(o)));
   // I-055: static GET subresources (script/stylesheet/image/font) from the same registrable site are allowed.
@@ -190,7 +196,7 @@ export function createRequestGuard(input: { scope: ObservationScope; loginOrigin
     const method = req.method.toUpperCase();
     if (origin && authOrigins.has(origin)) {
       if (req.isFormSubmit || req.isNavigation) {
-        blocked.push({ method, url: req.url, reason: req.isFormSubmit ? 'FORM_SUBMIT' : 'ORIGIN' });
+        push({ method, url: req.url, reason: req.isFormSubmit ? 'FORM_SUBMIT' : 'ORIGIN' });
         return 'block';
       }
       if (AUTH_READ_METHODS.has(method)) return 'allow';
@@ -198,14 +204,14 @@ export function createRequestGuard(input: { scope: ObservationScope; loginOrigin
         loginRequestUsed = true;
         return 'allow';
       }
-      blocked.push({ method, url: req.url, reason: loginRequestUsed && phase !== 'POST_LOGIN' && method === 'POST' ? 'LOGIN_ALREADY_USED' : 'METHOD' });
+      push({ method, url: req.url, reason: loginRequestUsed && phase !== 'POST_LOGIN' && method === 'POST' ? 'LOGIN_ALREADY_USED' : 'METHOD' });
       return 'block';
     }
     if (!origin || !allowedOrigins.has(origin)) {
       if (origin && isSameSiteSubresource(req, allowedSites)) return 'allow';
       // I-068: web font CSS/files (fonts.googleapis.com / fonts.gstatic.com) so text is measured with the real font.
       if (origin && isFontHostRequest(req)) return 'allow';
-      blocked.push({ method, url: req.url, reason: 'ORIGIN' });
+      push({ method, url: req.url, reason: 'ORIGIN' });
       return 'block';
     }
     if (READ_METHODS.has(method) && !req.isFormSubmit) return 'allow';
@@ -214,15 +220,23 @@ export function createRequestGuard(input: { scope: ObservationScope; loginOrigin
       return 'allow';
     }
     if (loginRequestUsed && phase !== 'POST_LOGIN' && !req.isFormSubmit && method === 'POST') {
-      blocked.push({ method, url: req.url, reason: 'LOGIN_ALREADY_USED' });
+      push({ method, url: req.url, reason: 'LOGIN_ALREADY_USED' });
       return 'block';
     }
-    blocked.push({ method, url: req.url, reason: req.isFormSubmit ? 'FORM_SUBMIT' : 'METHOD' });
+    push({ method, url: req.url, reason: req.isFormSubmit ? 'FORM_SUBMIT' : 'METHOD' });
     return 'block';
   };
   return {
     guard,
     blocked,
+    /** I-096: path of the page currently open (recorded with blocked requests). */
+    setPage: (url: string) => {
+      try {
+        page = new URL(url).pathname || '/';
+      } catch {
+        /* keep previous */
+      }
+    },
     beginLoginSubmit: () => {
       phase = 'LOGIN_SUBMITTING';
     },
@@ -270,7 +284,7 @@ export async function executeReadonlyObservation(input: {
   const report: ExecutorReport = { ok: false, loginAttempts: 0, snapshots: [], blockedRequests: [] };
   const plan = validateObservationPlan(input);
   if (!plan.ok) return { ...report, stop: plan.stop };
-  const policy = createRequestGuard({ scope: input.scope, loginOrigin: plan.loginOrigin });
+  const policy = createRequestGuard({ scope: input.scope, loginOrigin: plan.loginOrigin, clock });
   report.blockedRequests = policy.blocked;
   const { driver } = input;
   // I-069: time spent inside onPage (screen-audit measuring) does not count against the discovery budget.
@@ -289,6 +303,7 @@ export async function executeReadonlyObservation(input: {
   };
   try {
     await driver.setRequestGuard(policy.guard);
+    policy.setPage(input.login.loginUrl);
     await driver.goto(input.login.loginUrl, { login: true });
     const pre = await driver.detectChallenge();
     if (pre !== 'NONE') return stop('CHALLENGE_REQUIRED', { challenge: pre });
@@ -323,6 +338,7 @@ export async function executeReadonlyObservation(input: {
     const post = await driver.detectChallenge();
     if (post !== 'NONE') return stop('CHALLENGE_REQUIRED', { challenge: post });
     const landed = new URL(await driver.currentUrl());
+    policy.setPage(landed.toString());
     report.loginRequestUsed = policy.loginRequestUsed;
     report.finalUrl = originPath(landed.toString());
     if (!policy.loginRequestUsed) return stop('LOGIN_NOT_SUBMITTED');
@@ -353,8 +369,10 @@ export async function executeReadonlyObservation(input: {
     for (const action of input.actions) {
       if (action.type === 'goto') {
         const target = new URL(action.path, plan.loginOrigin).toString();
+        policy.setPage(target);
         await driver.goto(target);
         const now = new URL(await driver.currentUrl());
+        policy.setPage(now.toString());
         if (!input.scope.allowedOrigins.includes(now.origin) || !pathAllowed(input.scope, now.pathname)) return stop('NAVIGATION_BLOCKED');
         const challenge = await driver.detectChallenge();
         if (challenge !== 'NONE') return stop('CHALLENGE_REQUIRED', { challenge });
@@ -397,8 +415,10 @@ export async function executeReadonlyObservation(input: {
         if (visited.has(next.key)) continue;
         visited.add(next.key);
         try {
+          policy.setPage(next.key);
           await driver.goto(next.key);
           const now = new URL(await driver.currentUrl());
+          policy.setPage(now.toString());
           if (!input.scope.allowedOrigins.includes(now.origin)) {
             d.skipped += 1;
             continue;

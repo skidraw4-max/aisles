@@ -6,6 +6,7 @@ import type { EvidencePack } from '@/lib/ai-review-board/types';
 import type { ObservationScope } from './consent';
 import { decryptAccountCredential, type CredentialKeyProvider, type EncryptedAccountCredential } from './credential-crypto';
 import type { DiscoveryOptions, PageStats } from './discovery';
+import { toBlockedDetails, type BlockedDetail } from './blocked-details';
 import { blockedHostCounts } from './same-site';
 import { runReadonlyObservation, type ExecutorReport, type LoginPlan, type ObservationAction, type ObservationDriver } from './executor';
 
@@ -25,6 +26,8 @@ export type ObservationSummary = {
   blockedByReason: Record<'ORIGIN' | 'METHOD' | 'FORM_SUBMIT' | 'LOGIN_ALREADY_USED', number>;
   /** I-055: blocked request hostnames → count (no paths/queries), top 20. */
   blockedHosts: Record<string, number>;
+  /** I-096: first BLOCKED_DETAILS_CAP blocked requests (origin+path, method, reason, page, time). */
+  blockedDetails?: BlockedDetail[];
   /** I-047: origin + path of the last page (no query string). */
   finalOrigin: string | null;
   finalPath: string | null;
@@ -113,6 +116,7 @@ export function summarizeObservation(report: ExecutorReport): ObservationSummary
     blockedRequestCount: report.blockedRequests.length,
     blockedByReason,
     blockedHosts: blockedHostCounts(report.blockedRequests),
+    blockedDetails: toBlockedDetails(report.blockedRequests),
     ...finalOf(report.finalUrl),
     failedStep: report.failedStep ?? null,
     missingField: report.missingField ?? null,
