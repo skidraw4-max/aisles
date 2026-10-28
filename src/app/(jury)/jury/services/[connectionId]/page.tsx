@@ -17,6 +17,7 @@ import { guardServiceFeature } from '@/lib/jury-product/service-feature-guard';
 import { ScreenAuditSection } from '../../screen-audit-section';
 import { READONLY_ACCOUNT_UI_ENABLED, shouldShowReadonlyAccountSection } from '@/lib/jury-product/services/readonly-account/flags';
 import { Ga4ViewerSection, OwnershipSection } from '../../phase1-sections';
+import { SiteContextSection } from '../../site-context-section';
 import { loadJuryShell, readJurySessionEmail } from '../../load';
 
 /**
@@ -100,6 +101,7 @@ export default async function ServiceDetailPage({
       {/* I-072~I-075: render nothing unless the ownership / GA4 viewer flags are on. */}
       {ready && tab === 'connect' ? <OwnershipSection tenantId={actor.tenantId} connectionId={connectionId} accessMethod={accessMethod} /> : null}
       {ready && tab === 'connect' ? <Ga4ViewerSection connectionId={connectionId} accessMethod={accessMethod} /> : null}
+      {ready && tab === 'connect' ? <SiteContextSection tenantId={actor.tenantId} connectionId={connectionId} canWrite={canShowWrite(actor, 'connection.write')} deleted={view.connections.find((row) => row.id === connectionId && row.tenantId === actor.tenantId)?.status === 'DISCONNECTED'} /> : null}
       {/* I-063: 화면 심사 (screen audit) tab. */}
       {ready && tab === 'screen' ? <ScreenAuditSection tenantId={actor.tenantId} connectionId={connectionId} accessMethod={accessMethod} canJuryReview={canJuryReview} /> : null}
       {tab === 'overview' ? <GithubRefreshStatus connectionId={connectionId} /> : null}
