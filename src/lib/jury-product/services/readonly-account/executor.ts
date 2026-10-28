@@ -8,6 +8,7 @@
  * - 2FA/captcha => stop and report, never solved or bypassed
  * The browser is abstracted behind ObservationDriver; no browser library is bundled. Disabled by flag.
  */
+import { isAnalyticsStubRequest } from './analytics-stub';
 import type { AccountCredentialSecret } from './credential-crypto';
 import type { ObservationScope } from './consent';
 import { allowedSitesOf, isFontHostRequest, isSameSiteSubresource } from './same-site';
@@ -18,7 +19,8 @@ export const READONLY_ACCOUNT_EXECUTOR_ENABLED = true as boolean;
 
 /** resourceType (I-055): Playwright resource type when known (script, stylesheet, image, font, xhr, fetch, document, ...). */
 export type ObservedRequest = { method: string; url: string; isFormSubmit: boolean; isNavigation: boolean; resourceType?: string };
-export type RequestVerdict = 'allow' | 'block';
+/** I-097: 'stub' = answer locally (analytics/ad hosts), no outbound traffic; drivers without stubbing treat it as block. */
+export type RequestVerdict = 'allow' | 'block' | 'stub';
 /** I-068: per-page environment facts (counts only). */
 export type ResourceStats = { blocked: { stylesheet: number; font: number; script: number; xhr: number; other: number }; fontsReady: boolean };
 
@@ -127,7 +129,7 @@ export type ExecutorReport = {
     seeded?: number;
   };
   /** I-096: page = path open when blocked (no query); at = epoch ms. Optional for old callers. */
-  blockedRequests: { method: string; url: string; reason: 'ORIGIN' | 'METHOD' | 'FORM_SUBMIT' | 'LOGIN_ALREADY_USED'; page?: string; at?: number }[];
+  blockedRequests: { method: string; url: string; reason: 'ORIGIN' | 'METHOD' | 'FORM_SUBMIT' | 'LOGIN_ALREADY_USED' | 'STUBBED'; page?: string; at?: number }[];
 };
 
 export type DiscoveryStop = 'DONE' | 'MAX_PAGES' | 'BUDGET' | 'CHALLENGE' | 'SESSION_LOST' | 'UNSUPPORTED';
@@ -206,6 +208,11 @@ export function createRequestGuard(input: { scope: ObservationScope; loginOrigin
       }
       push({ method, url: req.url, reason: loginRequestUsed && phase !== 'POST_LOGIN' && method === 'POST' ? 'LOGIN_ALREADY_USED' : 'METHOD' });
       return 'block';
+    }
+    // I-097: analytics/ad/tag GET subresources are answered locally (recorded as STUBBED), never sent out.
+    if (origin && !allowedOrigins.has(origin) && isAnalyticsStubRequest(req)) {
+      push({ method, url: req.url, reason: 'STUBBED' });
+      return 'stub';
     }
     if (!origin || !allowedOrigins.has(origin)) {
       if (origin && isSameSiteSubresource(req, allowedSites)) return 'allow';

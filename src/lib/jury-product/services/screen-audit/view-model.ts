@@ -102,7 +102,7 @@ export function errorScreenRows(summary: unknown): { path: string; viewport: str
 export const ERROR_SCREEN_NOTE =
   '이 화면들은 사이트의 오류 화면(예: “오류가 발생했습니다”)이 떠서 측정하지 않았습니다. 읽기 전용 보호 장치가 저장·갱신 요청(POST 등)을 막아 사이트가 오류를 낸 것일 수 있습니다. 아래 “차단된 요청”에서 같은 화면의 요청을 확인해 주세요. 이 화면에서는 레이아웃 문제를 세지 않습니다.';
 
-export const BLOCK_REASON_LABEL: Record<string, string> = { ORIGIN: '허용 안 된 도메인', METHOD: '조회 외 요청', FORM_SUBMIT: '폼 제출', LOGIN_ALREADY_USED: '재로그인' };
+export const BLOCK_REASON_LABEL: Record<string, string> = { ORIGIN: '허용 안 된 도메인', METHOD: '조회 외 요청', FORM_SUBMIT: '폼 제출', LOGIN_ALREADY_USED: '재로그인', STUBBED: '분석·광고 대체' };
 
 /** HH:MM:SS KST for blocked-request rows. */
 export function formatKstTime(iso: string): string {

@@ -97,6 +97,7 @@ export function LatestObservationResult(props: { run: LatestObservationRun | nul
           <p>
             관찰 페이지 {run.pagesObserved}개 (내용 확인 {run.pagesVisible}개) · 차단된 요청 {run.blockedRequestCount}건 (도메인 {run.blockedByReason.ORIGIN}, 메서드{' '}
             {run.blockedByReason.METHOD}, 폼 제출 {run.blockedByReason.FORM_SUBMIT}, 재로그인 {run.blockedByReason.LOGIN_ALREADY_USED})
+            {run.blockedByReason.STUBBED ? ` · 분석·광고 대체 ${run.blockedByReason.STUBBED}건` : ''}
           </p>
           {Object.keys(run.blockedHosts ?? {}).length > 0 ? (
             <p>
