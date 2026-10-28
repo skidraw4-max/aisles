@@ -42,7 +42,7 @@ test('I-048: claim reclaims FAILED or stale RUNNING with a status+updatedAt guar
   assert.match(src, /status: existing\.status, updatedAt: existing\.updatedAt/);
   assert.match(src, /startReviewAttempt\(prisma/);
   assert.match(src, /finishReviewAttempt\(prisma, attemptId/);
-  assert.match(src, /evidence: projection\.pack,\s*trace,/);
+  assert.match(src, /evidence: (?:screenAuditFindings \? \{ \.\.\.projection\.pack, screenAuditFindings \} : )?projection\.pack,\s*trace,/);
   assert.match(src, /data: \{ status: 'FAILED', \.\.\.\(audit \? \{ failureReason: audit\.failureReason \} : \{\}\) \}/);
   assert.doesNotMatch(src, /markReviewFailed\(requestId[^\n]*\n\s*return \{ ok: false, reason: '(REVIEW_NOT_EXECUTED|PERSISTENCE_FAILED)'/);
 });

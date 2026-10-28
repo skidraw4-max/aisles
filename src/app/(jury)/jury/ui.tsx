@@ -33,7 +33,7 @@ import { TranslationHint } from './ui-primitives';
 import { CopyIdButton, ReviewSummaryDialog } from './ReviewSummaryDialog';
 import { AcceptanceCriteriaDialog } from './AcceptanceCriteriaDialog';
 import { formatKstFull, formatKstShort, shortId } from './review-summary-format';
-import { ConfidenceLine, ResultComparison, reviewTabHref } from './review-tabs-ui';
+import { ConfidenceLine, ImprovementProposalsPanel, ResultComparison, reviewTabHref } from './review-tabs-ui';
 import type { JuryMembership } from '@/lib/jury-product/records';
 import { JURY_CLAIM_MAX_LENGTH } from '@/lib/jury-product/records';
 import { ReviewRequestFields } from './review-request-fields';
@@ -615,6 +615,7 @@ export function ReviewDetailBody({ screen, noted }: { screen: ReviewConsoleScree
         </details>
       </section>
       <ResultComparison screen={screen} />
+      <ImprovementProposalsPanel screen={screen} />
       <section className={styles.panel}>
         <div className={styles.actionPanel}>
           <div>

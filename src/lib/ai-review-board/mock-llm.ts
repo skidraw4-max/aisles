@@ -1,6 +1,7 @@
 import { SCORE_DIMENSIONS } from './score-dimensions';
 import { normalizeDimensionScores } from './scoring';
 import type { ReviewBoardLlm } from './llm';
+import { isJuryMode, mockJuryProposals } from './jury-mode';
 import type {
   CalibrationImpactAssessment,
   ClaimCalibration,
@@ -139,7 +140,7 @@ export function createMockReviewBoardLlm(options?: {
             ? 'not-supported-core'
             : 'mixed-gaps');
 
-  return {
+  const base: ReviewBoardLlm = {
     async independentAnalysis(memberId, evidence, ctx: LlmContext) {
       assertIndependentContext(ctx);
       return stubIndependent(memberId, evidence);
@@ -744,6 +745,35 @@ export function createMockReviewBoardLlm(options?: {
           herdingRisks: critic.herdingFlags?.flags ?? critic.herding?.flags ?? [],
         },
       };
+    },
+  };
+  // I-089: Jury mode adds deterministic proposal fields; board mode returns `base` output unchanged.
+  return {
+    ...base,
+    async independentAnalysis(memberId, evidence, ctx) {
+      const out = await base.independentAnalysis(memberId, evidence, ctx);
+      return isJuryMode(evidence) ? { ...out, juryProposals: mockJuryProposals(evidence).slice(0, 1) } : out;
+    },
+    async debateTurn(memberId, evidence, peers, own) {
+      const out = await base.debateTurn(memberId, evidence, peers, own);
+      if (!isJuryMode(evidence)) return out;
+      const peer = peers.find((p) => p.memberId !== memberId);
+      return {
+        ...out,
+        proposalReviews: peer
+          ? [{ targetMemberId: peer.memberId, proposal: mockJuryProposals(evidence)[0].problem, stance: 'agree', effect: '사용성 개선 기대', sideEffects: '없음', mobileImpact: '모바일에서도 동일 적용 필요' }]
+          : [],
+      };
+    },
+    async revisionPass(memberId, evidence, ...rest) {
+      const out = await base.revisionPass(memberId, evidence, ...rest);
+      return isJuryMode(evidence)
+        ? { ...out, proposalPriorities: [{ proposal: mockJuryProposals(evidence)[0].problem, priority: '중간', dissent: '' }] }
+        : out;
+    },
+    async chairman(evidence, ...rest) {
+      const out = await base.chairman(evidence, ...rest);
+      return isJuryMode(evidence) ? { ...out, improvementProposals: mockJuryProposals(evidence) } : out;
     },
   };
 }

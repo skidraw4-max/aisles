@@ -46,6 +46,8 @@ export type ImprovementItem = {
 };
 
 export type IndependentAnalysis = {
+  /** I-089: Jury mode only — draft proposals. */
+  juryProposals?: JuryImprovementProposal[];
   memberId: CommitteeAnalystId;
   currentState: string;
   strengths: string[];
@@ -79,6 +81,8 @@ export type DebateTurn = {
   weakEvidence: string[];
   missed: string[];
   needsVerification: string[];
+  /** I-090: Jury mode only — effect / side effects / mobile review of peers' proposals. */
+  proposalReviews?: JuryProposalReview[];
   /**
    * v3 only (revision folded into debate).
    * v4+: omit — use `RevisionRecord` in `run.revisions`.
@@ -115,6 +119,8 @@ export type RevisionAnswers = {
 
 /** v4+ separate Revision Quality Pass */
 export type RevisionRecord = {
+  /** I-090: Jury mode only — priority + dissent per proposal. */
+  proposalPriorities?: { proposal: string; priority: JuryProposalPriority; dissent: string }[];
   memberId: CommitteeAnalystId;
   revisionStatus: RevisionStatus;
   revised: boolean;
@@ -564,6 +570,8 @@ export type RevisionSummaryBlock = {
 };
 
 export type FinalReport = {
+  /** I-091: Jury mode only — structured improvement proposals. */
+  improvementProposals?: JuryImprovementProposal[];
   statusSummary: string;
   overallTrendScore: number | null;
   dimensionScores: DimensionScore[];
@@ -706,6 +714,10 @@ export type EvidencePack = {
     finalPath: string | null;
   };
   /** PII 미포함 보장용 메타 */
+  /** I-089: set only by Jury (review-core). /ai-review-board never sets it. */
+  reviewMode?: 'jury';
+  /** I-093: stored rule-based screen-audit findings (no extra model call). */
+  screenAuditFindings?: JuryScreenAuditEvidence;
   piiExcluded: true;
   readOnly: true;
 };
@@ -766,4 +778,33 @@ export type LlmContext = {
   peerAnalyses?: IndependentAnalysis[];
   debate?: DebateTurn[];
   critic?: CriticReport | null;
+};
+
+/** I-091: Jury improvement proposal. */
+export type JuryProposalPriority = '높음' | '중간' | '낮음';
+export type JuryImprovementProposal = {
+  problem: string;
+  evidence: string;
+  /** observed = seen in EvidencePack / screen audit; general = best-practice advice. */
+  evidenceBasis: 'observed' | 'general';
+  steps: string[];
+  priority: JuryProposalPriority;
+  expectedEffect: string;
+  verification: string[];
+  unverified: boolean;
+  dissent: string;
+};
+export type JuryProposalReview = {
+  targetMemberId: string;
+  proposal: string;
+  stance: 'agree' | 'disagree' | 'needsVerification';
+  effect: string;
+  sideEffects: string;
+  mobileImpact: string;
+};
+/** I-093: compact summary of the latest finished screen audit. */
+export type JuryScreenAuditEvidence = {
+  auditId: string;
+  finishedAt: string | null;
+  findings: { rule: string; area: string; severity: string; status: string; viewport: string; path: string | null; message: string }[];
 };
