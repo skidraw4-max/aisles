@@ -199,7 +199,7 @@ test('console intake does not call the host adapter or put tenant in the form', 
   assert.equal(body.includes('name={`value:${metric}`}'), true);
   assert.equal(body.includes('name="periodStart"'), true);
   assert.equal(body.includes('name="periodEnd"'), true);
-  assert.equal(body.includes('현재 승인된 Scope에는 입력 가능한 Catalog Metric이 없어요.'), true);
+  assert.equal(body.includes('지금은 입력할 수 있는 분석 항목이 없어요.'), true);
   assert.equal(ui.includes('다른 조직의 데이터는 변경할 수 없어요.'), true);
   assert.equal(ui.includes('심사 근거를 저장하지 못했어요.'), true);
   assert.equal(ui.includes('자격 증명이 포함된 요청은 기록하지 않아요.'), true);
