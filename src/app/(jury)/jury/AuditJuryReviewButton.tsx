@@ -7,7 +7,7 @@ import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import { Gavel } from 'lucide-react';
 import type { pollAuditJuryReviewAction, startAuditJuryReviewAction } from './actions';
-import { auditJuryResultHref, auditJurySteps, type AuditJuryPhase } from '@/lib/jury-product/services/screen-audit/audit-jury-ui';
+import { auditJuryFailureText, auditJuryResultHref, auditJurySteps, type AuditJuryPhase } from '@/lib/jury-product/services/screen-audit/audit-jury-ui';
 import { Button } from './jury-controls';
 
 const POLL_MS = 4000;
@@ -26,9 +26,9 @@ export function AuditJuryReviewButton(props: {
   const timer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   React.useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
 
-  const finish = (resultId: string) => {
+  const finish = (resultId: string, reused = false) => {
     setPhase('done');
-    router.push(auditJuryResultHref(resultId));
+    router.push(auditJuryResultHref(resultId, reused));
   };
   const fail = (reason: string) => {
     setPhase('failed');
@@ -51,7 +51,7 @@ export function AuditJuryReviewButton(props: {
     setElapsed(0);
     const r = await props.start(props.connectionId);
     if (!r.ok) return fail(r.reason);
-    if (r.state === 'COMPLETED') return finish(r.resultId);
+    if (r.state === 'COMPLETED') return finish(r.resultId, r.reused);
     setPhase('running');
     pollLoop(r.requestId);
   };
@@ -75,7 +75,7 @@ export function AuditJuryReviewButton(props: {
         </ol>
       ) : null}
       {phase === 'running' || phase === 'starting' ? <p role="status">위원 5명이 근거를 검토하고 있어요. 보통 1~4분 걸리고, 이 화면을 떠나도 심사는 계속돼요.</p> : null}
-      {error ? <p role="alert">위원 심사를 끝내지 못했어요 ({error}). 잠시 후 다시 눌러 주세요.</p> : null}
+      {error ? <p role="alert">{auditJuryFailureText(error)}</p> : null}
     </div>
   );
 }

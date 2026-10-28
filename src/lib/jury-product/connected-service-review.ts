@@ -51,6 +51,7 @@ export type ConnectedCollectionFailure =
   | 'COLLECTION_FAILED'
   | 'PACK_NOT_READ_ONLY'
   | 'OBSERVATION_REQUIRED'
+  | 'NO_AUDIT'
   | 'PERSISTENCE_FAILED';
 
 export type ConnectedReviewFailure =
@@ -75,6 +76,8 @@ export type CollectionCommand = {
   actor: JuryActor;
   connectionId: string;
   purpose: string;
+  /** One-click 위원 심사: bind the latest DONE 화면 심사 for any connection type; none → NO_AUDIT (no fallback). */
+  requireScreenAudit?: boolean;
   periodStart: string;
   periodEnd: string;
   timezone: string;
@@ -87,6 +90,8 @@ export type ReviewCommand = {
   evidenceId: string;
   clientTenantId?: string | null;
   core?: ProductReviewCore;
+  /** One-click 위원 심사 only: a stored result without improvementProposals is not reused (runs fresh). */
+  skipLegacyResult?: boolean;
 };
 
 type CollectionStatus = 'AVAILABLE' | 'NOT_MEASURED' | 'NOT_AVAILABLE' | 'COLLECTION_FAILED';
@@ -306,17 +311,19 @@ export async function runConnectedServiceEvidenceCollection(
   if (!observed.ok) return { ok: false, reason: observed.reason === 'CONTEXT_NOT_ISSUED' ? 'COLLECTION_FAILED' : observed.reason };
   // I-099: a new finished 화면 심사 makes new evidence (and so a new review) instead of reusing the old result.
   let screenAudit: ScreenAuditIdentity | null = null;
-  if (connection.accessMethod === 'READ_ONLY_ACCOUNT') {
+  if (command.requireScreenAudit === true || connection.accessMethod === 'READ_ONLY_ACCOUNT') {
     screenAudit = deps?.screenAuditIdentity
       ? await deps.screenAuditIdentity(actor.tenantId, connection.id)
       : await loadLatestScreenAuditIdentity(prisma, actor.tenantId, connection.id);
   }
+  if (command.requireScreenAudit === true && !screenAudit) return { ok: false, reason: 'NO_AUDIT' };
   const basePack = readonlyRun ? readonlyObservationPack(observed.pack, readonlyRun, !deps?.evidenceDb) : observed.pack;
   const built = buildProductEvidence({
     actorTenantId: actor.tenantId,
     connection: { id: connection.id, tenantId: connection.tenantId },
     clientTenantId: null,
     screenAudit,
+    ...(command.requireScreenAudit === true ? { purpose: command.purpose } : {}),
     pack: {
       ...basePack,
       analysisPeriod: {
@@ -599,15 +606,26 @@ async function connectedServiceReview(
   }
   if (projection.periodWithheld || projection.issues.length > 0) return { ok: false, reason: 'PROJECTION_FAILED' };
 
-  const requestId = sha([actor.tenantId, evidence.id, 'FULL_REVIEW', '']);
+  // A stored result without the improvementProposals key (pre-proposals / LEGACY) is never reused: the review runs fresh
+  // under a second deterministic id (JuryReviewResult.reviewRequestId is unique, so the old row stays untouched).
+  const requestIds = command.skipLegacyResult === true
+    ? [sha([actor.tenantId, evidence.id, 'FULL_REVIEW', '']), sha([actor.tenantId, evidence.id, 'FULL_REVIEW', 'proposals'])]
+    : [sha([actor.tenantId, evidence.id, 'FULL_REVIEW', ''])];
+  let requestId = requestIds[0];
   const claimed = await prisma.$transaction(async (tx) => {
     await tx.$queryRaw(Prisma.sql`SELECT id FROM "JuryServiceConnection" WHERE id = ${connection.id} AND "tenantId" = ${actor.tenantId} FOR UPDATE`);
-    const existing = await tx.juryReviewRequest.findFirst({
-      where: { id: requestId, tenantId: actor.tenantId },
-      include: { result: true },
-    });
-    if (existing?.result && existing.result.tenantId === actor.tenantId) {
-      return { kind: 'reused' as const, resultId: existing.result.id, decision: existing.result.expectedDecision };
+    let existing: Awaited<ReturnType<typeof tx.juryReviewRequest.findFirst<{ where: { id: string }; include: { result: true } }>>> = null;
+    for (const [index, id] of requestIds.entries()) {
+      requestId = id;
+      existing = await tx.juryReviewRequest.findFirst({
+        where: { id, tenantId: actor.tenantId },
+        include: { result: true },
+      });
+      const result = existing?.result && existing.result.tenantId === actor.tenantId ? existing.result : null;
+      if (result && (hasProposalsKey(result.finalSurface) || index === requestIds.length - 1)) {
+        return { kind: 'reused' as const, resultId: result.id, decision: result.expectedDecision };
+      }
+      if (!result) break;
     }
     // I-048: a RUNNING row left behind by a killed function (no update for >330s) is retryable like FAILED.
     const stale = existing ? isStaleRunningReview(existing.status, existing.updatedAt, Date.now()) : false;
@@ -808,4 +826,9 @@ async function connectedServiceReview(
     return { ok: true, started: true, requestId, status: 'RUNNING' };
   }
   return execute();
+}
+
+/** True when a stored finalSurface carries the improvementProposals key (empty list included). */
+export function hasProposalsKey(finalSurface: unknown): boolean {
+  return typeof finalSurface === 'object' && finalSurface !== null && Object.hasOwn(finalSurface, 'improvementProposals');
 }

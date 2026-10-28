@@ -101,5 +101,5 @@ export function auditJuryEligibility(input: {
   return { ok: true };
 }
 
-export { AUDIT_JURY_STEPS, auditJurySteps, AUDIT_JURY_RESULT_ANCHOR, auditJuryResultHref } from './audit-jury-ui';
+export { AUDIT_JURY_STEPS, auditJurySteps, AUDIT_JURY_RESULT_ANCHOR, auditJuryResultHref, SCREEN_AUDIT_EVIDENCE_PURPOSE, AUDIT_JURY_REUSED_NOTICE, auditJuryFailureText } from './audit-jury-ui';
 export type { AuditJuryPhase, AuditJuryPoll } from './audit-jury-ui';
