@@ -269,7 +269,7 @@ test('loop operations do not enable the loop or trust a client tenant', () => {
     assert.equal(source.includes(LIVE_REVIEW.slice(0, 16)), false, file);
   }
   const ui = readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/ui.tsx'), 'utf8');
-  assert.equal(ui.includes('자동 Loop 중지'), true);
+  assert.equal(ui.includes('자동 반복 중지'), true);
   assert.equal(ui.includes('자동화 정책 변경'), false);
   const action = readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/actions.ts'), 'utf8');
   const stop = action.slice(action.indexOf('export async function stopJuryAutoLoop'));
