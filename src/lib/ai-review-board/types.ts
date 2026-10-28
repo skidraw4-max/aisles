@@ -674,6 +674,14 @@ export const EVIDENCE_METRIC_PROMPT_GUARD = `METRIC INTERPRETATION RULES (must f
 9. GA+DB differences (e.g. GA newUsers vs DB newUsersLast7d) are verification items / hypotheses — never auto-conclude cause.`;
 
 
+/** P2: owner-entered site purpose/identity (from providerConfig.siteContext). No reference URL is passed. */
+export type JurySiteContext = {
+  siteType: string;
+  primaryUsers: string;
+  coreTasks: string[];
+  brandTraits: string;
+};
+
 export type EvidencePack = {
   generatedAt: string;
   /**
@@ -716,6 +724,8 @@ export type EvidencePack = {
   /** PII 미포함 보장용 메타 */
   /** I-089: set only by Jury (review-core). /ai-review-board never sets it. */
   reviewMode?: 'jury';
+  /** P2 (JD t568): owner-entered site context. Jury only; user input, never observed evidence. */
+  siteContext?: JurySiteContext;
   /** I-093: stored rule-based screen-audit findings (no extra model call). */
   screenAuditFindings?: JuryScreenAuditEvidence;
   piiExcluded: true;

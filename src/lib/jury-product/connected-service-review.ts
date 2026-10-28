@@ -684,6 +684,13 @@ async function connectedServiceReview(
   const { loadScreenAuditEvidence } = await import('./services/screen-audit/review-evidence');
   // I-099: evidence built from a specific audit uses that audit; older evidence keeps the latest-DONE rule.
   const screenAuditFindings = await loadScreenAuditEvidence(prisma, actor.tenantId, connection.id, boundScreenAuditId(evidenceRow.apiEvidence));
+  // P2: owner-entered site context (no reference URL) for Jury judging; user input, not evidence.
+  const { readSiteContext, siteTypeLabel } = await import('./site-context');
+  const storedContext = readSiteContext(connection.providerConfig);
+  const siteContext = storedContext
+    ? { siteType: siteTypeLabel(storedContext.siteType), primaryUsers: storedContext.primaryUsers, coreTasks: storedContext.coreTasks, brandTraits: storedContext.brandTraits }
+    : undefined;
+  if (siteContext) projection = { ...projection, pack: { ...projection.pack, siteContext } };
   let reading: Awaited<ReturnType<ProductReviewCore>>;
   try {
     reading = await core({
