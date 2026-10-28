@@ -5,7 +5,7 @@
 import type { DebateTurn, EvidencePack, FinalReport, IndependentAnalysis } from '../ai-review-board/types';
 import type { ReviewBoardLlm } from '../ai-review-board/llm';
 import { containsSecret } from './agent-execution';
-import { parseJuryProposals } from '../ai-review-board/jury-mode';
+import { parseJuryNoChangeItems, parseJuryProposals } from '../ai-review-board/jury-mode';
 import {
   JURY_MEMBER_OPINION_IDS,
   JURY_PRODUCT_DATA_ROOT,
@@ -112,11 +112,12 @@ export function surfaceFromFinal(
 }
 
 /** I-091: proposals are re-normalized (caps, malformed items dropped) and withheld if they carry a secret. */
-function proposalSurface(final: FinalReport | null): Pick<JuryFinalSurface, 'improvementProposals' | 'improvementProposalsOmitted'> {
+function proposalSurface(final: FinalReport | null): Pick<JuryFinalSurface, 'improvementProposals' | 'improvementProposalsOmitted' | 'noChangeItems'> {
   if (!final || final.improvementProposals === undefined) return {};
   const proposals = parseJuryProposals(final.improvementProposals);
-  if (containsSecret(proposals)) return { improvementProposals: [], improvementProposalsOmitted: 'SECRET' };
-  return { improvementProposals: proposals, improvementProposalsOmitted: null };
+  const noChange = parseJuryNoChangeItems(final.noChangeItems);
+  if (containsSecret(proposals) || containsSecret(noChange)) return { improvementProposals: [], improvementProposalsOmitted: 'SECRET', noChangeItems: [] };
+  return { improvementProposals: proposals, improvementProposalsOmitted: null, noChangeItems: noChange };
 }
 
 export async function callFrozenReviewPipeline(input: {

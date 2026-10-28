@@ -572,6 +572,8 @@ export type RevisionSummaryBlock = {
 export type FinalReport = {
   /** I-091: Jury mode only — structured improvement proposals. */
   improvementProposals?: JuryImprovementProposal[];
+  /** P3: Jury only. Areas reviewed and kept as-is. */
+  noChangeItems?: JuryNoChangeItem[];
   statusSummary: string;
   overallTrendScore: number | null;
   dimensionScores: DimensionScore[];
@@ -803,7 +805,15 @@ export type JuryImprovementProposal = {
   verification: string[];
   unverified: boolean;
   dissent: string;
+  /** P3: what the change is for (short). Absent on older results. */
+  goal?: string;
+  /** P3: principle = common quality rule; siteTrait = this site's context; general = general advice. */
+  rationaleType?: JuryRationaleType;
+  rationale?: string;
 };
+export type JuryRationaleType = 'principle' | 'siteTrait' | 'general';
+/** P3: an area judges reviewed and decided not to change (keeps the site's identity). */
+export type JuryNoChangeItem = { area: string; reason: string; evidence: string };
 export type JuryProposalReview = {
   targetMemberId: string;
   proposal: string;

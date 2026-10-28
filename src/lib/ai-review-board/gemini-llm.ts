@@ -11,7 +11,7 @@ import {
 import { currentLlmCallContext } from '@/lib/llm-call-context';
 import { ANTI_HERDING_DEBATE_RULES, CLAIM_CALIBRATION_RULES, EVIDENCE_SEMANTICS_RULES, MEMBER_FOCUS, PERSONA_SYSTEM, REVISION_QUALITY_RULES, REVISION_Q_CHECKLIST, SEMANTIC_JUDGE_RULES } from './personas';
 import { formatEvidencePackForPrompt } from './format-evidence-prompt';
-import { isJuryMode, jurySystemAddon, juryUserAddon, parseJuryProposalPriorities, parseJuryProposalReviews, parseJuryProposals } from './jury-mode';
+import { isJuryMode, jurySystemAddon, juryUserAddon, parseJuryNoChangeItems, parseJuryProposalPriorities, parseJuryProposalReviews, parseJuryProposals } from './jury-mode';
 import { SCORE_DIMENSIONS } from './score-dimensions';
 import { listScoresLackingHardEvidence, normalizeDimensionScores } from './scoring';
 import { assertIndependentContext } from './independence';
@@ -802,7 +802,10 @@ needsFurtherVerification holds verification tasks (no separate verificationTasks
         weakLimitedInferences: asStringArray(o.weakLimitedInferences),
         revisionSummary,
       };
-      if (isJuryMode(evidence)) report.improvementProposals = parseJuryProposals(o.improvementProposals);
+      if (isJuryMode(evidence)) {
+        report.improvementProposals = parseJuryProposals(o.improvementProposals, { siteContext: Boolean(evidence?.siteContext) });
+        report.noChangeItems = parseJuryNoChangeItems(o.noChangeItems);
+      }
       return report;
     },
   };
