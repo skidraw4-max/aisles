@@ -22,6 +22,7 @@ import { createLlmCallRecorder } from './llm-call-log';
 import { finishReviewAttempt, startReviewAttempt } from './review-tracking';
 import { isStaleRunningReview } from './review-stale';
 import { recordReviewAudit } from './review-audit';
+import { compareWithPrevious } from './review-compare';
 import {
   JURY_CLAIM_STRENGTHS,
   JURY_CORE_CONTRACT_VERSION,
@@ -714,7 +715,24 @@ async function connectedServiceReview(
   }
   const decision = reading.expectedDecision as JuryDecision;
   const resultId = sha([requestId, reading.boardRunId]);
-  const surface = reading.finalSurface;
+  // P4: link to this service's previous full review (stored in finalSurface; lineage column untouched).
+  let previous: { id: string; completedAt: Date; finalSurface: unknown } | null = null;
+  try {
+    previous = await prisma.juryReviewResult.findFirst({
+      where: {
+        tenantId: actor.tenantId,
+        reviewRequestId: { not: requestId },
+        completedAt: { lt: new Date(reading.completedAt) },
+        request: { connectionId: connection.id, reviewType: 'FULL_REVIEW' },
+      },
+      orderBy: { completedAt: 'desc' },
+      select: { id: true, completedAt: true, finalSurface: true },
+    });
+  } catch {
+    previous = null;
+  }
+  const comparison = compareWithPrevious(previous, reading.finalSurface);
+  const surface = comparison ? { ...reading.finalSurface, previousComparison: comparison } : reading.finalSurface;
   try {
     await prisma.$transaction(async (tx) => {
       await tx.juryReviewResult.create({

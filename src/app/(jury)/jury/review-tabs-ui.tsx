@@ -14,6 +14,7 @@ import {
 } from '@/lib/jury-product/ui-labels';
 import { buildResultDetailView } from '@/lib/jury-product/review-result-detail';
 import type { ReviewComparisonView } from '@/lib/jury-product/review-comparison';
+import { COMPARISON_LABELS, COMPARISON_NOTE } from '@/lib/jury-product/review-compare';
 import { Tabs, TranslationHint, type TabItem } from './ui-primitives';
 import styles from './jury.module.css';
 import { StatusBadge } from './jury-controls';
@@ -375,6 +376,27 @@ export function ImprovementProposalsPanel({ screen }: { screen: ReviewConsoleScr
           </div>
         )}
       </section>
+      {screen.comparison ? (
+        <section className={styles.panel} aria-labelledby="previous-comparison">
+          <h2 id="previous-comparison">개선 제안 변화 (이전 결과 대비)</h2>
+          <p className={styles.muted}>
+            이전 심사 {formatKstDate(screen.comparison.previousCompletedAt)} 결과와 개선 제안을 비교했어요. {COMPARISON_NOTE}
+          </p>
+          {screen.comparison.items.length === 0 ? <p className={styles.muted}>두 결과 모두 개선 제안이 없어요.</p> : (
+            <div className={styles.resultTableWrap}>
+              <table className={`${styles.resultTable} ${styles.proposalTable}`}>
+                <caption className={styles.srOnly}>개선 제안 변화</caption>
+                <thead><tr><th scope="col">제안</th><th scope="col">변화</th></tr></thead>
+                <tbody>
+                  {screen.comparison.items.map((c, i) => (
+                    <tr key={`${i}-${c.label}`}><th scope="row">{c.label}</th><td><StatusBadge data-comparison={c.status}>{COMPARISON_LABELS[c.status]}</StatusBadge></td></tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+      ) : null}
       {view.noChange.length > 0 ? (
         <section className={styles.panel} aria-labelledby="no-change-items">
           <h2 id="no-change-items">수정 불필요</h2>
@@ -417,3 +439,9 @@ export function ImprovementProposalsPanel({ screen }: { screen: ReviewConsoleScr
 }
 
 const PROPOSAL_LEGACY_SHORT = '이전 형식 결과 — 개선 제안 없음';
+
+function formatKstDate(iso: string): string {
+  const d = new Date(iso);
+  if (!iso || Number.isNaN(d.getTime())) return '';
+  return `${d.toLocaleString('ko-KR', { timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })} (KST)`;
+}
