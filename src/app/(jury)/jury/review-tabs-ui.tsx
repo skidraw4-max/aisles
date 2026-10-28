@@ -359,11 +359,15 @@ export function ImprovementProposalsPanel({ screen }: { screen: ReviewConsoleScr
                     <td><StatusBadge data-priority={p.priority}>{p.priority}</StatusBadge></td>
                     <td>
                       <strong>{p.problem}</strong>
+                      {p.goal ? <p className={styles.muted}>목표: {p.goal}</p> : null}
                       <ol className={styles.proposalSteps}>{p.steps.map((step, j) => <li key={j}>{step}</li>)}</ol>
                       {p.dissent ? <p className={styles.muted}>이견: {p.dissent}</p> : null}
                     </td>
                     <td>{p.expectedEffect || <><span aria-hidden="true" className={styles.noStatus}>—</span><span className={styles.srOnly}>기대 효과 없음</span></>} <StatusBadge>AI 추정</StatusBadge></td>
-                    <td><StatusBadge data-proposal-status={p.statusLabel === '근거 있음' ? 'observed' : 'unverified'}>{p.basisLabel} · {p.statusLabel}</StatusBadge></td>
+                    <td>
+                      <StatusBadge data-proposal-status={p.statusLabel === '근거 있음' ? 'observed' : 'unverified'}>{p.basisLabel} · {p.statusLabel}</StatusBadge>
+                      {p.rationaleLabel ? <p className={styles.muted}><StatusBadge data-rationale={p.rationaleType}>{p.rationaleLabel}</StatusBadge>{p.rationale ? ` ${p.rationale}` : ''}</p> : null}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -371,6 +375,27 @@ export function ImprovementProposalsPanel({ screen }: { screen: ReviewConsoleScr
           </div>
         )}
       </section>
+      {view.noChange.length > 0 ? (
+        <section className={styles.panel} aria-labelledby="no-change-items">
+          <h2 id="no-change-items">수정 불필요</h2>
+          <p className={styles.muted}>검토했지만 바꿀 근거가 없어 그대로 두는 것이 좋다고 판단한 부분이에요.</p>
+          <div className={styles.resultTableWrap}>
+            <table className={`${styles.resultTable} ${styles.proposalTable}`}>
+              <caption className={styles.srOnly}>수정 불필요</caption>
+              <thead><tr><th scope="col">영역</th><th scope="col">유지 이유</th><th scope="col">근거</th></tr></thead>
+              <tbody>
+                {view.noChange.map((n, i) => (
+                  <tr key={`${i}-${n.area}`}>
+                    <th scope="row">{n.area}</th>
+                    <td>{n.reason}</td>
+                    <td>{n.evidence || <><span aria-hidden="true" className={styles.noStatus}>—</span><span className={styles.srOnly}>근거 없음</span></>}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      ) : null}
       <section className={styles.panel} aria-labelledby="verification-checklist">
         <h2 id="verification-checklist">검증 체크리스트</h2>
         {view.checklist.length === 0 ? <p className={styles.muted}>확인할 항목이 없어요.</p> : (

@@ -1,4 +1,4 @@
-import type { JuryImprovementProposal } from '../ai-review-board/types';
+import type { JuryImprovementProposal, JuryNoChangeItem } from '../ai-review-board/types';
 /**
  * AIsles Jury product Standard Contract.
  * These types sit above v9.x. They do not replace EvidencePack.
@@ -292,6 +292,8 @@ export type JuryFinalSurface = {
   /** I-091: Jury improvement proposals. Absent on results stored before I-091. */
   improvementProposals?: JuryImprovementProposal[];
   improvementProposalsOmitted?: 'SECRET' | null;
+  /** P3: areas judges kept as-is. Absent on older results. */
+  noChangeItems?: JuryNoChangeItem[];
 };
 
 export type JuryReviewResult = {
