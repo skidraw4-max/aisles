@@ -25,6 +25,8 @@ export function buildProductEvidence(input: {
   pack: EvidencePack;
   /** I-099: latest DONE 화면 심사 identity; absent → identical ids/hash to before (old evidence keeps matching). */
   screenAudit?: ScreenAuditIdentity | null;
+  /** One-click 위원 심사 labels its evidence (default keeps 'aisle-self-observation'). */
+  purpose?: string;
 }): { ok: true; metrics: JuryNormalizedMetric[]; evidence: BuiltJuryEvidence } | { ok: false; reason: ProductEvidenceFailure } {
   void input.clientTenantId;
   if (input.connection.tenantId !== input.actorTenantId) return { ok: false, reason: 'TENANT_MISMATCH' };
@@ -65,7 +67,7 @@ export function buildProductEvidence(input: {
     id: evidenceId,
     tenantId: input.actorTenantId,
     connectionId: input.connection.id,
-    purpose: 'aisle-self-observation',
+    purpose: input.purpose ?? 'aisle-self-observation',
     periodStart: period.start,
     periodEnd: period.end,
     timezone: period.timezone,

@@ -4,6 +4,7 @@ import { loadReviewComparison } from '@/lib/jury-product/review-comparison-db';
 import { externalFeatureDenial } from '@/lib/jury-product/service-feature-authorization';
 import { guardReviewFeature } from '@/lib/jury-product/service-feature-guard';
 import { getJuryActor } from '@/lib/jury-product/session';
+import { AUDIT_JURY_REUSED_NOTICE } from '@/lib/jury-product/services/screen-audit/audit-jury-ui';
 import { FollowingReReviewBody, HumanChangeGateBody, HumanReReviewBody, JuryChrome, ReReviewAgentHandoffBody, ReReviewNextImprovementBody, ReReviewAgentRunBody, ReReviewChangeGateBody, ReviewDetailBody, LaterAgentRunBody, LaterChangeGateBody, LaterImprovementApprovalBody, LaterImprovementBody, LaterImprovementHandoffBody, LaterReReviewBody, SecondChangeGateBody, SecondImprovementApprovalBody, SecondImprovementBody, SecondImprovementHandoffBody, SecondReReviewBody } from '../../ui';
 import { PreviousResultComparison, ResultFixedSummary, ReviewEvidenceTab, ReviewHistoryHint, ReviewHistoryIntro, ReviewMembersTab, ReviewTabs, reviewTabFrom } from '../../review-tabs-ui';
 
@@ -12,11 +13,12 @@ export default async function JuryReviewDetailPage({
   searchParams,
 }: {
   params: Promise<{ reviewId: string }>;
-  searchParams: Promise<{ human?: string | string[]; tab?: string | string[] }>;
+  searchParams: Promise<{ human?: string | string[]; tab?: string | string[]; reused?: string | string[] }>;
 }) {
   const { reviewId } = await params;
   const query = await searchParams;
   const noted = query.human === 'NOTED';
+  const reused = query.reused === '1';
   const tab = reviewTabFrom(query.tab);
   const actor = await getJuryActor();
   if (!actor.ok) {
@@ -43,6 +45,7 @@ export default async function JuryReviewDetailPage({
       <JuryChrome actor={actor}>
         {screen && show ? (
           <>
+            {reused ? <p role="status" data-testid="audit-jury-reused">{AUDIT_JURY_REUSED_NOTICE}</p> : null}
             <ResultFixedSummary screen={screen} />
             <ReviewTabs reviewId={screen.reviewId} active={tab} />
             {tab === 'summary' ? <ReviewDetailBody screen={screen} noted={noted} /> : null}

@@ -1156,7 +1156,7 @@ export async function runConnectedServiceJuryReview(formData: FormData): Promise
  * + 심사 실행 started in the background (`after`), then the client polls. Never runs without this click (cost).
  */
 export type AuditJuryStartResult =
-  | { ok: true; state: 'COMPLETED'; resultId: string }
+  | { ok: true; state: 'COMPLETED'; resultId: string; reused: boolean }
   | { ok: true; state: 'RUNNING'; requestId: string }
   | { ok: false; reason: string };
 
@@ -1184,10 +1184,12 @@ export async function startAuditJuryReviewAction(connectionIdRaw: string): Promi
     if (!reviewAccess.ok) return { ok: false, reason: featureRedirectCode(reviewAccess) };
     const { defaultEvidencePeriod } = await import('@/lib/jury-product/evidence-period');
     const period = defaultEvidencePeriod();
+    const { SCREEN_AUDIT_EVIDENCE_PURPOSE } = await import('@/lib/jury-product/services/screen-audit/audit-jury-ui');
     const collected = await runConnectedServiceEvidenceCollection({
       actor,
       connectionId,
-      purpose: 'aisle-self-observation',
+      purpose: SCREEN_AUDIT_EVIDENCE_PURPOSE,
+      requireScreenAudit: true,
       periodStart: period.start,
       periodEnd: period.end,
       timezone: period.timezone,
@@ -1204,7 +1206,7 @@ export async function startAuditJuryReviewAction(connectionIdRaw: string): Promi
     );
     if (!started.ok) return { ok: false, reason: started.reason };
     if ('started' in started) return { ok: true, state: 'RUNNING', requestId: started.requestId };
-    return { ok: true, state: 'COMPLETED', resultId: started.resultId };
+    return { ok: true, state: 'COMPLETED', resultId: started.resultId, reused: 'reused' in started && started.reused === true };
   } catch (error) {
     return { ok: false, reason: isJuryStoreUnavailable(error) ? 'STORE_UNAVAILABLE' : 'ERROR' };
   }
