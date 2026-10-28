@@ -90,6 +90,8 @@ export type ReviewCommand = {
   evidenceId: string;
   clientTenantId?: string | null;
   core?: ProductReviewCore;
+  /** One-click 위원 심사 only: a stored result without improvementProposals is not reused (runs fresh). */
+  skipLegacyResult?: boolean;
 };
 
 type CollectionStatus = 'AVAILABLE' | 'NOT_MEASURED' | 'NOT_AVAILABLE' | 'COLLECTION_FAILED';
@@ -606,7 +608,9 @@ async function connectedServiceReview(
 
   // A stored result without the improvementProposals key (pre-proposals / LEGACY) is never reused: the review runs fresh
   // under a second deterministic id (JuryReviewResult.reviewRequestId is unique, so the old row stays untouched).
-  const requestIds = [sha([actor.tenantId, evidence.id, 'FULL_REVIEW', '']), sha([actor.tenantId, evidence.id, 'FULL_REVIEW', 'proposals'])];
+  const requestIds = command.skipLegacyResult === true
+    ? [sha([actor.tenantId, evidence.id, 'FULL_REVIEW', '']), sha([actor.tenantId, evidence.id, 'FULL_REVIEW', 'proposals'])]
+    : [sha([actor.tenantId, evidence.id, 'FULL_REVIEW', ''])];
   let requestId = requestIds[0];
   const claimed = await prisma.$transaction(async (tx) => {
     await tx.$queryRaw(Prisma.sql`SELECT id FROM "JuryServiceConnection" WHERE id = ${connection.id} AND "tenantId" = ${actor.tenantId} FOR UPDATE`);

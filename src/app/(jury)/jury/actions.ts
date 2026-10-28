@@ -1201,7 +1201,7 @@ export async function startAuditJuryReviewAction(connectionIdRaw: string): Promi
       import('@/lib/jury-product/connected-service-review'),
     ]);
     const started = await startConnectedServiceReview(
-      { actor, connectionId, evidenceId: collected.evidenceId, clientTenantId: null, core: tenantReviewCore },
+      { actor, connectionId, evidenceId: collected.evidenceId, clientTenantId: null, core: tenantReviewCore, skipLegacyResult: true },
       (work) => after(work),
     );
     if (!started.ok) return { ok: false, reason: started.reason };

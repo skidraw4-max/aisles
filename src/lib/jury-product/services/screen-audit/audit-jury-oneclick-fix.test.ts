@@ -32,7 +32,8 @@ test('fix 2: results without the improvementProposals key are not reused', () =>
   assert.equal(hasProposalsKey(null), false);
   assert.equal(hasProposalsKey('x'), false);
   const review = src('src/lib/jury-product/connected-service-review.ts');
-  assert.match(review, /sha\(\[actor\.tenantId, evidence\.id, 'FULL_REVIEW', ''\]\), sha\(\[actor\.tenantId, evidence\.id, 'FULL_REVIEW', 'proposals'\]\)/);
+  assert.match(review, /command\.skipLegacyResult === true\s+\? \[sha\(\[actor\.tenantId, evidence\.id, 'FULL_REVIEW', ''\]\), sha\(\[actor\.tenantId, evidence\.id, 'FULL_REVIEW', 'proposals'\]\)\]/);
+  assert.match(src('src/app/(jury)/jury/actions.ts'), /core: tenantReviewCore, skipLegacyResult: true \}/);
   assert.match(review, /hasProposalsKey\(result\.finalSurface\)/);
 });
 
