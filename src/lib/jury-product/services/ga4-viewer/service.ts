@@ -5,6 +5,8 @@
  * and a consent row (version ga4-viewer-consent-v1). GA4_VIEWER is never ownership-gated.
  */
 import { createHash, randomUUID } from 'node:crypto';
+import { Prisma } from '@prisma/client';
+import { mergeProviderConfig } from '../../site-context';
 import { decideJuryMutation, type JuryActor } from '../../access';
 import type { AttachGa4Options } from '@/lib/ai-review-board/ga4-evidence';
 import { ga4ViewerFlags, type EnvLike } from '../phase1-flags';
@@ -98,10 +100,12 @@ export async function createPrismaGa4ViewerStore(): Promise<Ga4ViewerStore> {
     },
     async saveValidated(row) {
       await prisma.$transaction(async (tx) => {
+        // Keep other providerConfig keys (e.g. siteContext) when saving ga4.
+        const current = await tx.juryServiceConnection.findFirst({ where: { id: row.connectionId, tenantId: row.tenantId }, select: { providerConfig: true } });
         await tx.juryServiceConnection.updateMany({
           where: { id: row.connectionId, tenantId: row.tenantId, accessMethod: 'GA4_VIEWER' },
           data: {
-            providerConfig: { ga4: { propertyId: row.propertyId, validatedAt: row.validatedAt.toISOString() } },
+            providerConfig: mergeProviderConfig(current?.providerConfig, { ga4: { propertyId: row.propertyId, validatedAt: row.validatedAt.toISOString() } }) as Prisma.InputJsonValue,
             credentialRef: `ga4-viewer/properties/${row.propertyId}`,
             updatedAt: row.validatedAt,
           },
