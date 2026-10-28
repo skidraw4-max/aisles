@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { homeNextAction } from '@/lib/jury-product/home-next-action';
 import { juryDevUi } from '@/lib/jury-product/dev-ui';
 import { listHref, pageList, type ListQuery } from '@/lib/jury-product/list-paging';
 import type { ReactNode } from 'react';
@@ -285,21 +286,21 @@ export function DashboardBody({ view }: { view: JuryConsoleView }) {
       </section>
     );
   }
+  const next = homeNextAction(board);
   return (
     <>
       <PageHeader
         crumbs={[{ label: '홈' }]}
         title="홈"
         description="지금 해야 할 일과 최근 결과를 한눈에 확인하세요."
-        actions={<ButtonLink variant="primary" icon={Play} href={juryHref('/evidence')}>심사 요청 시작</ButtonLink>}
       />
       <section className={`${styles.panel} ${styles.nextAction}`}>
         <div>
           <p className={styles.eyebrow}>지금 할 일</p>
-          <h2>최근 심사 결과를 확인하세요</h2>
-          <p className={styles.muted}>새로운 결과가 도착하면 주요 문제와 권장 조치를 바로 확인할 수 있어요.</p>
+          <h2>{next.title}</h2>
+          <p className={styles.muted}>{next.description}</p>
         </div>
-        <ButtonLink variant="primary" icon={FileText} href={juryHref('/reviews')}>결과 보기</ButtonLink>
+        <ButtonLink variant="primary" icon={next.href === '/reviews' ? FileText : Play} href={juryHref(next.href)}>{next.label}</ButtonLink>
       </section>
       <div className={styles.cards}>
         <section className={styles.panel}>
@@ -315,14 +316,15 @@ export function DashboardBody({ view }: { view: JuryConsoleView }) {
         <section className={styles.panel}>
           <h2>진행 중 심사</h2>
           <p className={styles.metric}>{board.inFlightReviews}</p>
-          <p className={styles.muted}>완료된 결과 {board.reviews}건 · 출처 미기록 {board.resultSummary.unknownSource} · Mock/Fixture {board.resultSummary.nonReal} · 실모델(미검증) {board.resultSummary.realUnverified} · 검증된 실모델 {board.resultSummary.aggregatable}</p>
+          <p className={styles.muted}>완료된 결과 {board.reviews}건</p>
+          <details className={styles.technicalDetails}><summary>결과 출처 자세히 보기</summary><p className={styles.muted}>출처 미기록 {board.resultSummary.unknownSource} · Mock/Fixture {board.resultSummary.nonReal} · 실모델(미검증) {board.resultSummary.realUnverified} · 검증된 실모델 {board.resultSummary.aggregatable}</p></details>
           {board.resultSummary.withWarnings > 0 ? <p className={styles.muted}>⚠ 확인이 필요한 결과 {board.resultSummary.withWarnings}건</p> : null}
         </section>
         <section className={styles.panel}>
           <h2>개선 작업</h2>
           <p className={styles.metric}>{board.openImprovements}</p>
           <p className={styles.muted}>진행 중 {board.activeImprovements}건</p>
-          <p className={styles.muted}>출처: 실모델(미검증) {board.improvementSources.realUnverified} · 검증된 실모델 {board.improvementSources.verifiedReal} · Mock/Fixture {board.improvementSources.nonReal} · 출처 미기록 {board.improvementSources.unknownSource}{board.improvementSources.unlinked > 0 ? ` · 연결 확인 불가 ${board.improvementSources.unlinked}` : ''}</p>
+          <details className={styles.technicalDetails}><summary>출처 자세히 보기</summary><p className={styles.muted}>실모델(미검증) {board.improvementSources.realUnverified} · 검증된 실모델 {board.improvementSources.verifiedReal} · Mock/Fixture {board.improvementSources.nonReal} · 출처 미기록 {board.improvementSources.unknownSource}{board.improvementSources.unlinked > 0 ? ` · 연결 확인 불가 ${board.improvementSources.unlinked}` : ''}</p></details>
         </section>
       </div>
       <section className={styles.panel}>
@@ -537,6 +539,11 @@ export function ReviewDetailBody({ screen, noted }: { screen: ReviewConsoleScree
   const missing = display ? display.missingEvidenceCount : null;
   const supportedCount = display ? display.claims.counts?.supported ?? null : null;
   const noActionAllowed = !display || (display.decision.raw === 'ACCEPT' && display.flags.length === 0);
+  // UX stage 3: exactly one recommended next action is the primary button (implemented actions only).
+  const primaryNext: 'choice' | 'improvement' | 'handoff' | 'none' = screen.humanChoices.length > 0 ? 'choice'
+    : screen.canCreateImprovement ? 'improvement'
+    : screen.canHandoff && screen.improvementTask ? 'handoff'
+    : 'none';
   const fallbackAction = noActionAllowed ? '추가 조치가 필요하지 않아요.' : '권장 조치 기록 없음';
   return (
     <>
@@ -606,19 +613,22 @@ export function ReviewDetailBody({ screen, noted }: { screen: ReviewConsoleScree
         {screen.humanChoices.length > 0 ? (
           <form action={acknowledgeHumanReview}>
             <input type="hidden" name="reviewId" value={screen.reviewId} />
-            {screen.humanChoices.map((choice) => (
-              <Button variant="secondary" key={choice.code} name="action" value={choice.code} type="submit">{choice.label}</Button>
+            {screen.humanChoices.map((choice, index) => (
+              <Button variant={primaryNext === 'choice' && index === 0 ? 'primary' : 'secondary'} key={choice.code} name="action" value={choice.code} type="submit">{choice.label}</Button>
             ))}
           </form>
         ) : null}
         {!screen.humanDecision && screen.humanChoices.length === 0 ? (
           <p className={styles.muted}>다음 행동 선택: 현재 역할에는 이 변경 권한이 없어요.</p>
         ) : null}
+        {primaryNext === 'none' ? (
+          <p><ButtonLink variant="primary" icon={Play} href={juryHref('/services')}>서비스에서 새로 심사하기</ButtonLink></p>
+        ) : null}
         {screen.improvementTask ? <p>개선 작업을 만들었어요</p> : null}
         {screen.canCreateImprovement ? (
           <form action={createHumanImprovementTask}>
             <input type="hidden" name="reviewId" value={screen.reviewId} />
-            <Button variant="secondary" icon={Plus} type="submit">개선 작업 만들기</Button>
+            <Button variant={primaryNext === 'improvement' ? 'primary' : 'secondary'} icon={Plus} type="submit">개선 작업 만들기</Button>
           </form>
         ) : null}
         {screen.agentExecution ? (
@@ -646,7 +656,7 @@ export function ReviewDetailBody({ screen, noted }: { screen: ReviewConsoleScree
         {screen.canHandoff && screen.improvementTask ? (
           <form action={handoffHumanImprovement}>
             <input type="hidden" name="improvementTaskId" value={screen.improvementTask.id} />
-            <Button variant="secondary" icon={Send} type="submit">에이전트에 전달</Button>
+            <Button variant={primaryNext === 'handoff' ? 'primary' : 'secondary'} icon={Send} type="submit">에이전트에 전달</Button>
           </form>
         ) : null}
       </section>
@@ -775,7 +785,10 @@ export function EvidenceBody({ actor, view, query = { q: '', filter: '', page: 1
       </p>
       {form.visible ? (
         form.scopes.length === 0 ? (
-          <p className={styles.muted}>현재 승인된 Scope에는 입력 가능한 Catalog Metric이 없어요.</p>
+          <div className={styles.nextAction}>
+            <p className={styles.muted}>지금은 입력할 수 있는 분석 항목이 없어요. 서비스 화면에서 “이 결과로 위원 심사하기”로 바로 심사할 수 있어요.</p>
+            <ButtonLink variant="primary" icon={Play} href={juryHref('/services')}>서비스에서 새로 심사하기</ButtonLink>
+          </div>
         ) : (
           form.scopes.map((scope) => (
             <form action={submitTenantEvidenceIntake} key={scope.scopeId}>
@@ -829,7 +842,12 @@ export function EvidenceBody({ actor, view, query = { q: '', filter: '', page: 1
         <p className={styles.muted}>Evidence 입력: 현재 역할에는 이 변경 권한이 없어요.</p>
       )}
       {allEvidence.length > 0 ? <ListControls path="/evidence" query={query} total={evidencePage.total} page={evidencePage.page} pages={evidencePage.pages} /> : null}
-      {allEvidence.length === 0 ? <EmptyState>{displayText(SHELL_EMPTY.evidence)}</EmptyState> : evidence.length === 0 ? <p className={styles.muted}>조건에 맞는 자료 없음</p> : null}
+      {allEvidence.length === 0 ? (
+        <>
+          <EmptyState>{displayText(SHELL_EMPTY.evidence)}</EmptyState>
+          {!form.visible ? <p><ButtonLink variant="primary" icon={Play} href={juryHref('/services')}>서비스에서 새로 심사하기</ButtonLink></p> : null}
+        </>
+      ) : evidence.length === 0 ? <p className={styles.muted}>조건에 맞는 자료 없음</p> : null}
       {evidence.map((row) => {
         const stored = view.evidence.find((item) => item.id === row.id);
         // I-029: connected-collection evidence is reviewed from its service page (FULL_REVIEW only).
