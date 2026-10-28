@@ -43,6 +43,7 @@ export function projectImprovementRows(
         agentStatus: execution?.status ?? null,
         agentExecutionId: execution?.id ?? null,
         agentFinishedAt: execution?.finishedAt ?? null,
+        createdAt: task.createdAt ?? null,
       };
     });
 }

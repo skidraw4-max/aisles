@@ -476,8 +476,8 @@ export function ReviewsBody({ view }: { view: JuryConsoleView }) {
               <th>결론</th>
               <th>완료일</th>
               <th>심사 유형</th>
-              <th>심사 근거</th>
-              <th>요약</th>
+              <th>심사 근거 · 기간</th>
+              <th>한 줄 결론</th>
             </tr>
           </thead>
           <tbody>
@@ -490,6 +490,8 @@ export function ReviewsBody({ view }: { view: JuryConsoleView }) {
               const detailHref = juryHref(`/reviews/${row.id}`);
               const evidenceId = request?.evidenceId ?? null;
               const summary = row.finalSurface.statusSummary;
+              const evidenceRow = evidenceId ? view.evidence.find((item) => item.id === evidenceId) ?? null : null;
+              const conclusion = display.decision.withheld ? decisionLabel : `${decisionLabel} · ${DECISION_GUIDANCE[row.expectedDecision] ?? "상세에서 결과를 확인하세요."}`;
               return (
                 <tr key={row.id}>
                   <td title={request?.status}><StatusBadge status={request?.status}>{statusLabel}</StatusBadge></td>
@@ -501,6 +503,13 @@ export function ReviewsBody({ view }: { view: JuryConsoleView }) {
                   <td title={formatKstFull(row.completedAt)}>{formatKstShort(row.completedAt)}</td>
                   <td title={request?.reviewType}>{request?.reviewType ? userLabel(request.reviewType) : displayText(SHELL_UNAVAILABLE)}</td>
                   <td>
+                    {evidenceRow ? (
+                      <span>
+                        <span className={styles.ellipsisText} title={evidenceRow.purpose}>{evidenceRow.purpose}</span>
+                        <br />
+                        <span className={styles.muted}>{evidenceRow.periodStart} – {evidenceRow.periodEnd}</span>
+                      </span>
+                    ) : null}
                     {evidenceId ? (
                       <span className={styles.evidenceCell}>
                         <span className={styles.evidenceId} title={evidenceId}>{shortId(evidenceId)}</span>
@@ -510,7 +519,7 @@ export function ReviewsBody({ view }: { view: JuryConsoleView }) {
                   </td>
                   <td>
                     <span className={styles.summaryCell}>
-                      <span className={styles.summaryPreview} lang="en" title={summary}>{summary}</span>
+                      <span className={styles.summaryPreview} title={summary}>{conclusion}</span>
                       <ReviewSummaryDialog
                         summary={summary}
                         decisionLabel={decisionLabel}
@@ -848,6 +857,19 @@ export function EvidenceBody({ actor, view, query = { q: '', filter: '', page: 1
           {!form.visible ? <p><ButtonLink variant="primary" icon={Play} href={juryHref('/services')}>서비스에서 새로 심사하기</ButtonLink></p> : null}
         </>
       ) : evidence.length === 0 ? <p className={styles.muted}>조건에 맞는 자료 없음</p> : null}
+      {evidence.length > 0 ? (
+      <div className={styles.tableScroll}>
+      <table className={styles.table}>
+        <thead>
+          <tr>
+            <th>심사 근거</th>
+            <th>분석 기간</th>
+            <th>지표 수</th>
+            <th>최근 결과</th>
+            <th>자세히 · 심사</th>
+          </tr>
+        </thead>
+        <tbody>
       {evidence.map((row) => {
         const stored = view.evidence.find((item) => item.id === row.id);
         // I-029: connected-collection evidence is reviewed from its service page (FULL_REVIEW only).
@@ -855,9 +877,18 @@ export function EvidenceBody({ actor, view, query = { q: '', filter: '', page: 1
         // I-030: stored state for this card (rebuilt from the DB on every render, so it survives a refresh).
         const reviewState = evidenceReviewStatus(view, row.id, Date.now());
         return (
-        <article key={row.id}>
-          <div className={styles.row}><span className={styles.label}>심사 근거</span><span>{row.purpose}</span></div>
-          <div className={styles.row}><span className={styles.label}>분석 기간</span><span>{row.periodStart} – {row.periodEnd}</span></div>
+        <tr key={row.id}>
+          <td>{row.purpose}</td>
+          <td className={styles.nowrapCell}>{row.periodStart} – {row.periodEnd}</td>
+          <td>{row.metricCount}</td>
+          <td className={styles.nowrapCell}>
+            {reviewState.latestResult ? (
+              <Link className={styles.inline} href={juryHref(`/reviews/${reviewState.latestResult.id}`)}>
+                결과 보기 · {formatKstShort(reviewState.latestResult.completedAt)}
+              </Link>
+            ) : reviewState.open ? reviewState.open.stateLabel : '아직 없음'}
+          </td>
+          <td>
           <details className={styles.technicalDetails}>
             <summary>기술 정보 자세히 보기</summary>
             <div className={styles.row}><span className={styles.label}>시간대</span><span>{stored?.timezone ?? displayText(SHELL_UNAVAILABLE)}</span></div>
@@ -865,13 +896,15 @@ export function EvidenceBody({ actor, view, query = { q: '', filter: '', page: 1
             <div className={styles.row}><span className={styles.label}>내부 식별자</span><span>{row.id}</span></div>
             <div className={styles.row}><span className={styles.label}>읽기 전용</span><span>{stored?.readOnly === true ? '예' : stored?.readOnly === false ? '아니오' : displayText(SHELL_UNAVAILABLE)}</span></div>
           </details>
-          <div className={styles.row}><span className={styles.label}>지표 수</span><span>{row.metricCount}</span></div>
+          <details className={styles.technicalDetails}>
+            <summary>지표 보기</summary>
           {row.metrics.map((metric) => (
             <div className={styles.row} key={metric.id}>
               <span>{metricLine(metric.metric, metric.value, metric.availability)}</span>
               <span className={styles.muted}>{metric.sourceSystem}</span>
             </div>
           ))}
+          </details>
           {canShowWrite(actor, 'review.start') ? (
             // I-029: only declared-intake evidence can be reviewed from this card (runTenantReview scope check).
             evidenceReviewPath(row) === 'TENANT_INTAKE' ? (
@@ -902,18 +935,15 @@ export function EvidenceBody({ actor, view, query = { q: '', filter: '', page: 1
               </span>
             </div>
           ) : null}
-          {reviewState.latestResult ? (
-            <div className={styles.row}>
-              <span className={styles.label}>최근 결과</span>
-              <Link className={styles.inline} href={juryHref(`/reviews/${reviewState.latestResult.id}`)}>
-                결과 보기 · 완료 {formatKstShort(reviewState.latestResult.completedAt)}
-              </Link>
-            </div>
-          ) : null}
           {!reviewState.attemptsLoaded ? <p className={styles.muted}>실행 기록을 불러오지 못해 진행 중인 요청은 확인할 수 없어요.</p> : null}
-        </article>
+          </td>
+        </tr>
         );
       })}
+        </tbody>
+      </table>
+      </div>
+      ) : null}
     </section>
   );
 }
@@ -928,6 +958,13 @@ const criteriaDialogClasses = {
   footer: styles.summaryDialogFooter,
   secondaryButton: buttonClass('ghost'),
 };
+
+/** UX stage 4: display-only priority derived from the task type (no stored priority field). */
+function improvementPriorityLabel(taskType: string | null): string {
+  if (taskType === 'VERIFICATION') return '높음 · 근거 보완';
+  if (taskType === 'REWORD') return '보통 · 표현 수정';
+  return '기록 없음';
+}
 
 export function ImprovementsBody({
   actor,
@@ -960,28 +997,30 @@ export function ImprovementsBody({
         <table className={styles.table}>
           <thead>
             <tr>
+              <th>문제</th>
+              <th>우선순위</th>
               <th>상태</th>
-              <th>작업 유형</th>
-              <th>진단</th>
-              <th>완료 기준</th>
-              <th>원본 심사</th>
-              <th>원본 서비스</th>
-              <th>승인</th>
-              <th>에이전트</th>
-              <th>추적</th>
+              <th>최근 활동</th>
+              <th>자세히</th>
             </tr>
           </thead>
           <tbody>
             {rows.map((task) => (
               <tr key={task.id}>
+                <td><Link className={styles.inline} href={juryHref(`/improvements/${task.id}`)}><span className={styles.ellipsisText} title={task.diagnosis}>{task.diagnosis}</span></Link></td>
+                <td>{improvementPriorityLabel(task.taskType)}</td>
                 <td><StatusBadge status={task.status} title={task.status}>{userLabel(task.status)}</StatusBadge></td>
-                <td title={task.taskType ?? undefined}>{task.taskType ? userLabel(task.taskType) : displayText(SHELL_UNAVAILABLE)}</td>
-                <td><span className={styles.ellipsisText} title={task.diagnosis}>{task.diagnosis}</span></td>
-                <td className={styles.nowrapCell}><AcceptanceCriteriaDialog criteria={task.acceptanceCriteria} classes={criteriaDialogClasses} /></td>
-                <td><Link className={`${styles.inline} ${styles.identifier}`} href={juryHref(`/reviews/${task.sourceReviewId}`)} title={task.sourceReviewId}>{compactIdentifier(task.sourceReviewId)}</Link></td>
-                <td>{task.sourceService ?? displayText(SHELL_UNAVAILABLE)}</td>
-                <td title={task.approval ?? undefined}>{task.approval ? userLabel(task.approval) : displayText(SHELL_UNAVAILABLE)}</td>
+                <td className={styles.nowrapCell}>{task.agentFinishedAt ?? task.createdAt ? formatKstShort((task.agentFinishedAt ?? task.createdAt) as string) : displayText(SHELL_UNAVAILABLE)}</td>
                 <td>
+                <Link className={styles.inline} href={juryHref(`/improvements/${task.id}`)}>추적 보기</Link>
+                <details className={styles.technicalDetails}>
+                <summary>세부 정보·작업</summary>
+                <div className={styles.row}><span className={styles.label}>작업 유형</span><span title={task.taskType ?? undefined}>{task.taskType ? userLabel(task.taskType) : displayText(SHELL_UNAVAILABLE)}</span></div>
+                <div className={styles.nowrapCell}><AcceptanceCriteriaDialog criteria={task.acceptanceCriteria} classes={criteriaDialogClasses} /></div>
+                <div className={styles.row}><span className={styles.label}>원본 심사</span><Link className={`${styles.inline} ${styles.identifier}`} href={juryHref(`/reviews/${task.sourceReviewId}`)} title={task.sourceReviewId}>{compactIdentifier(task.sourceReviewId)}</Link></div>
+                <div className={styles.row}><span className={styles.label}>원본 서비스</span><span>{task.sourceService ?? displayText(SHELL_UNAVAILABLE)}</span></div>
+                <div className={styles.row}><span className={styles.label}>승인</span><span title={task.approval ?? undefined}>{task.approval ? userLabel(task.approval) : displayText(SHELL_UNAVAILABLE)}</span></div>
+                <div>
                   {task.agentStatus === 'RUNNING' ? <span>진행 중</span> : null}
                   {task.agentStatus === 'COMPLETED' ? (
                     <>
@@ -1034,15 +1073,14 @@ export function ImprovementsBody({
                       </form>
                     ) : null
                   ) : null}
-                </td>
-                <td>
-                  <Link className={styles.inline} href={juryHref(`/improvements/${task.id}`)}>추적 보기</Link>
+                </div>
                   {canHandoff && agentTasks.has(task.id) && task.approval === 'APPROVED' && task.status === 'OPEN' && !task.agentStatus ? (
                     <form action={handoffHumanImprovement}>
                       <input type="hidden" name="improvementTaskId" value={task.id} />
                       <Button variant="secondary" icon={Send} type="submit">에이전트에 전달</Button>
                     </form>
                   ) : null}
+                </details>
                 </td>
               </tr>
             ))}
