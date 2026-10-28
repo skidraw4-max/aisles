@@ -26,6 +26,13 @@ export function ServiceTabMemory({ connectionId, tab }: { connectionId: string; 
       router.replace(next);
       return;
     }
+    // A remembered tab is single-use: once this page shows without a restore (user clicked a tab, or the redirect
+    // already kept ?tab=), drop it so a later ?result= page cannot snap back to a stale tab.
+    if (saved !== null) {
+      try {
+        window.sessionStorage.removeItem(key);
+      } catch {}
+    }
     const onSubmit = () => {
       try {
         window.sessionStorage.setItem(key, tab);

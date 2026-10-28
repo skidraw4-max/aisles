@@ -5,6 +5,7 @@
 import Link from 'next/link';
 import { serviceTabHref, visibleServiceTabs, type ServiceTab, type ServiceTabBadge } from './service-detail-tabs-model';
 import { ServiceTabScroll } from './service-tab-scroll';
+import { ServiceTabPending } from './service-tab-pending';
 import styles from './jury.module.css';
 import { StatusBadge } from './jury-controls';
 import type { StatusTone } from '@/lib/jury-product/status-tone';
@@ -47,6 +48,7 @@ export function ServiceTabNav({
               className={selected ? `${styles.segTab} ${styles.segTabActive}` : styles.segTab}
             >
               <span>{t.label}</span>
+              <ServiceTabPending />
               {badge ? <StatusBadge tone={TONE[badge.tone]}>{badge.text}</StatusBadge> : null}
             </Link>
           );
