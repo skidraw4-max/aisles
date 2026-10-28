@@ -35,6 +35,8 @@ const REVIEW_KEYS = [
   'requestInput',
   // I-092: display-only improvement proposals belong to the review block
   'proposals',
+  // P4: proposal comparison with the previous result (display only)
+  'comparison',
 ] as const;
 const IMPROVEMENT_KEYS = [
   'improvementTask', 'canCreateImprovement', 'canHandoff', 'nextImprovement', 'canCreateReReviewImprovement',

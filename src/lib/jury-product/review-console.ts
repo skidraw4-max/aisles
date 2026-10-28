@@ -3,6 +3,7 @@
  * The stored choice does not replace expectedDecision. This module does not create an improvement task.
  */
 import { buildProposalView, type ProposalView } from './proposal-view-model';
+import { readPreviousComparison, type PreviousComparison } from './review-compare';
 import { buildReviewDisplayModel, type ReviewDisplayModel } from './review-display-model';
 import { createHash } from 'node:crypto';
 import { Prisma } from '@prisma/client';
@@ -68,6 +69,8 @@ export type ReviewConsoleScreen = {
   memberOpinionsOmitted?: 'SECRET' | null;
   /** I-092: 발견된 문제 / 개선 제안 / 검증 체크리스트. */
   proposals?: ProposalView;
+  /** P4: comparison with the previous result of the same service. */
+  comparison?: PreviousComparison | null;
   opinionDifferences?: string[];
   disputedPoints?: string[];
   confidence?: {
@@ -548,6 +551,7 @@ export function projectReviewConsole(input: {
       hypotheses: [...input.result.finalSurface.hypotheses],
       ...committeeView(input.result.finalSurface, input.result.evidenceStrength ?? null),
       proposals: buildProposalView(input.result.finalSurface),
+      comparison: readPreviousComparison(input.result.finalSurface),
       requestInput: {
         reviewType: input.displayFacts?.reviewType ?? null,
         claim: input.displayFacts?.claim?.trim() ? input.displayFacts.claim.trim() : null,

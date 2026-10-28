@@ -294,6 +294,8 @@ export type JuryFinalSurface = {
   improvementProposalsOmitted?: 'SECRET' | null;
   /** P3: areas judges kept as-is. Absent on older results. */
   noChangeItems?: JuryNoChangeItem[];
+  /** P4: link to the same service's previous result + proposal comparison. Absent on older/first results. */
+  previousComparison?: { previousResultId: string; previousCompletedAt: string; items: { label: string; status: '해결됨' | '남음' | '새로 생김' }[] };
 };
 
 export type JuryReviewResult = {
