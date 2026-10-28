@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { juryDevUi } from '@/lib/jury-product/dev-ui';
 import { listHref, pageList, type ListQuery } from '@/lib/jury-product/list-paging';
 import type { ReactNode } from 'react';
 import { DISPLAY_FLAG_LABELS, cycleStatusLabel, displayModelForCatalogRow } from '@/lib/jury-product/review-display-model';
@@ -244,6 +245,7 @@ export function WriteControl({
     return <p className={styles.muted}>{label}: 현재 역할에는 이 변경 권한이 없어요.</p>;
   }
   if (disabledHint !== undefined) {
+    if (!juryDevUi()) return null;
     return (
       <div>
         <button className={buttonClass('secondary')} type="button" disabled aria-disabled="true">
@@ -694,8 +696,8 @@ export function HumanReReviewBody({ screen }: { screen: ReviewConsoleScreen }) {
       {screen.canRunReReview && screen.agentExecution ? (
         <form action={runHumanReReview}>
           <input type="hidden" name="agentExecutionId" value={screen.agentExecution.id} />
-          <Button variant="secondary" icon={Play} type="submit">재심사 실행 (Mock)</Button>
-          <p className={styles.muted}>{MOCK_RE_REVIEW_NOTICE}</p>
+          {juryDevUi() ? (<><Button variant="secondary" icon={Play} type="submit">재심사 실행 (Mock)</Button>
+          <p className={styles.muted}>{MOCK_RE_REVIEW_NOTICE}</p></>) : null}
         </form>
       ) : null}
       {screen.reReview?.decision === 'ACCEPT' ? <p>개선이 필요하지 않아요</p> : null}
@@ -966,7 +968,7 @@ export function ImprovementsBody({
                   {task.agentStatus === 'COMPLETED' ? (
                     <>
                       <span>완료</span>
-                      <p className={styles.muted}>Mock</p>
+                      {juryDevUi() ? <p className={styles.muted}>Mock</p> : null}
                       {summaries[task.id] ? <p>{summaries[task.id]}</p> : null}
                       {task.agentFinishedAt ? <p>{formatKstFull(task.agentFinishedAt)}</p> : null}
                     </>
@@ -978,7 +980,7 @@ export function ImprovementsBody({
                   {canRun && task.approval === 'APPROVED' && task.agentStatus === 'PENDING' && task.agentExecutionId ? (
                     <form action={runHumanAgentExecution}>
                       <input type="hidden" name="agentExecutionId" value={task.agentExecutionId} />
-                      <Button variant="secondary" icon={Play} type="submit">에이전트 실행 (Mock)</Button>
+                      {juryDevUi() ? <Button variant="secondary" icon={Play} type="submit">에이전트 실행 (Mock)</Button> : null}
                     </form>
                   ) : null}
                   {task.agentStatus === 'COMPLETED' && task.agentExecutionId && gates[task.agentExecutionId] ? (
@@ -1009,8 +1011,8 @@ export function ImprovementsBody({
                     ) : canReview ? (
                       <form action={runProductChangeGateReReview}>
                         <input type="hidden" name="agentExecutionId" value={task.agentExecutionId} />
-                        <Button variant="secondary" icon={Play} type="submit">재심사 실행 (Mock)</Button>
-          <p className={styles.muted}>{MOCK_RE_REVIEW_NOTICE}</p>
+                        {juryDevUi() ? (<><Button variant="secondary" icon={Play} type="submit">재심사 실행 (Mock)</Button>
+          <p className={styles.muted}>{MOCK_RE_REVIEW_NOTICE}</p></>) : null}
                       </form>
                     ) : null
                   ) : null}
@@ -1345,8 +1347,8 @@ export function SettingsBody({
       <div className={styles.row}><span className={styles.label} title="maxRuntimeMs">최대 실행 시간(ms)</span><span>{view.loopPolicy.maxRuntimeMs ?? displayText(SHELL_UNAVAILABLE)}</span></div>
       <div className={styles.row}><span className={styles.label} title="maxCostUsd">최대 비용(USD)</span><span>{view.loopPolicy.maxCostUsd ?? displayText(SHELL_UNAVAILABLE)}</span></div>
       <p><Link className={styles.inline} href={juryHref('/automation')}>자동화 상태</Link></p>
-      <p><Link className={styles.inline} href={juryHref('/discovery')}>서비스 확인</Link></p>
-      <p><Link className={styles.inline} href={juryHref('/agents')}>에이전트</Link></p>
+      {juryDevUi() ? <p><Link className={styles.inline} href={juryHref('/discovery')}>서비스 확인</Link></p> : null}
+      {juryDevUi() ? <p><Link className={styles.inline} href={juryHref('/agents')}>에이전트</Link></p> : null}
     </section>
     </>
   );
@@ -1397,8 +1399,8 @@ export function SecondReReviewBody({ screen }: { screen: ReviewConsoleScreen }) 
       {screen.canRunSecondReReview && execution ? (
         <form action={runSecondReReview}>
           <input type="hidden" name="agentExecutionId" value={execution.id} />
-          <Button variant="secondary" icon={Play} type="submit">재심사 실행 (Mock)</Button>
-          <p className={styles.muted}>{MOCK_RE_REVIEW_NOTICE}</p>
+          {juryDevUi() ? (<><Button variant="secondary" icon={Play} type="submit">재심사 실행 (Mock)</Button>
+          <p className={styles.muted}>{MOCK_RE_REVIEW_NOTICE}</p></>) : null}
         </form>
       ) : null}
       {review?.status === 'RUNNING' ? <p>재심사 진행 중</p> : null}
@@ -1494,8 +1496,8 @@ export function LaterReReviewBody({ screen }: { screen: ReviewConsoleScreen }) {
       {screen.canRunLaterReReview && execution ? (
         <form action={runLaterReReview}>
           <input type="hidden" name="agentExecutionId" value={execution.id} />
-          <Button variant="secondary" icon={Play} type="submit">재심사 실행 (Mock)</Button>
-          <p className={styles.muted}>{MOCK_RE_REVIEW_NOTICE}</p>
+          {juryDevUi() ? (<><Button variant="secondary" icon={Play} type="submit">재심사 실행 (Mock)</Button>
+          <p className={styles.muted}>{MOCK_RE_REVIEW_NOTICE}</p></>) : null}
         </form>
       ) : null}
       {review?.status === 'EXECUTED' ? <p>두 번째 재심사 결과</p> : null}
@@ -1609,8 +1611,8 @@ export function FollowingReReviewBody({ screen }: { screen: ReviewConsoleScreen 
       {screen.canRunFollowingReReview && execution ? (
         <form action={runFollowingReReview}>
           <input type="hidden" name="agentExecutionId" value={execution.id} />
-          <Button variant="secondary" icon={Play} type="submit">재심사 실행 (Mock)</Button>
-          <p className={styles.muted}>{MOCK_RE_REVIEW_NOTICE}</p>
+          {juryDevUi() ? (<><Button variant="secondary" icon={Play} type="submit">재심사 실행 (Mock)</Button>
+          <p className={styles.muted}>{MOCK_RE_REVIEW_NOTICE}</p></>) : null}
         </form>
       ) : null}
       {review?.decision ? <p>결론: {userLabel(review.decision)}</p> : null}
