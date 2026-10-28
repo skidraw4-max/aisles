@@ -5,6 +5,7 @@
 import type { DebateTurn, EvidencePack, FinalReport, IndependentAnalysis } from '../ai-review-board/types';
 import type { ReviewBoardLlm } from '../ai-review-board/llm';
 import { containsSecret } from './agent-execution';
+import { parseJuryProposals } from '../ai-review-board/jury-mode';
 import {
   JURY_MEMBER_OPINION_IDS,
   JURY_PRODUCT_DATA_ROOT,
@@ -106,7 +107,16 @@ export function surfaceFromFinal(
     partiallySupportedClaims: [...(final?.partiallySupportedClaims ?? [])],
     hypotheses: [...(final?.hypotheses ?? [])],
     ...committeeSurfaceFromRun(final, run),
+    ...proposalSurface(final),
   };
+}
+
+/** I-091: proposals are re-normalized (caps, malformed items dropped) and withheld if they carry a secret. */
+function proposalSurface(final: FinalReport | null): Pick<JuryFinalSurface, 'improvementProposals' | 'improvementProposalsOmitted'> {
+  if (!final || final.improvementProposals === undefined) return {};
+  const proposals = parseJuryProposals(final.improvementProposals);
+  if (containsSecret(proposals)) return { improvementProposals: [], improvementProposalsOmitted: 'SECRET' };
+  return { improvementProposals: proposals, improvementProposalsOmitted: null };
 }
 
 export async function callFrozenReviewPipeline(input: {
@@ -124,7 +134,8 @@ export async function callFrozenReviewPipeline(input: {
   const run = await runReviewBoardPipeline({
     rootDir: input.rootDir,
     llm: input.llm,
-    evidence: input.evidence,
+    // I-089: Jury-only guidelines. /ai-review-board never sets reviewMode.
+    evidence: { ...input.evidence, reviewMode: 'jury' },
   });
   const actual = extractActualFromRun(run);
   if (

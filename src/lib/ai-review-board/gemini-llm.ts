@@ -11,6 +11,7 @@ import {
 import { currentLlmCallContext } from '@/lib/llm-call-context';
 import { ANTI_HERDING_DEBATE_RULES, CLAIM_CALIBRATION_RULES, EVIDENCE_SEMANTICS_RULES, MEMBER_FOCUS, PERSONA_SYSTEM, REVISION_QUALITY_RULES, REVISION_Q_CHECKLIST, SEMANTIC_JUDGE_RULES } from './personas';
 import { formatEvidencePackForPrompt } from './format-evidence-prompt';
+import { isJuryMode, jurySystemAddon, juryUserAddon, parseJuryProposalPriorities, parseJuryProposalReviews, parseJuryProposals } from './jury-mode';
 import { SCORE_DIMENSIONS } from './score-dimensions';
 import { listScoresLackingHardEvidence, normalizeDimensionScores } from './scoring';
 import { assertIndependentContext } from './independence';
@@ -288,7 +289,7 @@ export function createGeminiReviewBoardLlm(apiKey?: string): ReviewBoardLlm {
   return {
     async independentAnalysis(memberId, evidence, ctx: LlmContext) {
       assertIndependentContext(ctx);
-      const system = PERSONA_SYSTEM[memberId];
+      const system = `${PERSONA_SYSTEM[memberId]}${jurySystemAddon(evidence, memberId)}`;
       const user = `EvidencePack (read-only, no PII):\n${evidenceBlock(evidence)}
 
 Focus dimensions: ${MEMBER_FOCUS[memberId]}
@@ -305,7 +306,7 @@ Return JSON:
   "judgmentBasis": string,
   "confidence": number 0-1,
   "originalOpinion": string
-}`;
+}${juryUserAddon(evidence, 'independent')}`;
       const res = await geminiJson(key, system, user);
       if (!res.ok) throw new Error(res.error);
       const o = res.parsed as Record<string, unknown>;
@@ -323,11 +324,12 @@ Return JSON:
         confidence: typeof o.confidence === 'number' ? Math.min(1, Math.max(0, o.confidence)) : 0.5,
         originalOpinion,
       };
+      if (isJuryMode(evidence)) analysis.juryProposals = parseJuryProposals(o.proposals);
       return analysis;
     },
 
     async debateTurn(memberId, evidence, peers, own) {
-      const system = `${PERSONA_SYSTEM[memberId]}\n${ANTI_HERDING_DEBATE_RULES}`;
+      const system = `${PERSONA_SYSTEM[memberId]}\n${ANTI_HERDING_DEBATE_RULES}${jurySystemAddon(evidence, memberId)}`;
       const user = `EvidencePack:\n${evidenceBlock(evidence)}
 
 Your original independent analysis (immutable originalOpinion):
@@ -343,7 +345,7 @@ Return JSON ONLY (no revisionStatus — revision is a later phase):
   "weakEvidence": string[],
   "missed": string[],
   "needsVerification": string[]
-}`;
+}${juryUserAddon(evidence, 'debate')}`;
       const res = await geminiJson(key, system, user);
       if (!res.ok) throw new Error(res.error);
       const o = res.parsed as Record<string, unknown>;
@@ -355,6 +357,7 @@ Return JSON ONLY (no revisionStatus — revision is a later phase):
         missed: asStringArray(o.missed),
         needsVerification: asStringArray(o.needsVerification),
       };
+      if (isJuryMode(evidence)) turn.proposalReviews = parseJuryProposalReviews(o.proposalReviews);
       return turn;
     },
 
@@ -496,7 +499,7 @@ GA≠DB divergence ≠ tracking failure. Device counts ≠ UX. Stack ≠ competi
       evidenceSemantics,
       semanticJudgments,
     ) {
-      const system = `${PERSONA_SYSTEM[memberId]}\n${REVISION_QUALITY_RULES}\n${REVISION_Q_CHECKLIST}`;
+      const system = `${PERSONA_SYSTEM[memberId]}\n${REVISION_QUALITY_RULES}\n${REVISION_Q_CHECKLIST}${jurySystemAddon(evidence, memberId)}`;
       const calBlock = calibration
         ? formatCalibrationForRevisionPrompt(calibration)
         : '(no claim calibration provided)';
@@ -580,11 +583,11 @@ Return JSON:
     "q11_chosenStatus": "UNCHANGED" | "PARTIAL" | "FULL",
     "q12_confidenceChange": string
   }
-}`;
+}${juryUserAddon(evidence, 'revision')}`;
       const res = await geminiJson(key, system, user);
       if (!res.ok) throw new Error(res.error);
       const o = res.parsed as Record<string, unknown>;
-      return normalizeRevisionRecord({
+      const record = normalizeRevisionRecord({
         memberId,
         originalOpinion: own.originalOpinion,
         confidenceBefore:
@@ -602,6 +605,8 @@ Return JSON:
         revisionAnswers: o.revisionAnswers,
         calibrationImpactAssessment: o.calibrationImpactAssessment,
       });
+      if (isJuryMode(evidence)) record.proposalPriorities = parseJuryProposalPriorities(o.proposalPriorities);
+      return record;
     },
 
     async critic(
@@ -716,7 +721,7 @@ Also check Judge: null≠0; no unsupported causal/trend/tech leaps; peer≠evide
       const sems = evidenceSemantics ?? [];
       const judgments = semanticJudgments ?? [];
       const judgeRollup = summarizeSemanticJudgments(judgments);
-      const system = PERSONA_SYSTEM.Chairman;
+      const system = `${PERSONA_SYSTEM.Chairman}${jurySystemAddon(evidence, 'Chairman')}`;
       const user = `EvidencePack:
 ${evidenceBlock(evidence)}
 
@@ -750,7 +755,7 @@ unsupportedHypothesisClaims, directlySupportedClaims, supportedInferences, weakL
 calibrationRevisionFindings, evidenceSemanticsFindings, semanticJudgeFindings, semanticRisks,
 revisionSummary { unchanged, partial, full, confidenceShifts, claimSofteningFromEvidenceGap, herdingRisks }.
 crossSourceDivergences = GA≠DB style observations only (never root-cause labels).
-needsFurtherVerification holds verification tasks (no separate verificationTasks field).`;
+needsFurtherVerification holds verification tasks (no separate verificationTasks field).${juryUserAddon(evidence, 'chairman')}${isJuryMode(evidence) ? `\nJury proposal inputs (compact):\n${JSON.stringify(juryChairmanInputs(independent, debate, revs))}` : ''}`;
       const res = await geminiJson(key, system, user);
       if (!res.ok) throw new Error(res.error);
       const o = res.parsed as Record<string, unknown>;
@@ -765,7 +770,7 @@ needsFurtherVerification holds verification tasks (no separate verificationTasks
         claimSofteningFromEvidenceGap: asStringArray(rs.claimSofteningFromEvidenceGap),
         herdingRisks: asStringArray(rs.herdingRisks),
       };
-      return {
+      const report: FinalReport = {
         statusSummary: asString(o.statusSummary),
         overallTrendScore: typeof o.overallTrendScore === 'number' ? o.overallTrendScore : null,
         dimensionScores: normalizeDimensionScores(parseScores(o.dimensionScores)),
@@ -797,6 +802,16 @@ needsFurtherVerification holds verification tasks (no separate verificationTasks
         weakLimitedInferences: asStringArray(o.weakLimitedInferences),
         revisionSummary,
       };
+      if (isJuryMode(evidence)) report.improvementProposals = parseJuryProposals(o.improvementProposals);
+      return report;
     },
+  };
+}
+
+function juryChairmanInputs(independent: IndependentAnalysis[], debate: DebateTurn[], revisions: RevisionRecord[]) {
+  return {
+    proposals: independent.map((i) => ({ memberId: i.memberId, proposals: (i.juryProposals ?? []).slice(0, 4) })),
+    reviews: debate.map((d) => ({ memberId: d.memberId, proposalReviews: (d.proposalReviews ?? []).slice(0, 4) })),
+    priorities: revisions.map((r) => ({ memberId: r.memberId, proposalPriorities: (r.proposalPriorities ?? []).slice(0, 4) })),
   };
 }

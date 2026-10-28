@@ -33,6 +33,8 @@ const REVIEW_KEYS = [
   'display',
   // RM-21 (I-026): request review type + user claim belong to the review block
   'requestInput',
+  // I-092: display-only improvement proposals belong to the review block
+  'proposals',
 ] as const;
 const IMPROVEMENT_KEYS = [
   'improvementTask', 'canCreateImprovement', 'canHandoff', 'nextImprovement', 'canCreateReReviewImprovement',

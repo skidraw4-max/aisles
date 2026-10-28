@@ -315,3 +315,80 @@ function claimEmptyText(screen: ReviewConsoleScreen): string {
   if (state === 'NONE_RECORDED') return '주장 기록 없음';
   return '집계 불가';
 }
+
+/**
+ * I-092: 발견된 문제 / 개선 제안 / 검증 체크리스트 (summary tab). Display only; reads screen.proposals.
+ * Proposals without observed evidence are labelled 미검증 / 일반 권고 — never shown as confirmed defects.
+ */
+export function ImprovementProposalsPanel({ screen }: { screen: ReviewConsoleScreen }) {
+  const view = screen.proposals;
+  if (!view) return null;
+  return (
+    <>
+      <section className={styles.panel} aria-labelledby="found-problems">
+        <h2 id="found-problems">발견된 문제</h2>
+        {view.findings.length === 0 ? <p className={styles.muted}>{view.notice ?? '기록된 문제가 없습니다 (0건 확인이 아님).'}</p> : (
+          <div className={styles.resultTableWrap}>
+            <table className={`${styles.resultTable} ${styles.proposalTable}`}>
+              <caption className={styles.srOnly}>발견된 문제</caption>
+              <thead><tr><th scope="col">문제</th><th scope="col">근거</th><th scope="col">상태</th></tr></thead>
+              <tbody>
+                {view.findings.map((f, i) => (
+                  <tr key={`${i}-${f.problem}`}>
+                    <th scope="row">{f.problem}</th>
+                    <td>{f.evidence || <><span aria-hidden="true" className={styles.noStatus}>—</span><span className={styles.srOnly}>근거 없음</span></>}</td>
+                    <td><StatusBadge data-proposal-status={f.status === '관찰됨' ? 'observed' : 'unverified'}>{f.status === '관찰됨' ? '관찰됨' : '미검증'}</StatusBadge></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        {view.state === 'LEGACY' && view.findings.length > 0 ? <p className={styles.muted}>{view.notice}</p> : null}
+      </section>
+      <section className={styles.panel} aria-labelledby="improvement-proposals">
+        <h2 id="improvement-proposals">개선 제안</h2>
+        {view.proposals.length === 0 ? <p className={styles.muted}>{view.state === 'LEGACY' ? PROPOSAL_LEGACY_SHORT : view.notice}</p> : (
+          <div className={styles.resultTableWrap}>
+            <table className={`${styles.resultTable} ${styles.proposalTable}`}>
+              <caption className={styles.srOnly}>개선 제안</caption>
+              <thead><tr><th scope="col">우선순위</th><th scope="col">수정 방법</th><th scope="col">기대 효과</th><th scope="col">근거 구분</th></tr></thead>
+              <tbody>
+                {view.proposals.map((p, i) => (
+                  <tr key={`${i}-${p.problem}`}>
+                    <td><StatusBadge data-priority={p.priority}>{p.priority}</StatusBadge></td>
+                    <td>
+                      <strong>{p.problem}</strong>
+                      <ol className={styles.proposalSteps}>{p.steps.map((step, j) => <li key={j}>{step}</li>)}</ol>
+                      {p.dissent ? <p className={styles.muted}>이견: {p.dissent}</p> : null}
+                    </td>
+                    <td>{p.expectedEffect || <><span aria-hidden="true" className={styles.noStatus}>—</span><span className={styles.srOnly}>기대 효과 없음</span></>} <StatusBadge>AI 추정</StatusBadge></td>
+                    <td><StatusBadge data-proposal-status={p.statusLabel === '근거 있음' ? 'observed' : 'unverified'}>{p.basisLabel} · {p.statusLabel}</StatusBadge></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+      <section className={styles.panel} aria-labelledby="verification-checklist">
+        <h2 id="verification-checklist">검증 체크리스트</h2>
+        {view.checklist.length === 0 ? <p className={styles.muted}>확인할 항목이 없습니다.</p> : (
+          <div className={styles.resultTableWrap}>
+            <table className={`${styles.resultTable} ${styles.proposalTable}`}>
+              <caption className={styles.srOnly}>검증 체크리스트</caption>
+              <thead><tr><th scope="col">확인 항목</th><th scope="col">관련 문제</th><th scope="col">상태</th></tr></thead>
+              <tbody>
+                {view.checklist.map((c, i) => (
+                  <tr key={`${i}-${c.item}`}><th scope="row">{c.item}</th><td>{c.problem}</td><td><StatusBadge>확인 전</StatusBadge></td></tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+    </>
+  );
+}
+
+const PROPOSAL_LEGACY_SHORT = '이전 형식 결과 — 개선 제안 없음';

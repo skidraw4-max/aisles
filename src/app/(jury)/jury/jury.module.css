@@ -1457,3 +1457,11 @@ a.inline {
   .infoTable td { display: block; height: auto; padding: 0; border: 0; }
   .infoList > div { grid-template-columns: 1fr; gap: 4px; }
 }
+
+/* I-092: 발견된 문제 / 개선 제안 / 검증 체크리스트 — muted dark table, wraps long Korean text. */
+.proposalTable { table-layout: auto; }
+.proposalTable tbody th { padding: 8px 16px; border-bottom: 1px solid var(--jury-border, #24364f); color: var(--jury-text-soft, #d7dee8); font-weight: 600; text-align: left; vertical-align: top; }
+.proposalTable th, .proposalTable td { height: auto; min-height: 44px; white-space: normal; overflow-wrap: anywhere; vertical-align: top; }
+.proposalTable strong { color: var(--jury-text-soft, #d7dee8); }
+.proposalSteps { margin: 6px 0 0; padding-left: 20px; color: var(--jury-text-soft, #d7dee8); }
+.proposalSteps li + li { margin-top: 4px; }

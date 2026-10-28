@@ -648,11 +648,14 @@ export async function runConnectedServiceReview(
     return { ok: false as const, reason };
   };
 
+  // I-093: stored rule-based screen-audit findings join the judge input (no extra model call).
+  const { loadScreenAuditEvidence } = await import('./services/screen-audit/review-evidence');
+  const screenAuditFindings = await loadScreenAuditEvidence(prisma, actor.tenantId, connection.id);
   let reading: Awaited<ReturnType<ProductReviewCore>>;
   try {
     reading = await command.core({
       rootDir: JURY_PRODUCT_DATA_ROOT,
-      evidence: projection.pack,
+      evidence: screenAuditFindings ? { ...projection.pack, screenAuditFindings } : projection.pack,
       trace,
     });
   } catch {
