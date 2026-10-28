@@ -7,7 +7,7 @@ import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import { Gavel } from 'lucide-react';
 import type { pollAuditJuryReviewAction, startAuditJuryReviewAction } from './actions';
-import { auditJuryResultHref, auditJurySteps, type AuditJuryPhase } from '@/lib/jury-product/services/screen-audit/audit-jury-review';
+import { auditJuryResultHref, auditJurySteps, type AuditJuryPhase } from '@/lib/jury-product/services/screen-audit/audit-jury-ui';
 import { Button } from './jury-controls';
 
 const POLL_MS = 4000;
