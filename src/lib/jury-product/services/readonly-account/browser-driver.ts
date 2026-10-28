@@ -14,6 +14,7 @@
 import type { ObservationDriver, ObservedRequest, RequestVerdict, ResourceStats } from './executor';
 import { MOBILE_DEVICE, type MobileDevice } from '../screen-audit/viewports';
 import { LAYOUT_PROBE } from '../screen-audit/layout-probe';
+import { analyticsStubResponse } from './analytics-stub';
 import { ERROR_SCREEN_PATTERN } from '../screen-audit/error-screen';
 import { MASK_ATTR, MASK_PROBE, UNMASK_PROBE } from '../screen-audit/mask-probe';
 import { TAB_ATTR, TAB_CLICK_PROBE, TAB_LIST_PROBE, TAB_UNSAFE_TEXT_SOURCE } from '../screen-audit/tab-probe';
@@ -28,6 +29,8 @@ export interface PwRoute {
   request(): PwRequest;
   abort(errorCode?: string): Promise<void>;
   continue(): Promise<void>;
+  /** I-097: local response (analytics stub). Optional in fakes; without it a stub verdict aborts. */
+  fulfill?(response: { status: number; contentType?: string; body: string }): Promise<void>;
 }
 export interface PwPage {
   goto(url: string, options?: { waitUntil?: 'load' | 'domcontentloaded' | 'networkidle'; timeout?: number }): Promise<unknown>;
@@ -302,7 +305,10 @@ export function createBrowserObservationDriver(launch: PwContextLauncher, option
         return route.abort('blockedbyclient');
       };
       if (BLOCKED_RESOURCE_TYPES.has(req.resourceType()) || !guard) return block();
-      if (guard(toObservedRequest(req)) !== 'allow') return block();
+      const verdict = guard(toObservedRequest(req));
+      // I-097: answered locally, never continued to the network.
+      if (verdict === 'stub' && route.fulfill) return route.fulfill(analyticsStubResponse(req.resourceType()));
+      if (verdict !== 'allow') return block();
       return (await hostAllowed(req.url(), options.hostCheck)) ? route.continue() : block();
     });
   };

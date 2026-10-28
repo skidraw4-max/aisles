@@ -5,10 +5,10 @@
  * that was open, and a timestamp. Never headers, bodies, cookies or query strings. Capped at BLOCKED_DETAILS_CAP.
  */
 export const BLOCKED_DETAILS_CAP = 50;
-export type BlockedReason = 'ORIGIN' | 'METHOD' | 'FORM_SUBMIT' | 'LOGIN_ALREADY_USED';
+export type BlockedReason = 'ORIGIN' | 'METHOD' | 'FORM_SUBMIT' | 'LOGIN_ALREADY_USED' | 'STUBBED';
 export type BlockedDetail = { origin: string; path: string; method: string; reason: BlockedReason; page: string | null; at: string };
 
-const REASONS = new Set<string>(['ORIGIN', 'METHOD', 'FORM_SUBMIT', 'LOGIN_ALREADY_USED']);
+const REASONS = new Set<string>(['ORIGIN', 'METHOD', 'FORM_SUBMIT', 'LOGIN_ALREADY_USED', 'STUBBED']);
 
 /** Masks path segments that look like emails, phone numbers or long tokens; caps length. */
 export function safePath(pathname: string): string {

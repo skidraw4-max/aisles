@@ -15,7 +15,7 @@ export type LatestObservationRun = {
   pagesVisible: number;
   pages: { label: string; path: string; visible: boolean; textLength: number; discovered?: boolean; stats?: PageStats }[];
   blockedRequestCount: number;
-  blockedByReason: { ORIGIN: number; METHOD: number; FORM_SUBMIT: number; LOGIN_ALREADY_USED: number };
+  blockedByReason: { ORIGIN: number; METHOD: number; FORM_SUBMIT: number; LOGIN_ALREADY_USED: number; STUBBED?: number };
   /** I-055: blocked hostnames → count (empty for runs recorded before I-055). */
   blockedHosts?: Record<string, number>;
   /** I-096: per-request detail (empty for runs recorded before I-096). */
@@ -92,7 +92,7 @@ export function toLatestObservationRun(row: Row): LatestObservationRun {
     pagesVisible: row.pagesVisible,
     pages,
     blockedRequestCount: row.blockedRequestCount,
-    blockedByReason: { ORIGIN: num(b.ORIGIN), METHOD: num(b.METHOD), FORM_SUBMIT: num(b.FORM_SUBMIT), LOGIN_ALREADY_USED: num(b.LOGIN_ALREADY_USED) },
+    blockedByReason: { ORIGIN: num(b.ORIGIN), METHOD: num(b.METHOD), FORM_SUBMIT: num(b.FORM_SUBMIT), LOGIN_ALREADY_USED: num(b.LOGIN_ALREADY_USED), ...(num(b.STUBBED) > 0 ? { STUBBED: num(b.STUBBED) } : {}) },
     blockedHosts,
     blockedDetails: parseBlockedDetails(row.blockedByReason),
     finalOrigin: row.finalOrigin,

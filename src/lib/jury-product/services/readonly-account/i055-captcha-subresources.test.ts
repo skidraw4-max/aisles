@@ -82,9 +82,11 @@ test('B: same-site static GET subresources are allowed; xhr, writes, navigation 
 
 test('B: Google reCAPTCHA and tag hosts stay blocked', () => {
   const p = createRequestGuard({ scope: atomyScope, loginOrigin: 'https://kr.atomy.com' });
-  for (const u of ['https://www.google.com/recaptcha/enterprise.js', 'https://www.gstatic.com/recaptcha/x.js', 'https://www.recaptcha.net/recaptcha/api.js', 'https://www.googletagmanager.com/gtag/js']) {
+  for (const u of ['https://www.google.com/recaptcha/enterprise.js', 'https://www.gstatic.com/recaptcha/x.js', 'https://www.recaptcha.net/recaptcha/api.js']) {
     assert.equal(p.guard(sub(u, 'script')), 'block', u);
   }
+  // I-097: tag hosts are never fetched; they are answered locally (stub), not allowed.
+  assert.equal(p.guard(sub('https://www.googletagmanager.com/gtag/js', 'script')), 'stub');
   // even if a google origin were allowed, same-site expansion is never applied to it
   const g = createRequestGuard({ scope: { allowedOrigins: ['https://accounts.google.com'], paths: ['/'] }, loginOrigin: 'https://accounts.google.com' });
   assert.equal(g.guard(sub('https://www.google.com/recaptcha/api.js', 'script')), 'block');

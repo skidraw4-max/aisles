@@ -23,7 +23,7 @@ export type ObservationSummary = {
   /** I-049: auto-discovery outcome (not persisted as a column; pages carry discovered=true). */
   discovery: ExecutorReport['discovery'] | null;
   blockedRequestCount: number;
-  blockedByReason: Record<'ORIGIN' | 'METHOD' | 'FORM_SUBMIT' | 'LOGIN_ALREADY_USED', number>;
+  blockedByReason: Record<'ORIGIN' | 'METHOD' | 'FORM_SUBMIT' | 'LOGIN_ALREADY_USED', number> & { STUBBED?: number };
   /** I-055: blocked request hostnames → count (no paths/queries), top 20. */
   blockedHosts: Record<string, number>;
   /** I-096: first BLOCKED_DETAILS_CAP blocked requests (origin+path, method, reason, page, time). */
@@ -94,8 +94,12 @@ export function logBlockedRequests(report: ExecutorReport, connectionId: string,
 }
 
 export function summarizeObservation(report: ExecutorReport): ObservationSummary {
-  const blockedByReason = { ORIGIN: 0, METHOD: 0, FORM_SUBMIT: 0, LOGIN_ALREADY_USED: 0 };
-  for (const b of report.blockedRequests) blockedByReason[b.reason] += 1;
+  // I-097: STUBBED (answered locally) is reported separately and not counted as blocked.
+  const blockedByReason: ObservationSummary['blockedByReason'] = { ORIGIN: 0, METHOD: 0, FORM_SUBMIT: 0, LOGIN_ALREADY_USED: 0 };
+  const hardBlocked = report.blockedRequests.filter((b) => b.reason !== 'STUBBED');
+  const stubbed = report.blockedRequests.length - hardBlocked.length;
+  for (const b of hardBlocked) blockedByReason[b.reason as keyof typeof blockedByReason] += 1;
+  if (stubbed > 0) blockedByReason.STUBBED = stubbed;
   const pages: ObservedPage[] = report.snapshots.map((s) => ({
     label: s.label.slice(0, 64),
     path: pathOf(s.url),
@@ -113,9 +117,9 @@ export function summarizeObservation(report: ExecutorReport): ObservationSummary
     pagesObserved: pages.length,
     pages,
     discovery: report.discovery ?? null,
-    blockedRequestCount: report.blockedRequests.length,
+    blockedRequestCount: hardBlocked.length,
     blockedByReason,
-    blockedHosts: blockedHostCounts(report.blockedRequests),
+    blockedHosts: blockedHostCounts(hardBlocked),
     blockedDetails: toBlockedDetails(report.blockedRequests),
     ...finalOf(report.finalUrl),
     failedStep: report.failedStep ?? null,
