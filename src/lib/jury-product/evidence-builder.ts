@@ -3,6 +3,7 @@
  * Nothing here is written to the database.
  */
 import { createHash } from 'node:crypto';
+import { screenAuditApiEvidence, type ScreenAuditIdentity } from './services/screen-audit/audit-jury-review';
 import type { EvidencePack } from '@/lib/ai-review-board/types';
 import { applyAvailability, draftNormalizedMetrics } from './normalizer';
 import type { JuryEvidence, JuryNormalizedMetric } from './records';
@@ -22,6 +23,8 @@ export function buildProductEvidence(input: {
   connection: { id: string; tenantId: string };
   clientTenantId?: string | null;
   pack: EvidencePack;
+  /** I-099: latest DONE 화면 심사 identity; absent → identical ids/hash to before (old evidence keeps matching). */
+  screenAudit?: ScreenAuditIdentity | null;
 }): { ok: true; metrics: JuryNormalizedMetric[]; evidence: BuiltJuryEvidence } | { ok: false; reason: ProductEvidenceFailure } {
   void input.clientTenantId;
   if (input.connection.tenantId !== input.actorTenantId) return { ok: false, reason: 'TENANT_MISMATCH' };
@@ -46,7 +49,9 @@ export function buildProductEvidence(input: {
       row.value === null ? 'null' : String(row.value),
     ]),
   }));
-  const evidenceId = stableId([input.actorTenantId, input.connection.id, period.start, period.end, ...metrics.map((metric) => metric.id)]);
+  const audit = input.screenAudit ?? null;
+  const auditParts = audit ? [`screen-audit:${audit.auditId}:${audit.finishedAt ?? ''}:${audit.hash}`] : [];
+  const evidenceId = stableId([input.actorTenantId, input.connection.id, period.start, period.end, ...metrics.map((metric) => metric.id), ...auditParts]);
   const linked = metrics.map((metric) => ({ ...metric, evidenceId }));
   const canonical = linked.map((metric) => ({
     metric: metric.metric,
@@ -80,10 +85,11 @@ export function buildProductEvidence(input: {
             },
           ]
         : []),
+      ...(audit ? [screenAuditApiEvidence(audit)] : []),
     ],
     adapterKey: 'aisle-self',
     collectedAt: input.pack.generatedAt,
-    contentHash: stableId([JSON.stringify(canonical)]),
+    contentHash: stableId([JSON.stringify(canonical), ...auditParts]),
     piiExcluded: true,
     readOnly: true,
   };

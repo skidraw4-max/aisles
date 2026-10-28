@@ -262,6 +262,8 @@ export function ServiceDetailBody({
         </p>
       ) : connection.status === 'CONNECTED' ? (
         canShowWrite(actor, 'connection.write') ? (
+          <details className={styles.technicalDetails} data-advanced="collect-evidence">
+            <summary>고급: 기간을 직접 골라 자료 수집</summary>
           <form action={collectConnectedServiceEvidence}>
             <input type="hidden" name="connectionId" value={connection.id} />
             <input type="hidden" name="tenantId" value="client-supplied-tenant" />
@@ -271,6 +273,7 @@ export function ServiceDetailBody({
             <p className={styles.muted}>기준 시간대: 한국 시간(KST)</p>
             <OnboardingSubmit label="자료 수집" pendingLabel="자료 수집 중" />
           </form>
+          </details>
         ) : (
           <p className={styles.muted}>자료 수집: 현재 역할에는 이 변경 권한이 없어요.</p>
         )
@@ -312,6 +315,8 @@ export function ServiceDetailBody({
           {row.expectedUserEffect ? <p>예상 사용자 영향 {row.expectedUserEffect}</p> : null}
           {row.risk ? <p>위험 {row.risk}</p> : null}
           {row.collectionStatus === 'AVAILABLE' && (row.reviewStatus !== 'RUNNING' || row.reviewStale) && canShowWrite(actor, 'review.start') ? (
+            <details className={styles.technicalDetails} data-advanced="run-review">
+              <summary>고급: 이 근거로 심사 실행</summary>
             <form action={runConnectedServiceJuryReview}>
               <input type="hidden" name="connectionId" value={connection.id} />
               <input type="hidden" name="evidenceId" value={row.id} />
@@ -319,6 +324,7 @@ export function ServiceDetailBody({
               <ReviewSubmitButton label="심사 실행" pendingLabel="심사 진행 중" pendingNote={CONNECTED_REVIEW_PENDING_NOTE} />
               <p className={styles.muted}>{CONNECTED_REVIEW_PENDING_NOTE}</p>
             </form>
+            </details>
           ) : null}
           {row.resultId ? <p><Link className={styles.inline} href={juryHref(`/reviews/${row.resultId}`)}>심사 결과</Link></p> : null}
         </article>

@@ -7,6 +7,7 @@ import { Prisma } from '@prisma/client';
 import type { EvidenceDb } from '@/lib/ai-review-board/evidence-pack';
 import type { EvidencePack } from '@/lib/ai-review-board/types';
 import { loadLatestObservationRun, type LatestObservationRun } from './services/readonly-account/latest-observation';
+import { loadLatestScreenAuditIdentity, boundScreenAuditId, type ScreenAuditIdentity } from './services/screen-audit/audit-jury-review';
 import { attachObservationToPack } from './services/readonly-account/observation-evidence';
 import { decideJuryMutation, type JuryActor } from './access';
 import type { AccessFailure } from './access-layer';
@@ -233,6 +234,7 @@ export async function runConnectedServiceEvidenceCollection(
     evidenceDb?: EvidenceDb;
     persist?: (input: PersistCommand) => Promise<PersistResult>;
     latestObservation?: (tenantId: string, connectionId: string) => Promise<LatestObservationRun | null>;
+    screenAuditIdentity?: (tenantId: string, connectionId: string) => Promise<ScreenAuditIdentity | null>;
   },
 ): Promise<
   | { ok: true; created: boolean; evidenceId: string; contentHash: string; connectionId: string }
@@ -301,11 +303,19 @@ export async function runConnectedServiceEvidenceCollection(
     }),
   );
   if (!observed.ok) return { ok: false, reason: observed.reason === 'CONTEXT_NOT_ISSUED' ? 'COLLECTION_FAILED' : observed.reason };
+  // I-099: a new finished 화면 심사 makes new evidence (and so a new review) instead of reusing the old result.
+  let screenAudit: ScreenAuditIdentity | null = null;
+  if (connection.accessMethod === 'READ_ONLY_ACCOUNT') {
+    screenAudit = deps?.screenAuditIdentity
+      ? await deps.screenAuditIdentity(actor.tenantId, connection.id)
+      : await loadLatestScreenAuditIdentity(prisma, actor.tenantId, connection.id);
+  }
   const basePack = readonlyRun ? readonlyObservationPack(observed.pack, readonlyRun, !deps?.evidenceDb) : observed.pack;
   const built = buildProductEvidence({
     actorTenantId: actor.tenantId,
     connection: { id: connection.id, tenantId: connection.tenantId },
     clientTenantId: null,
+    screenAudit,
     pack: {
       ...basePack,
       analysisPeriod: {
@@ -519,12 +529,32 @@ async function markReviewFailed(
   }
 }
 
-export async function runConnectedServiceReview(
-  command: ReviewCommand,
-): Promise<
+type ReviewOutcome =
   | { ok: true; reused: boolean; requestId: string; resultId: string; decision: JuryDecision; status: 'COMPLETED' }
-  | { ok: false; reason: ConnectedReviewFailure }
-> {
+  | { ok: false; reason: ConnectedReviewFailure };
+
+export async function runConnectedServiceReview(command: ReviewCommand): Promise<ReviewOutcome> {
+  const outcome = await connectedServiceReview(command, null);
+  if (outcome.ok && 'started' in outcome) return { ok: false, reason: 'REVIEW_NOT_EXECUTED' };
+  return outcome;
+}
+
+/**
+ * I-099: same validation and claim as runConnectedServiceReview, but the model run is handed to `background`
+ * (Next `after()`) once the RUNNING row is claimed, so the click returns at once and the page polls.
+ * A reused result returns immediately. A killed background run is picked up by the I-048 stale (330s) rule.
+ */
+export async function startConnectedServiceReview(
+  command: ReviewCommand,
+  background: (work: () => Promise<void>) => void,
+): Promise<ReviewOutcome | { ok: true; started: true; requestId: string; status: 'RUNNING' }> {
+  return connectedServiceReview(command, background);
+}
+
+async function connectedServiceReview(
+  command: ReviewCommand,
+  background: ((work: () => Promise<void>) => void) | null,
+): Promise<ReviewOutcome | { ok: true; started: true; requestId: string; status: 'RUNNING' }> {
   void command.clientTenantId;
   const actor = command.actor;
   if (!actor.ok) return { ok: false, reason: actor.reason };
@@ -553,6 +583,7 @@ export async function runConnectedServiceReview(
   const metrics = metricRows.map((row) => metricFromRow(row));
   if (describeEvidenceCollection(metrics) !== 'AVAILABLE') return { ok: false, reason: 'EVIDENCE_UNAVAILABLE' };
   if (!command.core) return { ok: false, reason: 'REVIEW_NOT_EXECUTED' };
+  const core = command.core;
 
   let projection: ReturnType<typeof projectEvidenceToPack>;
   try {
@@ -622,6 +653,7 @@ export async function runConnectedServiceReview(
     };
   }
 
+  const execute = async (): Promise<ReviewOutcome> => {
   // I-048 (RM-01 parity): attempt lifecycle + per-LLM-call metadata on this path too (best-effort).
   const trace: ProductReviewTrace = { resultSource: 'UNKNOWN_LEGACY', recorder: createLlmCallRecorder() };
   const attemptId = await startReviewAttempt(prisma, {
@@ -650,10 +682,11 @@ export async function runConnectedServiceReview(
 
   // I-093: stored rule-based screen-audit findings join the judge input (no extra model call).
   const { loadScreenAuditEvidence } = await import('./services/screen-audit/review-evidence');
-  const screenAuditFindings = await loadScreenAuditEvidence(prisma, actor.tenantId, connection.id);
+  // I-099: evidence built from a specific audit uses that audit; older evidence keeps the latest-DONE rule.
+  const screenAuditFindings = await loadScreenAuditEvidence(prisma, actor.tenantId, connection.id, boundScreenAuditId(evidenceRow.apiEvidence));
   let reading: Awaited<ReturnType<ProductReviewCore>>;
   try {
-    reading = await command.core({
+    reading = await core({
       rootDir: JURY_PRODUCT_DATA_ROOT,
       evidence: screenAuditFindings ? { ...projection.pack, screenAuditFindings } : projection.pack,
       trace,
@@ -738,4 +771,16 @@ export async function runConnectedServiceReview(
   }
   await finishAttempt('COMPLETED', null, reading.boardRunId);
   return { ok: true, reused: false, requestId, resultId, decision, status: 'COMPLETED' };
+  };
+  if (background) {
+    background(async () => {
+      try {
+        await execute();
+      } catch {
+        await markReviewFailed(requestId, actor.tenantId, { actorUserId: actor.userId, evidenceId: evidence.id, failureReason: 'REVIEW_NOT_EXECUTED' }).catch(() => undefined);
+      }
+    });
+    return { ok: true, started: true, requestId, status: 'RUNNING' };
+  }
+  return execute();
 }

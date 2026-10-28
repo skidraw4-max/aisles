@@ -26,9 +26,33 @@ import { runScreenAuditAction } from './screen-audit-actions';
 import { ScreenAuditRunButton } from './ScreenAuditRunButton';
 import { BlockedRequestsTable } from './BlockedRequestsTable';
 import { BuildVersionNotice } from './BuildVersionNotice';
+import { AuditJuryReviewButton } from './AuditJuryReviewButton';
+import { pollAuditJuryReviewAction, startAuditJuryReviewAction } from './actions';
+import { auditJuryEligibility } from '@/lib/jury-product/services/screen-audit/audit-jury-review';
 import { currentBuildVersion } from '@/lib/jury-product/build-version';
 
-export async function ScreenAuditSection(props: { tenantId: string; connectionId: string; accessMethod: string | null | undefined }) {
+/** I-099: non-stale RUNNING jury review for this connection (read-only). */
+async function reviewRunning(tenantId: string, connectionId: string): Promise<boolean> {
+  try {
+    const [{ prisma }, { isStaleRunningReview }] = await Promise.all([import('@/lib/prisma'), import('@/lib/jury-product/review-stale')]);
+    const rows = await prisma.juryReviewRequest.findMany({
+      where: { tenantId, connectionId, status: 'RUNNING' },
+      select: { status: true, updatedAt: true },
+      take: 5,
+    });
+    return rows.some((r) => !isStaleRunningReview(r.status, r.updatedAt));
+  } catch {
+    return false;
+  }
+}
+
+export async function ScreenAuditSection(props: {
+  tenantId: string;
+  connectionId: string;
+  accessMethod: string | null | undefined;
+  /** I-099: role (connection.write + review.start) and the review.execute service grant. */
+  canJuryReview?: boolean;
+}) {
   if (!shouldShowReadonlyAccountSection({ uiEnabled: READONLY_ACCOUNT_UI_ENABLED, accessMethod: props.accessMethod })) {
     return (
       <section className={styles.resultCard}>
@@ -43,6 +67,15 @@ export async function ScreenAuditSection(props: { tenantId: string; connectionId
   const stop = latest ? stopText(latest.summary) : null;
   const guidance = latest ? guidanceText(latest.summary) : [];
   const errorScreens = latest ? errorScreenRows(latest.summary) : [];
+  const juryGate = latest
+    ? auditJuryEligibility({
+        audit: { state: latest.state, status: latest.status },
+        pages: latest.pages,
+        errorScreens,
+        reviewRunning: latest.state === 'DONE' ? await reviewRunning(props.tenantId, props.connectionId) : false,
+        permitted: props.canJuryReview === true,
+      })
+    : null;
   const findings = latest ? [...latest.findings].sort((a, b) => (SEVERITY_ORDER[a.severity] ?? 9) - (SEVERITY_ORDER[b.severity] ?? 9)) : [];
   return (
     <section className={styles.resultCard} aria-labelledby="screen-audit-title">
@@ -58,6 +91,12 @@ export async function ScreenAuditSection(props: { tenantId: string; connectionId
       </ul>
       {latest ? (
         <>
+          <AuditJuryReviewButton
+            connectionId={props.connectionId}
+            disabledReason={juryGate && !juryGate.ok ? juryGate.text : null}
+            start={startAuditJuryReviewAction}
+            poll={pollAuditJuryReviewAction}
+          />
           <h3 className={styles.resultSubhead}>
             최근 심사
             <span className={styles.resultMeta}>{formatKst(latest.createdAt)}</span>

@@ -28,12 +28,12 @@ export function toScreenAuditEvidence(audit: { id: string; finishedAt: Date | nu
   return containsSecret(out) ? null : out;
 }
 
-export async function loadScreenAuditEvidence(db: unknown, tenantId: string, connectionId: string): Promise<JuryScreenAuditEvidence | null> {
+export async function loadScreenAuditEvidence(db: unknown, tenantId: string, connectionId: string, auditId?: string | null): Promise<JuryScreenAuditEvidence | null> {
   try {
     const prisma = db as AuditDb;
     if (!prisma?.juryVisualAudit?.findFirst || !prisma?.juryAuditFinding?.findMany) return null;
     const audit = await prisma.juryVisualAudit.findFirst({
-      where: { tenantId, connectionId, state: 'DONE' },
+      where: { tenantId, connectionId, state: 'DONE', ...(auditId ? { id: auditId } : {}) },
       orderBy: { createdAt: 'desc' },
       select: { id: true, finishedAt: true },
     });
