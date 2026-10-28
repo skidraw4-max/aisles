@@ -331,7 +331,7 @@ test('review console source stays off host collectors and improvement actions', 
   assert.equal(body.includes('사용자 확인:'), true);
   assert.equal(body.includes('부족한 근거'), true);
   assert.equal(body.includes('개선 작업 만들기'), true);
-  assert.equal(body.includes('개선 작업을 만들었습니다'), true);
+  assert.equal(body.includes('개선 작업을 만들었어요'), true);
   assert.equal(body.includes('createHumanImprovementTask'), true);
   for (const label of ['Cursor로 보내기', '자동 수정', '에이전트 실행', '개선 실행', '재심사']) {
     assert.equal(body.includes(label), false, label);

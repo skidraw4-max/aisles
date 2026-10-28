@@ -31,7 +31,7 @@ export function ScreenAuditRunButton(props: {
       </Button>
       {result ? (
         <p role="status">
-          {result.ok ? `완료: ${STATUS_LABEL[result.status] ?? result.status}, 발견 ${result.findings}건` : `실행하지 못했습니다 (${result.reason}).`}
+          {result.ok ? `완료: ${STATUS_LABEL[result.status] ?? result.status}, 발견 ${result.findings}건` : `실행하지 못했어요 (${result.reason}).`}
         </p>
       ) : null}
     </form>

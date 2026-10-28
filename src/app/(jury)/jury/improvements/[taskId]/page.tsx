@@ -20,7 +20,7 @@ export default async function JuryImprovementTracePage({
   if (!access.ok) {
     return (
       <JuryChrome actor={actor}>
-        <p>{externalFeatureDenial(access) === 'FORBIDDEN' ? 'Not authorized' : '이 tenant에서 해당 Improvement를 찾을 수 없습니다.'}</p>
+        <p>{externalFeatureDenial(access) === 'FORBIDDEN' ? '이 화면을 볼 권한이 없어요.' : '현재 조직에서 이 개선 작업을 찾을 수 없어요.'}</p>
       </JuryChrome>
     );
   }
@@ -33,7 +33,7 @@ export default async function JuryImprovementTracePage({
     if (!trace.ok) {
       return (
         <JuryChrome actor={actor}>
-          <p>이 tenant에서 해당 Improvement를 찾을 수 없습니다.</p>
+          <p>현재 조직에서 이 개선 작업을 찾을 수 없어요.</p>
         </JuryChrome>
       );
     }

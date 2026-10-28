@@ -19,7 +19,7 @@ import { juryEmailVerificationDestination, juryHref, juryOAuthRedirect, safeJury
 import { JuryEmailNotice } from './JuryEmailNotice';
 import styles from './jury-entry.module.css';
 
-const GENERIC = '계정을 만들 수 없습니다. 다시 시도해 주세요.';
+const GENERIC = '계정을 만들 수 없어요. 다시 시도해 주세요.';
 
 export function JurySignupForm({ returnQuery }: { returnQuery?: string | null }) {
   const router = useRouter();
@@ -57,7 +57,7 @@ export function JurySignupForm({ returnQuery }: { returnQuery?: string | null })
         session: data.session,
       });
       if (outcome === 'existing') {
-        setMessage('이미 가입된 이메일입니다. 로그인해 주세요.');
+        setMessage('이미 가입된 이메일이에요. 로그인해 주세요.');
         return;
       }
       if (outcome === 'enter' && data.session?.access_token) {
@@ -98,7 +98,7 @@ export function JurySignupForm({ returnQuery }: { returnQuery?: string | null })
         queryParams: { prompt: 'select_account' },
       });
     } catch {
-      setMessage('Google 계정으로 진행할 수 없습니다.');
+      setMessage('Google 계정으로 진행할 수 없어요.');
       setLoading(false);
     }
   };

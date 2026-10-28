@@ -13,7 +13,7 @@ import styles from './jury.module.css';
 /** I-085: one lucide icon per product nav item, keyed by label. */
 const NAV_ICONS: Record<(typeof PRODUCT_NAV)[number]['label'], LucideIcon> = {
   홈: House,
-  '리뷰 요청': FileSearch,
+  '심사 요청': FileSearch,
   결과: ClipboardCheck,
   서비스: Layers,
   개선: Wrench,

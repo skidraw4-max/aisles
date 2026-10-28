@@ -5,46 +5,46 @@ import styles from './jury-landing.module.css';
 const FLOW = [
   {
     step: '01',
-    label: 'Evidence',
+    label: '근거',
     tone: styles.toneEvidence,
-    text: 'Connect a service and collect the evidence a review should rest on.',
+    text: '서비스를 연결하고 심사의 바탕이 될 근거를 모아요.',
   },
   {
     step: '02',
-    label: 'Jury',
+    label: '심사',
     tone: styles.toneJury,
-    text: 'Run an AI review against that evidence and read the final report.',
+    text: '모은 근거로 AI 심사를 실행하고 최종 보고서를 확인해요.',
   },
   {
     step: '03',
-    label: 'Improve',
+    label: '개선',
     tone: styles.toneImprove,
-    text: 'Turn findings into improvement tasks, with human decisions kept beside the result.',
+    text: '발견한 문제를 개선 작업으로 만들고, 담당자 판단을 결과 옆에 남겨요.',
   },
   {
     step: '04',
-    label: 'Re-review',
+    label: '재심사',
     tone: styles.toneRereview,
-    text: 'Review the changed service again and compare it with the earlier result.',
+    text: '바뀐 서비스를 다시 심사하고 이전 결과와 비교해요.',
   },
 ] as const;
 
 const CAPABILITIES = [
   {
-    title: 'Evidence management',
-    text: 'Gather and browse evidence per connected service before anything is judged.',
+    title: '심사 근거 관리',
+    text: '결론을 내리기 전에 연결한 서비스별로 근거를 모으고 살펴봐요.',
   },
   {
-    title: 'AI review and final report',
-    text: 'Start a review run and open its result, including the final report for each review.',
+    title: 'AI 심사와 최종 보고서',
+    text: '심사를 시작하고 심사별 최종 보고서까지 결과를 확인해요.',
   },
   {
-    title: 'Organizations and permissions',
-    text: 'Invite members, assign roles, and control which services each member can access.',
+    title: '조직과 권한',
+    text: '구성원을 초대하고 역할을 정하고, 구성원별 서비스 접근 권한을 관리해요.',
   },
   {
-    title: 'Audit and improvement trace',
-    text: 'Follow what was reviewed, decided, and changed across each improvement cycle.',
+    title: '감사 이력과 개선 추적',
+    text: '개선 주기마다 무엇을 심사하고 결정하고 바꿨는지 따라가요.',
   },
 ] as const;
 

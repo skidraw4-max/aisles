@@ -34,7 +34,7 @@ export const REVIEW_ACTION_LIMIT_SECONDS = 300;
 export function ReviewSubmitButton({
   label,
   disabledReason,
-  pendingLabel = '리뷰 진행 중…',
+  pendingLabel = '심사 진행 중…',
   pendingNote,
 }: {
   label: string;
@@ -106,19 +106,19 @@ export function ReviewSubmitButton({
       {submitting ? (
         <p className={styles.muted} role="status" aria-live="polite">
           {overLimit
-            ? `서버 실행 한도(${REVIEW_ACTION_LIMIT_SECONDS}초)를 넘었습니다. 완료·실패 여부는 새로고침 후 이 카드의 상태나 리뷰 목록에서 확인하세요. 다시 요청하지 마세요.`
-            : pendingNote ?? 'AI 심사를 실행하고 있습니다. 보통 2~3분 걸립니다. 버튼을 다시 누르지 마세요. 완료되면 결과 화면으로 이동합니다.'}
+            ? `서버 실행 한도(${REVIEW_ACTION_LIMIT_SECONDS}초)를 넘었어요. 완료·실패 여부는 새로고침 후 이 카드의 상태나 심사 목록에서 확인하세요. 다시 요청하지 마세요.`
+            : pendingNote ?? 'AI 심사를 실행하고 있어요. 보통 2~3분 걸려요. 버튼을 다시 누르지 마세요. 완료되면 결과 화면으로 이동해요.'}
         </p>
       ) : null}
       {progress.phase === 'TIMED_OUT' ? (
         <p className={styles.muted} role="status" aria-live="polite">
-          브라우저가 응답 대기를 멈췄습니다. 완료·실패 여부는 새로고침 후 이 카드의 상태나 리뷰 목록에서 확인하세요. 다시 요청하지 마세요.{' '}
+          브라우저가 응답 대기를 멈췄어요. 완료·실패 여부는 새로고침 후 이 카드의 상태나 심사 목록에서 확인하세요. 다시 요청하지 마세요.{' '}
           <Button variant="secondary" icon={RefreshCw} type="button" onClick={() => { dispatch({ type: 'RESET' }); router.refresh(); }}>상태 새로고침</Button>
         </p>
       ) : null}
       {progress.phase === 'NO_NAVIGATION' ? (
         <p className={styles.muted} role="status" aria-live="polite">
-          응답을 받았지만 화면이 이동하지 않았습니다. 실제 상태를 다시 읽어 오세요.{' '}
+          응답을 받았지만 화면이 이동하지 않았어요. 실제 상태를 다시 읽어 오세요.{' '}
           <Button variant="secondary" icon={RefreshCw} type="button" onClick={() => { dispatch({ type: 'RESET' }); router.refresh(); }}>상태 새로고침</Button>
         </p>
       ) : null}

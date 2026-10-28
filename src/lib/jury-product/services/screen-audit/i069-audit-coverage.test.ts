@@ -89,7 +89,7 @@ test('I-069: measuring time inside the hook does not use up the discovery budget
 });
 
 test('I-069: tabs — selected skipped, same-URL tabs measured as masked separate entries, cap 5', async () => {
-  const tabs = [{ index: 0, name: '상세정보', selected: true }, { index: 1, name: '리뷰 12345', selected: false }, { index: 2, name: '배송안내', selected: false }];
+  const tabs = [{ index: 0, name: '상세정보', selected: true }, { index: 1, name: '심사 12345', selected: false }, { index: 2, name: '배송안내', selected: false }];
   const { driver, log } = driverWith({ tabs });
   const hook = createAuditHook({ driver });
   await hook.onPage({ label: '상품', url: `${O}/product/1` });
@@ -127,7 +127,7 @@ test('I-069: tab helpers — hash-only change is same document; unsafe tab text 
   assert.equal(sameDocumentUrl(`${O}/p/1`, `${O}/p/1?tab=2`), false);
   const unsafe = new RegExp(TAB_UNSAFE_TEXT_SOURCE, 'i');
   for (const t of ['장바구니 담기', '바로구매', '결제하기', '로그아웃', '삭제', 'Add to cart']) assert.ok(unsafe.test(t), t);
-  for (const t of ['상세정보', '리뷰', '배송/교환 안내']) assert.ok(!unsafe.test(t), t);
+  for (const t of ['상세정보', '심사', '배송/교환 안내']) assert.ok(!unsafe.test(t), t);
 });
 
 test('I-069: consent v5 mentions same-page tabs (max 5) and sampled pages', () => {

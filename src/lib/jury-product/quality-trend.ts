@@ -1,6 +1,6 @@
 /**
  * RM-16 (M-013): 품질 추세. Service-level verdict time series, VERIFIED_REAL only (metric-rules M-013).
- * Fewer than 3 points → section hidden. Categorical only (판정 범주 + 수정 필요 항목 수); no score, no ratio.
+ * Fewer than 3 points → section hidden. Categorical only (결론 범주 + 수정 필요 항목 수); no score, no ratio.
  */
 import type { JuryActor } from './access';
 import type { ComparisonSide } from './review-comparison';
@@ -15,7 +15,7 @@ export function buildQualityTrend(sides: readonly ComparisonSide[]): QualityTren
   const eligible = sides.filter((s) => s.display.source.value === TREND_SOURCE && !s.display.decision.withheld && s.display.resultId);
   const excluded = sides.length - eligible.length;
   if (eligible.length < TREND_MIN_POINTS) {
-    return { visible: false, reason: `검증된 실모델 결과 ${eligible.length}건 — ${TREND_MIN_POINTS}건 이상일 때 추세를 표시합니다.`, excluded };
+    return { visible: false, reason: `검증된 실모델 결과 ${eligible.length}건 — ${TREND_MIN_POINTS}건 이상일 때 추세를 표시해요.`, excluded };
   }
   const points = [...eligible]
     .sort((a, b) => a.completedAt.localeCompare(b.completedAt))

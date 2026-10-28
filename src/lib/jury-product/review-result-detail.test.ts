@@ -49,7 +49,7 @@ function ui05(v: ResultDetailView) {
   assert.equal(/문제 없음|특이 사항 없음|조치가 필요하지 않/.test(all), false, 'missing data never "no problem"');
   // fixed summary shape
   assert.deepEqual(v.summary.facts.map((f) => f.label), ['문제', '주장 확인 현황', '부족한 근거', '검사 범위', '근거 강도', '위원 의견']);
-  assert.deepEqual(v.comparison.map((c) => c.step), ['주장', '근거', '판정', '기대']);
+  assert.deepEqual(v.comparison.map((c) => c.step), ['주장', '근거', '결론', '기대']);
   // every listed problem carries a cause link to the evidence tab (PC-03: result-level evidence)
   for (const item of v.problems.items) assert.equal(item.cause.tab, 'evidence');
 }
@@ -69,7 +69,7 @@ test('real shape 2f6638a0 (VERIFY, 5 problems, 0 claims) passes UI-05', () => {
 test('real shape 6adbe715 (VERIFY, 0 problems, claims 15/21/10) passes UI-05', () => {
   const v = view({ decision: 'VERIFY', surface: surface({ supportedClaims: n(15, 's'), partiallySupportedClaims: n(21, 'p'), hypotheses: n(10, 'h') }) });
   ui05(v);
-  assert.equal(fact(v, '문제'), '문제 목록 없음 — 판정과 불일치'); // CT-03
+  assert.equal(fact(v, '문제'), '문제 목록 없음 — 결론과 불일치'); // CT-03
   assert.equal(fact(v, '주장 확인 현황'), '확인 15 · 일부 확인 21 · 미확인 10');
   assert.equal(fact(v, '부족한 근거'), '31개');
   assert.equal(v.problems.state, 'EMPTY');
@@ -89,7 +89,7 @@ test('fixture shape aa734100 (REWORD, nothing recorded, FIXTURE) passes UI-05 wi
   ui05(v);
   assert.equal(v.summary.source.tone, 'NON_REAL'); // CT-10
   assert.match(v.summary.source.note ?? '', /집계에서 제외/);
-  assert.equal(fact(v, '문제'), '문제 목록 없음 — 판정과 불일치'); // CT-01
+  assert.equal(fact(v, '문제'), '문제 목록 없음 — 결론과 불일치'); // CT-01
   assert.ok(v.summary.warnings.length >= 3);
 });
 
@@ -103,7 +103,7 @@ test('mock shape 37072025 (MOCK source) passes UI-05 with Mock badge', () => {
 test('CT-09: no evidence -> verdict withheld, scope "근거 미연결", unchecked unknown', () => {
   const v = view({ decision: 'REWORD', surface: surface({ topProblems: ['p'] }), evidence: false });
   ui05(v);
-  assert.ok(v.summary.decisionNote?.startsWith('판정 표시 보류'));
+  assert.ok(v.summary.decisionNote?.startsWith('결론 표시 보류'));
   assert.equal(fact(v, '검사 범위'), '근거 미연결');
   assert.equal(v.unchecked.state, 'UNKNOWN');
 });

@@ -75,7 +75,7 @@ export default async function JuryReviewDetailPage({
             ) : null}
           </>
         ) : (
-          <p>{!access.ok && externalFeatureDenial(access) === 'FORBIDDEN' ? 'Not authorized' : '이 tenant에서 해당 Review를 찾을 수 없습니다.'}</p>
+          <p>{!access.ok && externalFeatureDenial(access) === 'FORBIDDEN' ? '이 화면을 볼 권한이 없어요.' : '현재 조직에서 이 심사를 찾을 수 없어요.'}</p>
         )}
       </JuryChrome>
     );

@@ -52,8 +52,8 @@ test('jury signup success asks for verification and an existing account stays a 
     'existing',
   );
   assert.equal(classifyJurySignUpResult({ errorMessage: 'database connection string leaked' }), 'failed');
-  assert.equal(juryAuthErrorMessage('User already registered'), '이미 가입된 이메일입니다. 로그인해 주세요.');
-  assert.equal(juryAuthErrorMessage('database connection string leaked'), '계정을 만들 수 없습니다. 다시 시도해 주세요.');
+  assert.equal(juryAuthErrorMessage('User already registered'), '이미 가입된 이메일이에요. 로그인해 주세요.');
+  assert.equal(juryAuthErrorMessage('database connection string leaked'), '계정을 만들 수 없어요. 다시 시도해 주세요.');
   assert.equal(juryAuthErrorMessage('User already registered').includes('가입된'), true);
   assert.equal(juryAuthErrorMessage('secret internal host').includes('secret'), false);
   assert.equal(maskJuryEmail('jane@example.com'), 'j***@example.com');

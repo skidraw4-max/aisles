@@ -903,7 +903,7 @@ a.inline {
   }
 }
 
-/* Layout fix: "리뷰 자료 만들기" sat flush against the 분석 항목 fieldset. */
+/* Layout fix: "심사 근거 만들기" sat flush against the 분석 항목 fieldset. */
 .intakeSubmit {
   margin-top: 1rem;
 }

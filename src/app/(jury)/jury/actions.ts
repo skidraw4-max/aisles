@@ -1152,7 +1152,7 @@ export async function runConnectedServiceJuryReview(formData: FormData): Promise
 }
 
 /**
- * I-099: "이 결과로 위원 심사하기". One click = 검증 근거 수집 (default period: 7 days ending yesterday, KST)
+ * I-099: "이 결과로 위원 심사하기". One click = 심사 근거 수집 (default period: 7 days ending yesterday, KST)
  * + 심사 실행 started in the background (`after`), then the client polls. Never runs without this click (cost).
  */
 export type AuditJuryStartResult =

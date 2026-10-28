@@ -192,17 +192,17 @@ test('console intake does not call the host adapter or put tenant in the form', 
   const ui = readFileSync(path.resolve(process.cwd(), 'src/app/(jury)/jury/ui.tsx'), 'utf8');
   const body = ui.slice(ui.indexOf('export function EvidenceBody'), ui.indexOf('export function ImprovementsBody'));
   assert.equal(body.includes('tenantId'), false);
-  assert.equal(body.includes('리뷰 자료 만들기'), true);
+  assert.equal(body.includes('심사 근거 만들기'), true);
   // RM-09: multi-metric rows (metricName + availability:<metric> / value:<metric>) and a period.
   assert.equal(body.includes('name="metricName"'), true);
   assert.equal(body.includes('name={`availability:${metric}`}'), true);
   assert.equal(body.includes('name={`value:${metric}`}'), true);
   assert.equal(body.includes('name="periodStart"'), true);
   assert.equal(body.includes('name="periodEnd"'), true);
-  assert.equal(body.includes('현재 승인된 Scope에는 입력 가능한 Catalog Metric이 없습니다.'), true);
-  assert.equal(ui.includes('다른 tenant의 데이터는 변경할 수 없습니다.'), true);
-  assert.equal(ui.includes('Evidence를 저장하지 못했습니다.'), true);
-  assert.equal(ui.includes('자격 증명이 포함된 요청은 기록하지 않습니다.'), true);
+  assert.equal(body.includes('현재 승인된 Scope에는 입력 가능한 Catalog Metric이 없어요.'), true);
+  assert.equal(ui.includes('다른 조직의 데이터는 변경할 수 없어요.'), true);
+  assert.equal(ui.includes('심사 근거를 저장하지 못했어요.'), true);
+  assert.equal(ui.includes('자격 증명이 포함된 요청은 기록하지 않아요.'), true);
 });
 
 async function submit(overrides: Partial<ConsoleIntakeCommand>) {

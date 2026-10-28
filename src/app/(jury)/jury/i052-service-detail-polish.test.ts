@@ -15,7 +15,7 @@ test('I-052: raw enum and status values render in Korean', () => {
   assert.equal(userLabel('ACTIVE'), '사용 중');
   assert.equal(displayText('APPROVED'), '승인됨');
   assert.equal(displayText('AVAILABLE'), '사용 가능');
-  assert.equal(userLabels(['DISCOVERY', 'READ', 'EVIDENCE']), '서비스 확인, 읽기, 검증 근거');
+  assert.equal(userLabels(['DISCOVERY', 'READ', 'EVIDENCE']), '서비스 확인, 읽기, 심사 근거');
   assert.equal(displayText('readonly.pagesObserved'), '관찰 페이지 수');
 });
 

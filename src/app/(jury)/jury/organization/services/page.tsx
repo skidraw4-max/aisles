@@ -35,7 +35,7 @@ export default async function JuryServiceAccessPage() {
   return (
     <JuryChrome actor={actor}>
       <PageHeader crumbs={[{ label: '홈', href: juryHref('/') }, { label: '관리' }, { label: '서비스 접근 권한' }]} title="서비스 접근 권한" />
-      {services.length === 0 ? <p className={listStyles.empty}>아직 연결된 서비스가 없습니다.</p> : services.map((service) => (
+      {services.length === 0 ? <p className={listStyles.empty}>아직 연결된 서비스가 없어요.</p> : services.map((service) => (
         <section key={service.connectionId}>
           <h3>{service.displayName}</h3>
           <p className={listStyles.empty}>
@@ -45,7 +45,7 @@ export default async function JuryServiceAccessPage() {
             {' · '}
             구성원: {service.memberCount}
           </p>
-          {service.members.length === 0 ? <p className={listStyles.empty}>아직 서비스 구성원이 없습니다.</p> : (
+          {service.members.length === 0 ? <p className={listStyles.empty}>아직 서비스 구성원이 없어요.</p> : (
             <div className={listStyles.tableWrap}>
             <table className={listStyles.table}>
               <thead>

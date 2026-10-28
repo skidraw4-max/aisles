@@ -56,25 +56,25 @@ export function GithubPanel({
       <p>제공자 GitHub</p>
       <p>출처 {screen?.source === 'fixture' ? 'Fixture' : 'GitHub'}</p>
       <p>환경 {screen?.environment === 'fixture' ? '테스트' : configured ? 'GitHub App' : '설정되지 않음'}</p>
-      <p>Read-only repository evidence. This connection does not modify a repository.</p>
+      <p>저장소를 읽기 전용으로만 확인해요. 저장소를 수정하지 않아요.</p>
       {notice ? <p>{notice}</p> : null}
-      {state === 'no-connection' ? <p>GitHub is not connected for this organization.</p> : null}
-      {!configured ? <p>GitHub App configuration is not available.</p> : null}
-      {state === 'no-scope' ? <p>No repository is selected. Choose a read-only repository before collecting evidence.</p> : null}
-      {state === 'evidence-failed' ? <p>Evidence collection failed. A review was not started.</p> : null}
-      {state === 'evidence-partial' ? <p>Evidence is partial. Unavailable sections stay unavailable.</p> : null}
-      {state === 'review-running' ? <p>A review is in progress.</p> : null}
-      {state === 'review-completed' ? <p>The review is complete.</p> : null}
-      {!canConnect && !connection ? <p>Your organization role cannot connect a service.</p> : null}
+      {state === 'no-connection' ? <p>이 조직에는 아직 GitHub가 연결되지 않았어요.</p> : null}
+      {!configured ? <p>GitHub App 설정이 아직 준비되지 않았어요.</p> : null}
+      {state === 'no-scope' ? <p>선택한 저장소가 없어요. 심사 근거를 수집하기 전에 저장소를 골라 주세요.</p> : null}
+      {state === 'evidence-failed' ? <p>심사 근거 수집에 실패해서 심사를 시작하지 않았어요.</p> : null}
+      {state === 'evidence-partial' ? <p>심사 근거가 일부만 수집됐어요. 빠진 항목은 비어 있어요.</p> : null}
+      {state === 'review-running' ? <p>심사가 진행 중이에요.</p> : null}
+      {state === 'review-completed' ? <p>심사가 끝났어요.</p> : null}
+      {!canConnect && !connection ? <p>현재 역할로는 서비스를 연결할 수 없어요.</p> : null}
       {guide.needed ? (
         <>
-          <p>GitHub is connected for this organization. You do not have service access.</p>
-          <p>View is the minimum permission. Review is required to collect evidence and start a review.</p>
-          <p>{guide.canGrant ? 'You can grant service access. An organization role does not grant it by itself.' : 'An organization owner or admin can grant service access.'}</p>
+          <p>이 조직에 GitHub가 연결돼 있지만, 이 서비스에 대한 접근 권한이 없어요.</p>
+          <p>보기 권한이 최소 권한이에요. 심사 근거 수집과 심사 시작에는 심사 권한이 필요해요.</p>
+          <p>{guide.canGrant ? '서비스 접근 권한을 직접 부여할 수 있어요. 조직 역할만으로는 권한이 생기지 않아요.' : '조직 소유자나 관리자에게 서비스 접근 권한을 요청해 주세요.'}</p>
           <p><Link className={styles.inline} href={juryHref('/organization/services')}>서비스 접근 권한</Link></p>
         </>
       ) : null}
-      {screen?.canView && !screen.canCollect && selected ? <p>Evidence collection and review need Review permission.</p> : null}
+      {screen?.canView && !screen.canCollect && selected ? <p>심사 근거 수집과 심사에는 심사 권한이 필요해요.</p> : null}
       {canConnect && !connection ? (
         <form action={startGithubConnect}>
           <input type="hidden" name="tenantId" value="client-supplied-tenant" />
@@ -89,12 +89,12 @@ export function GithubPanel({
         <>
           <p>계정 {connection.displayName}</p>
           <p>연결 상태 <StatusBadge status={connection.status}>{displayText(connection.status)}</StatusBadge></p>
-          {state === 'no-repository' ? <p>No repositories are available to this installation.</p> : null}
+          {state === 'no-repository' ? <p>이 GitHub App 설치에서 사용할 수 있는 저장소가 없어요.</p> : null}
           {repositoriesVisible && repositories && repositories.length > 0 ? (
             <ul>
               {repositories.map((repository) => (
                 <li key={repository.fullName}>
-                  {repository.owner} {repository.name} {repository.fullName} {repository.visibility} {repository.private ? 'private' : 'public'} {repository.defaultBranch || 'branch not available'} {repository.archived ? 'archived' : ''} {repository.disabled ? 'disabled' : ''}
+                  {repository.owner} {repository.name} {repository.fullName} {repository.visibility} {repository.private ? '비공개' : '공개'} {repository.defaultBranch || '기본 브랜치 없음'} {repository.archived ? 'archived' : ''} {repository.disabled ? 'disabled' : ''}
                 </li>
               ))}
             </ul>
@@ -146,7 +146,7 @@ export function GithubPanel({
             </>
           ) : null}
           {screen?.reviewStatus ? <p>심사 상태 <StatusBadge status={screen.reviewStatus}>{displayText(screen.reviewStatus)}</StatusBadge></p> : null}
-          {screen?.reviewStatus === 'FAILED' ? <p>The review did not complete. Collect evidence again before another review.</p> : null}
+          {screen?.reviewStatus === 'FAILED' ? <p>심사가 완료되지 않았어요. 심사 근거를 다시 수집한 뒤 시도해 주세요.</p> : null}
           {screen?.canStartReview ? (
             <form action={reviewGithubEvidence}>
               <input type="hidden" name="connectionId" value={connection.id} />
@@ -157,11 +157,11 @@ export function GithubPanel({
           {screen?.reviewView ? (
             <>
               <h3>심사 결과</h3>
-              <p>This review was based on GitHub repository evidence.</p>
+              <p>GitHub 저장소 근거로 진행한 심사예요.</p>
               <p>제공자 GitHub</p>
               <p>저장소 {screen.repository}</p>
               <p>자료 상태 {displayText(screen.evidenceStatus)}</p>
-              <p>판정 {displayText(screen.reviewView.decision)}</p>
+              <p>결론 {displayText(screen.reviewView.decision)}</p>
               <p>근거 강도 {screen.reviewView.evidenceStrength ?? '저장되지 않음'}</p>
               <p>주장 강도 {screen.reviewView.claimStrength ?? '저장되지 않음'}</p>
               <p>위험 {screen.reviewView.risk || '저장되지 않음'}</p>
@@ -220,7 +220,7 @@ export function GithubPanel({
               <Button variant="secondary" icon={Unlink} type="submit">GitHub 연결 해제</Button>
             </form>
           ) : null}
-          <p>Disconnect stops this Jury connection. It does not uninstall the GitHub App.</p>
+          <p>연결을 해제하면 Jury 연결만 끊겨요. GitHub App은 제거되지 않아요.</p>
         </>
       ) : null}
     </section>

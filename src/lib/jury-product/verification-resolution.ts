@@ -189,7 +189,7 @@ function findingFor(conflictDetected: boolean, pairs: readonly VerificationPairN
   }
   return {
     status: 'RESOLVED',
-    finding: '저장된 metric pair에서 측정된 값의 충돌은 보이지 않는다. 어느 소스가 맞다는 판정은 아니다.',
+    finding: '저장된 metric pair에서 측정된 값의 충돌은 보이지 않는다. 어느 소스가 맞다는 결론은 아니다.',
   };
 }
 

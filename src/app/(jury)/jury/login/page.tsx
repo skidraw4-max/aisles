@@ -7,7 +7,7 @@ import { juryLoginOutcome } from '@/lib/jury-product/jury-login-entry';
 import { getJuryEntry } from '@/lib/jury-product/session';
 
 export const metadata: Metadata = {
-  title: 'Sign in — AIsles Jury',
+  title: '로그인 — AIsles Jury',
 };
 
 export default async function JuryLoginPage({
@@ -24,7 +24,7 @@ export default async function JuryLoginPage({
   return (
     <JuryLoginForm
       returnQuery={returnQuery}
-      notice={juryLoginErrorNotice(typeof params.error === 'string' ? params.error : null) ?? (outcome.notice === 'STORE_UNAVAILABLE' ? JURY_LOGIN_STORE_UNAVAILABLE_NOTICE : outcome.notice === 'EMAIL_UNVERIFIED' ? '이메일 인증이 필요합니다.' : undefined)}
+      notice={juryLoginErrorNotice(typeof params.error === 'string' ? params.error : null) ?? (outcome.notice === 'STORE_UNAVAILABLE' ? JURY_LOGIN_STORE_UNAVAILABLE_NOTICE : outcome.notice === 'EMAIL_UNVERIFIED' ? '이메일 인증이 필요해요.' : undefined)}
     />
   );
 }

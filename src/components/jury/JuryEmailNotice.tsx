@@ -28,9 +28,9 @@ export function JuryEmailNotice({ email }: { email?: string | null }) {
         options: { emailRedirectTo: destination },
       });
       if (resendError) throw new Error('resend-failed');
-      setStatus('인증 메일을 보냈습니다.');
+      setStatus('인증 메일을 보냈어요.');
     } catch {
-      setError('인증 메일을 다시 보내지 못했습니다.');
+      setError('인증 메일을 다시 보내지 못했어요.');
     } finally {
       setLoading(false);
     }

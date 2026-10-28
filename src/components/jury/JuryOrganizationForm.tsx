@@ -27,7 +27,7 @@ export function JuryOrganizationForm() {
       router.push(juryHref('/'));
       router.refresh();
     } catch {
-      setMessage('조직을 만들 수 없습니다.');
+      setMessage('조직을 만들 수 없어요.');
     } finally {
       setLoading(false);
     }

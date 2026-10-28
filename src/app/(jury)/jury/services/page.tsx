@@ -28,10 +28,10 @@ export default async function JuryServicesPage({
   const deletedMeta = actor.ok && showDeleted ? await loadDeletedConnectionMeta(actor.tenantId).catch(() => ({})) : {};
   const error = !actor.ok
     ? actor.reason === 'STORE_UNAVAILABLE'
-      ? 'Jury 저장소가 아직 준비되지 않았습니다.'
-      : '서비스 정보를 불러오지 못했습니다.'
+      ? 'Jury 저장소가 아직 준비되지 않았어요.'
+      : '서비스 정보를 불러오지 못했어요.'
     : operations && !operations.ok
-      ? 'Jury 저장소가 아직 준비되지 않았습니다.'
+      ? 'Jury 저장소가 아직 준비되지 않았어요.'
       : null;
   return (
     <JuryChrome actor={actor} notice={notice}>

@@ -11,7 +11,7 @@ import { createClient } from '@/lib/supabase/server';
 import { readJurySessionEmail } from '../../load';
 
 export const metadata: Metadata = {
-  title: 'Organization invitation — AIsles Jury',
+  title: '조직 초대 — AIsles Jury',
 };
 
 export default async function JuryInvitationPage({ params }: { params: Promise<{ token: string }> }) {

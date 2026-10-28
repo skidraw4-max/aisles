@@ -24,7 +24,7 @@ export type ReviewTabId = (typeof REVIEW_TAB_IDS)[number];
 const REVIEW_TAB_LABELS: Record<ReviewTabId, string> = {
   summary: '요약',
   members: '위원 의견',
-  evidence: '검증 근거',
+  evidence: '심사 근거',
   history: '이력',
 };
 
@@ -40,7 +40,7 @@ export function reviewTabHref(reviewId: string, tab: ReviewTabId): string {
 
 export function ReviewTabs({ reviewId, active }: { reviewId: string; active: ReviewTabId }) {
   const items: TabItem[] = REVIEW_TAB_IDS.map((id) => ({ id, label: REVIEW_TAB_LABELS[id], href: reviewTabHref(reviewId, id) }));
-  return <Tabs items={items} activeId={active} label="리뷰 결과 탭" />;
+  return <Tabs items={items} activeId={active} label="심사 결과 탭" />;
 }
 
 /**
@@ -61,7 +61,7 @@ export function ResultFixedSummary({ screen }: { screen: ReviewConsoleScreen }) 
     <section className={styles.panel} aria-label="결과 고정 요약">
       <p className={styles.eyebrow}>결과 고정 요약</p>
       <div className={styles.row}>
-        <span className={styles.label}>판정</span>
+        <span className={styles.label}>결론</span>
         <span>
           <strong><StatusBadge>{view.summary.decision}</StatusBadge></strong>{' '}
           <StatusBadge data-source-tone={view.summary.source.tone}>{view.summary.source.label}</StatusBadge>
@@ -79,14 +79,14 @@ export function ResultFixedSummary({ screen }: { screen: ReviewConsoleScreen }) 
   );
 }
 
-/** RM-07: 주장 → 근거 → 판정 → 기대 comparison and 문제 → 원인 링크 (summary tab). */
+/** RM-07: 주장 → 근거 → 결론 → 기대 comparison and 문제 → 원인 링크 (summary tab). */
 export function ResultComparison({ screen }: { screen: ReviewConsoleScreen }) {
   if (!screen.display) return null;
   const view = buildResultDetailView(screen.display);
   return (
     <>
       <section className={styles.panel}>
-        <h2>주장 → 근거 → 판정 → 기대</h2>
+        <h2>주장 → 근거 → 결론 → 기대</h2>
         {view.comparison.map((row) => (
           <div className={styles.row} key={row.step}>
             <span className={styles.label}>{row.step}</span>
@@ -129,7 +129,7 @@ export function UncheckedMetricsPanel({ screen }: { screen: ReviewConsoleScreen 
   );
 }
 
-/** RM-11 (M-011, UI-06): 이전 대비. 판정 범주 변화 + 문제 수 차이(정수)만; 비율·종합 점수 없음. */
+/** RM-11 (M-011, UI-06): 이전 대비. 결론 범주 변화 + 문제 수 차이(정수)만; 비율·종합 점수 없음. */
 export function PreviousResultComparison({ comparison }: { comparison: ReviewComparisonView | null }) {
   return (
     <section className={styles.panel}>
@@ -240,12 +240,12 @@ export function ReviewEvidenceTab({ screen }: { screen: ReviewConsoleScreen }) {
   return (
     <>
       <section className={styles.panel}>
-        <p className={styles.eyebrow}>현재 메뉴 · 결과 · 검증 근거</p>
+        <p className={styles.eyebrow}>현재 메뉴 · 결과 · 심사 근거</p>
         <h2>측정된 사실</h2>
-        <p className={styles.muted}>리뷰 자료</p>
+        <p className={styles.muted}>심사 근거</p>
         <div className={styles.row}><span className={styles.label}>자료 ID</span><span>{screen.evidenceId ?? '근거 미연결'}</span></div>
-        <Link className={styles.inline} href={juryHref('/evidence')}>리뷰 자료 목록</Link>
-        {screen.measured.length === 0 ? <p className={styles.muted}>측정된 값이 없습니다.</p> : null}
+        <Link className={styles.inline} href={juryHref('/evidence')}>심사 근거 목록</Link>
+        {screen.measured.length === 0 ? <p className={styles.muted}>측정된 값이 없어요.</p> : null}
         {screen.measured.map((metric) => (
           <div className={styles.row} key={metric.id}>
             <span>{metric.metric}</span>
@@ -265,7 +265,7 @@ export function ReviewEvidenceTab({ screen }: { screen: ReviewConsoleScreen }) {
       </section>
       <section className={styles.panel}>
         <h2>부족한 근거</h2>
-        <p className={styles.muted}>일부만 확인된 주장과 아직 확인되지 않은 가설입니다. 자료를 보완하면 다시 요청할 수 있습니다.</p>
+        <p className={styles.muted}>일부만 확인된 주장과 아직 확인되지 않은 가설이에요. 자료를 보완하면 다시 요청할 수 있어요.</p>
         <h3>일부만 확인된 주장</h3>
         {claimList(screen, 'partial').length === 0 ? <p className={styles.muted}>{claimEmptyText(screen)}</p> : (
           <ul lang="en">{claimList(screen, 'partial').map((item) => <li key={item}><StatusBadge>일부 확인</StatusBadge> {item}</li>)}</ul>
@@ -286,7 +286,7 @@ export function ReviewHistoryIntro({ hasHistory }: { hasHistory: boolean }) {
     <section className={styles.panel}>
       <p className={styles.eyebrow}>현재 메뉴 · 결과 · 이력</p>
       <h2>재심사·개선 이력</h2>
-      {hasHistory ? null : <p className={styles.muted}>이 리뷰에 이어진 재심사나 개선 작업이 아직 없습니다.</p>}
+      {hasHistory ? null : <p className={styles.muted}>이 심사에 이어진 재심사나 개선 작업이 아직 없어요.</p>}
     </section>
   );
 }
@@ -297,7 +297,7 @@ export function ReviewHistoryHint({ reviewId, hasHistory }: { reviewId: string; 
   return (
     <section className={styles.panel}>
       <p className={styles.muted}>
-        재심사·개선 작업이 이어지고 있습니다. <Link className={styles.inline} href={reviewTabHref(reviewId, 'history')}>이력 탭에서 진행하기</Link>
+        재심사·개선 작업이 이어지고 있어요. <Link className={styles.inline} href={reviewTabHref(reviewId, 'history')}>이력 탭에서 진행하기</Link>
       </p>
     </section>
   );
@@ -327,7 +327,7 @@ export function ImprovementProposalsPanel({ screen }: { screen: ReviewConsoleScr
     <>
       <section className={styles.panel} aria-labelledby="found-problems">
         <h2 id="found-problems">발견된 문제</h2>
-        {view.findings.length === 0 ? <p className={styles.muted}>{view.notice ?? '기록된 문제가 없습니다 (0건 확인이 아님).'}</p> : (
+        {view.findings.length === 0 ? <p className={styles.muted}>{view.notice ?? '기록된 문제가 없어요 (0건 확인이 아님).'}</p> : (
           <div className={styles.resultTableWrap}>
             <table className={`${styles.resultTable} ${styles.proposalTable}`}>
               <caption className={styles.srOnly}>발견된 문제</caption>
@@ -373,7 +373,7 @@ export function ImprovementProposalsPanel({ screen }: { screen: ReviewConsoleScr
       </section>
       <section className={styles.panel} aria-labelledby="verification-checklist">
         <h2 id="verification-checklist">검증 체크리스트</h2>
-        {view.checklist.length === 0 ? <p className={styles.muted}>확인할 항목이 없습니다.</p> : (
+        {view.checklist.length === 0 ? <p className={styles.muted}>확인할 항목이 없어요.</p> : (
           <div className={styles.resultTableWrap}>
             <table className={`${styles.resultTable} ${styles.proposalTable}`}>
               <caption className={styles.srOnly}>검증 체크리스트</caption>

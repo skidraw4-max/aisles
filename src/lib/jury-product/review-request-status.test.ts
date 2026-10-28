@@ -29,7 +29,7 @@ test('CT-11 failed/running requests without result are listed with status, times
   assert.equal(by.has('done'), false);
   assert.equal(by.get('k1')?.state, 'FAILED');
   assert.equal(by.get('k1')?.attempts, 2);
-  assert.equal(by.get('k1')?.reason, '심사를 실행하지 못했습니다 (AI 호출 시간 초과)');
+  assert.equal(by.get('k1')?.reason, '심사를 실행하지 못했어요 (AI 호출 시간 초과)');
   assert.equal(by.get('k2')?.state, 'RUNNING');
   assert.equal(by.get('k2')?.reason, null);
   assert.equal(by.get('k3')?.state, 'STALE');

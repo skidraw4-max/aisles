@@ -41,18 +41,18 @@ export type DisplayFlag =
   | 'STRENGTH_COUNT_MISMATCH';
 
 export const DISPLAY_FLAG_LABELS: Record<DisplayFlag, string> = {
-  DECISION_PROBLEM_MISMATCH: '판정과 문제 목록이 일치하지 않습니다',
-  DECISION_REVISION_MISMATCH: '판정과 수정 필요 표시가 일치하지 않습니다',
+  DECISION_PROBLEM_MISMATCH: '결론과 문제 목록이 일치하지 않아요',
+  DECISION_REVISION_MISMATCH: '결론과 수정 필요 표시가 일치하지 않아요',
   NO_CLAIMS: '주장 기록 없음 (0건 확인이 아님)',
-  NO_EVIDENCE: '근거 미연결 — 판정 표시 보류',
-  SCHEMA_INVALID: '결과 형식 오류 — 판정 불가',
-  NON_REAL_SOURCE: '실모델 결과가 아닙니다 (집계 제외)',
+  NO_EVIDENCE: '근거 미연결 — 결론 표시 보류',
+  SCHEMA_INVALID: '결과 형식 오류 — 결론 불가',
+  NON_REAL_SOURCE: '실모델 결과가 아니에요 (집계 제외)',
   UNKNOWN_SOURCE: '출처 미기록(과거) — 실모델로 확인되지 않음',
-  DUPLICATE_CLAIM: '중복 주장을 1회로 집계했습니다',
-  DUPLICATE_PROBLEM: '중복 문제를 1회로 집계했습니다',
+  DUPLICATE_CLAIM: '중복 주장을 1회로 집계했어요',
+  DUPLICATE_PROBLEM: '중복 문제를 1회로 집계했어요',
   NO_RESULT: '결과 없음',
-  PARTIAL_CONFIRMATION: '일부 주장만 확인되었습니다',
-  STRENGTH_COUNT_MISMATCH: '근거 강도는 판단 불가인데 부족한 근거가 기록되지 않았습니다',
+  PARTIAL_CONFIRMATION: '일부 주장만 확인되었어요',
+  STRENGTH_COUNT_MISMATCH: '근거 강도는 판단 불가인데 부족한 근거가 기록되지 않았어요',
 };
 
 export const RESULT_SOURCE_LABELS: Record<JuryResultSourceValue, string> = {
@@ -190,7 +190,7 @@ export function buildReviewDisplayModel(input: ReviewDisplayInput): ReviewDispla
     source: { ...source, label: RESULT_SOURCE_LABELS[source.value], countsTowardAggregates: source.value === 'VERIFIED_REAL' },
     execution,
     schemaValid,
-    decision: { raw: result?.expectedDecision ?? null, label: flag === 'NO_RESULT' ? '결과 없음' : '판정 불가', withheld: true, withheldReason: flag },
+    decision: { raw: result?.expectedDecision ?? null, label: flag === 'NO_RESULT' ? '결과 없음' : '결론 불가', withheld: true, withheldReason: flag },
     problems: { state: 'UNAVAILABLE', count: null, items: [], severity: null, severityNote: null },
     claims: { state: 'UNAVAILABLE', supported: [], partial: [], unverified: [], counts: null },
     missingEvidenceCount: null,
@@ -333,7 +333,7 @@ export function summarizeProblems(decision: string | null | undefined, topProble
     count: kept.length,
     items: kept,
     severityNote: kept.length > 0 ? `심각도 미기록 ${kept.length}건` : null,
-    emptyText: kept.length > 0 ? null : flags.includes('DECISION_PROBLEM_MISMATCH') ? '문제 목록 없음 — 판정과 불일치' : '문제 목록 없음',
+    emptyText: kept.length > 0 ? null : flags.includes('DECISION_PROBLEM_MISMATCH') ? '문제 목록 없음 — 결론과 불일치' : '문제 목록 없음',
     flags,
   };
 }

@@ -42,7 +42,7 @@ export function JuryMemberRoleControl({
       }
       router.refresh();
     } catch {
-      setMessage('역할을 변경하지 못했습니다');
+      setMessage('역할을 변경하지 못했어요');
     } finally {
       setLoading(false);
     }
@@ -92,7 +92,7 @@ export function JuryMemberRemoveControl({
       setOpen(false);
       router.refresh();
     } catch {
-      setMessage('구성원을 삭제하지 못했습니다');
+      setMessage('구성원을 삭제하지 못했어요');
     } finally {
       setLoading(false);
     }
@@ -107,7 +107,7 @@ export function JuryMemberRemoveControl({
       <p>이 구성원을 삭제할까요?</p>
       <p>email: {email}</p>
       <p>역할: {roleLabel}</p>
-      <p>이 구성원을 삭제하면 이 조직의 서비스 접근 권한도 함께 삭제됩니다.</p>
+      <p>이 구성원을 삭제하면 이 조직의 서비스 접근 권한도 함께 삭제돼요.</p>
       {message ? <p className={styles.alert} role="alert">{message}</p> : null}
       <div className={listStyles.confirmActions}>
         <button className={listStyles.remove} type="button" onClick={() => setOpen(false)} disabled={loading}>취소</button>

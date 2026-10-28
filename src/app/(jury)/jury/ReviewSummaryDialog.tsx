@@ -11,7 +11,7 @@ export function CopyIdButton({ value }: { value: string }) {
     <button
       type="button"
       className={buttonClass('ghost')}
-      aria-label={copied ? '복사됨' : '리뷰 자료 ID 복사'}
+      aria-label={copied ? '복사됨' : '심사 근거 ID 복사'}
       title={copied ? '복사됨' : '전체 ID 복사'}
       onClick={() => {
         void navigator.clipboard?.writeText(value).then(() => {
@@ -62,16 +62,16 @@ export function ReviewSummaryDialog(props: ReviewSummaryDialogProps) {
             완료일 {props.completedAtFull}
             {props.evidenceId ? (
               <>
-                {' · 리뷰 자료 '}
+                {' · 심사 근거 '}
                 <span className={styles.evidenceId} title={props.evidenceId}>{shortId(props.evidenceId)}</span>
                 <CopyIdButton value={props.evidenceId} />
               </>
             ) : null}
           </p>
-          <div className={styles.summaryDialogBody} lang="en">{props.summary || '요약이 없습니다.'}</div>
-          <p className={styles.muted}>영문 요약입니다. 브라우저 번역 기능으로 한국어로 볼 수 있습니다.</p>
+          <div className={styles.summaryDialogBody} lang="en">{props.summary || '요약이 없어요.'}</div>
+          <p className={styles.muted}>영문 요약이에요. 브라우저 번역 기능으로 한국어로 볼 수 있어요.</p>
           <div className={styles.summaryDialogFooter}>
-            <a className={styles.inline} href={props.detailHref}>리뷰 상세로 이동</a>
+            <a className={styles.inline} href={props.detailHref}>심사 상세로 이동</a>
             <button type="button" className={buttonClass('ghost')} onClick={close}>닫기</button>
           </div>
         </div>

@@ -19,8 +19,8 @@ test('jury landing and login stay on the jury auth entry and the existing signup
   assert.match(landing, /by AIsles Studio/);
   assert.match(landing, /AI Services Under Review/);
   assert.match(landing, /Verify\. Improve\. Review Again\./);
-  assert.match(landing, /Evidence/);
-  assert.match(landing, /Re-review/);
+  assert.match(landing, /근거/);
+  assert.match(landing, /재심사/);
   assert.match(landing, /juryHref\('\/login'\)/);
   assert.match(landing, /jurySignupHref\(\)/);
   assert.match(login, /signInWithPassword/);
