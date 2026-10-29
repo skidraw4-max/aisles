@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { JuryUserManualLinks } from '@/components/jury/JuryUserManualLinks';
 import { juryHref, jurySignupHref } from '@/lib/jury-product/jury-url';
 import styles from './jury-landing.module.css';
 
@@ -140,6 +141,7 @@ export function JuryLanding({ notice }: { notice?: string }) {
 
       <footer className={styles.footer}>
         <p>AIsles Jury · by AIsles Studio</p>
+        <JuryUserManualLinks variant="footer" />
       </footer>
     </div>
   );

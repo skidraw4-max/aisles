@@ -23,6 +23,7 @@ test('jury landing and login stay on the jury auth entry and the existing signup
   assert.match(landing, /재심사/);
   assert.match(landing, /juryHref\('\/login'\)/);
   assert.match(landing, /jurySignupHref\(\)/);
+  assert.match(landing, /JuryUserManualLinks/);
   assert.match(login, /signInWithPassword/);
   assert.match(login, /signInWithOAuth/);
   assert.match(login, /jurySignupHref\(\)/);

@@ -15,6 +15,7 @@ import {
   jurySignupIssueMessage,
   validateJurySignup,
 } from '@/lib/jury-product/jury-signup';
+import { JuryUserManualLinks } from '@/components/jury/JuryUserManualLinks';
 import { juryEmailVerificationDestination, juryHref, juryOAuthRedirect, safeJuryNext } from '@/lib/jury-product/jury-url';
 import { JuryEmailNotice } from './JuryEmailNotice';
 import styles from './jury-entry.module.css';
@@ -161,6 +162,7 @@ export function JurySignupForm({ returnQuery }: { returnQuery?: string | null })
             로그인
           </Link>
         </p>
+        <JuryUserManualLinks variant="auth" />
       </div>
     </section>
   );

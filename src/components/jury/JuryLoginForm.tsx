@@ -9,6 +9,7 @@ import { getAuthCallbackSiteUrl } from '@/lib/site-url';
 import { createClient } from '@/lib/supabase/client';
 import { syncPrismaUserWithAuth } from '@/lib/sync-prisma-user';
 import { ACCOUNT_EMAIL_CONFLICT_MESSAGE, runProfileSync } from '@/lib/auth/account-email-conflict';
+import { JuryUserManualLinks } from '@/components/jury/JuryUserManualLinks';
 import { juryHref, juryOAuthRedirect, jurySignupHref, jurySignupLink, safeJuryNext } from '@/lib/jury-product/jury-url';
 import styles from './jury-entry.module.css';
 
@@ -109,6 +110,7 @@ export function JuryLoginForm({ notice, returnQuery }: { notice?: string; return
             계정 만들기
           </Link>
         </p>
+        <JuryUserManualLinks variant="auth" />
       </div>
     </section>
   );

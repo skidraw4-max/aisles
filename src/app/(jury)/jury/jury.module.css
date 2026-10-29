@@ -474,6 +474,38 @@ a.inline {
   color: var(--jury-text-bright, #f5f7ff);
 }
 
+.statCardPanel {
+  padding: 0;
+}
+
+.statCardHit {
+  display: block;
+  padding: 24px;
+  text-decoration: none;
+  color: inherit;
+  border-radius: 12px;
+}
+
+.statCardHit:hover h2,
+.statCardHit:focus-visible h2,
+.statCardHit:hover .metric,
+.statCardHit:focus-visible .metric {
+  color: var(--jury-mint-soft, #a9f0da);
+}
+
+.statCardHit:focus-visible {
+  outline: 2px solid var(--jury-mint, #8ee7cf);
+  outline-offset: -2px;
+}
+
+.statCardExtra {
+  padding: 0 24px 24px;
+}
+
+.statCardExtra .technicalDetails {
+  margin-top: 0;
+}
+
 .badge {
   display: inline-flex;
   align-items: center;

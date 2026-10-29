@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { DASHBOARD_STAT_HREFS, dashboardStatAriaLabel } from '@/lib/jury-product/dashboard-stat-hrefs';
 import { homeNextAction } from '@/lib/jury-product/home-next-action';
 import { juryDevUi } from '@/lib/jury-product/dev-ui';
 import { listHref, pageList, type ListQuery } from '@/lib/jury-product/list-paging';
@@ -7,7 +8,9 @@ import { DISPLAY_FLAG_LABELS, cycleStatusLabel, displayModelForCatalogRow } from
 import { buildRequestStatusRows } from '@/lib/jury-product/review-request-status';
 import { redirect } from 'next/navigation';
 import { juryEntrySurface } from '@/components/jury/entry';
+import { JuryUserManualLinks } from '@/components/jury/JuryUserManualLinks';
 import { OrganizationSwitcher } from '@/components/jury/OrganizationSwitcher';
+import { JURY_USER_MANUAL_PDF, JURY_USER_MANUAL_VERSION } from '@/lib/jury-product/jury-user-manual';
 import { listOrganizationsForUser } from '@/lib/jury-product/jury-db';
 import { juryHref } from '@/lib/jury-product/jury-url';
 import {
@@ -277,6 +280,36 @@ function metricLine(metric: string, value: number | null, availability: string):
   return `${metric}: ${displayText(shown)} (${availability})${scored ? '' : ' · v9.x 품질 결론 밖'}`;
 }
 
+function DashboardStatCard({
+  kind,
+  title,
+  metric,
+  footer,
+  extra,
+}: {
+  kind: keyof typeof DASHBOARD_STAT_HREFS;
+  title: string;
+  metric: string;
+  footer: ReactNode;
+  extra?: ReactNode;
+}) {
+  const href = DASHBOARD_STAT_HREFS[kind];
+  return (
+    <section className={extra ? `${styles.panel} ${styles.statCardPanel}` : styles.panel}>
+      <Link
+        className={styles.statCardHit}
+        href={juryHref(href)}
+        aria-label={dashboardStatAriaLabel(kind, metric, title)}
+      >
+        <h2>{title}</h2>
+        <p className={styles.metric}>{metric}</p>
+        {footer}
+      </Link>
+      {extra ? <div className={styles.statCardExtra}>{extra}</div> : null}
+    </section>
+  );
+}
+
 export function DashboardBody({ view }: { view: JuryConsoleView }) {
   const board = projectDashboard(view);
   if (!board.available) {
@@ -294,6 +327,7 @@ export function DashboardBody({ view }: { view: JuryConsoleView }) {
         crumbs={[{ label: '홈' }]}
         title="홈"
         description="지금 해야 할 일과 최근 결과를 한눈에 확인하세요."
+        actions={<JuryUserManualLinks variant="header" />}
       />
       <section className={`${styles.panel} ${styles.nextAction}`}>
         <div>
@@ -304,29 +338,62 @@ export function DashboardBody({ view }: { view: JuryConsoleView }) {
         <ButtonLink variant="primary" icon={next.href === '/reviews' ? FileText : Play} href={juryHref(next.href)}>{next.label}</ButtonLink>
       </section>
       <div className={styles.cards}>
-        <section className={styles.panel}>
-          <h2>연결된 서비스</h2>
-          <p className={styles.metric}>{board.connectedServices}</p>
-          <p className={styles.muted}>정상 연결 {board.connectedServices}개 · 전체 {board.services}개</p>
-        </section>
-        <section className={styles.panel}>
-          <h2>심사 근거</h2>
-          <p className={styles.metric}>{board.evidence}</p>
-          <p className={styles.muted}>최근 분석에 사용된 자료</p>
-        </section>
-        <section className={styles.panel}>
-          <h2>진행 중 심사</h2>
-          <p className={styles.metric}>{board.inFlightReviews}</p>
-          <p className={styles.muted}>완료된 결과 {board.reviews}건</p>
-          <details className={styles.technicalDetails}><summary>결과 출처 자세히 보기</summary><p className={styles.muted}>출처 미기록 {board.resultSummary.unknownSource} · Mock/Fixture {board.resultSummary.nonReal} · 실모델(미검증) {board.resultSummary.realUnverified} · 검증된 실모델 {board.resultSummary.aggregatable}</p></details>
-          {board.resultSummary.withWarnings > 0 ? <p className={styles.muted}>⚠ 확인이 필요한 결과 {board.resultSummary.withWarnings}건</p> : null}
-        </section>
-        <section className={styles.panel}>
-          <h2>개선 작업</h2>
-          <p className={styles.metric}>{board.openImprovements}</p>
-          <p className={styles.muted}>진행 중 {board.activeImprovements}건</p>
-          <details className={styles.technicalDetails}><summary>출처 자세히 보기</summary><p className={styles.muted}>실모델(미검증) {board.improvementSources.realUnverified} · 검증된 실모델 {board.improvementSources.verifiedReal} · Mock/Fixture {board.improvementSources.nonReal} · 출처 미기록 {board.improvementSources.unknownSource}{board.improvementSources.unlinked > 0 ? ` · 연결 확인 불가 ${board.improvementSources.unlinked}` : ''}</p></details>
-        </section>
+        <DashboardStatCard
+          kind="connectedServices"
+          title="연결된 서비스"
+          metric={board.connectedServices}
+          footer={
+            <p className={styles.muted}>
+              정상 연결 {board.connectedServices}개 · 전체 {board.services}개
+            </p>
+          }
+        />
+        <DashboardStatCard
+          kind="evidence"
+          title="심사 근거"
+          metric={board.evidence}
+          footer={<p className={styles.muted}>최근 분석에 사용된 자료</p>}
+        />
+        <DashboardStatCard
+          kind="inFlightReviews"
+          title="진행 중 심사"
+          metric={board.inFlightReviews}
+          footer={<p className={styles.muted}>완료된 결과 {board.reviews}건</p>}
+          extra={
+            <>
+              <details className={styles.technicalDetails}>
+                <summary>결과 출처 자세히 보기</summary>
+                <p className={styles.muted}>
+                  출처 미기록 {board.resultSummary.unknownSource} · Mock/Fixture {board.resultSummary.nonReal} ·
+                  실모델(미검증) {board.resultSummary.realUnverified} · 검증된 실모델{' '}
+                  {board.resultSummary.aggregatable}
+                </p>
+              </details>
+              {board.resultSummary.withWarnings > 0 ? (
+                <p className={styles.muted}>⚠ 확인이 필요한 결과 {board.resultSummary.withWarnings}건</p>
+              ) : null}
+            </>
+          }
+        />
+        <DashboardStatCard
+          kind="openImprovements"
+          title="개선 작업"
+          metric={board.openImprovements}
+          footer={<p className={styles.muted}>진행 중 {board.activeImprovements}건</p>}
+          extra={
+            <details className={styles.technicalDetails}>
+              <summary>출처 자세히 보기</summary>
+              <p className={styles.muted}>
+                실모델(미검증) {board.improvementSources.realUnverified} · 검증된 실모델{' '}
+                {board.improvementSources.verifiedReal} · Mock/Fixture {board.improvementSources.nonReal} · 출처 미기록{' '}
+                {board.improvementSources.unknownSource}
+                {board.improvementSources.unlinked > 0
+                  ? ` · 연결 확인 불가 ${board.improvementSources.unlinked}`
+                  : ''}
+              </p>
+            </details>
+          }
+        />
       </div>
       <section className={styles.panel}>
         <h2>최근 결과와 활동</h2>
@@ -1343,6 +1410,10 @@ export function SettingsBody({
       description="서비스 연결, 멤버, 권한, 초대, 보안과 설정을 한 곳에서 관리해요."
     />
     <nav className={styles.adminGrid} aria-label="관리 메뉴">
+      <a className={styles.adminCard} href={JURY_USER_MANUAL_PDF} target="_blank" rel="noopener noreferrer">
+        <strong>사용자 매뉴얼</strong>
+        <span>PDF v{JURY_USER_MANUAL_VERSION} — Jury 이용 안내 (보기·다운로드)</span>
+      </a>
       <Link className={styles.adminCard} href={juryHref('/organization/services')}><strong>서비스 접근 권한</strong><span>연결 상태와 서비스 권한</span></Link>
       {actor.ok && (actor.role === 'OWNER' || actor.role === 'ADMIN') ? <Link className={styles.adminCard} href={juryHref('/operations')}><strong>운영 지표</strong><span>요청 수·완료율·실패 사유·소요 시간</span></Link> : null}
       <Link className={styles.adminCard} href={juryHref('/organization/members')}><strong>멤버</strong><span>조직 역할과 상태</span></Link>
