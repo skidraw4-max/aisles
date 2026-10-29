@@ -23,7 +23,10 @@ test('fix 1: one-click binds screen audit for any connection type, NO_AUDIT bloc
   assert.match(auditJuryFailureText('NO_AUDIT'), /화면 심사가 끝나면/);
   assert.match(auditJuryFailureText('ERROR'), /\(ERROR\)/);
   assert.equal(typeof buildProductEvidence, 'function');
-  assert.match(src('src/lib/jury-product/evidence-builder.ts'), /purpose: input\.purpose \?\? 'aisle-self-observation'/);
+  assert.match(
+    src('src/lib/jury-product/evidence-builder.ts'),
+    /purpose = input\.purpose \?\? 'aisle-self-observation'/,
+  );
 });
 
 test('fix 2: results without the improvementProposals key are not reused', () => {

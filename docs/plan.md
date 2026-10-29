@@ -1798,3 +1798,109 @@ verificationTasks?: string[]; // 또는 needsFurtherVerification 재사용 + pro
 2. `reasoningLevel`을 Calibration에 **optional**로 둘지, Judge에만 둘지? (권장: Calibration optional + Judge 검증)
 3. Chairman `crossSourceDivergences`/`observations`를 **새 optional 배열**로 둘지, 기존 배열+prompt 순서만으로 할지? (권장: additive 배열)
 4. Live Gemini run은 구현+테스트 green 후 **승인 시** 실행?
+
+---
+
+# Plan: JuryEvidence 저장 실패 — 진단 후 한 가지 수정
+
+**Status:** 1·2단계 승인 후 진단 완료. 3단계 수정은 로컬 테스트까지. Production 배포 전.
+
+**기준:** `origin/main` `03a7276`, 브랜치 `fix/jury-persistence`.  
+**작업 폴더:** `C:\dev\AIsle-jury-persistence-fix`. `C:\dev\AIsle`의 미커밋 변경과 분리.
+
+## 확인된 사실
+
+- ATOMY 읽기 전용 관찰 성공. Vercel 22:31:22, `https://kr.atomy.com/main`, 화면 5개, 190.6초, 로그인 1회 성공, 관찰 오류 없음.
+- 화면 심사 성공.
+- 그 근거를 `JuryEvidence`로 저장하는 단계 실패. 화면 사유는 `PERSISTENCE_FAILED`.
+- 위원 심사는 시작 전 중단. 기존 심사 결과는 그대로.
+- Prisma 오류 코드는 로그에 없다. `notePersistenceFailure()`는 `JURY_TEST_DIAGNOSTICS=1`일 때만 작업명, Prisma `code`, 타임아웃 여부, 경과 시간, 오류 유형을 남긴다.
+
+코드 경로는 `startAuditJuryReviewAction` → `runConnectedServiceEvidenceCollection` → `persistProductEvidence`이다. 저장이 throw되고 같은 해시의 기존 행이 없으면 `PERSISTENCE_FAILED`를 반환하고, 그 다음 `startConnectedServiceReview`는 호출되지 않는다. 저장은 Prisma `create`가 아니라 `$queryRaw` / `$executeRaw`이다. 트랜잭션 한도는 이미 15초(`JURY_INTERACTIVE_TRANSACTION`)이다.
+
+`contentHash`가 없어 `HASH_REQUIRED`가 되는 경로도 `PERSISTENCE_FAILED`를 반환하지만 `notePersistenceFailure`를 호출하지 않는다. 플래그만 켜고 줄이 없으면 그 실패는 throw된 Prisma 오류가 아니다.
+
+## 목표
+
+실패한 환경에서 저장 오류의 Prisma 코드와 SQLSTATE를 확인한 뒤, 그 코드에 해당하는 수정 하나만 한다. 사용자에게 보이는 사유는 `PERSISTENCE_FAILED`로 유지한다.
+
+## 1. 실패 환경에서 기존 플래그만 켠다
+
+새 로거를 만들지 않는다. 22:31:22 로그가 나온 Vercel 환경에만 `JURY_TEST_DIAGNOSTICS=1`을 잠시 켠다. Preview와 Production DB는 분리되어 있으므로 Preview에서 켠 결과로 Production 오류 코드를 확정하지 않는다.
+
+같은 「이 결과로 위원 심사하기」를 한 번 누른다. 이 클릭은 이미 저장된 관찰과 화면 심사를 읽는다. 190초 ATOMY 관찰을 다시 실행하지 않는다. 저장이 다시 실패하면 Gemini 위원 심사는 시작되지 않는다.
+
+저장이 성공하면 그 클릭은 `tenantReviewCore`의 Gemini 호출로 넘어간다. 그 경우 즉시 멈추고, 진단 줄을 기대하지 않는다. 성공 경로에는 로그를 추가하지 않는다.
+
+플래그는 `notePersistenceFailure`를 호출하는 다른 Jury 저장에도 적용된다. 기록은 기존 허용 필드뿐이다.
+
+기록한다: 작업명, Prisma `code`, 타임아웃 여부, `elapsedMs`, `limitMs`, 오류 유형.  
+기록하지 않는다: 아이디·비밀번호, SQL, 화면 내용, 토큰, 사이트 데이터, `error.message`.
+
+플래그를 켠 뒤에도 줄이 없으면 1단계 결과를 `NO_THROWN_ERROR`로 적고 2단계로 간다. `P2010`만 있고 SQLSTATE가 없으면 2단계로 간다. `P2028` 또는 `P2002`처럼 코드만으로 분기할 수 있으면 2단계를 건너뛰고 3단계로 간다.
+
+확인이 끝나면 플래그를 끈다.
+
+## 2. 코드로 보강하는 진단은 필요할 때만
+
+1단계 로그만으로 분기할 수 없을 때, 실패 테스트를 먼저 넣고 아래만 추가한다. 게이트는 `JURY_TEST_DIAGNOSTICS=1`을 유지한다.
+
+- Prisma `meta.code`가 짧은 SQLSTATE이면 `sqlState`로 남긴다. `meta.message`와 `error.message`는 남기지 않는다.
+- `HASH_REQUIRED`도 진단을 남긴다. operation은 `evidence.persist.hash`, `errorClass`는 `HashRequired`이다.
+- 공개 사유, INSERT 문, 스키마, 트랜잭션 한도, 판정, 프롬프트, 화면 심사 규칙은 그대로 둔다.
+
+보강 후 실패 환경에서 저장 실패 클릭을 한 번 더 한다. 조건은 1단계와 같다. 저장이 성공하면 Gemini로 넘어가므로 멈춘다.
+
+## 3. 코드가 확인된 뒤 수정은 하나
+
+| 확인된 값 | 의미 | 수정 |
+| --- | --- | --- |
+| `P2028`이고 `elapsedMs`/`limitMs`가 15초에 닿음 | 트랜잭션 안에서 하는 일이 한도를 넘김 | 저장 트랜잭션 범위만 조정 |
+| `P2028`이고 `elapsedMs`/`limitMs`가 비어 있음 | transaction pooler가 interactive transaction을 끊은 경우에 해당 | 풀러와 트랜잭션 방식만 조정. 타임아웃 증가와 같은 수정으로 처리하지 않음 |
+| `P2010` + `sqlState` `42703` 또는 `42P01` | raw SQL 기준 컬럼·테이블 불일치. `P2021`/`P2022`는 이 경로의 1차 코드가 아님 | 마이그레이션은 실행하지 않고, 필요한 스키마 변경만 문서화해 별도 승인 |
+| `P2002`, 또는 상위 `23505`, 또는 `P2010` + `sqlState` `23505` | 새 `contentHash` 저장 중 중복. 현재 멱등 처리는 상위 `P2002`/`23505`만 재조회함 | 기존 근거 재조회에 `P2010`의 `23505`를 포함 |
+| 그 외 연결 오류 | Supabase 또는 Vercel DB 연결 문제 | 저장 방식과 사용자 문구는 유지하고, 서버 진단만 유지 |
+| `evidence.persist.hash` | throw 없이 해시가 없어 실패 | 해시 누락 경로만 수정. 판정·프롬프트·화면 심사 규칙은 유지 |
+| 코드가 이미 충분하고 로그가 플래그 뒤에만 숨겨져 있음 | 원인 수정이 없음 | 사용자 문구 `PERSISTENCE_FAILED`는 유지하고, 서버 진단 게이트만 조정 |
+
+DB 마이그레이션과 `prisma/schema.prisma` 변경은 스키마 불일치가 확인된 뒤의 별도 승인 대상이다. 핵심 판정, 프롬프트, 화면 심사 규칙은 변경하지 않는다.
+
+## 4. 검증
+
+수정이 정해진 뒤에만 한다.
+
+- 저장 경로 단위 테스트. 실패 테스트를 먼저 작성한다.
+- 기존 Jury 회귀 테스트.
+- Production 빌드.
+- Preview 배포로 코드 경로가 깨지지 않는지만 확인한다. Preview 저장 성공은 Production 원인 해소가 아니다.
+- Gemini 위원 심사 시작 확인은 저장 수정이 확인된 뒤의 별도 단계다. 이 클릭은 `tenantReviewCore`의 유료 호출이다. 실행 전에 호출 여부를 보고하고, 승인 후에만 Preview에서 한 번 확인한다.
+
+## 5. Production 반영 전 보고
+
+Production 배포 전에 다음을 보고하고 승인을 받는다.
+
+- 변경 파일과 커밋
+- 예상 Production 영향
+- DB·마이그레이션 변경 여부
+- 추가 유료 호출 여부. 진단용 실패 재시도는 관찰 재실행과 Gemini를 포함하지 않는다. 위원 심사 시작 확인만 Gemini를 호출한다.
+- 실패 환경의 진단 결과와 Preview 경로 검증 결과
+
+## 진단 결과 (2026-10-28)
+
+Production `jury.aisleshub.com`, 배포 `dpl_BrcpfyD1BETEK46urJj7cTMF9unS`, 14:44:23Z.
+
+`evidence.persist` / `PrismaClientKnownRequestError` / `P2010` / `sqlState` `23505` / `driverKind` `UniqueConstraintViolation`. 타임아웃 아님. 컬럼·테이블 이름은 드라이버가 주지 않음. 위원 심사는 시작되지 않음.
+
+같은 측정값의 지표 id가 근거 id를 포함하지 않아, 목적이 다른 새 근거가 기존 `JuryNormalizedMetric` 기본키와 충돌한다. 근거 id도 목적을 포함하지 않아 목적만 다른 행이 같은 기본키를 쓴다. 충돌 후 롤백되면 새 목적의 기존 행 재조회는 빈다.
+
+수정은 두 가지가 아니라 저장 멱등 한 가지다.
+
+- 지표 id는 근거 id를 포함한다. 근거 id는 목적을 포함한다. 내용 해시는 그대로다.
+- `P2010` 안의 `23505`도 기존 근거 재조회로 처리한다.
+
+스키마, 마이그레이션, 판정, 프롬프트, 화면 심사 규칙은 변경하지 않는다. 이 수정은 아직 Production에 배포하지 않는다. 저장이 성공하면 다음 클릭이 Gemini 위원 심사로 이어진다.
+
+## 승인 질문
+
+1. 1단계를 코드 변경 없이, 22:31:22 로그가 나온 환경의 `JURY_TEST_DIAGNOSTICS=1`과 저장 실패 재시도 한 번으로 시작할까요?
+2. 그 로그가 `P2010`이거나 줄이 없을 때만 2단계 진단 보강을 넣을까요?

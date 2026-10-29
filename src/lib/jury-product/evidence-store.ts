@@ -53,7 +53,15 @@ function identityOf(evidence: BuiltJuryEvidence): EvidenceIdentity | null {
 function uniqueViolation(error: unknown): boolean {
   if (!error || typeof error !== 'object' || !('code' in error)) return false;
   const code = String((error as { code?: unknown }).code);
-  return code === 'P2002' || code === '23505';
+  if (code === 'P2002' || code === '23505') return true;
+  if (code !== 'P2010') return false;
+  const meta = (error as { meta?: unknown }).meta;
+  const driver =
+    meta && typeof meta === 'object' ? (meta as { driverAdapterError?: unknown }).driverAdapterError : null;
+  const cause = driver && typeof driver === 'object' ? (driver as { cause?: unknown }).cause : null;
+  if (!cause || typeof cause !== 'object') return false;
+  const detail = cause as { originalCode?: unknown; kind?: unknown };
+  return detail.originalCode === '23505' || detail.kind === 'UniqueConstraintViolation';
 }
 
 export async function runProductEvidencePersist(command: PersistCommand, tx: EvidenceWriteTx): Promise<PersistResult> {

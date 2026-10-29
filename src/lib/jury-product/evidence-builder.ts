@@ -53,8 +53,17 @@ export function buildProductEvidence(input: {
   }));
   const audit = input.screenAudit ?? null;
   const auditParts = audit ? [`screen-audit:${audit.auditId}:${audit.finishedAt ?? ''}:${audit.hash}`] : [];
-  const evidenceId = stableId([input.actorTenantId, input.connection.id, period.start, period.end, ...metrics.map((metric) => metric.id), ...auditParts]);
-  const linked = metrics.map((metric) => ({ ...metric, evidenceId }));
+  const purpose = input.purpose ?? 'aisle-self-observation';
+  const evidenceId = stableId([
+    input.actorTenantId,
+    input.connection.id,
+    purpose,
+    period.start,
+    period.end,
+    ...metrics.map((metric) => metric.id),
+    ...auditParts,
+  ]);
+  const linked = metrics.map((metric) => ({ ...metric, id: stableId([metric.id, evidenceId]), evidenceId }));
   const canonical = linked.map((metric) => ({
     metric: metric.metric,
     value: metric.value,
@@ -67,7 +76,7 @@ export function buildProductEvidence(input: {
     id: evidenceId,
     tenantId: input.actorTenantId,
     connectionId: input.connection.id,
-    purpose: input.purpose ?? 'aisle-self-observation',
+    purpose,
     periodStart: period.start,
     periodEnd: period.end,
     timezone: period.timezone,

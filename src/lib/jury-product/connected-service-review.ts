@@ -368,7 +368,10 @@ export async function runConnectedServiceEvidenceCollection(
     };
   }
   if (!stored.ok) {
-    if (stored.reason === 'HASH_REQUIRED') return { ok: false, reason: 'PERSISTENCE_FAILED' };
+    if (stored.reason === 'HASH_REQUIRED') {
+      notePersistenceFailure('evidence.persist.hash', Object.assign(new Error('missing content hash'), { name: 'HashRequired' }));
+      return { ok: false, reason: 'PERSISTENCE_FAILED' };
+    }
     if (stored.reason === 'PACK_NOT_READ_ONLY') return { ok: false, reason: 'PACK_NOT_READ_ONLY' };
     return { ok: false, reason: 'NOT_FOUND' };
   }

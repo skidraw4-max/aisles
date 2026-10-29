@@ -190,4 +190,97 @@ describe('product evidence store', () => {
     assert.equal(source.includes('credentialRef'), false);
     assert.equal(source.includes('ai-review-board'), false);
   });
+
+  it('gives a different purpose its own evidence id and metric ids', () => {
+    const screen = buildProductEvidence({
+      actorTenantId: 'tenant-a',
+      connection: { id: 'conn-a', tenantId: 'tenant-a' },
+      purpose: 'screen-audit',
+      pack: buildStubEvidencePack({
+        generatedAt: '2026-10-01T00:00:00.000Z',
+        analysisPeriod: { start: '2026-09-24', end: '2026-09-30', timezone: 'Asia/Seoul' },
+        aggregates: {
+          userCount: 0,
+          newUsersLast7d: null,
+          activeUsersLast7d: 2,
+          postCount: 4,
+          postsLast7d: 0,
+          commentsLast7d: null,
+          viewsLast7d: 3,
+          totalViews: 0,
+          commentCount: 1,
+        },
+      }),
+    });
+    assert.equal(screen.ok, true);
+    if (!screen.ok) return;
+    const again = buildProductEvidence({
+      actorTenantId: 'tenant-a',
+      connection: { id: 'conn-a', tenantId: 'tenant-a' },
+      purpose: 'screen-audit',
+      pack: buildStubEvidencePack({
+        generatedAt: '2026-10-01T00:00:00.000Z',
+        analysisPeriod: { start: '2026-09-24', end: '2026-09-30', timezone: 'Asia/Seoul' },
+        aggregates: {
+          userCount: 0,
+          newUsersLast7d: null,
+          activeUsersLast7d: 2,
+          postCount: 4,
+          postsLast7d: 0,
+          commentsLast7d: null,
+          viewsLast7d: 3,
+          totalViews: 0,
+          commentCount: 1,
+        },
+      }),
+    });
+    assert.equal(again.ok, true);
+    if (!again.ok) return;
+    assert.notEqual(screen.evidence.id, fixture.evidence.id);
+    assert.deepEqual(
+      again.metrics.map((metric) => metric.id),
+      screen.metrics.map((metric) => metric.id),
+    );
+    const existing = new Set(fixture.metrics.map((metric) => metric.id));
+    for (const metric of screen.metrics) assert.equal(existing.has(metric.id), false);
+  });
+
+  it('reuses the saved evidence when Postgres unique failure arrives as P2010', async () => {
+    const db = memoryDb();
+    const command = {
+      actorTenantId: 'tenant-a',
+      connectionId: 'conn-a',
+      evidence: fixture.evidence,
+      metrics: fixture.metrics,
+    };
+    const first = await runProductEvidencePersist(command, db.tx);
+    assert.equal(first.ok, true);
+    let lookups = 0;
+    const hidden: EvidenceWriteTx = {
+      ...db.tx,
+      async findByIdentity(identity) {
+        lookups += 1;
+        if (lookups === 1) return null;
+        return db.tx.findByIdentity(identity);
+      },
+      async insertEvidence() {
+        const error = new Error('duplicate key');
+        Object.assign(error, {
+          code: 'P2010',
+          meta: {
+            driverAdapterError: {
+              cause: { originalCode: '23505', kind: 'UniqueConstraintViolation', originalMessage: 'INSERT secret' },
+            },
+          },
+        });
+        throw error;
+      },
+    };
+    const saved = await runProductEvidencePersist(command, hidden);
+    assert.equal(saved.ok, true);
+    if (!saved.ok) return;
+    assert.equal(saved.created, false);
+    assert.equal(saved.evidence.contentHash, fixture.evidence.contentHash);
+    assert.equal(db.evidence.length, 1);
+  });
 });
